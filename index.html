@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0f172a">
   <title>Sistem Absensi Multi-User</title>
-  
+
   <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  
+
   <style>
     :root {
       --primary: #3b82f6;
@@ -49,7 +49,7 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    
+
     html, body { 
       height: 100%; 
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -61,15 +61,13 @@
       -moz-osx-font-smoothing: grayscale;
     }
 
-    /* Scrollbar Modern */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-    /* ==================== LAYOUT ==================== */
     #app-layout { display: flex; min-height: 100vh; }
-    
+
     #sidebar {
       width: var(--sidebar-width);
       background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
@@ -88,9 +86,9 @@
       display: flex;
       flex-direction: column;
     }
-    
+
     #sidebar.open { transform: translateX(0); }
-    
+
     #sidebar-overlay {
       display: none;
       position: fixed;
@@ -101,11 +99,8 @@
       opacity: 0;
       transition: opacity 0.3s ease;
     }
-    
-    #sidebar-overlay.show { 
-      display: block; 
-      opacity: 1;
-    }
+
+    #sidebar-overlay.show { display: block; opacity: 1; }
 
     .sidebar-brand { 
       padding: 0 1.5rem 1.5rem; 
@@ -118,7 +113,7 @@
       gap: 0.75rem;
       letter-spacing: -0.025em;
     }
-    
+
     .sidebar-brand-icon {
       width: 36px;
       height: 36px;
@@ -129,8 +124,9 @@
       justify-content: center;
       font-size: 1.25rem;
       flex-shrink: 0;
+      color: white;
     }
-    
+
     .sidebar-user { 
       padding: 0 1.5rem 1.25rem; 
       border-bottom: 1px solid rgba(255,255,255,0.1);
@@ -139,7 +135,7 @@
       align-items: center;
       gap: 0.875rem;
     }
-    
+
     .sidebar-user img { 
       width: 44px; 
       height: 44px; 
@@ -149,14 +145,14 @@
       border: 2px solid rgba(255,255,255,0.1);
       flex-shrink: 0;
     }
-    
+
     .sidebar-user .name { 
       font-weight: 600; 
       font-size: 0.9375rem;
       line-height: 1.25;
       color: white;
     }
-    
+
     .sidebar-user .role { 
       font-size: 0.75rem; 
       color: #94a3b8; 
@@ -172,7 +168,7 @@
       gap: 0.25rem;
       flex: 1;
     }
-    
+
     .nav-item { 
       display: flex; 
       align-items: center; 
@@ -189,17 +185,17 @@
       position: relative;
       white-space: nowrap;
     }
-    
+
     .nav-item:hover { 
       background: rgba(255,255,255,0.08); 
       color: white; 
     }
-    
+
     .nav-item.active { 
       background: rgba(59, 130, 246, 0.15);
       color: #60a5fa;
     }
-    
+
     .nav-item.active::before {
       content: '';
       position: absolute;
@@ -211,19 +207,19 @@
       background: #60a5fa;
       border-radius: 0 3px 3px 0;
     }
-    
-    .nav-item i { 
+
+    .nav-item svg { 
       width: 20px; 
-      text-align: center;
-      font-size: 1.125rem;
+      height: 20px;
       flex-shrink: 0;
+      stroke-width: 2;
     }
-    
+
     .nav-item.logout {
       margin-top: auto;
       color: #fca5a5;
     }
-    
+
     .nav-item.logout:hover {
       background: rgba(239, 68, 68, 0.15);
       color: #fca5a5;
@@ -237,7 +233,7 @@
       display: flex;
       flex-direction: column;
     }
-    
+
     #header {
       height: var(--header-height);
       background: rgba(255, 255, 255, 0.8);
@@ -252,7 +248,7 @@
       z-index: 50;
       width: 100%;
     }
-    
+
     #header .menu-btn { 
       background: none; 
       border: none; 
@@ -267,9 +263,9 @@
       border-radius: var(--radius);
       transition: var(--transition);
     }
-    
+
     #header .menu-btn:hover { background: var(--bg); }
-    
+
     .page-title { 
       font-size: 1.125rem; 
       font-weight: 600;
@@ -284,7 +280,6 @@
       flex: 1;
     }
 
-    /* ==================== CARDS & GRID ==================== */
     .card { 
       background: var(--surface); 
       border-radius: var(--radius-lg); 
@@ -294,12 +289,12 @@
       box-shadow: var(--shadow-sm);
       transition: var(--transition);
     }
-    
+
     .card:hover {
       box-shadow: var(--shadow);
       border-color: #e2e8f0;
     }
-    
+
     .card-header { 
       display: flex; 
       justify-content: space-between; 
@@ -308,7 +303,7 @@
       flex-wrap: wrap;
       gap: 0.75rem;
     }
-    
+
     .card-title { 
       font-size: 1rem; 
       font-weight: 600;
@@ -317,34 +312,29 @@
       align-items: center;
       gap: 0.5rem;
     }
-    
-    .grid { 
-      display: grid; 
-      gap: 1.25rem; 
-    }
-    
+
+    .grid { display: grid; gap: 1.25rem; }
     .grid-2 { grid-template-columns: repeat(1, 1fr); }
     .grid-3 { grid-template-columns: repeat(1, 1fr); }
     .grid-4 { grid-template-columns: repeat(1, 1fr); }
-    
+
     @media (min-width: 640px) { 
       .grid-2 { grid-template-columns: repeat(2, 1fr); } 
       .grid-3 { grid-template-columns: repeat(2, 1fr); } 
     }
-    
+
     @media (min-width: 1024px) { 
       .grid-3 { grid-template-columns: repeat(3, 1fr); } 
       .grid-4 { grid-template-columns: repeat(4, 1fr); } 
     }
 
-    /* ==================== STATS ==================== */
     .stat-card { 
       display: flex; 
       align-items: center; 
       gap: 1rem; 
       padding: 1.25rem;
     }
-    
+
     .stat-icon { 
       width: 48px; 
       height: 48px; 
@@ -355,19 +345,19 @@
       font-size: 1.5rem;
       flex-shrink: 0;
     }
-    
+
     .stat-icon.blue { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #2563eb; }
     .stat-icon.green { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #059669; }
     .stat-icon.orange { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #d97706; }
     .stat-icon.red { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #dc2626; }
-    
+
     .stat-value { 
       font-size: 1.75rem; 
       font-weight: 700;
       letter-spacing: -0.025em;
       line-height: 1;
     }
-    
+
     .stat-label { 
       font-size: 0.875rem; 
       color: var(--text-secondary);
@@ -375,9 +365,8 @@
       margin-top: 0.25rem;
     }
 
-    /* ==================== FORMS ==================== */
     .form-group { margin-bottom: 1.25rem; }
-    
+
     .form-label { 
       display: block; 
       font-size: 0.875rem; 
@@ -385,7 +374,7 @@
       margin-bottom: 0.5rem;
       color: var(--text);
     }
-    
+
     .form-input, .form-select, .form-textarea {
       width: 100%;
       padding: 0.625rem 0.875rem;
@@ -398,31 +387,30 @@
       transition: var(--transition);
       outline: none;
     }
-    
+
     .form-input:focus, .form-select:focus, .form-textarea:focus { 
       border-color: var(--primary); 
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
-    
+
     .form-input:disabled, .form-select:disabled { 
       background: #f8fafc; 
       color: var(--text-muted); 
       cursor: not-allowed; 
       opacity: 0.7;
     }
-    
+
     .form-row { 
       display: grid; 
       gap: 1rem; 
       grid-template-columns: 1fr; 
     }
-    
+
     @media (min-width: 640px) { 
       .form-row-2 { grid-template-columns: 1fr 1fr; } 
       .form-row-3 { grid-template-columns: 1fr 1fr 1fr; } 
     }
 
-    /* ==================== BUTTONS ==================== */
     .btn { 
       display: inline-flex; 
       align-items: center; 
@@ -439,9 +427,9 @@
       letter-spacing: 0.01em;
       white-space: nowrap;
     }
-    
+
     .btn:active { transform: scale(0.98); }
-    
+
     .btn-primary { 
       background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
       color: white;
@@ -452,7 +440,7 @@
       box-shadow: 0 8px 12px -2px rgba(59, 130, 246, 0.35);
       transform: translateY(-1px);
     }
-    
+
     .btn-success { 
       background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
       color: white;
@@ -462,7 +450,7 @@
       background: linear-gradient(135deg, #059669 0%, #047857 100%);
       transform: translateY(-1px);
     }
-    
+
     .btn-danger { 
       background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
       color: white;
@@ -472,18 +460,18 @@
       background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
       transform: translateY(-1px);
     }
-    
+
     .btn-warning { 
       background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
       color: white;
       box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.3);
     }
-    
+
     .btn-secondary { 
       background: linear-gradient(135deg, #64748b 0%, #475569 100%); 
       color: white;
     }
-    
+
     .btn-outline { 
       background: transparent; 
       border: 1.5px solid var(--border); 
@@ -494,25 +482,24 @@
       border-color: var(--text-muted);
       color: var(--text);
     }
-    
+
     .btn-sm { padding: 0.375rem 0.875rem; font-size: 0.8125rem; }
     .btn-lg { padding: 0.875rem 2rem; font-size: 1rem; }
     .btn-block { width: 100%; }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
 
-    /* ==================== TABLES ==================== */
     .table-container { 
       overflow-x: auto;
       border-radius: var(--radius);
       border: 1px solid var(--border);
     }
-    
+
     .data-table { 
       width: 100%; 
       border-collapse: collapse; 
       font-size: 0.875rem; 
     }
-    
+
     .data-table th { 
       text-align: left; 
       padding: 0.875rem 1rem; 
@@ -525,20 +512,19 @@
       text-transform: uppercase;
       letter-spacing: 0.025em;
     }
-    
+
     .data-table td { 
       padding: 0.875rem 1rem; 
       border-bottom: 1px solid var(--border-light);
       color: var(--text);
       font-weight: 400;
     }
-    
+
     .data-table tr:hover td { background: #f8fafc; }
     .data-table tr:last-child td { border-bottom: none; }
-    
+
     .data-table .actions { display: flex; gap: 0.5rem; }
 
-    /* Mobile Card Table */
     @media (max-width: 768px) {
       .data-table thead { display: none; }
       .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; }
@@ -567,16 +553,15 @@
       }
     }
 
-    /* ==================== USER CARDS GRID ==================== */
     .user-card-grid { 
       display: grid; 
       gap: 1.25rem; 
       grid-template-columns: repeat(1, 1fr); 
     }
-    
+
     @media (min-width: 640px) { .user-card-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (min-width: 1024px) { .user-card-grid { grid-template-columns: repeat(3, 1fr); } }
-    
+
     .user-card { 
       background: var(--surface); 
       border: 1px solid var(--border); 
@@ -586,38 +571,35 @@
       transition: var(--transition);
       box-shadow: var(--shadow-sm);
     }
-    
+
     .user-card:hover { 
       box-shadow: var(--shadow-lg);
       transform: translateY(-2px);
       border-color: #cbd5e1;
     }
-    
+
     .user-card-img { 
       width: 100%; 
       height: 180px; 
       object-fit: cover; 
       background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
     }
-    
-    .user-card-body { 
-      padding: 1.25rem; 
-    }
-    
+
+    .user-card-body { padding: 1.25rem; }
+
     .user-card-name { 
       font-weight: 600; 
       font-size: 1rem; 
       margin-bottom: 0.25rem;
       color: var(--text);
     }
-    
+
     .user-card-role { 
       font-size: 0.8125rem; 
       color: var(--text-secondary);
       margin-bottom: 0.75rem;
     }
 
-    /* ==================== MODALS ==================== */
     .modal-overlay { 
       display: none; 
       position: fixed; 
@@ -631,12 +613,9 @@
       opacity: 0;
       transition: opacity 0.3s ease;
     }
-    
-    .modal-overlay.show { 
-      display: flex; 
-      opacity: 1;
-    }
-    
+
+    .modal-overlay.show { display: flex; opacity: 1; }
+
     .modal { 
       background: var(--surface); 
       border-radius: var(--radius-xl); 
@@ -649,11 +628,9 @@
       transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       border: 1px solid var(--border);
     }
-    
-    .modal-overlay.show .modal {
-      transform: scale(1);
-    }
-    
+
+    .modal-overlay.show .modal { transform: scale(1); }
+
     .modal-header { 
       padding: 1.25rem 1.5rem; 
       border-bottom: 1px solid var(--border); 
@@ -666,7 +643,7 @@
       z-index: 10;
       border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     }
-    
+
     .modal-title { 
       font-size: 1.125rem; 
       font-weight: 600;
@@ -674,7 +651,7 @@
       align-items: center;
       gap: 0.5rem;
     }
-    
+
     .modal-close { 
       background: var(--bg); 
       border: none; 
@@ -689,12 +666,12 @@
       border-radius: var(--radius);
       transition: var(--transition);
     }
-    
+
     .modal-close:hover { 
       background: var(--danger-light); 
       color: var(--danger);
     }
-    
+
     .modal-body { padding: 1.5rem; }
     .modal-footer { 
       padding: 1rem 1.5rem; 
@@ -707,11 +684,10 @@
       background: var(--surface);
       border-radius: 0 0 var(--radius-xl) var(--radius-xl);
     }
-    
+
     .modal-lg { max-width: 900px; }
     .modal-xl { max-width: 1100px; }
 
-    /* ==================== ALERTS / TOAST ==================== */
     #alert-box {
       position: fixed;
       top: 80px;
@@ -724,7 +700,7 @@
       gap: 0.75rem;
       pointer-events: none;
     }
-    
+
     .alert { 
       padding: 1rem 1.25rem; 
       border-radius: var(--radius-lg); 
@@ -739,37 +715,21 @@
       pointer-events: all;
       border: 1px solid transparent;
     }
-    
-    .alert-success { 
-      background: #f0fdf4; 
-      color: #166534; 
-      border-color: #86efac;
-    }
-    .alert-danger { 
-      background: #fff1f2; 
-      color: #991b1b; 
-      border-color: #fca5a5;
-    }
-    .alert-warning { 
-      background: #fffbeb; 
-      color: #92400e; 
-      border-color: #fcd34d;
-    }
-    .alert-info { 
-      background: #eff6ff; 
-      color: #1e40af; 
-      border-color: #93c5fd;
-    }
-    
+
+    .alert-success { background: #f0fdf4; color: #166534; border-color: #86efac; }
+    .alert-danger { background: #fff1f2; color: #991b1b; border-color: #fca5a5; }
+    .alert-warning { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+    .alert-info { background: #eff6ff; color: #1e40af; border-color: #93c5fd; }
+
     .alert-icon { 
       font-size: 1.25rem; 
       flex-shrink: 0; 
       margin-top: 0.125rem;
     }
-    
+
     .alert-body { flex: 1; }
     .alert-msg { line-height: 1.5; font-weight: 500; }
-    
+
     .alert-progress { 
       height: 3px; 
       border-radius: 0 0 var(--radius-lg) var(--radius-lg); 
@@ -778,19 +738,18 @@
       left: 0; 
       animation: alertProgress 5s linear forwards; 
     }
-    
+
     .alert-success .alert-progress { background: var(--success); }
     .alert-danger .alert-progress { background: var(--danger); }
     .alert-warning .alert-progress { background: var(--warning); }
     .alert-info .alert-progress { background: var(--primary); }
-    
+
     @keyframes slideInRight { 
       from { transform: translateX(120%) scale(0.9); opacity: 0; } 
       to { transform: translateX(0) scale(1); opacity: 1; } 
     }
     @keyframes alertProgress { from { width: 100%; } to { width: 0%; } }
 
-    /* ==================== LOADING ==================== */
     .loading-overlay { 
       display: none; 
       position: fixed; 
@@ -803,9 +762,9 @@
       flex-direction: column; 
       gap: 1.25rem;
     }
-    
+
     .loading-overlay.show { display: flex; }
-    
+
     .spinner { 
       width: 48px; 
       height: 48px; 
@@ -815,10 +774,9 @@
       border-radius: 50%; 
       animation: spin 0.8s linear infinite; 
     }
-    
+
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ==================== FACE/QR CAMERA ==================== */
     .camera-container { 
       position: relative; 
       width: 100%; 
@@ -829,13 +787,13 @@
       box-shadow: var(--shadow-lg);
       background: #000;
     }
-    
+
     .camera-container video { 
       width: 100%; 
       border-radius: var(--radius-lg); 
       display: block; 
     }
-    
+
     .face-guide { 
       position: absolute; 
       top: 50%; 
@@ -848,7 +806,7 @@
       pointer-events: none;
       box-shadow: 0 0 0 9999px rgba(0,0,0,0.4);
     }
-    
+
     .qr-overlay { 
       position: absolute; 
       top: 0; 
@@ -859,14 +817,13 @@
       border-radius: var(--radius-lg);
     }
 
-    /* ==================== SIGNATURE PAD ==================== */
     .signature-pad-container { 
       border: 2px dashed var(--border); 
       border-radius: var(--radius); 
       background: #fafafa;
       overflow: hidden;
     }
-    
+
     .signature-pad-container canvas { 
       width: 100%; 
       height: 200px; 
@@ -874,78 +831,261 @@
       cursor: crosshair;
     }
 
-    /* ==================== ID CARD PREVIEW ==================== */
+    /* ==================== ID CARD PORTRAIT MODERN ==================== */
     .id-card-preview { 
-      width: 100%; 
-      max-width: 380px;
-      aspect-ratio: 1.586;
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      width: 100%;
+      max-width: 320px;
+      aspect-ratio: 54 / 86;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
       border: 1px solid #e2e8f0; 
-      border-radius: var(--radius-lg); 
-      padding: 1.5rem; 
+      border-radius: 16px; 
+      padding: 1.25rem; 
       margin: 0 auto; 
       position: relative; 
-      box-shadow: var(--shadow-lg);
+      box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,0.04);
       display: flex;
       flex-direction: column;
+      align-items: center;
+      text-align: center;
+      overflow: hidden;
     }
-    
-    .id-card-header { 
-      display: flex; 
-      align-items: center; 
-      gap: 1rem; 
-      margin-bottom: 1rem;
-      padding-bottom: 1rem;
-      border-bottom: 2px solid var(--primary-light);
+
+    .id-card-header-text {
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #1e3a8a;
+      line-height: 1.5;
+      margin-bottom: 1.25rem;
+      text-align: center;
+      padding: 0 0.5rem;
     }
-    
-    .id-card-photo { 
-      width: 72px; 
-      height: 72px; 
-      border-radius: 50%; 
-      object-fit: cover; 
+
+    .id-card-header-text .sppg-name {
+      display: block;
+      font-size: 0.85rem;
+      color: #1e40af;
+      margin-top: 0.15rem;
+      letter-spacing: 0.02em;
+    }
+
+    .id-card-photo-frame {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 4px solid #dbeafe;
+      padding: 4px;
+      background: white;
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(30, 58, 138, 0.12);
+      flex-shrink: 0;
+    }
+
+    .id-card-photo {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
       background: #e2e8f0;
-      border: 3px solid white;
-      box-shadow: var(--shadow);
+      display: block;
     }
-    
-    .id-card-info { flex: 1; }
-    .id-card-name { 
-      font-weight: 700; 
-      font-size: 1.125rem;
-      color: var(--text);
-      margin-bottom: 0.25rem;
+
+    .id-card-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #0f172a;
+      margin-bottom: 0.35rem;
+      letter-spacing: -0.01em;
     }
-    .id-card-role { 
-      font-size: 0.875rem; 
-      color: var(--text-secondary);
+
+    .id-card-role {
+      font-size: 0.8rem;
+      color: #475569;
       font-weight: 500;
-    }
-    
-    .id-card-qr { 
-      position: absolute; 
-      bottom: 1.25rem; 
-      right: 1.25rem; 
-    }
-    
-    .id-card-sppg { 
-      position: absolute; 
-      bottom: 1.25rem; 
-      left: 1.25rem; 
-      font-size: 0.75rem; 
-      color: var(--text-muted);
-      font-weight: 500;
+      margin-bottom: 1.5rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
-    
-    .id-card-company {
+
+    .id-card-bottom {
       margin-top: auto;
-      font-size: 0.75rem;
-      color: var(--primary);
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.875rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .id-card-qr-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .id-card-qr { 
+      width: 64px; 
+      height: 64px; 
+      flex-shrink: 0;
+      background: white;
+      padding: 4px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+
+    .id-card-qr canvas, .id-card-qr img {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    .id-card-id-vertical {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      font-size: 0.6rem;
       font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.15em;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Courier New', monospace;
+    }
+
+    .id-card-footer-note {
+      font-size: 0.55rem;
+      color: #94a3b8;
+      text-align: center;
+      line-height: 1.5;
+      margin-top: 0.875rem;
+      padding: 0 0.25rem;
+      font-weight: 500;
+    }
+
+    .id-card-company-strip {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 50%, #1e3a8a 100%);
+    }
+
+    /* ==================== CROP MODAL ==================== */
+    .crop-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .crop-stage {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      background: #f1f5f9;
+      border-radius: 12px;
+      overflow: hidden;
+      touch-action: none;
+      cursor: grab;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .crop-stage:active { cursor: grabbing; }
+
+    .crop-stage canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .crop-mask {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .crop-mask::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+    }
+
+    .crop-mask::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: transparent;
+      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.55);
+      border: 2px dashed rgba(255,255,255,0.9);
+    }
+
+    .crop-controls {
+      width: 100%;
+      max-width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .crop-control-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .crop-control-row label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.05em;
+    }
+
+    .crop-control-row input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+    }
+
+    .crop-preview-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+
+    .crop-preview-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid var(--border);
+      margin: 0 auto;
+      background: #f8fafc;
+    }
+
+    .crop-preview-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
     /* ==================== DEVICE UI ==================== */
@@ -960,14 +1100,14 @@
       gap: 2rem;
       background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
     }
-    
+
     .device-btn-wrap { 
       position: relative; 
       display: inline-flex; 
       align-items: center; 
       justify-content: center; 
     }
-    
+
     .device-btn-pulse { 
       position: absolute; 
       width: 220px; 
@@ -977,14 +1117,14 @@
       animation: pulseBig 2.5s ease-in-out infinite; 
       pointer-events: none; 
     }
-    
+
     .device-btn-pulse2 { animation-delay: 0.8s; }
-    
+
     @keyframes pulseBig { 
       0%,100% { transform: scale(1); opacity: 0.5; } 
       50% { transform: scale(1.3); opacity: 0; } 
     }
-    
+
     .device-btn-absen { 
       position: relative; 
       z-index: 1; 
@@ -1005,14 +1145,14 @@
       justify-content: center; 
       gap: 0.5rem;
     }
-    
+
     .device-btn-absen:hover { 
       transform: scale(1.08); 
       box-shadow: 0 16px 48px rgba(37,99,235,0.5);
     }
-    
+
     .device-btn-absen:active { transform: scale(0.92); }
-    
+
     .device-btn-absen .btn-icon { font-size: 3rem; line-height: 1; }
     .device-btn-absen .btn-label { 
       font-size: 0.875rem; 
@@ -1021,7 +1161,7 @@
       opacity: 0.9;
       font-weight: 600;
     }
-    
+
     .device-status { 
       font-size: 1rem; 
       font-weight: 500; 
@@ -1032,7 +1172,7 @@
       padding: 0.625rem 1.5rem;
       box-shadow: var(--shadow-sm);
     }
-    
+
     .device-time { 
       font-size: 3.5rem; 
       font-weight: 800; 
@@ -1041,7 +1181,7 @@
       line-height: 1;
       font-variant-numeric: tabular-nums;
     }
-    
+
     .device-date { 
       font-size: 1rem; 
       color: var(--text-secondary);
@@ -1059,7 +1199,7 @@
       position: relative;
       overflow: hidden;
     }
-    
+
     .auth-page::before {
       content: '';
       position: absolute;
@@ -1071,7 +1211,7 @@
       border-radius: 50%;
       pointer-events: none;
     }
-    
+
     .auth-page::after {
       content: '';
       position: absolute;
@@ -1083,7 +1223,7 @@
       border-radius: 50%;
       pointer-events: none;
     }
-    
+
     .auth-card { 
       background: var(--surface); 
       border-radius: var(--radius-xl); 
@@ -1095,7 +1235,7 @@
       z-index: 1;
       border: 1px solid rgba(255,255,255,0.1);
     }
-    
+
     .auth-logo { 
       text-align: center; 
       margin-bottom: 2rem; 
@@ -1110,7 +1250,7 @@
       gap: 0.75rem;
       letter-spacing: -0.025em;
     }
-    
+
     .auth-footer { 
       text-align: center; 
       margin-top: 1.5rem; 
@@ -1118,7 +1258,7 @@
       color: var(--text-secondary);
       font-weight: 500;
     }
-    
+
     .auth-footer a { 
       color: var(--primary); 
       text-decoration: none; 
@@ -1126,10 +1266,9 @@
       font-weight: 600;
       transition: var(--transition);
     }
-    
+
     .auth-footer a:hover { color: var(--primary-dark); text-decoration: underline; }
 
-    /* ==================== BADGES ==================== */
     .badge { 
       display: inline-flex; 
       align-items: center;
@@ -1139,14 +1278,13 @@
       font-weight: 600;
       letter-spacing: 0.01em;
     }
-    
+
     .badge-green { background: #dcfce7; color: #166534; }
     .badge-red { background: #fee2e2; color: #991b1b; }
     .badge-blue { background: #dbeafe; color: #1e40af; }
     .badge-gray { background: #f1f5f9; color: #475569; }
     .badge-orange { background: #fef3c7; color: #92400e; }
 
-    /* ==================== PROGRESS BAR ==================== */
     .progress-bar { 
       height: 8px; 
       background: var(--border); 
@@ -1154,7 +1292,7 @@
       overflow: hidden; 
       margin-bottom: 1.25rem; 
     }
-    
+
     .progress-bar-fill { 
       height: 100%; 
       background: linear-gradient(90deg, #3b82f6, #2563eb); 
@@ -1162,7 +1300,6 @@
       border-radius: 4px;
     }
 
-    /* ==================== CHECKBOX / RADIO ==================== */
     .checkbox-row { 
       display: flex; 
       align-items: center; 
@@ -1173,7 +1310,7 @@
       color: var(--text);
       font-weight: 500;
     }
-    
+
     .checkbox-row input { 
       width: 20px; 
       height: 20px; 
@@ -1181,7 +1318,6 @@
       cursor: pointer;
     }
 
-    /* ==================== RESPONSIVE SIDEBAR ==================== */
     @media (min-width: 1024px) {
       #app-layout { flex-direction: row; align-items: flex-start; }
 
@@ -1198,31 +1334,31 @@
         overflow-y: auto;
         z-index: 10;
       }
-      
+
       #sidebar.collapsed { width: var(--sidebar-collapsed); }
-      
+
       #sidebar.collapsed .sidebar-brand-text,
       #sidebar.collapsed .sidebar-user .name,
       #sidebar.collapsed .sidebar-user .role,
       #sidebar.collapsed .nav-item-text { display: none; }
-      
+
       #sidebar.collapsed .nav-item { 
         justify-content: center; 
         padding: 0.875rem; 
         gap: 0; 
       }
-      
+
       #sidebar.collapsed .sidebar-brand { 
         text-align: center; 
         padding: 0 0.5rem 1.5rem; 
       }
-      
+
       #sidebar.collapsed .sidebar-user { 
         text-align: center; 
         padding: 0 0.5rem 1rem; 
         justify-content: center;
       }
-      
+
       #sidebar.collapsed .sidebar-user img { 
         margin: 0; 
         width: 40px; 
@@ -1234,12 +1370,11 @@
         min-width: 0; 
         margin-left: 0; 
       }
-      
+
       #header .menu-btn { display: flex !important; }
       #sidebar-overlay { display: none !important; }
     }
 
-    /* ==================== UTILITIES ==================== */
     .hidden { display: none !important; }
     .text-center { text-align: center; }
     .text-right { text-align: right; }
@@ -1258,7 +1393,7 @@
     .gap-2 { gap: 1rem; }
     .w-full { width: 100%; }
     .flex-wrap { flex-wrap: wrap; }
-    
+
     .section-title {
       font-size: 1.25rem;
       font-weight: 700;
@@ -1266,20 +1401,19 @@
       color: var(--text);
       letter-spacing: -0.025em;
     }
-    
+
     .empty-state {
       text-align: center;
       padding: 3rem 1rem;
       color: var(--text-muted);
     }
-    
+
     .empty-state-icon {
       font-size: 3rem;
       margin-bottom: 1rem;
       opacity: 0.5;
     }
 
-    /* Mobile Bottom Safe Area */
     @supports (padding-bottom: env(safe-area-inset-bottom)) {
       .device-ui { padding-bottom: max(2rem, env(safe-area-inset-bottom)); }
       #content-area { padding-bottom: max(1.25rem, env(safe-area-inset-bottom)); }
@@ -1288,6 +1422,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <base target="_blank">
+<base target="_blank">
 </head>
 <body>
 
@@ -1306,7 +1441,10 @@
   <!-- PAGE: LOGIN -->
   <div id="page-login" class="page auth-page">
     <div class="auth-card">
-      <div class="auth-logo">📋 Sistem Absensi</div>
+      <div class="auth-logo">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Sistem Absensi
+      </div>
       <div id="login-form-section">
         <div class="form-group">
           <label class="form-label">Username</label>
@@ -1316,7 +1454,10 @@
           <label class="form-label">Password</label>
           <input type="password" id="login-password" class="form-input" placeholder="Masukkan password">
         </div>
-        <button id="btn-login" class="btn btn-primary btn-block btn-lg">🔐 Login</button>
+        <button id="btn-login" class="btn btn-primary btn-block btn-lg">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Login
+        </button>
         <div class="auth-footer">
           <a id="btn-forgot">Lupa Password?</a> &nbsp;|&nbsp; <a id="btn-to-register">Daftar Akun</a>
         </div>
@@ -1346,7 +1487,10 @@
   <!-- PAGE: REGISTER -->
   <div id="page-register" class="page auth-page hidden">
     <div class="auth-card" style="max-width:640px; max-height:92vh; overflow-y:auto;">
-      <div class="auth-logo">📝 Registrasi Karyawan</div>
+      <div class="auth-logo">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        Registrasi Karyawan
+      </div>
       <div class="form-row form-row-2">
         <div class="form-group"><label class="form-label">Nama Lengkap *</label><input type="text" id="reg-nama" class="form-input"></div>
         <div class="form-group"><label class="form-label">Username *</label><input type="text" id="reg-username" class="form-input"></div>
@@ -1376,22 +1520,34 @@
 
       <!-- Foto Profil -->
       <div class="card" style="margin:1.25rem 0; padding:1.25rem;">
-        <div class="card-title mb-2">📷 Foto Profil</div>
+        <div class="card-title mb-2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Foto Profil
+        </div>
         <div id="reg-photo-step">
           <video id="reg-video-photo" style="width:100%; border-radius:var(--radius-lg);" autoplay playsinline muted></video>
           <canvas id="reg-canvas-photo" style="display:none;"></canvas>
           <img id="reg-photo-preview" class="hidden" style="width:100%; border-radius:var(--radius-lg); margin-top:0.75rem;">
         </div>
         <div class="flex gap-2 mt-3">
-          <button id="btn-capture-photo" class="btn btn-secondary btn-sm">📷 Ambil dari Kamera</button>
-          <button id="btn-pick-photo" class="btn btn-outline btn-sm">🖼️ Pilih dari Galeri</button>
+          <button id="btn-capture-photo" class="btn btn-secondary btn-sm">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Ambil dari Kamera
+          </button>
+          <button id="btn-pick-photo" class="btn btn-outline btn-sm">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Pilih dari Galeri
+          </button>
         </div>
         <input type="file" id="reg-photo-file" accept="image/*" class="hidden">
       </div>
 
       <!-- Face Capture -->
       <div class="card" style="margin:1.25rem 0; padding:1.25rem;">
-        <div class="card-title mb-2">🧑 Pendaftaran Wajah *</div>
+        <div class="card-title mb-2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Pendaftaran Wajah *
+        </div>
         <div id="reg-face-step">
           <div class="camera-container">
             <video id="reg-video" style="width:100%; border-radius:var(--radius-lg);" autoplay playsinline muted></video>
@@ -1400,7 +1556,10 @@
           </div>
         </div>
         <div id="reg-face-status" class="text-muted mt-2">Klik tombol di bawah untuk memulai pendaftaran wajah</div>
-        <button id="btn-capture-face" class="btn btn-secondary btn-sm mt-3">🎥 Mulai Pendaftaran Wajah</button>
+        <button id="btn-capture-face" class="btn btn-secondary btn-sm mt-3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Mulai Pendaftaran Wajah
+        </button>
       </div>
 
       <div class="checkbox-row mb-3">
@@ -1408,7 +1567,10 @@
         <label for="reg-setuju">Saya menyetujui kebijakan penggunaan data pribadi</label>
       </div>
 
-      <button id="btn-register" class="btn btn-primary btn-block btn-lg">✅ Daftar</button>
+      <button id="btn-register" class="btn btn-primary btn-block btn-lg">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Daftar
+      </button>
       <div class="auth-footer"><a id="btn-to-login">← Sudah punya akun? Login</a></div>
     </div>
   </div>
@@ -1418,7 +1580,9 @@
 <div id="app-layout" class="hidden">
   <div id="sidebar">
     <div class="sidebar-brand">
-      <div class="sidebar-brand-icon">📋</div>
+      <div class="sidebar-brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
       <span class="sidebar-brand-text">Sistem Absensi</span>
     </div>
     <div class="sidebar-user">
@@ -1429,16 +1593,46 @@
       </div>
     </div>
     <nav class="nav-section">
-      <div class="nav-item" data-page="dashboard">📊 <span class="nav-item-text">Dashboard</span></div>
-      <div class="nav-item" data-page="profil">👤 <span class="nav-item-text">Profil</span></div>
-      <div class="nav-item admin-only" data-page="manajemen-user">⚙️ <span class="nav-item-text">Manajemen User</span></div>
-      <div class="nav-item admin-only akuntan-only" data-page="data-karyawan">👥 <span class="nav-item-text">Data Karyawan</span></div>
-      <div class="nav-item admin-only akuntan-only" data-page="payroll">💵 <span class="nav-item-text">Payroll</span></div>
-      <div class="nav-item" data-page="my-payroll">📄 <span class="nav-item-text">My Payroll</span></div>
-      <div class="nav-item admin-only akuntan-only" data-page="absensi">📋 <span class="nav-item-text">Data Absensi</span></div>
-      <div class="nav-item admin-only" data-page="audit-log">📜 <span class="nav-item-text">Catatan Aktivitas</span></div>
-      <div class="nav-item" data-page="absen-manual">📷 <span class="nav-item-text">Absen</span></div>
-      <div class="nav-item logout" id="btn-logout-sidebar">🚪 <span class="nav-item-text">Logout</span></div>
+      <div class="nav-item" data-page="dashboard">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span class="nav-item-text">Dashboard</span>
+      </div>
+      <div class="nav-item" data-page="profil">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="nav-item-text">Profil</span>
+      </div>
+      <div class="nav-item admin-only" data-page="manajemen-user">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-item-text">Manajemen User</span>
+      </div>
+      <div class="nav-item admin-only akuntan-only" data-page="data-karyawan">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-item-text">Data Karyawan</span>
+      </div>
+      <div class="nav-item admin-only akuntan-only" data-page="payroll">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span class="nav-item-text">Payroll</span>
+      </div>
+      <div class="nav-item" data-page="my-payroll">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span class="nav-item-text">My Payroll</span>
+      </div>
+      <div class="nav-item admin-only akuntan-only" data-page="absensi">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        <span class="nav-item-text">Data Absensi</span>
+      </div>
+      <div class="nav-item admin-only" data-page="audit-log">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="nav-item-text">Catatan Aktivitas</span>
+      </div>
+      <div class="nav-item" data-page="absen-manual">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span class="nav-item-text">Absen</span>
+      </div>
+      <div class="nav-item logout" id="btn-logout-sidebar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span class="nav-item-text">Logout</span>
+      </div>
     </nav>
   </div>
 
@@ -1446,11 +1640,16 @@
 
   <div id="main-content">
     <div id="header">
-      <button id="menu-btn" class="menu-btn">☰</button>
+      <button id="menu-btn" class="menu-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
       <div class="page-title" id="page-title">Dashboard</div>
       <div style="display:flex; align-items:center; gap:0.75rem;">
         <span id="header-nama" style="font-size:0.875rem; color:var(--text-secondary); font-weight:500;"></span>
-        <button id="btn-logout" class="btn btn-sm btn-outline">🚪 Logout</button>
+        <button id="btn-logout" class="btn btn-sm btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
       </div>
     </div>
 
@@ -1466,7 +1665,10 @@
       <div id="page-profil" class="page hidden">
         <div id="profil-readonly"></div>
         <div id="profil-edit-form" class="hidden card" style="margin-top:1.25rem;">
-          <div class="card-header"><div class="card-title">✏️ Edit Profil</div></div>
+          <div class="card-header"><div class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit Profil
+          </div></div>
           <div class="form-row form-row-2">
             <div class="form-group"><label class="form-label">Nama Lengkap</label><input type="text" id="edit-nama" class="form-input"></div>
             <div class="form-group"><label class="form-label">Tempat Lahir</label><input type="text" id="edit-tempat" class="form-input"></div>
@@ -1477,32 +1679,104 @@
             <div class="form-group"><label class="form-label">Atas Nama Rekening</label><input type="text" id="edit-rekening" class="form-input"></div>
           </div>
           <div class="flex gap-2 mt-3">
-            <button id="btn-save-profil" class="btn btn-primary">💾 Simpan</button>
+            <button id="btn-save-profil" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Simpan
+            </button>
             <button id="btn-cancel-profil" class="btn btn-outline">Batal</button>
           </div>
         </div>
         <div class="flex gap-2 mt-3 flex-wrap">
-          <button id="btn-edit-profil" class="btn btn-outline">✏️ Edit Profil</button>
-          <button id="btn-update-wajah" class="btn btn-outline">🧑 Update Data Wajah</button>
-          <button id="btn-update-foto-profil" class="btn btn-outline">📷 Update Foto Profil</button>
+          <button id="btn-edit-profil" class="btn btn-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit Profil
+          </button>
+          <button id="btn-update-wajah" class="btn btn-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Update Data Wajah
+          </button>
+          <button id="btn-update-foto-profil" class="btn btn-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Update Foto Profil
+          </button>
         </div>
       </div>
 
       <!-- Modal Update Foto Profil -->
       <div id="modal-update-foto" class="modal-overlay">
         <div class="modal">
-          <div class="modal-header"><div class="modal-title">📷 Update Foto Profil</div><button class="modal-close modal-cancel">&times;</button></div>
+          <div class="modal-header"><div class="modal-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Update Foto Profil
+          </div><button class="modal-close modal-cancel">&times;</button></div>
           <div class="modal-body">
             <img id="update-foto-preview" class="hidden" style="width:100%; border-radius:var(--radius-lg); margin-bottom:0.75rem;">
             <video id="update-foto-video" style="width:100%; border-radius:var(--radius-lg);" autoplay playsinline muted></video>
             <div class="flex gap-2 mt-3">
-              <button id="btn-update-foto-kamera" class="btn btn-secondary btn-sm">📷 Ambil dari Kamera</button>
-              <button id="btn-update-foto-galeri" class="btn btn-outline btn-sm">🖼️ Pilih dari Galeri</button>
+              <button id="btn-update-foto-kamera" class="btn btn-secondary btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                Ambil dari Kamera
+              </button>
+              <button id="btn-update-foto-galeri" class="btn btn-outline btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Pilih dari Galeri
+              </button>
             </div>
             <input type="file" id="update-foto-file" accept="image/*" class="hidden">
           </div>
           <div class="modal-footer">
-            <button id="btn-save-foto-profil" class="btn btn-primary">💾 Simpan Foto</button>
+            <button id="btn-save-foto-profil" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Simpan Foto
+            </button>
+            <button class="btn btn-outline modal-cancel">Batal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Crop Foto -->
+      <div id="modal-crop-foto" class="modal-overlay">
+        <div class="modal" style="max-width: 480px;">
+          <div class="modal-header">
+            <div class="modal-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              Atur Foto Profil
+            </div>
+            <button class="modal-close modal-cancel">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="crop-wrapper">
+              <div class="crop-stage" id="crop-stage">
+                <canvas id="crop-canvas" width="300" height="300"></canvas>
+                <div class="crop-mask"></div>
+              </div>
+              <div class="crop-controls">
+                <div class="crop-control-row">
+                  <label>Zoom</label>
+                  <input type="range" id="crop-zoom" min="0.5" max="3" step="0.01" value="1">
+                </div>
+                <div class="crop-control-row">
+                  <label>Posisi Horizontal</label>
+                  <input type="range" id="crop-pan-x" min="-150" max="150" step="1" value="0">
+                </div>
+                <div class="crop-control-row">
+                  <label>Posisi Vertikal</label>
+                  <input type="range" id="crop-pan-y" min="-150" max="150" step="1" value="0">
+                </div>
+              </div>
+              <div>
+                <div class="crop-preview-label">Preview</div>
+                <div class="crop-preview-circle">
+                  <img id="crop-preview-img" src="" alt="Preview">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="btn-apply-crop" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Terapkan
+            </button>
             <button class="btn btn-outline modal-cancel">Batal</button>
           </div>
         </div>
@@ -1511,7 +1785,10 @@
       <!-- Modal Update Wajah -->
       <div id="modal-update-wajah" class="modal-overlay">
         <div class="modal">
-          <div class="modal-header"><div class="modal-title">🧑 Update Data Wajah</div><button class="modal-close modal-cancel">&times;</button></div>
+          <div class="modal-header"><div class="modal-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Update Data Wajah
+          </div><button class="modal-close modal-cancel">&times;</button></div>
           <div class="modal-body">
             <div class="camera-container">
               <video id="update-wajah-video" style="width:100%; border-radius:var(--radius-lg);" autoplay playsinline muted></video>
@@ -1521,7 +1798,10 @@
             <div id="update-wajah-status" class="text-muted mt-2">Klik tombol di bawah untuk memulai</div>
           </div>
           <div class="modal-footer">
-            <button id="btn-save-wajah" class="btn btn-primary">💾 Simpan Data Wajah</button>
+            <button id="btn-save-wajah" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Simpan Data Wajah
+            </button>
             <button id="btn-cancel-wajah" class="btn btn-outline modal-cancel">Batal</button>
           </div>
         </div>
@@ -1531,8 +1811,14 @@
       <div id="page-manajemen-user" class="page hidden">
         <div class="card">
           <div class="card-header flex flex-between items-center flex-wrap">
-            <div class="card-title">👥 Manajemen User</div>
-            <button id="btn-register-device" class="btn btn-primary btn-sm">➕ Daftarkan Perangkat Absensi</button>
+            <div class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Manajemen User
+            </div>
+            <button id="btn-register-device" class="btn btn-primary btn-sm">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Daftarkan Perangkat Absensi
+            </button>
           </div>
           <div id="user-grid" class="user-card-grid"></div>
         </div>
@@ -1541,10 +1827,16 @@
       <!-- Modal User Detail -->
       <div id="modal-user-detail" class="modal-overlay">
         <div class="modal modal-lg">
-          <div class="modal-header"><div class="modal-title">👤 Detail User</div><button class="modal-close modal-cancel">&times;</button></div>
+          <div class="modal-header"><div class="modal-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Detail User
+          </div><button class="modal-close modal-cancel">&times;</button></div>
           <div class="modal-body"></div>
           <div class="modal-footer">
-            <button id="btn-save-user-detail" class="btn btn-primary">💾 Simpan Perubahan</button>
+            <button id="btn-save-user-detail" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Simpan Perubahan
+            </button>
             <button class="btn btn-outline modal-cancel">Batal</button>
           </div>
         </div>
@@ -1553,7 +1845,10 @@
       <!-- Modal Register Device -->
       <div id="modal-register-device" class="modal-overlay">
         <div class="modal">
-          <div class="modal-header"><div class="modal-title">➕ Daftarkan Perangkat Absensi</div><button class="modal-close modal-cancel">&times;</button></div>
+          <div class="modal-header"><div class="modal-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Daftarkan Perangkat Absensi
+          </div><button class="modal-close modal-cancel">&times;</button></div>
           <div class="modal-body">
             <div class="form-group"><label class="form-label">Username Device *</label><input type="text" id="dev-username" class="form-input"></div>
             <div class="form-group"><label class="form-label">Password *</label><input type="password" id="dev-password" class="form-input"></div>
@@ -1561,7 +1856,10 @@
             <div class="form-group"><label class="form-label">Lokasi SPPG *</label><input type="text" id="dev-sppg" class="form-input"></div>
           </div>
           <div class="modal-footer">
-            <button id="btn-save-device" class="btn btn-primary">💾 Simpan</button>
+            <button id="btn-save-device" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Simpan
+            </button>
             <button id="btn-cancel-device" class="btn btn-outline modal-cancel">Batal</button>
           </div>
         </div>
@@ -1570,7 +1868,10 @@
       <!-- PAGE: DATA KARYAWAN -->
       <div id="page-data-karyawan" class="page hidden">
         <div class="card">
-          <div class="card-header"><div class="card-title">👥 Data Karyawan</div></div>
+          <div class="card-header"><div class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Data Karyawan
+          </div></div>
           <div class="table-container">
             <table class="data-table" id="table-karyawan">
               <thead>
@@ -1586,8 +1887,14 @@
       <div id="page-payroll" class="page hidden">
         <div class="card">
           <div class="card-header flex flex-between items-center flex-wrap">
-            <div class="card-title">💵 Proses Payroll</div>
-            <button id="btn-proses-payroll" class="btn btn-primary btn-sm">▶️ Proses Payroll</button>
+            <div class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Proses Payroll
+            </div>
+            <button id="btn-proses-payroll" class="btn btn-primary btn-sm">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Proses Payroll
+            </button>
           </div>
           <div class="table-container">
             <table class="data-table" id="table-payroll">
@@ -1603,7 +1910,10 @@
       <!-- Modal Payroll -->
       <div id="modal-payroll" class="modal-overlay">
         <div class="modal modal-xl">
-          <div class="modal-header"><div class="modal-title">💵 Proses Payroll - Input Detail</div><button class="modal-close modal-cancel">&times;</button></div>
+          <div class="modal-header"><div class="modal-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Proses Payroll - Input Detail
+          </div><button class="modal-close modal-cancel">&times;</button></div>
           <div class="modal-body">
             <div class="form-row form-row-2">
               <div class="form-group"><label class="form-label">Periode Mulai</label><input type="date" id="payroll-mulai" class="form-input"></div>
@@ -1611,15 +1921,24 @@
             </div>
             <div id="payroll-karyawan-inputs"></div>
             <div class="card" style="margin-top:1.25rem;">
-              <div class="card-title mb-2">✍️ Tanda Tangan Digital</div>
+              <div class="card-title mb-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+                Tanda Tangan Digital
+              </div>
               <div class="signature-pad-container">
                 <canvas id="signature-pad"></canvas>
               </div>
-              <button id="btn-clear-signature" class="btn btn-sm btn-outline mt-2">🗑️ Hapus Tanda Tangan</button>
+              <button id="btn-clear-signature" class="btn btn-sm btn-outline mt-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Hapus Tanda Tangan
+              </button>
             </div>
           </div>
           <div class="modal-footer">
-            <button id="btn-accept-payroll" class="btn btn-success">✅ Accept Payroll</button>
+            <button id="btn-accept-payroll" class="btn btn-success">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Accept Payroll
+            </button>
             <button id="btn-cancel-payroll" class="btn btn-outline modal-cancel">Batal</button>
           </div>
         </div>
@@ -1628,7 +1947,10 @@
       <!-- PAGE: MY PAYROLL -->
       <div id="page-my-payroll" class="page hidden">
         <div class="card">
-          <div class="card-header"><div class="card-title">📄 Slip Gaji Saya</div></div>
+          <div class="card-header"><div class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Slip Gaji Saya
+          </div></div>
           <div class="table-container">
             <table class="data-table" id="table-my-payroll">
               <thead>
@@ -1644,12 +1966,18 @@
       <div id="page-absensi" class="page hidden">
         <div class="card">
           <div class="card-header flex flex-between items-center flex-wrap" style="gap:0.75rem;">
-            <div class="card-title">📋 Data Absensi</div>
+            <div class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+              Data Absensi
+            </div>
             <div class="flex gap-2 flex-wrap" style="flex-wrap:wrap;">
               <input type="date" id="filter-abs-tanggal" class="form-input" style="width:auto;">
               <input type="text" id="filter-abs-sppg" class="form-input" placeholder="SPPG" style="width:120px;">
               <input type="text" id="filter-abs-jabatan" class="form-input" placeholder="Jabatan" style="width:120px;">
-              <button id="btn-filter-absensi" class="btn btn-primary btn-sm">🔍 Filter</button>
+              <button id="btn-filter-absensi" class="btn btn-primary btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Filter
+              </button>
             </div>
           </div>
           <div class="table-container">
@@ -1674,7 +2002,9 @@
               <div class="device-btn-pulse"></div>
               <div class="device-btn-pulse device-btn-pulse2"></div>
               <button id="btn-device-absen" class="device-btn-absen">
-                <span class="btn-icon">📷</span>
+                <span class="btn-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </span>
                 <span class="btn-label">Absen</span>
               </button>
             </div>
@@ -1683,7 +2013,10 @@
 
           <!-- Step QR -->
           <div id="device-step-qr" class="hidden">
-            <div class="card-title mb-3" style="font-size:1.75rem; font-weight:700;">📷 Scan QR Code ID Card</div>
+            <div class="card-title mb-3" style="font-size:1.75rem; font-weight:700;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.5rem;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Scan QR Code ID Card
+            </div>
             <div class="form-group" id="qr-camera-select-group" style="max-width:420px; margin:0 auto 1.25rem;">
               <label class="form-label">Pilih Kamera</label>
               <select id="qr-camera-select" class="form-select"></select>
@@ -1696,7 +2029,10 @@
 
           <!-- Step Face -->
           <div id="device-step-face" class="hidden">
-            <div class="card-title mb-3" style="font-size:1.75rem; font-weight:700;">🧑 Scan Wajah</div>
+            <div class="card-title mb-3" style="font-size:1.75rem; font-weight:700;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.5rem;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Scan Wajah
+            </div>
             <div class="camera-container">
               <video id="device-face-video" style="width:100%; border-radius:var(--radius-lg);" autoplay playsinline muted></video>
               <div class="face-guide"></div>
@@ -1723,30 +2059,44 @@
               <div class="device-btn-pulse"></div>
               <div class="device-btn-pulse device-btn-pulse2"></div>
               <button id="btn-absen-manual" class="device-btn-absen">
-                <span class="btn-icon">📷</span>
+                <span class="btn-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </span>
                 <span class="btn-label">Absen</span>
               </button>
             </div>
             <div class="device-status">Tekan tombol untuk memulai absensi</div>
           </div>
           <div id="absen-step-qr" class="hidden" style="width:100%; max-width:520px; text-align:center;">
-            <div class="card-title mb-3" style="font-size:1.5rem; font-weight:700;">📷 Scan QR Code ID Card</div>
+            <div class="card-title mb-3" style="font-size:1.5rem; font-weight:700;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.5rem;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Scan QR Code ID Card
+            </div>
             <div class="form-group hidden" id="absen-qr-cam-group" style="margin-bottom:1.25rem;">
               <label class="form-label">Pilih Kamera</label>
               <select id="absen-qr-cam-select" class="form-select"></select>
             </div>
             <div id="absen-qr-video" style="width:100%; border-radius:var(--radius-lg); overflow:hidden;"></div>
             <div class="device-status mt-3">Arahkan QR Code ke kamera</div>
-            <button id="btn-absen-qr-cancel" class="btn btn-outline mt-3">✖ Batal</button>
+            <button id="btn-absen-qr-cancel" class="btn btn-outline mt-3">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Batal
+            </button>
           </div>
           <div id="absen-step-face" class="hidden" style="width:100%; max-width:420px; text-align:center;">
-            <div class="card-title mb-3" style="font-size:1.5rem; font-weight:700;">🧑 Scan Wajah</div>
+            <div class="card-title mb-3" style="font-size:1.5rem; font-weight:700;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.5rem;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Scan Wajah
+            </div>
             <div class="camera-container">
               <video id="absen-face-video" style="width:100%; border-radius:var(--radius-lg);" autoplay playsinline muted></video>
               <div class="face-guide"></div>
             </div>
             <div id="absen-face-status" class="device-status mt-3">Posisikan wajah di dalam oval...</div>
-            <button id="btn-absen-face-cancel" class="btn btn-outline mt-3">✖ Batal</button>
+            <button id="btn-absen-face-cancel" class="btn btn-outline mt-3">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Batal
+            </button>
           </div>
           <div id="absen-step-result" class="hidden" style="text-align:center;">
             <div id="absen-result-icon" style="font-size:5rem; margin-bottom:1.25rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));"></div>
@@ -1760,12 +2110,18 @@
       <div id="page-audit-log" class="page hidden">
         <div class="card">
           <div class="card-header flex flex-between items-center flex-wrap" style="gap:0.75rem;">
-            <div class="card-title">📜 Catatan Aktivitas</div>
+            <div class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Catatan Aktivitas
+            </div>
             <div class="flex gap-2 flex-wrap">
               <input type="text" id="filter-audit-jenis" class="form-input" placeholder="Jenis Aktivitas" style="width:150px;">
               <input type="date" id="filter-audit-tanggal" class="form-input" style="width:auto;">
               <input type="text" id="filter-audit-pelaku" class="form-input" placeholder="ID Pelaku" style="width:120px;">
-              <button id="btn-filter-audit" class="btn btn-primary btn-sm">🔍 Filter</button>
+              <button id="btn-filter-audit" class="btn btn-primary btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Filter
+              </button>
             </div>
           </div>
           <div class="table-container">
@@ -1784,6 +2140,44 @@
 </div><!-- /app-layout -->
 
 <script>
+// ==================== ICONS (SVG Stroke) ====================
+const ICONS = {
+  dashboard: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
+  profil: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  manajemen: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  karyawan: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  payroll: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+  mypayroll: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+  absensi: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>`,
+  audit: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  absen: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+  logout: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
+  camera: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+  edit: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  save: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,
+  check: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  close: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+  plus: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  search: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+  image: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+  face: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  upload: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+  download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+  pen: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>`,
+  trash: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+  warning: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  info: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
+  success: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+  danger: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+  menu: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`,
+  logo: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  lock: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  register: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>`,
+  play: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
+  x: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+  arrowLeft: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>`
+};
+
 // ==================== UTILS ====================
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -1791,12 +2185,12 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if(cls) 
 function formatDate(d) { if(!d) return '-'; const date = new Date(d); return date.toLocaleDateString('id-ID', {day:'2-digit', month:'2-digit', year:'numeric'}); }
 function formatDateTime(d) { if(!d) return '-'; const date = new Date(d); return date.toLocaleDateString('id-ID', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}); }
 function formatRupiah(n) { return 'Rp ' + (parseFloat(n)||0).toLocaleString('id-ID'); }
-const ALERT_ICONS = { success: '✅', danger: '❌', warning: '⚠️', info: 'ℹ️' };
+const ALERT_ICONS = { success: ICONS.success, danger: ICONS.danger, warning: ICONS.warning, info: ICONS.info };
 function showAlert(msg, type='danger') {
   const box = $('#alert-box');
   if(!box) return;
   const id = 'alert-' + Date.now();
-  const icon = ALERT_ICONS[type] || 'ℹ️';
+  const icon = ALERT_ICONS[type] || ICONS.info;
   const div = document.createElement('div');
   div.id = id;
   div.className = `alert alert-${type}`;
@@ -1821,6 +2215,19 @@ const AppState = {
   qrScanner: null,
   videoStream: null,
   tempIdUser: null,
+};
+
+// ==================== CROP STATE ====================
+let cropState = {
+  img: null,
+  scale: 1,
+  dx: 0,
+  dy: 0,
+  dragging: false,
+  lastX: 0,
+  lastY: 0,
+  callback: null,
+  canvasSize: 300
 };
 
 // ==================== API WRAPPER ====================
@@ -2038,7 +2445,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
-  
+
   $('#sidebar-overlay').addEventListener('click', () => {
     $('#sidebar').classList.remove('open');
     $('#sidebar-overlay').classList.remove('show');
@@ -2100,6 +2507,21 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#btn-save-foto-profil').addEventListener('click', saveUpdateFotoProfil);
   $('#btn-capture-face').addEventListener('click', captureFace);
   $('#btn-capture-photo').addEventListener('click', capturePhoto);
+
+  // Crop listeners
+  $('#btn-apply-crop').addEventListener('click', applyCrop);
+  const cropStage = $('#crop-stage');
+  if(cropStage) {
+    cropStage.addEventListener('mousedown', startCropDrag);
+    cropStage.addEventListener('touchstart', startCropDrag, {passive: false});
+    window.addEventListener('mousemove', onCropDrag);
+    window.addEventListener('touchmove', onCropDrag, {passive: false});
+    window.addEventListener('mouseup', endCropDrag);
+    window.addEventListener('touchend', endCropDrag);
+  }
+  $('#crop-zoom').addEventListener('input', updateCrop);
+  $('#crop-pan-x').addEventListener('input', updateCrop);
+  $('#crop-pan-y').addEventListener('input', updateCrop);
 });
 
 // ==================== REGISTER ====================
@@ -2183,15 +2605,18 @@ async function capturePhoto() {
     video.play();
     $('#reg-photo-step').classList.remove('hidden');
     setTimeout(() => {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0);
-      regPhotoBase64 = canvas.toDataURL('image/png');
-      $('#reg-photo-preview').src = regPhotoBase64;
-      $('#reg-photo-preview').classList.remove('hidden');
+      const rawBase64 = canvas.toDataURL('image/png');
       stopVideo();
-    }, 2000);
+      openCropModal(rawBase64, (croppedBase64) => {
+        regPhotoBase64 = croppedBase64;
+        $('#reg-photo-preview').src = croppedBase64;
+        $('#reg-photo-preview').classList.remove('hidden');
+      });
+    }, 1500);
   } catch(e) {
     showAlert('Tidak bisa mengakses kamera: ' + e.message);
   }
@@ -2204,7 +2629,7 @@ function stopVideo() {
   }
 }
 
-function fileToResizedBase64(file, maxSize = 800) {
+function fileToResizedBase64(file, maxSize = 1200) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -2222,7 +2647,7 @@ function fileToResizedBase64(file, maxSize = 800) {
         canvas.width = width;
         canvas.height = height;
         canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
+        resolve(canvas.toDataURL('image/jpeg', 0.9));
       };
       img.onerror = reject;
       img.src = e.target.result;
@@ -2236,9 +2661,12 @@ async function handleRegPhotoFile(e) {
   const file = e.target.files[0];
   if(!file) return;
   try {
-    regPhotoBase64 = await fileToResizedBase64(file);
-    $('#reg-photo-preview').src = regPhotoBase64;
-    $('#reg-photo-preview').classList.remove('hidden');
+    const resized = await fileToResizedBase64(file, 1200);
+    openCropModal(resized, (croppedBase64) => {
+      regPhotoBase64 = croppedBase64;
+      $('#reg-photo-preview').src = croppedBase64;
+      $('#reg-photo-preview').classList.remove('hidden');
+    });
   } catch(err) {
     showAlert('Gagal memproses gambar: ' + err);
   }
@@ -2262,14 +2690,18 @@ async function captureUpdateFotoKamera() {
     video.play();
     setTimeout(() => {
       const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
       canvas.getContext('2d').drawImage(video, 0, 0);
-      updateFotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
-      $('#update-foto-preview').src = updateFotoBase64;
+      const rawBase64 = canvas.toDataURL('image/jpeg', 0.9);
+      $('#update-foto-preview').src = rawBase64;
       $('#update-foto-preview').classList.remove('hidden');
       $('#update-foto-video').classList.add('hidden');
       stopVideo();
+      openCropModal(rawBase64, (croppedBase64) => {
+        updateFotoBase64 = croppedBase64;
+        $('#update-foto-preview').src = croppedBase64;
+      });
     }, 1500);
   } catch(e) {
     showAlert('Tidak bisa mengakses kamera: ' + e.message);
@@ -2280,11 +2712,15 @@ async function handleUpdateFotoFile(e) {
   const file = e.target.files[0];
   if(!file) return;
   try {
-    updateFotoBase64 = await fileToResizedBase64(file);
-    $('#update-foto-preview').src = updateFotoBase64;
+    const resized = await fileToResizedBase64(file, 1200);
+    $('#update-foto-preview').src = resized;
     $('#update-foto-preview').classList.remove('hidden');
     $('#update-foto-video').classList.add('hidden');
     stopVideo();
+    openCropModal(resized, (croppedBase64) => {
+      updateFotoBase64 = croppedBase64;
+      $('#update-foto-preview').src = croppedBase64;
+    });
   } catch(err) {
     showAlert('Gagal memproses gambar: ' + err);
   }
@@ -2343,6 +2779,88 @@ async function doRegister() {
   }
 }
 
+// ==================== CROP MODAL ====================
+function openCropModal(imageSrc, callback) {
+  cropState.callback = callback;
+  cropState.scale = 1;
+  cropState.dx = 0;
+  cropState.dy = 0;
+  cropState.dragging = false;
+  const img = new Image();
+  img.onload = () => {
+    cropState.img = img;
+    $('#crop-zoom').value = 1;
+    $('#crop-pan-x').value = 0;
+    $('#crop-pan-y').value = 0;
+    drawCrop();
+    $('#modal-crop-foto').classList.add('show');
+  };
+  img.src = imageSrc;
+}
+
+function drawCrop() {
+  const canvas = $('#crop-canvas');
+  if(!canvas || !cropState.img) return;
+  const ctx = canvas.getContext('2d');
+  const size = cropState.canvasSize;
+  ctx.clearRect(0, 0, size, size);
+  const img = cropState.img;
+  const scale = cropState.scale;
+  const imgW = img.width * scale;
+  const imgH = img.height * scale;
+  const x = (size - imgW) / 2 + cropState.dx;
+  const y = (size - imgH) / 2 + cropState.dy;
+  ctx.drawImage(img, x, y, imgW, imgH);
+
+  // Update preview
+  const preview = $('#crop-preview-img');
+  if(preview) preview.src = canvas.toDataURL('image/jpeg', 0.92);
+}
+
+function updateCrop() {
+  cropState.scale = parseFloat($('#crop-zoom').value);
+  cropState.dx = parseInt($('#crop-pan-x').value);
+  cropState.dy = parseInt($('#crop-pan-y').value);
+  drawCrop();
+}
+
+function startCropDrag(e) {
+  e.preventDefault();
+  cropState.dragging = true;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  cropState.lastX = clientX;
+  cropState.lastY = clientY;
+}
+
+function onCropDrag(e) {
+  if(!cropState.dragging) return;
+  e.preventDefault();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const deltaX = clientX - cropState.lastX;
+  const deltaY = clientY - cropState.lastY;
+  cropState.dx += deltaX;
+  cropState.dy += deltaY;
+  cropState.lastX = clientX;
+  cropState.lastY = clientY;
+  $('#crop-pan-x').value = cropState.dx;
+  $('#crop-pan-y').value = cropState.dy;
+  drawCrop();
+}
+
+function endCropDrag() {
+  cropState.dragging = false;
+}
+
+function applyCrop() {
+  if(cropState.callback) {
+    const canvas = $('#crop-canvas');
+    cropState.callback(canvas.toDataURL('image/jpeg', 0.95));
+  }
+  $('#modal-crop-foto').classList.remove('show');
+}
+
 // ==================== FORGOT PASSWORD ====================
 function showForgotPassword() {
   $('#forgot-password-section').classList.remove('hidden');
@@ -2396,25 +2914,25 @@ function renderDashboardAdmin(data) {
   container.innerHTML = `
     <div class="grid grid-4 mb-2">
       <div class="card stat-card">
-        <div class="stat-icon blue">👥</div>
+        <div class="stat-icon blue">${ICONS.karyawan}</div>
         <div><div class="stat-value">${data.totalKaryawan}</div><div class="stat-label">Karyawan Aktif</div></div>
       </div>
       <div class="card stat-card">
-        <div class="stat-icon green">📥</div>
+        <div class="stat-icon green">${ICONS.absensi}</div>
         <div><div class="stat-value">${data.datangHariIni}</div><div class="stat-label">Absen Datang Hari Ini</div></div>
       </div>
       <div class="card stat-card">
-        <div class="stat-icon orange">📤</div>
+        <div class="stat-icon orange">${ICONS.absen}</div>
         <div><div class="stat-value">${data.pulangHariIni}</div><div class="stat-label">Absen Pulang Hari Ini</div></div>
       </div>
       <div class="card stat-card">
-        <div class="stat-icon blue">💰</div>
+        <div class="stat-icon blue">${ICONS.payroll}</div>
         <div><div class="stat-value">${data.payrollBulanIni}</div><div class="stat-label">Payroll Bulan Ini</div></div>
       </div>
     </div>
     <div class="grid grid-2">
       <div class="card">
-        <div class="card-header"><div class="card-title">📊 Trend Absensi 7 Hari Terakhir</div></div>
+        <div class="card-header"><div class="card-title">Trend Absensi 7 Hari Terakhir</div></div>
         <div class="table-container">
           <table class="data-table">
             <thead><tr><th>Tanggal</th><th>Datang</th><th>Pulang</th></tr></thead>
@@ -2423,7 +2941,7 @@ function renderDashboardAdmin(data) {
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">⚠️ Belum Absen Hari Ini</div></div>
+        <div class="card-header"><div class="card-title">Belum Absen Hari Ini</div></div>
         <div class="table-container">
           <table class="data-table">
             <thead><tr><th>Nama</th><th>Jabatan</th><th>SPPG</th></tr></thead>
@@ -2434,7 +2952,7 @@ function renderDashboardAdmin(data) {
     </div>
     <div class="grid grid-2">
       <div class="card">
-        <div class="card-header"><div class="card-title">📍 Absensi per SPPG</div></div>
+        <div class="card-header"><div class="card-title">Absensi per SPPG</div></div>
         <div class="table-container">
           <table class="data-table">
             <thead><tr><th>SPPG</th><th>Jumlah Karyawan</th></tr></thead>
@@ -2443,7 +2961,7 @@ function renderDashboardAdmin(data) {
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">💼 Absensi per Jabatan</div></div>
+        <div class="card-header"><div class="card-title">Absensi per Jabatan</div></div>
         <div class="table-container">
           <table class="data-table">
             <thead><tr><th>Jabatan</th><th>Jumlah Karyawan</th></tr></thead>
@@ -2462,23 +2980,23 @@ function renderDashboardUser(data) {
   container.innerHTML = `
     <div class="grid grid-2">
       <div class="card stat-card">
-        <div class="stat-icon blue">📅</div>
+        <div class="stat-icon blue">${ICONS.absensi}</div>
         <div><div class="stat-value">${data.totalHariKerja}</div><div class="stat-label">Total Hari Kerja</div></div>
       </div>
       <div class="card stat-card">
-        <div class="stat-icon green">💰</div>
+        <div class="stat-icon green">${ICONS.payroll}</div>
         <div><div class="stat-value">${formatRupiah(data.totalGajiDiterima)}</div><div class="stat-label">Total Gaji Diterima</div></div>
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><div class="card-title">📋 Status Absen Hari Ini</div></div>
+      <div class="card-header"><div class="card-title">Status Absen Hari Ini</div></div>
       <div class="flex gap-2 items-center flex-wrap">
-        <span class="badge ${data.sudahDatang ? 'badge-green' : 'badge-red'}">Datang: ${data.sudahDatang ? '✓ Sudah' : '✗ Belum'}</span>
-        <span class="badge ${data.sudahPulang ? 'badge-green' : 'badge-red'}">Pulang: ${data.sudahPulang ? '✓ Sudah' : '✗ Belum'}</span>
+        <span class="badge ${data.sudahDatang ? 'badge-green' : 'badge-red'}">Datang: ${data.sudahDatang ? 'Sudah' : 'Belum'}</span>
+        <span class="badge ${data.sudahPulang ? 'badge-green' : 'badge-red'}">Pulang: ${data.sudahPulang ? 'Sudah' : 'Belum'}</span>
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><div class="card-title">📝 Riwayat Absensi Terakhir</div></div>
+      <div class="card-header"><div class="card-title">Riwayat Absensi Terakhir</div></div>
       <div class="table-container">
         <table class="data-table">
           <thead><tr><th>Tanggal</th><th>Jenis</th><th>Waktu</th><th>Status</th></tr></thead>
@@ -2508,7 +3026,7 @@ function renderProfil() {
   $('#profil-readonly').innerHTML = `
     <div class="grid grid-2">
       <div class="card">
-        <div class="card-header"><div class="card-title">👤 Informasi Pribadi</div></div>
+        <div class="card-header"><div class="card-title">${ICONS.profil} Informasi Pribadi</div></div>
         <div class="form-row form-row-2">
           <div class="form-group"><label class="form-label">Nama Lengkap</label><input class="form-input" value="${escapeHtml(u.Nama_Lengkap||'')}" disabled></div>
           <div class="form-group"><label class="form-label">Username</label><input class="form-input" value="${escapeHtml(u.Username||'')}" disabled></div>
@@ -2530,9 +3048,11 @@ function renderProfil() {
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">🪪 ID Card Digital</div></div>
+        <div class="card-header"><div class="card-title">${ICONS.image} ID Card Digital</div></div>
         <div id="id-card-preview-area" style="margin-bottom:1.25rem;"></div>
-        <button class="btn btn-primary btn-block" id="btn-download-idcard">⬇️ Download ID Card (PDF)</button>
+        <button class="btn btn-primary btn-block" id="btn-download-idcard">
+          ${ICONS.download} Download ID Card (PDF)
+        </button>
       </div>
     </div>
   `;
@@ -2549,23 +3069,39 @@ function isActive(val) { return val === true || val === 'TRUE' || val === '1' ||
 function renderIdCardPreview(u) {
   const container = $('#id-card-preview-area');
   if(!container) return;
+  const sppgName = escapeHtml(u.SPPG || 'DARMARAJA');
   const qrData = u.ID_Card_Unik || '';
   container.innerHTML = `
     <div class="id-card-preview" id="id-card-render">
-      <div class="id-card-header">
+      <div class="id-card-company-strip"></div>
+      <div class="id-card-header-text">
+        SATUAN PELAYANAN PEMENUHAN GIZI (SPPG)<br>
+        <span class="sppg-name">${sppgName}</span>
+      </div>
+      <div class="id-card-photo-frame">
         <img src="${u.URL_Foto_Profil || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" class="id-card-photo" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'">
-        <div class="id-card-info">
-          <div class="id-card-name">${escapeHtml(u.Nama_Lengkap||'')}</div>
-          <div class="id-card-role">${escapeHtml(u.Jabatan_Divisi||'')}</div>
+      </div>
+      <div class="id-card-name">${escapeHtml(u.Nama_Lengkap||'')}</div>
+      <div class="id-card-role">${escapeHtml(u.Jabatan_Divisi||'')}</div>
+      <div class="id-card-bottom">
+        <div class="id-card-qr-wrap">
+          <div class="id-card-qr" id="id-card-qr"></div>
+          <div class="id-card-id-vertical">${escapeHtml(qrData)}</div>
         </div>
       </div>
-      <div class="id-card-sppg">${escapeHtml(u.SPPG||'')}</div>
-      <div class="id-card-qr" id="id-card-qr"></div>
-      <div class="id-card-company">Sistem Absensi</div>
+      <div class="id-card-footer-note">
+        ID Card ini adalah tanda pengenal karyawan Satuan Pelayanan Pemenuhan Gizi (SPPG) ${sppgName} yang sah dan berlaku selama menjadi karyawan.
+      </div>
     </div>
   `;
   if(typeof QRCode !== 'undefined' && qrData) {
-    new QRCode($('#id-card-qr'), { text: qrData, width: 60, height: 60 });
+    setTimeout(() => {
+      const qrContainer = $('#id-card-qr');
+      if(qrContainer) {
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, { text: qrData, width: 56, height: 56, margin: 0, correctLevel: QRCode.CorrectLevel.H });
+      }
+    }, 0);
   }
 }
 
@@ -2653,34 +3189,81 @@ async function downloadIdCard() {
   if(!profilData) return;
   try {
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [86, 54] });
+    // Portrait ID Card: 54mm x 86mm
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [54, 86] });
+
+    // Background
     pdf.setFillColor(255,255,255);
-    pdf.rect(0,0,86,54,'F');
+    pdf.rect(0,0,54,86,'F');
+
+    // Top strip
+    pdf.setFillColor(30, 58, 138);
+    pdf.rect(0,0,54,3,'F');
+
+    // Header text
+    pdf.setFontSize(6);
+    pdf.setTextColor(30, 58, 138);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('SATUAN PELAYANAN', 27, 8, { align: 'center' });
+    pdf.text('PEMENUHAN GIZI (SPPG)', 27, 11.5, { align: 'center' });
+    pdf.setFontSize(8);
+    pdf.text((profilData.SPPG || 'DARMARAJA').toUpperCase(), 27, 16, { align: 'center' });
+
+    // Photo circle (simulate with rect clip, or just square with border radius approximation)
+    // jsPDF doesn't support native clip, so we draw a square with border
+    const photoY = 20;
     if(profilData.URL_Foto_Profil) {
       try {
         const img = await loadImage(profilData.URL_Foto_Profil);
-        pdf.addImage(img, 'JPEG', 5, 5, 20, 20);
+        pdf.addImage(img, 'JPEG', 17, photoY, 20, 20);
       } catch(e) {}
     }
+    // Draw circle border around photo area
+    pdf.setDrawColor(219, 234, 254);
+    pdf.setLineWidth(0.8);
+    pdf.ellipse(27, photoY + 10, 11, 11, 'S');
+
+    // Name & Role
     pdf.setFontSize(10);
-    pdf.setTextColor(0,0,0);
-    pdf.text(profilData.Nama_Lengkap || '', 28, 12);
-    pdf.setFontSize(8);
-    pdf.text(profilData.Jabatan_Divisi || '', 28, 18);
-    pdf.text(profilData.SPPG || '', 28, 24);
+    pdf.setTextColor(15, 23, 42);
+    pdf.setFont('helvetica', 'bold');
+    const nama = profilData.Nama_Lengkap || '';
+    pdf.text(nama, 27, photoY + 26, { align: 'center' });
+
+    pdf.setFontSize(7);
+    pdf.setTextColor(71, 85, 105);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text((profilData.Jabatan_Divisi || '').toUpperCase(), 27, photoY + 30, { align: 'center' });
+
+    // QR Code
     const qrCanvas = document.createElement('canvas');
     await new Promise(resolve => {
-      new QRCode(qrCanvas, { text: profilData.ID_Card_Unik || '', width: 60, height: 60, correctLevel: QRCode.CorrectLevel.H });
+      new QRCode(qrCanvas, { text: profilData.ID_Card_Unik || '', width: 80, height: 80, margin: 0, correctLevel: QRCode.CorrectLevel.H });
       setTimeout(resolve, 500);
     });
     const qrDataUrl = qrCanvas.toDataURL('image/png');
-    pdf.addImage(qrDataUrl, 'PNG', 70, 38, 12, 12);
-    const pdfBase64 = pdf.output('datauristring');
-    const res = await apiCallWithToken('updateIdCard', { pdfBase64 });
-    if(res.url) {
-      pdf.save('ID_Card_' + profilData.ID_Card_Unik + '.pdf');
-      showAlert('ID Card berhasil di-generate dan diupload', 'success');
+    pdf.addImage(qrDataUrl, 'PNG', 8, 62, 14, 14);
+
+    // Vertical ID text
+    pdf.setFontSize(5);
+    pdf.setTextColor(100, 116, 139);
+    pdf.setFont('courier', 'bold');
+    const idText = profilData.ID_Card_Unik || '';
+    // Draw vertical text manually
+    for(let i = 0; i < idText.length; i++) {
+      pdf.text(idText[i], 24, 64 + (i * 2.5), { align: 'center' });
     }
+
+    // Footer note
+    pdf.setFontSize(4.5);
+    pdf.setTextColor(148, 163, 184);
+    pdf.setFont('helvetica', 'normal');
+    const footerText = `ID Card ini adalah tanda pengenal karyawan SPPG ${profilData.SPPG || 'DARMARAJA'} yang sah dan berlaku selama menjadi karyawan.`;
+    const splitFooter = pdf.splitTextToSize(footerText, 48);
+    pdf.text(splitFooter, 27, 80, { align: 'center' });
+
+    pdf.save('ID_Card_' + profilData.ID_Card_Unik + '.pdf');
+    showAlert('ID Card berhasil di-generate', 'success');
   } catch(e) { showAlert('Gagal generate ID Card: ' + e); }
 }
 
@@ -2709,7 +3292,7 @@ function renderUserGrid(users) {
       <img src="${u.URL_Foto_Profil || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" class="user-card-img" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'">
       <div class="user-card-body">
         <div class="user-card-name">${escapeHtml(u.Nama_Lengkap)}</div>
-        <div class="user-card-role">${escapeHtml(u.Jabatan_Divisi)} • ${escapeHtml(u.SPPG)}</div>
+        <div class="user-card-role">${escapeHtml(u.Jabatan_Divisi)} &bull; ${escapeHtml(u.SPPG)}</div>
         <span class="badge ${isActive(u.Status_Aktif)?'badge-green':'badge-red'}">${isActive(u.Status_Aktif)?'Aktif':'Nonaktif'}</span>
       </div>
     </div>
