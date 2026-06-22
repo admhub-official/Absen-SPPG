@@ -919,11 +919,8 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#btn-save-profil').addEventListener('click', saveProfil);
   $('#btn-update-wajah').addEventListener('click', showUpdateWajahModal);
   $('#btn-save-wajah').addEventListener('click', saveUpdateWajah);
-  // Device Absen
-  $('#btn-device-absen').addEventListener('click', startDeviceFlow);
-  // #btn-device-retry dihapus: elemen ini tidak ada di HTML dan menyebabkan
-  // error yang memutus semua event listener setelahnya
-  $('#btn-device-done').addEventListener('click', resetDeviceFlow);
+
+  // Manajemen User
   $('#btn-register-device').addEventListener('click', showRegisterDeviceModal);
   $('#btn-save-device').addEventListener('click', saveRegisterDevice);
   $('#btn-cancel-device').addEventListener('click', () => $('#modal-register-device').classList.remove('show'));
@@ -936,7 +933,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Device Absen
   $('#btn-device-absen').addEventListener('click', startDeviceFlow);
-  $('#btn-device-retry').addEventListener('click', () => startFaceScan());
+  // #btn-device-retry dihapus: elemen ini tidak ada di HTML dan menyebabkan
+  // error yang memutus semua event listener setelahnya
   $('#btn-device-done').addEventListener('click', resetDeviceFlow);
 
   // Close modals
@@ -1787,11 +1785,6 @@ async function startDeviceFlow() {
   }
 }
 
-function apiCallWithToken(funcName, extraData) {
-  const data = { token: AppState.token, ...extraData };
-  return apiCall(funcName, data);
-}
-
 function applyUserUI() {
   if(!AppState.user) return;
   $('#sidebar-nama').textContent = AppState.user.nama || '-';
@@ -1803,6 +1796,10 @@ function applyUserUI() {
   $$('.nav-item.admin-only').forEach(n => n.classList.toggle('hidden', role !== 'ADMIN'));
   $$('.nav-item.akuntan-only').forEach(n => n.classList.toggle('hidden', !(role === 'ADMIN' || role === 'AKUNTAN')));
 }
+
+async function handleQrScanned(idCardUnik) {
+  try {
+    const res = await apiCallWithToken('lookupUserByIdCard', { idCardUnik });
     if(!res.found) {
       showDeviceResult(false, 'ID Card tidak valid');
       return;
