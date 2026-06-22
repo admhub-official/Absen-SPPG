@@ -312,6 +312,7 @@
         <div class="form-group hidden" id="reg-sppg-lainnya-group"><label class="form-label">SPPG Lainnya</label><input type="text" id="reg-sppg-lainnya" class="form-input"></div>
         <div class="form-group"><label class="form-label">Tanggal Mulai Kerja</label><input type="date" id="reg-tanggal-mulai" class="form-input"></div>
         <div class="form-group"><label class="form-label">Jabatan/Divisi</label><select id="reg-jabatan" class="form-select"><option value="">Pilih Jabatan</option></select></div>
+        <div class="form-group hidden" id="reg-jabatan-lainnya-group"><label class="form-label">Jabatan/Divisi Lainnya</label><input type="text" id="reg-jabatan-lainnya" class="form-input"></div>
         <div class="form-group"><label class="form-label">Gaji Harian (Rp)</label><input type="number" id="reg-gaji" class="form-input"></div>
         <div class="form-group"><label class="form-label">Nama Bank</label><input type="text" id="reg-bank" class="form-input"></div>
         <div class="form-group"><label class="form-label">Atas Nama Rekening</label><input type="text" id="reg-rekening" class="form-input" placeholder="1234567890 a.n. Nama"></div>
@@ -325,7 +326,11 @@
           <canvas id="reg-canvas-photo" style="display:none;"></canvas>
           <img id="reg-photo-preview" class="hidden" style="width:100%; border-radius:8px; margin-top:0.5rem;">
         </div>
-        <button id="btn-capture-photo" class="btn btn-secondary btn-sm mt-2">📷 Ambil Foto Profil</button>
+        <div class="flex gap-1 mt-2">
+          <button id="btn-capture-photo" class="btn btn-secondary btn-sm">📷 Ambil dari Kamera</button>
+          <button id="btn-pick-photo" class="btn btn-outline btn-sm">🖼️ Pilih dari Galeri</button>
+        </div>
+        <input type="file" id="reg-photo-file" accept="image/*" class="hidden">
       </div>
 
       <!-- Face Capture -->
@@ -417,6 +422,27 @@
         <div class="flex gap-1 mt-2">
           <button id="btn-edit-profil" class="btn btn-outline">✏️ Edit Profil</button>
           <button id="btn-update-wajah" class="btn btn-outline">🧑 Update Data Wajah</button>
+          <button id="btn-update-foto-profil" class="btn btn-outline">📷 Update Foto Profil</button>
+        </div>
+      </div>
+
+      <!-- Modal Update Foto Profil -->
+      <div id="modal-update-foto" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header"><div class="modal-title">📷 Update Foto Profil</div><button class="modal-close modal-cancel">&times;</button></div>
+          <div class="modal-body">
+            <img id="update-foto-preview" class="hidden" style="width:100%; border-radius:8px; margin-bottom:0.75rem;">
+            <video id="update-foto-video" style="width:100%; border-radius:8px;" autoplay playsinline muted></video>
+            <div class="flex gap-1 mt-2">
+              <button id="btn-update-foto-kamera" class="btn btn-secondary btn-sm">📷 Ambil dari Kamera</button>
+              <button id="btn-update-foto-galeri" class="btn btn-outline btn-sm">🖼️ Pilih dari Galeri</button>
+            </div>
+            <input type="file" id="update-foto-file" accept="image/*" class="hidden">
+          </div>
+          <div class="modal-footer">
+            <button id="btn-save-foto-profil" class="btn btn-primary">💾 Simpan Foto</button>
+            <button class="btn btn-outline modal-cancel">Batal</button>
+          </div>
         </div>
       </div>
 
@@ -675,7 +701,7 @@ const AppState = {
 // ==================== API WRAPPER (FETCH KE APPS SCRIPT WEB APP) ====================
 // GANTI URL DI BAWAH DENGAN URL WEB APP HASIL DEPLOY APPS SCRIPT ANDA
 // Contoh: 'https://script.google.com/macros/s/XXXXXXXXXXXXXXXXXXXXXXXX/exec'
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyL0K1j3nGo7BH4gnYk5WdBYoHALdSwdQvQzuTK-jo4Um9bZI7zCLG7_VVBxVCVrn4o/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfO2rTkTf3futdb9GFgFWuCHz-TDFdpPLC1XoEl0DawjaZ_Hb_E9ZJ4dfIoBkv4yEA/exec';
 
 function apiCall(funcName, data) {
   return new Promise((resolve, reject) => {
@@ -941,6 +967,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $$('.modal-close, .modal-cancel').forEach(btn => {
     btn.addEventListener('click', () => {
       btn.closest('.modal-overlay').classList.remove('show');
+      stopVideo();
     });
   });
 
@@ -948,6 +975,22 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#reg-sppg').addEventListener('change', e => {
     $('#reg-sppg-lainnya-group').classList.toggle('hidden', e.target.value !== 'LAINNYA');
   });
+
+  // Register: Jabatan lainnya toggle
+  $('#reg-jabatan').addEventListener('change', e => {
+    $('#reg-jabatan-lainnya-group').classList.toggle('hidden', e.target.value !== 'LAINNYA');
+  });
+
+  // Register: pilih foto dari galeri
+  $('#btn-pick-photo').addEventListener('click', () => $('#reg-photo-file').click());
+  $('#reg-photo-file').addEventListener('change', handleRegPhotoFile);
+
+  // Profil: update foto profil
+  $('#btn-update-foto-profil').addEventListener('click', showUpdateFotoModal);
+  $('#btn-update-foto-kamera').addEventListener('click', captureUpdateFotoKamera);
+  $('#btn-update-foto-galeri').addEventListener('click', () => $('#update-foto-file').click());
+  $('#update-foto-file').addEventListener('change', handleUpdateFotoFile);
+  $('#btn-save-foto-profil').addEventListener('click', saveUpdateFotoProfil);
 
   // Register: face capture
   $('#btn-capture-face').addEventListener('click', captureFace);
@@ -967,10 +1010,13 @@ async function initRegister() {
   try {
     const masters = await apiCall('getMasterData', {});
     const sppgSel = $('#reg-sppg');
-    sppgSel.innerHTML = '<option value="">Pilih SPPG</option>' + masters.sppg.map(s => `<option value="${s}">${s}</option>`).join('') + '<option value="LAINNYA">Lainnya</option>';
+    sppgSel.innerHTML = '<option value="">Pilih SPPG</option>' + masters.sppg.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('') + '<option value="LAINNYA">Lainnya</option>';
     const jabSel = $('#reg-jabatan');
-    jabSel.innerHTML = '<option value="">Pilih Jabatan</option>' + masters.jabatan.map(j => `<option value="${j}">${j}</option>`).join('');
-  } catch(e) { console.error(e); }
+    jabSel.innerHTML = '<option value="">Pilih Jabatan</option>' + masters.jabatan.map(j => `<option value="${escapeHtml(j)}">${escapeHtml(j)}</option>`).join('') + '<option value="LAINNYA">Lainnya</option>';
+  } catch(e) {
+    console.error(e);
+    showAlert('Gagal memuat data SPPG/Jabatan: ' + e + '. Coba refresh halaman.', 'warning');
+  }
 
   // Load face-api models
   await loadFaceApiModels();
@@ -1068,6 +1114,113 @@ function stopVideo() {
   }
 }
 
+// Resize + compress gambar dari file galeri sebelum dijadikan base64,
+// supaya ukuran upload tidak terlalu besar
+function fileToResizedBase64(file, maxSize = 800) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if(width > height && width > maxSize) {
+          height = Math.round(height * (maxSize / width));
+          width = maxSize;
+        } else if(height > maxSize) {
+          width = Math.round(width * (maxSize / height));
+          height = maxSize;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ----- Register: pilih foto profil dari galeri -----
+async function handleRegPhotoFile(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  try {
+    regPhotoBase64 = await fileToResizedBase64(file);
+    $('#reg-photo-preview').src = regPhotoBase64;
+    $('#reg-photo-preview').classList.remove('hidden');
+  } catch(err) {
+    showAlert('Gagal memproses gambar: ' + err);
+  }
+}
+
+// ----- Profil: modal update foto profil -----
+let updateFotoBase64 = null;
+
+function showUpdateFotoModal() {
+  updateFotoBase64 = null;
+  $('#update-foto-preview').classList.add('hidden');
+  $('#update-foto-video').classList.remove('hidden');
+  $('#modal-update-foto').classList.add('show');
+}
+
+async function captureUpdateFotoKamera() {
+  const video = $('#update-foto-video');
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    AppState.videoStream = stream;
+    video.srcObject = stream;
+    video.play();
+    setTimeout(() => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      updateFotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
+      $('#update-foto-preview').src = updateFotoBase64;
+      $('#update-foto-preview').classList.remove('hidden');
+      $('#update-foto-video').classList.add('hidden');
+      stopVideo();
+    }, 1500);
+  } catch(e) {
+    showAlert('Tidak bisa mengakses kamera: ' + e.message);
+  }
+}
+
+async function handleUpdateFotoFile(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  try {
+    updateFotoBase64 = await fileToResizedBase64(file);
+    $('#update-foto-preview').src = updateFotoBase64;
+    $('#update-foto-preview').classList.remove('hidden');
+    $('#update-foto-video').classList.add('hidden');
+    stopVideo();
+  } catch(err) {
+    showAlert('Gagal memproses gambar: ' + err);
+  }
+}
+
+async function saveUpdateFotoProfil() {
+  if(!updateFotoBase64) { showAlert('Silakan ambil atau pilih foto terlebih dahulu'); return; }
+  try {
+    const res = await apiCallWithToken('updateFotoProfil', { fotoProfilBase64: updateFotoBase64 });
+    showAlert('Foto profil berhasil diperbarui', 'success');
+    $('#modal-update-foto').classList.remove('show');
+    stopVideo();
+    // Refresh foto di sidebar & header
+    if(res.url && AppState.user) {
+      AppState.user.fotoProfil = res.url;
+      localStorage.setItem('absensi_user', JSON.stringify(AppState.user));
+      $('#sidebar-foto').src = res.url;
+    }
+    initProfil();
+  } catch(e) { showAlert(e); }
+}
+
 async function doRegister() {
   const data = {
     username: $('#reg-username').value.trim(),
@@ -1083,6 +1236,7 @@ async function doRegister() {
     sppgLainnya: $('#reg-sppg-lainnya').value.trim(),
     tanggalMulaiKerja: $('#reg-tanggal-mulai').value,
     jabatanDivisi: $('#reg-jabatan').value,
+    jabatanLainnya: $('#reg-jabatan-lainnya').value.trim(),
     gajiHarian: parseFloat($('#reg-gaji').value) || 0,
     namaBank: $('#reg-bank').value.trim(),
     atasNamaRekening: $('#reg-rekening').value.trim(),
