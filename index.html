@@ -4,2425 +4,1907 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sistem Absensi Multi-User</title>
-  
-  <!-- CDN Libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  
-  <!-- ===== STYLE: GLOBAL ===== -->
   <style>
-    :root {
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
-      --secondary: #64748b;
-      --success: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --bg: #f1f5f9;
-      --card: #ffffff;
-      --text: #1e293b;
-      --border: #e2e8f0;
-      --radius: 12px;
-      --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
-    }
-    
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      line-height: 1.5;
-      -webkit-tap-highlight-color: transparent;
-    }
-    
-    /* Loading */
-    #loading-overlay {
-      position: fixed; inset: 0; background: rgba(255,255,255,0.95);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 9999; transition: opacity 0.3s;
-    }
-    .spinner {
-      width: 48px; height: 48px; border: 4px solid var(--border);
-      border-top-color: var(--primary); border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    
-    /* Layout */
-    .app-container { display: flex; min-height: 100vh; }
-    .sidebar {
-      width: 260px; background: var(--card); border-right: 1px solid var(--border);
-      display: flex; flex-direction: column; position: fixed; height: 100vh;
-      left: 0; top: 0; z-index: 100; transition: transform 0.3s;
-    }
-    .sidebar-header {
-      padding: 20px; border-bottom: 1px solid var(--border);
-      font-weight: 700; font-size: 1.1rem; color: var(--primary);
-      display: flex; align-items: center; gap: 10px;
-    }
-    .nav-menu { flex: 1; overflow-y: auto; padding: 12px; }
-    .nav-item {
-      display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-      border-radius: 8px; cursor: pointer; color: var(--secondary);
-      font-size: 0.95rem; transition: all 0.2s; margin-bottom: 4px;
-    }
-    .nav-item:hover { background: #f8fafc; color: var(--text); }
-    .nav-item.active { background: #eff6ff; color: var(--primary); font-weight: 600; }
-    .nav-item i { width: 20px; text-align: center; }
-    .sidebar-footer {
-      padding: 16px; border-top: 1px solid var(--border);
-      font-size: 0.8rem; color: var(--secondary);
-    }
-    
-    .main-content {
-      flex: 1; margin-left: 260px; padding: 24px;
-      max-width: 1400px; width: 100%;
-    }
-    
-    /* Mobile sidebar */
-    .menu-toggle {
-      display: none; position: fixed; top: 16px; left: 16px;
-      z-index: 101; background: var(--card); border: 1px solid var(--border);
-      width: 40px; height: 40px; border-radius: 8px; align-items: center;
-      justify-content: center; font-size: 1.2rem; cursor: pointer;
-      box-shadow: var(--shadow);
-    }
-    @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.open { transform: translateX(0); }
-      .main-content { margin-left: 0; padding: 16px; padding-top: 64px; }
-      .menu-toggle { display: flex; }
-    }
-    
-    /* Cards */
-    .card {
-      background: var(--card); border-radius: var(--radius);
-      box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px;
-    }
-    .card-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
-    }
-    .card-title { font-size: 1.15rem; font-weight: 700; }
-    
-    /* Buttons */
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      gap: 8px; padding: 10px 18px; border-radius: 8px; border: none;
-      font-size: 0.95rem; font-weight: 600; cursor: pointer;
-      transition: all 0.2s; white-space: nowrap;
-    }
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-primary:hover { background: var(--primary-dark); }
-    .btn-success { background: var(--success); color: white; }
-    .btn-danger { background: var(--danger); color: white; }
-    .btn-warning { background: var(--warning); color: white; }
-    .btn-secondary { background: var(--secondary); color: white; }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-    .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
-    .btn-lg { padding: 14px 24px; font-size: 1.1rem; }
-    .btn-block { width: 100%; }
-    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    
-    /* Forms */
-    .form-group { margin-bottom: 16px; }
-    .form-label {
-      display: block; font-size: 0.875rem; font-weight: 600;
-      margin-bottom: 6px; color: var(--text);
-    }
-    .form-input, .form-select, .form-textarea {
-      width: 100%; padding: 10px 14px; border: 1px solid var(--border);
-      border-radius: 8px; font-size: 0.95rem; background: var(--card);
-      transition: border-color 0.2s;
-    }
-    .form-input:focus, .form-select:focus, .form-textarea:focus {
-      outline: none; border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-    }
-    .form-textarea { min-height: 80px; resize: vertical; }
-    .form-hint { font-size: 0.8rem; color: var(--secondary); margin-top: 4px; }
-    .form-error { color: var(--danger); font-size: 0.85rem; margin-top: 4px; display: none; }
-    .form-group.has-error .form-input { border-color: var(--danger); }
-    .form-group.has-error .form-error { display: block; }
-    
-    /* Grid */
-    .grid { display: grid; gap: 16px; }
-    .grid-2 { grid-template-columns: repeat(2, 1fr); }
-    .grid-3 { grid-template-columns: repeat(3, 1fr); }
-    .grid-4 { grid-template-columns: repeat(4, 1fr); }
-    @media (max-width: 1024px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 768px) {
-      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-    }
-    
-    /* Tables */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
-    th { font-weight: 600; color: var(--secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
-    tr:hover { background: #f8fafc; }
-    .badge {
-      display: inline-block; padding: 4px 10px; border-radius: 20px;
-      font-size: 0.75rem; font-weight: 600;
-    }
-    .badge-success { background: #d1fae5; color: #065f46; }
-    .badge-danger { background: #fee2e2; color: #991b1b; }
-    .badge-warning { background: #fef3c7; color: #92400e; }
-    .badge-info { background: #dbeafe; color: #1e40af; }
-    
-    /* Modal */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-      display: none; align-items: center; justify-content: center;
-      z-index: 200; padding: 16px;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal {
-      background: var(--card); border-radius: var(--radius);
-      width: 100%; max-width: 600px; max-height: 90vh;
-      overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-    }
-    .modal-header {
-      padding: 20px; border-bottom: 1px solid var(--border);
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .modal-body { padding: 20px; }
-    .modal-footer {
-      padding: 16px 20px; border-top: 1px solid var(--border);
-      display: flex; justify-content: flex-end; gap: 10px;
-    }
-    .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--secondary); }
-    
-    /* Toast */
-    #toast-container {
-      position: fixed; top: 20px; right: 20px; z-index: 300;
-      display: flex; flex-direction: column; gap: 10px;
-    }
-    .toast {
-      background: var(--card); border-radius: 8px; padding: 14px 18px;
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-      display: flex; align-items: center; gap: 10px; min-width: 280px;
-      animation: slideIn 0.3s ease;
-      border-left: 4px solid var(--primary);
-    }
-    .toast.success { border-left-color: var(--success); }
-    .toast.error { border-left-color: var(--danger); }
-    .toast.warning { border-left-color: var(--warning); }
-    @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-    
-    /* Specific Components */
-    .login-page {
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      padding: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    .login-box {
-      background: var(--card); border-radius: var(--radius); padding: 32px;
-      width: 100%; max-width: 420px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
-    }
-    .login-logo {
-      text-align: center; margin-bottom: 24px; font-size: 1.5rem;
-      font-weight: 800; color: var(--primary);
-    }
-    
-    .stat-card {
-      background: var(--card); border-radius: var(--radius); padding: 20px;
-      box-shadow: var(--shadow); display: flex; flex-direction: column;
-    }
-    .stat-value { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
-    .stat-label { font-size: 0.875rem; color: var(--secondary); margin-top: 4px; }
-    
-    .user-card {
-      background: var(--card); border-radius: var(--radius); overflow: hidden;
-      box-shadow: var(--shadow); cursor: pointer; transition: transform 0.2s;
-    }
-    .user-card:hover { transform: translateY(-2px); }
-    .user-card-img {
-      width: 100%; height: 160px; object-fit: cover; background: #e2e8f0;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--secondary); font-size: 3rem;
-    }
-    .user-card-body { padding: 16px; }
-    .user-card-name { font-weight: 700; font-size: 1rem; }
-    .user-card-role { font-size: 0.85rem; color: var(--secondary); margin-top: 2px; }
-    
-    .face-guide {
-      position: relative; width: 100%; max-width: 400px; margin: 0 auto;
-    }
-    .face-guide video, .face-guide canvas {
-      width: 100%; border-radius: var(--radius); display: block;
-    }
-    .face-guide .overlay {
-      position: absolute; inset: 0; border: 3px dashed var(--primary);
-      border-radius: 50% / 40%; pointer-events: none;
-    }
-    .face-guide .head-frame-overlay {
-      position: absolute; inset: 0; pointer-events: none;
-      width: 100%; height: 100%;
-    }
-    .face-guide .head-frame-overlay svg {
-      width: 100%; height: 100%; display: block;
-    }
-    
-    .id-card-preview {
-      width: 344px; height: 216px; /* CR80 ratio ~86x54mm at 4x */
-      background: white; border: 1px solid #ccc; border-radius: 8px;
-      padding: 20px; display: flex; gap: 16px; position: relative;
-      margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .id-card-photo {
-      width: 100px; height: 120px; object-fit: cover; border-radius: 4px;
-      background: #e2e8f0;
-    }
-    .id-card-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-    .id-card-name { font-size: 1.1rem; font-weight: 700; }
-    .id-card-role { font-size: 0.85rem; color: #666; margin-top: 4px; }
-    .id-card-sppg { font-size: 0.8rem; color: #888; margin-top: 2px; }
-    .id-card-qr { position: absolute; bottom: 16px; right: 16px; }
-    
-    .signature-pad {
-      border: 2px dashed var(--border); border-radius: 8px;
-      width: 100%; height: 200px; background: #fafafa;
-    }
-    
-    .device-absen-page {
-      min-height: 100vh; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; padding: 20px;
-      background: var(--bg);
-    }
-    .device-btn-absen {
-      width: 200px; height: 200px; border-radius: 50%;
-      background: var(--primary); color: white; font-size: 1.5rem;
-      font-weight: 800; border: none; cursor: pointer;
-      box-shadow: 0 10px 25px rgba(37,99,235,0.3);
-      transition: all 0.3s; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 8px;
-    }
-    .device-btn-absen:hover { transform: scale(1.05); }
-    .device-btn-absen:active { transform: scale(0.95); }
-    
-    .hidden { display: none !important; }
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    .mt-1 { margin-top: 4px; }
-    .mt-2 { margin-top: 8px; }
-    .mt-3 { margin-top: 12px; }
-    .mt-4 { margin-top: 16px; }
-    .mb-2 { margin-bottom: 8px; }
-    .mb-3 { margin-bottom: 12px; }
-    .mb-4 { margin-bottom: 16px; }
-    .flex { display: flex; }
-    .flex-col { flex-direction: column; }
-    .items-center { align-items: center; }
-    .justify-between { justify-content: space-between; }
-    .gap-2 { gap: 8px; }
-    .gap-3 { gap: 12px; }
-    .w-full { width: 100%; }
-    .h-full { height: 100%; }
-    
-    /* Checkbox & Radio */
-    .form-check {
-      display: flex; align-items: center; gap: 8px; cursor: pointer;
-      padding: 8px 0;
-    }
-    .form-check input { width: 18px; height: 18px; accent-color: var(--primary); }
-    
-    /* Tabs */
-    .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
-    .tab { padding: 10px 16px; cursor: pointer; font-weight: 600; color: var(--secondary); border-bottom: 2px solid transparent; margin-bottom: -2px; }
-    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    
-    /* Responsive table cards for mobile */
-    @media (max-width: 640px) {
-      .table-responsive thead { display: none; }
-      .table-responsive tr {
-        display: block; margin-bottom: 12px; background: var(--card);
-        border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px;
-      }
-      .table-responsive td {
-        display: flex; justify-content: space-between; padding: 8px 0;
-        border: none; border-bottom: 1px solid #f1f5f9;
-      }
-      .table-responsive td::before {
-        content: attr(data-label); font-weight: 600; color: var(--secondary);
-        font-size: 0.8rem; text-transform: uppercase;
-      }
-    }
-  </style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --secondary: #64748b;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --sidebar-width: 260px;
+    --header-height: 60px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+  /* Layout */
+  #app { display: flex; min-height: 100vh; }
+  #sidebar {
+    width: var(--sidebar-width); background: #0f172a; color: white;
+    position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+    transform: translateX(-100%); transition: transform 0.3s ease;
+    overflow-y: auto; padding: 1rem 0;
+  }
+  #sidebar.open { transform: translateX(0); }
+  #sidebar-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99;
+  }
+  #sidebar-overlay.show { display: block; }
+  .sidebar-brand { padding: 0 1.5rem 1.5rem; font-size: 1.25rem; font-weight: 700; border-bottom: 1px solid #334155; margin-bottom: 1rem; }
+  .sidebar-user { padding: 0 1.5rem 1rem; border-bottom: 1px solid #334155; margin-bottom: 1rem; }
+  .sidebar-user img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; margin-bottom: 0.5rem; background: #334155; }
+  .sidebar-user .name { font-weight: 600; font-size: 0.95rem; }
+  .sidebar-user .role { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; }
+  .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.5rem; cursor: pointer; transition: background 0.2s; color: #cbd5e1; text-decoration: none; }
+  .nav-item:hover, .nav-item.active { background: #1e293b; color: white; }
+  .nav-item i { width: 20px; text-align: center; }
+
+  #main-content { flex: 1; margin-left: 0; transition: margin-left 0.3s; min-height: 100vh; }
+  #header {
+    height: var(--header-height); background: var(--card-bg); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem;
+    position: sticky; top: 0; z-index: 50;
+  }
+  #header .menu-btn { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text); display: flex; align-items: center; }
+  .page-title { font-size: 1.1rem; font-weight: 600; }
+
+  #content-area { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
+
+  /* Cards & Grid */
+  .card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1rem; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .card-title { font-size: 1rem; font-weight: 600; }
+  .grid { display: grid; gap: 1rem; }
+  .grid-2 { grid-template-columns: repeat(1, 1fr); }
+  .grid-3 { grid-template-columns: repeat(1, 1fr); }
+  .grid-4 { grid-template-columns: repeat(1, 1fr); }
+  @media (min-width: 640px) { .grid-2 { grid-template-columns: repeat(2, 1fr); } .grid-3 { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1024px) { .grid-3 { grid-template-columns: repeat(3, 1fr); } .grid-4 { grid-template-columns: repeat(4, 1fr); } }
+
+  /* Stats */
+  .stat-card { display: flex; align-items: center; gap: 1rem; }
+  .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+  .stat-icon.blue { background: #dbeafe; color: var(--primary); }
+  .stat-icon.green { background: #dcfce7; color: var(--success); }
+  .stat-icon.orange { background: #fef3c7; color: var(--warning); }
+  .stat-icon.red { background: #fee2e2; color: var(--danger); }
+  .stat-value { font-size: 1.5rem; font-weight: 700; }
+  .stat-label { font-size: 0.875rem; color: var(--text-muted); }
+
+  /* Forms */
+  .form-group { margin-bottom: 1rem; }
+  .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.375rem; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 0.625rem 0.875rem; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 0.875rem; font-family: inherit; background: var(--card-bg); color: var(--text);
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+  .form-input:disabled, .form-select:disabled { background: #f1f5f9; color: var(--text-muted); cursor: not-allowed; }
+  .form-row { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .form-row-2 { grid-template-columns: 1fr 1fr; } .form-row-3 { grid-template-columns: 1fr 1fr 1fr; } }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 0.625rem 1.25rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500;
+    border: none; cursor: pointer; transition: all 0.2s; font-family: inherit;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-success { background: var(--success); color: white; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-warning { background: var(--warning); color: white; }
+  .btn-secondary { background: var(--secondary); color: white; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { background: var(--bg); }
+  .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
+  .btn-lg { padding: 0.875rem 1.75rem; font-size: 1rem; }
+  .btn-block { width: 100%; }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* Tables */
+  .table-container { overflow-x: auto; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .data-table th { text-align: left; padding: 0.75rem 1rem; background: #f8fafc; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+  .data-table tr:hover td { background: #f8fafc; }
+  .data-table .actions { display: flex; gap: 0.5rem; }
+
+  /* User Cards Grid */
+  .user-card-grid { display: grid; gap: 1rem; grid-template-columns: repeat(1, 1fr); }
+  @media (min-width: 640px) { .user-card-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1024px) { .user-card-grid { grid-template-columns: repeat(3, 1fr); } }
+  .user-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: box-shadow 0.2s; }
+  .user-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .user-card-img { width: 100%; height: 160px; object-fit: cover; background: #e2e8f0; }
+  .user-card-body { padding: 1rem; }
+  .user-card-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem; }
+  .user-card-role { font-size: 0.8rem; color: var(--text-muted); }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--card-bg); border-radius: 16px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-title { font-size: 1.1rem; font-weight: 600; }
+  .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
+  .modal-body { padding: 1.5rem; }
+  .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem; }
+  .modal-lg { max-width: 900px; }
+  .modal-xl { max-width: 1100px; }
+
+  /* Alerts */
+  .alert { padding: 0.875rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem; }
+  .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+  .alert-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+  .alert-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .alert-info { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+
+  /* Loading */
+  .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 300; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; }
+  .loading-overlay.show { display: flex; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Face/QR Camera */
+  .camera-container { position: relative; width: 100%; max-width: 400px; margin: 0 auto; }
+  .camera-container video { width: 100%; border-radius: 12px; display: block; }
+  .face-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 260px; border: 3px dashed rgba(255,255,255,0.7); border-radius: 50%; pointer-events: none; }
+  .qr-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 2px solid var(--primary); border-radius: 12px; }
+
+  /* Signature Pad */
+  .signature-pad-container { border: 2px dashed var(--border); border-radius: 8px; background: #fafafa; }
+  .signature-pad-container canvas { width: 100%; height: 200px; display: block; }
+
+  /* ID Card Preview */
+  .id-card-preview { width: 344px; height: 216px; background: white; border: 1px solid #ccc; border-radius: 12px; padding: 1rem; margin: 0 auto; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .id-card-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .id-card-photo { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
+  .id-card-info { flex: 1; }
+  .id-card-name { font-weight: 700; font-size: 0.9rem; }
+  .id-card-role { font-size: 0.75rem; color: var(--text-muted); }
+  .id-card-qr { position: absolute; bottom: 1rem; right: 1rem; }
+  .id-card-sppg { position: absolute; bottom: 1rem; left: 1rem; font-size: 0.7rem; color: var(--text-muted); }
+
+  /* Device UI */
+  .device-ui { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; text-align: center; }
+  .device-btn-absen { width: 200px; height: 200px; border-radius: 50%; background: var(--primary); color: white; font-size: 1.5rem; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 8px 24px rgba(37,99,235,0.3); transition: transform 0.2s; }
+  .device-btn-absen:hover { transform: scale(1.05); }
+  .device-btn-absen:active { transform: scale(0.95); }
+  .device-status { margin-top: 2rem; font-size: 1.25rem; font-weight: 600; }
+
+  /* Utilities */
+  .hidden { display: none !important; }
+  .text-center { text-align: center; }
+  .text-right { text-align: right; }
+  .text-muted { color: var(--text-muted); }
+  .text-success { color: var(--success); }
+  .text-danger { color: var(--danger); }
+  .mb-1 { margin-bottom: 0.5rem; }
+  .mb-2 { margin-bottom: 1rem; }
+  .mt-2 { margin-top: 1rem; }
+  .flex { display: flex; }
+  .flex-between { justify-content: space-between; }
+  .items-center { align-items: center; }
+  .gap-1 { gap: 0.5rem; }
+  .gap-2 { gap: 1rem; }
+  .w-full { width: 100%; }
+
+  /* Checkbox */
+  .checkbox-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .checkbox-row input { width: 18px; height: 18px; accent-color: var(--primary); }
+
+  /* Responsive sidebar desktop */
+  @media (min-width: 1024px) {
+    #sidebar { transform: translateX(0); position: relative; height: auto; }
+    #main-content { margin-left: 0; }
+    #header .menu-btn { display: none; }
+    #sidebar-overlay { display: none !important; }
+  }
+
+  /* Login/Register pages */
+  .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+  .auth-card { background: var(--card-bg); border-radius: 16px; padding: 2rem; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+  .auth-logo { text-align: center; margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+  .auth-footer { text-align: center; margin-top: 1rem; font-size: 0.875rem; color: var(--text-muted); }
+  .auth-footer a { color: var(--primary); text-decoration: none; cursor: pointer; }
+
+  /* Progress bar */
+  .progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 1rem; }
+  .progress-bar-fill { height: 100%; background: var(--primary); transition: width 0.3s; }
+
+  /* Badge */
+  .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-gray { background: #f1f5f9; color: #475569; }
+</style>
+<base target="_blank">
 </head>
 <body>
 
 <!-- Loading Overlay -->
-<div id="loading-overlay">
+<div id="loading-overlay" class="loading-overlay">
   <div class="spinner"></div>
-  <p style="margin-top:16px;color:var(--secondary);">Memuat aplikasi...</p>
+  <div>Memuat...</div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container"></div>
+<!-- Alert Box -->
+<div id="alert-box" style="position:fixed; top:70px; right:20px; z-index:400; max-width:400px;"></div>
 
-<!-- ===== SECTION: LOGIN ===== -->
-<div id="section-login" class="login-page">
-  <div class="login-box">
-    <div class="login-logo">📋 Sistem Absensi</div>
-    <div class="tabs" id="login-tabs">
-      <div class="tab active" onclick="switchLoginTab('login', event)">Masuk</div>
-      <div class="tab" onclick="switchLoginTab('register', event)">Daftar</div>
-      <div class="tab" onclick="switchLoginTab('lupa', event)">Lupa Password</div>
-    </div>
-    
-    <!-- Form Login -->
-    <div id="tab-login" class="tab-content active">
-      <div class="form-group">
-        <label class="form-label">Username</label>
-        <input type="text" id="login-username" class="form-input" placeholder="Masukkan username">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input type="password" id="login-password" class="form-input" placeholder="Masukkan password">
-      </div>
-      <button class="btn btn-primary btn-block btn-lg" onclick="doLogin()">Masuk</button>
-    </div>
-    
-    <!-- Form Register -->
-    <div id="tab-register" class="tab-content">
-      <div style="max-height:60vh;overflow-y:auto;padding-right:8px;">
-        <div class="grid grid-2">
-          <div class="form-group">
-            <label class="form-label">Nama Lengkap *</label>
-            <input type="text" id="reg-nama" class="form-input" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Username *</label>
-            <input type="text" id="reg-username" class="form-input" required>
-          </div>
-        </div>
-        <div class="grid grid-2">
-          <div class="form-group">
-            <label class="form-label">Tempat Lahir</label>
-            <input type="text" id="reg-tempat-lahir" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Tanggal Lahir</label>
-            <input type="date" id="reg-tanggal-lahir" class="form-input">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Jenis Kelamin</label>
-          <div class="flex gap-3">
-            <label class="form-check"><input type="radio" name="reg-jk" value="L" checked> Laki-laki</label>
-            <label class="form-check"><input type="radio" name="reg-jk" value="P"> Perempuan</label>
-          </div>
-        </div>
-        <div class="grid grid-2">
-          <div class="form-group">
-            <label class="form-label">Email *</label>
-            <input type="email" id="reg-email" class="form-input" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">No. Whatsapp *</label>
-            <input type="text" id="reg-whatsapp" class="form-input" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">SPPG *</label>
-          <select id="reg-sppg" class="form-select" onchange="handleSppgChange()">
-            <option value="">Pilih SPPG</option>
-          </select>
-          <input type="text" id="reg-sppg-lainnya" class="form-input mt-2 hidden" placeholder="Nama SPPG lainnya">
-        </div>
-        <div class="grid grid-2">
-          <div class="form-group">
-            <label class="form-label">Tanggal Mulai Kerja</label>
-            <input type="date" id="reg-mulai-kerja" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Jabatan/Divisi *</label>
-            <select id="reg-jabatan" class="form-select" required></select>
-          </div>
-        </div>
-        <div class="grid grid-2">
-          <div class="form-group">
-            <label class="form-label">Gaji Harian (Rp)</label>
-            <input type="number" id="reg-gaji" class="form-input" placeholder="0">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Nama Bank</label>
-            <input type="text" id="reg-bank" class="form-input">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Atas Nama Rekening</label>
-          <input type="text" id="reg-rekening" class="form-input" placeholder="Contoh: 1234567890 a.n. Budi Santoso">
-        </div>
-        <div class="grid grid-2">
-          <div class="form-group">
-            <label class="form-label">Password *</label>
-            <input type="password" id="reg-password" class="form-input" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Konfirmasi Password *</label>
-            <input type="password" id="reg-password2" class="form-input" required>
-          </div>
-        </div>
-        
-        <!-- Face Registration -->
-        <div class="card mt-3">
-          <div class="card-title mb-2">📷 Pendaftaran Wajah</div>
-          <p class="form-hint">Aktifkan kamera, posisikan wajah di tengah frame, lalu ambil foto</p>
-          <div class="face-guide mt-2">
-            <video id="reg-video" autoplay muted playsinline></video>
-            <div class="head-frame-overlay">
-              <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <mask id="head-mask-reg">
-                    <rect x="0" y="0" width="300" height="400" fill="white"/>
-                    <ellipse cx="150" cy="150" rx="85" ry="110" fill="black"/>
-                    <path d="M 40 400 Q 40 280 90 250 Q 150 230 150 230 Q 150 230 210 250 Q 260 280 260 400 Z" fill="black"/>
-                  </mask>
-                </defs>
-                <rect x="0" y="0" width="300" height="400" fill="rgba(0,0,0,0.45)" mask="url(#head-mask-reg)"/>
-                <ellipse cx="150" cy="150" rx="85" ry="110" fill="none" style="stroke:var(--primary)" stroke-width="3" stroke-dasharray="6 4"/>
-                <path d="M 40 400 Q 40 280 90 250 Q 150 230 150 230 Q 150 230 210 250 Q 260 280 260 400" fill="none" style="stroke:var(--primary)" stroke-width="3" stroke-dasharray="6 4"/>
-              </svg>
-            </div>
-            <canvas id="reg-canvas" class="hidden"></canvas>
-          </div>
-          <div class="flex gap-2 mt-2">
-            <button class="btn btn-secondary btn-sm" onclick="startRegCamera()">Aktifkan Kamera</button>
-            <button class="btn btn-primary btn-sm" onclick="captureRegFace()">Ambil Foto Wajah</button>
-          </div>
-          <div id="reg-face-status" class="mt-2" style="font-size:0.9rem;"></div>
-        </div>
-        
-        <!-- Foto Profil -->
-        <div class="card mt-3">
-          <div class="card-title mb-2">🖼️ Foto Profil</div>
-          <input type="file" id="reg-foto-profil" accept="image/*" class="form-input" onchange="previewRegFoto(this)">
-          <img id="reg-foto-preview" class="mt-2" style="max-width:120px;border-radius:8px;display:none;">
-        </div>
-        
-        <label class="form-check mt-3">
-          <input type="checkbox" id="reg-setuju"> Saya menyetujui kebijakan penggunaan data
-        </label>
-        
-        <button class="btn btn-success btn-block btn-lg mt-3" onclick="doRegister()">Daftar Sekarang</button>
-      </div>
-    </div>
-    
-    <!-- Form Lupa Password -->
-    <div id="tab-lupa" class="tab-content">
-      <div id="lupa-step1">
+<!-- ==================== AUTH LAYOUT ==================== -->
+<div id="auth-layout">
+
+  <!-- PAGE: LOGIN -->
+  <div id="page-login" class="page auth-page">
+    <div class="auth-card">
+      <div class="auth-logo">📋 Sistem Absensi</div>
+      <div id="login-form-section">
         <div class="form-group">
           <label class="form-label">Username</label>
-          <input type="text" id="lupa-username" class="form-input">
+          <input type="text" id="login-username" class="form-input" placeholder="Masukkan username">
         </div>
         <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" id="lupa-email" class="form-input">
+          <label class="form-label">Password</label>
+          <input type="password" id="login-password" class="form-input" placeholder="Masukkan password">
         </div>
-        <div class="form-group">
-          <label class="form-label">ID Card Unik (8 karakter)</label>
-          <input type="text" id="lupa-idcard" class="form-input" maxlength="8">
+        <button id="btn-login" class="btn btn-primary btn-block btn-lg">🔐 Login</button>
+        <div class="auth-footer">
+          <a id="btn-forgot">Lupa Password?</a> &nbsp;|&nbsp; <a id="btn-to-register">Daftar Akun</a>
         </div>
-        <button class="btn btn-primary btn-block" onclick="doRequestReset()">Verifikasi Data</button>
       </div>
-      <div id="lupa-step2" class="hidden">
-        <p class="mb-3">Data valid. Silakan masukkan password baru:</p>
-        <div class="form-group">
-          <label class="form-label">Password Baru</label>
-          <input type="password" id="lupa-password" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Konfirmasi Password Baru</label>
-          <input type="password" id="lupa-password2" class="form-input">
-        </div>
-        <button class="btn btn-success btn-block" onclick="doConfirmReset()">Update Password</button>
+
+      <!-- Forgot Password -->
+      <div id="forgot-password-section" class="hidden">
+        <h3 style="margin-bottom:1rem;">Lupa Password</h3>
+        <div class="form-group"><label class="form-label">Username</label><input type="text" id="fp-username" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Email</label><input type="email" id="fp-email" class="form-input"></div>
+        <div class="form-group"><label class="form-label">ID Card Unik</label><input type="text" id="fp-idcard" class="form-input" placeholder="8 karakter"></div>
+        <button id="btn-request-reset" class="btn btn-primary btn-block">Verifikasi Data</button>
+        <div class="auth-footer"><a id="btn-back-login">← Kembali ke Login</a></div>
       </div>
+
+      <!-- Reset Password -->
+      <div id="reset-password-section" class="hidden">
+        <h3 style="margin-bottom:1rem;">Reset Password</h3>
+        <input type="hidden" id="reset-token">
+        <div class="form-group"><label class="form-label">Password Baru</label><input type="password" id="fp-new-password" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Konfirmasi Password Baru</label><input type="password" id="fp-confirm-password" class="form-input"></div>
+        <button id="btn-reset-password" class="btn btn-primary btn-block">Update Password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: REGISTER -->
+  <div id="page-register" class="page auth-page hidden">
+    <div class="auth-card" style="max-width:600px; max-height:90vh; overflow-y:auto;">
+      <div class="auth-logo">📝 Registrasi Karyawan</div>
+      <div class="form-row form-row-2">
+        <div class="form-group"><label class="form-label">Nama Lengkap *</label><input type="text" id="reg-nama" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Username *</label><input type="text" id="reg-username" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Password *</label><input type="password" id="reg-password" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Konfirmasi Password *</label><input type="password" id="reg-confirm-password" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Tempat Lahir</label><input type="text" id="reg-tempat-lahir" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Tanggal Lahir</label><input type="date" id="reg-tanggal-lahir" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Jenis Kelamin</label>
+          <div class="flex gap-2">
+            <label class="checkbox-row"><input type="radio" name="reg-jk" value="L"> Laki-laki</label>
+            <label class="checkbox-row"><input type="radio" name="reg-jk" value="P"> Perempuan</label>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Email</label><input type="email" id="reg-email" class="form-input"></div>
+        <div class="form-group"><label class="form-label">No. Whatsapp</label><input type="text" id="reg-whatsapp" class="form-input"></div>
+        <div class="form-group"><label class="form-label">SPPG</label>
+          <select id="reg-sppg" class="form-select"><option value="">Pilih SPPG</option></select>
+        </div>
+        <div class="form-group hidden" id="reg-sppg-lainnya-group"><label class="form-label">SPPG Lainnya</label><input type="text" id="reg-sppg-lainnya" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Tanggal Mulai Kerja</label><input type="date" id="reg-tanggal-mulai" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Jabatan/Divisi</label><select id="reg-jabatan" class="form-select"><option value="">Pilih Jabatan</option></select></div>
+        <div class="form-group"><label class="form-label">Gaji Harian (Rp)</label><input type="number" id="reg-gaji" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Nama Bank</label><input type="text" id="reg-bank" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Atas Nama Rekening</label><input type="text" id="reg-rekening" class="form-input" placeholder="1234567890 a.n. Nama"></div>
+      </div>
+
+      <!-- Foto Profil -->
+      <div class="card" style="margin:1rem 0; padding:1rem;">
+        <div class="card-title mb-1">📷 Foto Profil</div>
+        <div id="reg-photo-step">
+          <video id="reg-video-photo" style="width:100%; border-radius:8px;" autoplay playsinline muted></video>
+          <canvas id="reg-canvas-photo" style="display:none;"></canvas>
+          <img id="reg-photo-preview" class="hidden" style="width:100%; border-radius:8px; margin-top:0.5rem;">
+        </div>
+        <button id="btn-capture-photo" class="btn btn-secondary btn-sm mt-2">📷 Ambil Foto Profil</button>
+      </div>
+
+      <!-- Face Capture -->
+      <div class="card" style="margin:1rem 0; padding:1rem;">
+        <div class="card-title mb-1">🧑 Pendaftaran Wajah *</div>
+        <div id="reg-face-step">
+          <div class="camera-container">
+            <video id="reg-video" style="width:100%; border-radius:8px;" autoplay playsinline muted></video>
+            <div class="face-guide"></div>
+            <canvas id="reg-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+          </div>
+        </div>
+        <div id="reg-face-status" class="text-muted mt-2">Klik tombol di bawah untuk memulai pendaftaran wajah</div>
+        <button id="btn-capture-face" class="btn btn-secondary btn-sm mt-2">🎥 Mulai Pendaftaran Wajah</button>
+      </div>
+
+      <div class="checkbox-row mb-2">
+        <input type="checkbox" id="reg-setuju">
+        <label for="reg-setuju">Saya menyetujui kebijakan penggunaan data pribadi</label>
+      </div>
+
+      <button id="btn-register" class="btn btn-primary btn-block btn-lg">✅ Daftar</button>
+      <div class="auth-footer"><a id="btn-to-login">← Sudah punya akun? Login</a></div>
     </div>
   </div>
 </div>
 
-<!-- ===== SECTION: APP (Sidebar + Main) ===== -->
-<div id="section-app" class="app-container hidden">
-  <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-  
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <span>📋</span> Sistem Absensi
+<!-- ==================== APP LAYOUT ==================== -->
+<div id="app-layout" class="hidden">
+  <div id="sidebar">
+    <div class="sidebar-brand">📋 Sistem Absensi</div>
+    <div class="sidebar-user">
+      <img id="sidebar-foto" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Foto">
+      <div class="name" id="sidebar-nama">User</div>
+      <div class="role" id="sidebar-role">Role</div>
     </div>
-    <nav class="nav-menu" id="nav-menu">
-      <!-- Nav items generated by JS -->
+    <nav>
+      <div class="nav-item" data-page="dashboard">📊 Dashboard</div>
+      <div class="nav-item" data-page="profil">👤 Profil</div>
+      <div class="nav-item admin-only" data-page="manajemen-user">⚙️ Manajemen User</div>
+      <div class="nav-item admin-only akuntan-only" data-page="data-karyawan">👥 Data Karyawan</div>
+      <div class="nav-item admin-only akuntan-only" data-page="payroll">💵 Payroll</div>
+      <div class="nav-item" data-page="my-payroll">📄 My Payroll</div>
+      <div class="nav-item admin-only akuntan-only" data-page="absensi">📋 Data Absensi</div>
+      <div class="nav-item admin-only" data-page="audit-log">📜 Catatan Aktivitas</div>
+      <div class="nav-item" id="btn-logout-sidebar" style="color:#ef4444;">🚪 Logout</div>
     </nav>
-    <div class="sidebar-footer">
-      <div id="user-info" style="font-weight:600;margin-bottom:4px;"></div>
-      <div id="user-role" style="text-transform:uppercase;font-size:0.7rem;letter-spacing:1px;"></div>
-      <button class="btn btn-danger btn-sm btn-block mt-2" onclick="confirmLogout()">Keluar</button>
-    </div>
-  </aside>
-  
-  <main class="main-content" id="main-content">
-    
-    <!-- ===== SECTION: DASHBOARD ===== -->
-    <div id="page-dashboard" class="page-section">
-      <h2 style="margin-bottom:20px;">Dashboard</h2>
-      <div id="dashboard-admin" class="hidden">
-        <div class="grid grid-4 mb-4">
-          <div class="stat-card">
-            <div class="stat-value" id="dash-total-karyawan">0</div>
-            <div class="stat-label">Karyawan Aktif</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="dash-total-datang">0</div>
-            <div class="stat-label">Datang Hari Ini</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="dash-total-pulang">0</div>
-            <div class="stat-label">Pulang Hari Ini</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="dash-total-payroll">0</div>
-            <div class="stat-label">Payroll Bulan Ini</div>
-          </div>
-        </div>
-        
-        <div class="grid grid-2">
-          <div class="card">
-            <div class="card-header"><div class="card-title">Absensi per SPPG</div></div>
-            <div id="dash-sppg-table" class="table-wrap"></div>
-          </div>
-          <div class="card">
-            <div class="card-header"><div class="card-title">Absensi per Jabatan</div></div>
-            <div id="dash-jabatan-table" class="table-wrap"></div>
-          </div>
-        </div>
-        
-        <div class="card mt-4">
-          <div class="card-header">
-            <div class="card-title">⚠️ Karyawan Belum Absen Hari Ini</div>
-          </div>
-          <div id="dash-belum-absen" class="table-wrap"></div>
-        </div>
-      </div>
-      
-      <div id="dashboard-user" class="hidden">
-        <div class="grid grid-3 mb-4">
-          <div class="stat-card">
-            <div class="stat-value" id="dash-user-hari">0</div>
-            <div class="stat-label">Total Hari Kerja</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="dash-user-slip">0</div>
-            <div class="stat-label">Total Slip Gaji</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="dash-user-gaji">Rp 0</div>
-            <div class="stat-label">Total Gaji Diterima</div>
-          </div>
-        </div>
-        
-        <div class="card">
-          <div class="card-header"><div class="card-title">Status Absen Hari Ini</div></div>
-          <div id="dash-user-status" class="flex gap-3" style="padding:10px;">
-            <span class="badge badge-warning" id="badge-datang">Belum Datang</span>
-            <span class="badge badge-warning" id="badge-pulang">Belum Pulang</span>
-          </div>
-        </div>
-        
-        <div class="card mt-4">
-          <div class="card-header"><div class="card-title">Riwayat Absensi Terakhir</div></div>
-          <div id="dash-user-riwayat" class="table-wrap"></div>
-        </div>
+  </div>
+
+  <div id="sidebar-overlay"></div>
+
+  <div id="main-content">
+    <div id="header">
+      <button id="menu-btn" class="menu-btn">☰</button>
+      <div class="page-title" id="page-title">Dashboard</div>
+      <div style="display:flex; align-items:center; gap:0.75rem;">
+        <span id="header-nama" style="font-size:0.875rem; color:var(--text-muted);"></span>
+        <button id="btn-logout" class="btn btn-sm btn-outline">🚪 Logout</button>
       </div>
     </div>
-    
-    <!-- ===== SECTION: PROFIL ===== -->
-    <div id="page-profil" class="page-section hidden">
-      <h2 style="margin-bottom:20px;">Profil Saya</h2>
-      <div class="grid grid-2">
-        <div class="card">
-          <div class="card-header"><div class="card-title">Data Pribadi</div></div>
-          <div id="profil-readonly"></div>
-          <div id="profil-edit-form" class="hidden">
-            <!-- Edit form injected by JS -->
+
+    <div id="content-area">
+
+      <!-- PAGE: DASHBOARD -->
+      <div id="page-dashboard" class="page hidden">
+        <div id="dashboard-admin" class="hidden"></div>
+        <div id="dashboard-user" class="hidden"></div>
+      </div>
+
+      <!-- PAGE: PROFIL -->
+      <div id="page-profil" class="page hidden">
+        <div id="profil-readonly"></div>
+        <div id="profil-edit-form" class="hidden card" style="margin-top:1rem;">
+          <div class="card-header"><div class="card-title">✏️ Edit Profil</div></div>
+          <div class="form-row form-row-2">
+            <div class="form-group"><label class="form-label">Nama Lengkap</label><input type="text" id="edit-nama" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Tempat Lahir</label><input type="text" id="edit-tempat" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Tanggal Lahir</label><input type="date" id="edit-tanggal-lahir" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Email</label><input type="email" id="edit-email" class="form-input"></div>
+            <div class="form-group"><label class="form-label">No. Whatsapp</label><input type="text" id="edit-whatsapp" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Nama Bank</label><input type="text" id="edit-bank" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Atas Nama Rekening</label><input type="text" id="edit-rekening" class="form-input"></div>
           </div>
-          <div class="flex gap-2 mt-3" id="profil-actions">
-            <button class="btn btn-primary" onclick="toggleEditProfil()">Edit Profil</button>
-            <button class="btn btn-secondary" onclick="showUpdateWajah()">Update Data Wajah</button>
+          <div class="flex gap-1 mt-2">
+            <button id="btn-save-profil" class="btn btn-primary">💾 Simpan</button>
+            <button id="btn-cancel-profil" class="btn btn-outline">Batal</button>
           </div>
         </div>
-        <div class="card">
-          <div class="card-header"><div class="card-title">ID Card Digital</div></div>
-          <div id="id-card-container"></div>
-          <div class="flex gap-2 mt-3">
-            <button class="btn btn-primary" onclick="downloadIDCard('pdf')">Download PDF</button>
-            <button class="btn btn-secondary" onclick="downloadIDCard('png')">Download PNG</button>
-          </div>
+        <div class="flex gap-1 mt-2">
+          <button id="btn-edit-profil" class="btn btn-outline">✏️ Edit Profil</button>
+          <button id="btn-update-wajah" class="btn btn-outline">🧑 Update Data Wajah</button>
         </div>
       </div>
-      
+
       <!-- Modal Update Wajah -->
-      <div id="modal-wajah" class="modal-overlay">
+      <div id="modal-update-wajah" class="modal-overlay">
         <div class="modal">
-          <div class="modal-header">
-            <div class="card-title">Update Data Wajah</div>
-            <button class="modal-close" onclick="closeModal('modal-wajah')">&times;</button>
-          </div>
+          <div class="modal-header"><div class="modal-title">🧑 Update Data Wajah</div><button class="modal-close modal-cancel">&times;</button></div>
           <div class="modal-body">
-            <p>Verifikasi tambahan diperlukan. Masukkan password Anda:</p>
-            <div class="form-group">
-              <input type="password" id="wajah-password" class="form-input" placeholder="Password saat ini">
+            <div class="camera-container">
+              <video id="update-wajah-video" style="width:100%; border-radius:8px;" autoplay playsinline muted></video>
+              <div class="face-guide"></div>
+              <canvas id="update-wajah-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%;"></canvas>
             </div>
-            <div class="face-guide mt-3">
-              <video id="wajah-video" autoplay muted playsinline></video>
-              <div class="overlay"></div>
+            <div id="update-wajah-status" class="text-muted mt-2">Klik tombol di bawah untuk memulai</div>
+          </div>
+          <div class="modal-footer">
+            <button id="btn-save-wajah" class="btn btn-primary">💾 Simpan Data Wajah</button>
+            <button id="btn-cancel-wajah" class="btn btn-outline modal-cancel">Batal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: MANAJEMEN USER -->
+      <div id="page-manajemen-user" class="page hidden">
+        <div class="card">
+          <div class="card-header flex flex-between items-center">
+            <div class="card-title">👥 Manajemen User</div>
+            <button id="btn-register-device" class="btn btn-primary btn-sm">➕ Daftarkan Perangkat Absensi</button>
+          </div>
+          <div id="user-grid" class="user-card-grid"></div>
+        </div>
+      </div>
+
+      <!-- Modal User Detail -->
+      <div id="modal-user-detail" class="modal-overlay">
+        <div class="modal modal-lg">
+          <div class="modal-header"><div class="modal-title">👤 Detail User</div><button class="modal-close modal-cancel">&times;</button></div>
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <button id="btn-save-user-detail" class="btn btn-primary">💾 Simpan Perubahan</button>
+            <button class="btn btn-outline modal-cancel">Batal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Register Device -->
+      <div id="modal-register-device" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header"><div class="modal-title">➕ Daftarkan Perangkat Absensi</div><button class="modal-close modal-cancel">&times;</button></div>
+          <div class="modal-body">
+            <div class="form-group"><label class="form-label">Username Device *</label><input type="text" id="dev-username" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Password *</label><input type="password" id="dev-password" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Nama Device *</label><input type="text" id="dev-nama" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Lokasi SPPG *</label><input type="text" id="dev-sppg" class="form-input"></div>
+          </div>
+          <div class="modal-footer">
+            <button id="btn-save-device" class="btn btn-primary">💾 Simpan</button>
+            <button id="btn-cancel-device" class="btn btn-outline modal-cancel">Batal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: DATA KARYAWAN -->
+      <div id="page-data-karyawan" class="page hidden">
+        <div class="card">
+          <div class="card-header"><div class="card-title">👥 Data Karyawan</div></div>
+          <div class="table-container">
+            <table class="data-table" id="table-karyawan">
+              <thead>
+                <tr><th>Nama</th><th>Jabatan</th><th>JK</th><th>Email</th><th>Whatsapp</th><th>Mulai Kerja</th><th>SPPG</th><th>Gaji Harian</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: PAYROLL -->
+      <div id="page-payroll" class="page hidden">
+        <div class="card">
+          <div class="card-header flex flex-between items-center">
+            <div class="card-title">💵 Proses Payroll</div>
+            <button id="btn-proses-payroll" class="btn btn-primary btn-sm">▶️ Proses Payroll</button>
+          </div>
+          <div class="table-container">
+            <table class="data-table" id="table-payroll">
+              <thead>
+                <tr><th><input type="checkbox" id="payroll-check-all" onchange="document.querySelectorAll('.payroll-check').forEach(c=>{c.checked=this.checked; togglePayrollSelect(c.dataset.id)})"></th><th>Nama</th><th>Jabatan</th><th>SPPG</th><th>Gaji Harian</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Payroll -->
+      <div id="modal-payroll" class="modal-overlay">
+        <div class="modal modal-xl">
+          <div class="modal-header"><div class="modal-title">💵 Proses Payroll - Input Detail</div><button class="modal-close modal-cancel">&times;</button></div>
+          <div class="modal-body">
+            <div class="form-row form-row-2">
+              <div class="form-group"><label class="form-label">Periode Mulai</label><input type="date" id="payroll-mulai" class="form-input"></div>
+              <div class="form-group"><label class="form-label">Periode Akhir</label><input type="date" id="payroll-akhir" class="form-input"></div>
             </div>
-            <button class="btn btn-primary btn-block mt-3" onclick="startWajahCamera()">Aktifkan Kamera</button>
-            <button class="btn btn-success btn-block mt-2" onclick="captureUpdateWajah()">Simpan Wajah Baru</button>
+            <div id="payroll-karyawan-inputs"></div>
+            <div class="card" style="margin-top:1rem;">
+              <div class="card-title mb-1">✍️ Tanda Tangan Digital</div>
+              <div class="signature-pad-container">
+                <canvas id="signature-pad"></canvas>
+              </div>
+              <button id="btn-clear-signature" class="btn btn-sm btn-outline mt-2">🗑️ Hapus Tanda Tangan</button>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="btn-accept-payroll" class="btn btn-success">✅ Accept Payroll</button>
+            <button id="btn-cancel-payroll" class="btn btn-outline modal-cancel">Batal</button>
           </div>
         </div>
       </div>
-    </div>
-    
-    <!-- ===== SECTION: MANAJEMEN USER ===== -->
-    <div id="page-manajemen-user" class="page-section hidden">
-      <h2 style="margin-bottom:20px;">Manajemen User</h2>
-      <div class="card mb-4">
-        <div class="flex gap-2" style="flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="openRegisterDevice()">+ Daftarkan Perangkat Absensi</button>
-        </div>
-      </div>
-      <div id="user-grid" class="grid grid-3"></div>
-    </div>
-    
-    <!-- Modal Detail User -->
-    <div id="modal-user-detail" class="modal-overlay">
-      <div class="modal" style="max-width:700px;">
-        <div class="modal-header">
-          <div class="card-title">Detail User</div>
-          <button class="modal-close" onclick="closeModal('modal-user-detail')">&times;</button>
-        </div>
-        <div class="modal-body" id="user-detail-content"></div>
-        <div class="modal-footer" id="user-detail-footer"></div>
-      </div>
-    </div>
-    
-    <!-- Modal Register Device -->
-    <div id="modal-device" class="modal-overlay">
-      <div class="modal">
-        <div class="modal-header"><div class="card-title">Daftarkan Perangkat Absensi</div></div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Username Device</label>
-            <input type="text" id="dev-username" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <input type="password" id="dev-password" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Nama Device</label>
-            <input type="text" id="dev-nama" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Lokasi SPPG</label>
-            <select id="dev-sppg" class="form-select"></select>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline" onclick="closeModal('modal-device')">Batal</button>
-          <button class="btn btn-primary" onclick="submitRegisterDevice()">Simpan</button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- ===== SECTION: DATA KARYAWAN ===== -->
-    <div id="page-data-karyawan" class="page-section hidden">
-      <h2 style="margin-bottom:20px;">Data Karyawan</h2>
-      <div class="card">
-        <div class="table-wrap">
-          <table class="table-responsive" id="table-karyawan">
-            <thead><tr>
-              <th>Nama</th><th>Jabatan</th><th>Jenis Kelamin</th><th>Email</th>
-              <th>No. Whatsapp</th><th>Mulai Kerja</th><th>SPPG</th><th>Status</th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    
-    <!-- ===== SECTION: PAYROLL ===== -->
-    <div id="page-payroll" class="page-section hidden">
-      <h2 style="margin-bottom:20px;">Proses Payroll</h2>
-      <div class="card mb-4">
-        <div class="grid grid-3">
-          <div class="form-group">
-            <label class="form-label">Periode Mulai</label>
-            <input type="date" id="payroll-mulai" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Periode Akhir</label>
-            <input type="date" id="payroll-akhir" class="form-input">
-          </div>
-          <div class="form-group flex items-end">
-            <button class="btn btn-primary" onclick="loadPayrollKaryawan()">Tampilkan Karyawan</button>
-          </div>
-        </div>
-      </div>
-      
-      <div id="payroll-karyawan-list" class="card hidden">
-        <div class="card-header">
-          <div class="card-title">Pilih Karyawan</div>
-          <label class="form-check">
-            <input type="checkbox" id="payroll-check-all" onchange="toggleCheckAll()"> Pilih Semua
-          </label>
-        </div>
-        <div class="table-wrap">
-          <table class="table-responsive">
-            <thead><tr>
-              <th>Pilih</th><th>Nama</th><th>Jabatan</th><th>Gaji Harian</th>
-              <th>Lembur (Rp)</th><th>Bonus (Rp)</th><th>Potongan (Rp)</th><th>Keterangan</th>
-            </tr></thead>
-            <tbody id="payroll-tbody"></tbody>
-          </table>
-        </div>
-        <div class="mt-3 flex justify-between items-center">
-          <button class="btn btn-success btn-lg" onclick="openPayrollModal()">Proses Payroll</button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Modal Payroll Confirm -->
-    <div id="modal-payroll" class="modal-overlay">
-      <div class="modal" style="max-width:700px;">
-        <div class="modal-header"><div class="card-title">Konfirmasi Payroll</div></div>
-        <div class="modal-body">
-          <p>Silakan tanda tangani di bawah ini:</p>
-          <canvas id="payroll-ttd" class="signature-pad"></canvas>
-          <button class="btn btn-outline btn-sm mt-2" onclick="clearTtd()">Hapus Tanda Tangan</button>
-          <div id="payroll-summary" class="mt-3"></div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline" onclick="closeModal('modal-payroll')">Batal</button>
-          <button class="btn btn-success" onclick="submitPayroll()">Accept Payroll</button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- ===== SECTION: MY PAYROLL ===== -->
-    <div id="page-my-payroll" class="page-section hidden">
-      <h2 style="margin-bottom:20px;">My Payroll</h2>
-      <div class="card">
-        <div class="table-wrap">
-          <table class="table-responsive" id="table-my-payroll">
-            <thead><tr>
-              <th>Periode</th><th>Hari Kerja</th><th>Total Gaji</th><th>Aksi</th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    
-    <!-- ===== SECTION: DATA ABSENSI ===== -->
-    <div id="page-data-absensi" class="page-section hidden">
-      <h2 style="margin-bottom:20px;">Data Absensi</h2>
-      <div class="card mb-4">
-        <div class="grid grid-4">
-          <div class="form-group">
-            <label class="form-label">Tanggal</label>
-            <input type="date" id="filter-absen-tanggal" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label">SPPG</label>
-            <select id="filter-absen-sppg" class="form-select"><option value="">Semua</option></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Jabatan</label>
-            <select id="filter-absen-jabatan" class="form-select"><option value="">Semua</option></select>
-          </div>
-          <div class="form-group flex items-end">
-            <button class="btn btn-primary" onclick="loadDataAbsensi()">Filter</button>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table class="table-responsive" id="table-absensi">
-            <thead><tr>
-              <th>Nama</th><th>Jabatan</th><th>SPPG</th><th>Tanggal</th>
-              <th>Jenis</th><th>Waktu</th><th>Status</th><th>Skor Senyum</th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    
-    <!-- ===== SECTION: AUDIT LOG ===== -->
-    <div id="page-audit-log" class="page-section hidden">
-      <h2 style="margin-bottom:20px;">Catatan Aktivitas</h2>
-      <div class="card mb-4">
-        <div class="grid grid-3">
-          <div class="form-group">
-            <label class="form-label">Jenis Aktivitas</label>
-            <input type="text" id="filter-audit-jenis" class="form-input" placeholder="Contoh: LOGIN_BERHASIL">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Tanggal</label>
-            <input type="date" id="filter-audit-tanggal" class="form-input">
-          </div>
-          <div class="form-group flex items-end">
-            <button class="btn btn-primary" onclick="loadAuditLog()">Filter</button>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table class="table-responsive" id="table-audit">
-            <thead><tr>
-              <th>Waktu</th><th>Pelaku</th><th>Jenis</th><th>Detail</th><th>IP</th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    
-  </main>
-</div>
 
-<!-- ===== SECTION: DEVICE ABSEN ===== -->
-<div id="section-device" class="device-absen-page hidden">
-  <div id="device-step-1" class="text-center">
-    <h1 style="margin-bottom:24px;font-size:1.5rem;">Device Absensi</h1>
-    <button class="device-btn-absen" onclick="deviceStartAbsen()">
-      <span style="font-size:3rem;">👆</span>
-      <span>ABSEN</span>
-    </button>
-    <p class="mt-4" style="color:var(--secondary);">Lokasi: <span id="device-lokasi"></span></p>
-  </div>
-  
-  <div id="device-step-2" class="hidden text-center w-full" style="max-width:500px;">
-    <h2 class="mb-3">Scan QR ID Card</h2>
-    <div id="qr-reader" style="width:100%;max-width:400px;margin:0 auto;"></div>
-    <button class="btn btn-outline mt-3" onclick="deviceReset()">Batal</button>
-  </div>
-  
-   <div id="device-step-3" class="hidden text-center w-full" style="max-width:500px;">
-    <h2 class="mb-3">😊 Senyum untuk Absen</h2>
-    <p id="device-user-info" class="mb-3"></p>
-    <p class="mb-3" style="color:var(--secondary);">Posisikan wajah di tengah frame dan tersenyumlah</p>
-    <div class="face-guide">
-      <video id="device-video" autoplay muted playsinline></video>
-      <div class="overlay"></div>
-      <canvas id="device-canvas" class="hidden"></canvas>
-    </div>
-    <div id="device-smile-meter" style="width:100%;max-width:400px;margin:12px auto 0;height:10px;background:var(--border);border-radius:6px;overflow:hidden;">
-      <div id="device-smile-bar" style="height:100%;width:0%;background:var(--success);transition:width 0.15s;"></div>
-    </div>
-    <div id="device-face-status" class="mt-3" style="font-size:1.1rem;font-weight:600;"></div>
-    <button class="btn btn-outline mt-3" onclick="deviceReset()">Batal</button>
-  </div>
-  
-  <div id="device-step-4" class="hidden text-center">
-    <div id="device-result-icon" style="font-size:4rem;margin-bottom:16px;"></div>
-    <h2 id="device-result-title"></h2>
-    <p id="device-result-msg" class="mt-2"></p>
-  </div>
-</div>
+      <!-- PAGE: MY PAYROLL -->
+      <div id="page-my-payroll" class="page hidden">
+        <div class="card">
+          <div class="card-header"><div class="card-title">📄 Slip Gaji Saya</div></div>
+          <div class="table-container">
+            <table class="data-table" id="table-my-payroll">
+              <thead>
+                <tr><th>Periode</th><th>Hari Kerja</th><th>Total Gaji</th><th>Aksi</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
-<!-- Hidden elements for PDF generation -->
-<div id="hidden-idcard" class="hidden"></div>
-<div id="hidden-slip" class="hidden"></div>
+      <!-- PAGE: ABSENSI -->
+      <div id="page-absensi" class="page hidden">
+        <div class="card">
+          <div class="card-header flex flex-between items-center" style="flex-wrap:wrap; gap:0.5rem;">
+            <div class="card-title">📋 Data Absensi</div>
+            <div class="flex gap-1" style="flex-wrap:wrap;">
+              <input type="date" id="filter-abs-tanggal" class="form-input" style="width:auto;">
+              <input type="text" id="filter-abs-sppg" class="form-input" placeholder="SPPG" style="width:120px;">
+              <input type="text" id="filter-abs-jabatan" class="form-input" placeholder="Jabatan" style="width:120px;">
+              <button id="btn-filter-absensi" class="btn btn-primary btn-sm">🔍 Filter</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="data-table" id="table-absensi">
+              <thead>
+                <tr><th>Tanggal</th><th>Nama</th><th>Jabatan</th><th>SPPG</th><th>Jenis</th><th>Waktu</th><th>Skor Wajah</th><th>Status</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
-<!-- ===== JS: GLOBAL STATE & UTILS ===== -->
+      <!-- PAGE: DEVICE ABSEN -->
+      <div id="page-device-absen" class="page hidden">
+        <div class="device-ui">
+          <!-- Step Idle -->
+          <div id="device-step-idle">
+            <button id="btn-device-absen" class="device-btn-absen">📷<br>ABSEN</button>
+            <div class="device-status">Tekan tombol untuk memulai absensi</div>
+          </div>
+
+          <!-- Step QR -->
+          <div id="device-step-qr" class="hidden">
+            <div class="card-title mb-2" style="font-size:1.5rem;">📷 Scan QR Code ID Card</div>
+            <div class="camera-container">
+              <div id="device-qr-video" style="width:100%; max-width:400px;"></div>
+            </div>
+            <div class="device-status">Arahkan QR Code ke kamera</div>
+          </div>
+
+          <!-- Step Face -->
+          <div id="device-step-face" class="hidden">
+            <div class="card-title mb-2" style="font-size:1.5rem;">🧑 Scan Wajah</div>
+            <div class="camera-container">
+              <video id="device-face-video" style="width:100%; border-radius:12px;" autoplay playsinline muted></video>
+              <div class="face-guide"></div>
+            </div>
+            <div id="device-face-status" class="device-status">Posisikan wajah di dalam oval...</div>
+          </div>
+
+          <!-- Step Result -->
+          <div id="device-step-result" class="hidden">
+            <div id="device-result-icon" style="font-size:4rem; margin-bottom:1rem;"></div>
+            <div id="device-result-text" style="font-size:1.25rem; font-weight:600;"></div>
+            <button id="btn-device-done" class="btn btn-primary btn-lg mt-2">OK</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: AUDIT LOG -->
+      <div id="page-audit-log" class="page hidden">
+        <div class="card">
+          <div class="card-header flex flex-between items-center" style="flex-wrap:wrap; gap:0.5rem;">
+            <div class="card-title">📜 Catatan Aktivitas</div>
+            <div class="flex gap-1" style="flex-wrap:wrap;">
+              <input type="text" id="filter-audit-jenis" class="form-input" placeholder="Jenis Aktivitas" style="width:150px;">
+              <input type="date" id="filter-audit-tanggal" class="form-input" style="width:auto;">
+              <input type="text" id="filter-audit-pelaku" class="form-input" placeholder="ID Pelaku" style="width:120px;">
+              <button id="btn-filter-audit" class="btn btn-primary btn-sm">🔍 Filter</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="data-table" id="table-audit">
+              <thead>
+                <tr><th>Waktu</th><th>Pelaku</th><th>Jenis</th><th>Detail</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content-area -->
+  </div><!-- /main-content -->
+</div><!-- /app-layout -->
+
 <script>
-// ============================================================
-// JEMBATAN KE BACKEND APPS SCRIPT (untuk hosting di GitHub Pages)
-// ============================================================
-// GANTI URL DI BAWAH dengan URL deployment Web App kamu (Deploy > Manage deployments > Web app URL)
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyY7Y95PueL04gYQBLPSRK1T0wVnWKLe-XBtq09l35diV9gO115_GeP8eqjuhqRQWcW/exec';
+// ==================== UTILS ====================
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if(cls) e.className = cls; if(text) e.textContent = text; return e; };
+function formatDate(d) { if(!d) return '-'; const date = new Date(d); return date.toLocaleDateString('id-ID', {day:'2-digit', month:'2-digit', year:'numeric'}); }
+function formatDateTime(d) { if(!d) return '-'; const date = new Date(d); return date.toLocaleDateString('id-ID', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}); }
+function formatRupiah(n) { return 'Rp ' + (parseFloat(n)||0).toLocaleString('id-ID'); }
+function showAlert(msg, type='danger') {
+  const box = $('#alert-box');
+  if(!box) return;
+  box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(() => box.innerHTML = '', 5000);
+}
+function showLoading(show=true) { $('#loading-overlay').classList.toggle('show', show); }
+function escapeHtml(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
 
-window.google = window.google || {};
-google.script = google.script || {};
-google.script.run = new Proxy({ _s: null, _f: null }, {
-  get(target, prop) {
-    if (prop === 'withSuccessHandler') {
-      return function(fn) { target._s = fn; return google.script.run; };
-    }
-    if (prop === 'withFailureHandler') {
-      return function(fn) { target._f = fn; return google.script.run; };
-    }
-    return function(...args) {
-      const successFn = target._s, failureFn = target._f;
-      target._s = null; target._f = null;
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // hindari CORS preflight
-        body: JSON.stringify({ fn: prop, args: args })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.error && failureFn) failureFn({ message: data.error });
-          else if (successFn) successFn(data);
-        })
-        .catch(err => {
-          if (failureFn) failureFn({ message: 'Gagal terhubung ke backend: ' + err.message });
-        });
-      return google.script.run;
-    };
-  }
-});
-
-// State
-let APP_STATE = {
-  token: null,
-  role: null,
-  idUser: null,
-  nama: null,
-  currentPage: 'dashboard',
-  masterSppg: [],
-  masterJabatan: [],
-  users: [],
-  payrollKaryawan: [],
+// ==================== STATE ====================
+const AppState = {
+  token: localStorage.getItem('absensi_token') || null,
+  user: JSON.parse(localStorage.getItem('absensi_user') || 'null'),
+  device: JSON.parse(localStorage.getItem('absensi_device') || 'null'),
+  currentPage: 'login',
+  sessionCheckInterval: null,
+  faceApiLoaded: false,
+  modelsLoaded: false,
+  currentFaceDescriptor: null,
   signaturePad: null,
-  deviceId: null,
-  deviceLokasi: null,
-  deviceCurrentUser: null,
-  regFotoProfilBase64: null,
-  regFotoWajahBase64: null,
-  resetToken: null
+  qrScanner: null,
+  videoStream: null,
+  tempIdUser: null,
 };
 
-// Utils
-function showLoading(show) {
-  document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
-}
+// ==================== API WRAPPER (FETCH KE APPS SCRIPT WEB APP) ====================
+// GANTI URL DI BAWAH DENGAN URL WEB APP HASIL DEPLOY APPS SCRIPT ANDA
+// Contoh: 'https://script.google.com/macros/s/XXXXXXXXXXXXXXXXXXXXXXXX/exec'
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgs45PeYcb0KWhz6EBh9q_pi3Jb8-WfGNCaxs-3LDUXnyahPuyUZz58-ILBOVnt8Iq/exec';
 
-function showToast(message, type='info') {
-  const container = document.getElementById('toast-container');
-  const toast = document.createElement('div');
-  toast.className = 'toast ' + type;
-  toast.innerHTML = '<span>' + message + '</span>';
-  container.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
-}
-
-function formatRupiah(num) {
-  return 'Rp ' + (parseFloat(num)||0).toLocaleString('id-ID');
-}
-
-function formatDate(d) {
-  if (!d) return '';
-  const date = new Date(d);
-  const y = date.getFullYear();
-  const m = String(date.getMonth()+1).padStart(2,'0');
-  const day = String(date.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
-
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove('active');
-}
-
-function openModal(id) {
-  document.getElementById(id).classList.add('active');
-}
-
-// Navigation
-function showPage(pageId) {
-  document.querySelectorAll('.page-section').forEach(p => p.classList.add('hidden'));
-  document.getElementById('page-' + pageId).classList.remove('hidden');
-  APP_STATE.currentPage = pageId;
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const nav = document.querySelector('[data-page="'+pageId+'"]');
-  if (nav) nav.classList.add('active');
-  
-  // Load data
-  if (pageId === 'dashboard') loadDashboard();
-  if (pageId === 'profil') loadProfil();
-  if (pageId === 'manajemen-user') loadManajemenUser();
-  if (pageId === 'data-karyawan') loadDataKaryawan();
-  if (pageId === 'payroll') loadPayrollKaryawan();
-  if (pageId === 'my-payroll') loadMyPayroll();
-  if (pageId === 'data-absensi') loadDataAbsensi();
-  if (pageId === 'audit-log') loadAuditLog();
-}
-
-function renderNav() {
-  const menu = document.getElementById('nav-menu');
-  const role = APP_STATE.role;
-  let items = [];
-  
-  if (role === 'ADMIN') {
-    items = [
-      {page:'dashboard', label:'Dashboard', icon:'📊'},
-      {page:'profil', label:'Profil', icon:'👤'},
-      {page:'manajemen-user', label:'Manajemen User', icon:'👥'},
-      {page:'data-karyawan', label:'Data Karyawan', icon:'📋'},
-      {page:'payroll', label:'Payroll', icon:'💰'},
-      {page:'my-payroll', label:'My Payroll', icon:'📄'},
-      {page:'data-absensi', label:'Data Absensi', icon:'📝'},
-      {page:'audit-log', label:'Catatan Aktivitas', icon:'🔍'}
-    ];
-  } else if (role === 'AKUNTAN') {
-    items = [
-      {page:'dashboard', label:'Dashboard', icon:'📊'},
-      {page:'profil', label:'Profil', icon:'👤'},
-      {page:'data-karyawan', label:'Data Karyawan', icon:'📋'},
-      {page:'payroll', label:'Payroll', icon:'💰'},
-      {page:'my-payroll', label:'My Payroll', icon:'📄'},
-      {page:'data-absensi', label:'Data Absensi', icon:'📝'}
-    ];
-  } else if (role === 'USER') {
-    items = [
-      {page:'dashboard', label:'Dashboard', icon:'📊'},
-      {page:'profil', label:'Profil', icon:'👤'},
-      {page:'my-payroll', label:'My Payroll', icon:'📄'}
-    ];
-  }
-  
-  menu.innerHTML = items.map(i => 
-    `<div class="nav-item" data-page="${i.page}" onclick="showPage('${i.page}')">
-      <span>${i.icon}</span> ${i.label}
-    </div>`
-  ).join('');
-}
-
-// ===== JS: AUTH =====
-function switchLoginTab(tab, evt) {
-  document.querySelectorAll('#login-tabs .tab').forEach(t => t.classList.remove('active'));
-  const target = (evt && evt.target) || document.querySelector(`[onclick*="switchLoginTab('${tab}')"]`);
-  if (target) target.classList.add('active');
-  document.querySelectorAll('#tab-login, #tab-register, #tab-lupa').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-}
-
-function doLogin() {
-  const username = document.getElementById('login-username').value.trim();
-  const password = document.getElementById('login-password').value;
-  if (!username || !password) { showToast('Username dan password wajib diisi', 'error'); return; }
-  
-  showLoading(true);
-  google.script.run
-    .withSuccessHandler(function(res) {
+function apiCall(funcName, data) {
+  return new Promise((resolve, reject) => {
+    showLoading(true);
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      // PENTING: gunakan text/plain agar browser TIDAK mengirim preflight OPTIONS
+      // (Apps Script Web App tidak menangani OPTIONS, jadi harus dihindari)
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ function: funcName, data: data })
+    })
+    .then(res => res.json())
+    .then(json => {
       showLoading(false);
-      if (res.success) {
-        localStorage.setItem('absensi_token', res.token);
-        APP_STATE.token = res.token;
-        APP_STATE.role = res.role;
-        APP_STATE.idUser = res.idUser || res.idDevice;
-        APP_STATE.nama = res.nama || res.namaDevice;
-        
-        if (res.role === 'DEVICE') {
-          APP_STATE.deviceId = res.idDevice;
-          APP_STATE.deviceLokasi = res.lokasi;
-          document.getElementById('section-login').classList.add('hidden');
-          document.getElementById('section-device').classList.remove('hidden');
-          document.getElementById('device-lokasi').textContent = res.lokasi;
-        } else {
-          document.getElementById('section-login').classList.add('hidden');
-          document.getElementById('section-app').classList.remove('hidden');
-          document.getElementById('user-info').textContent = res.nama;
-          document.getElementById('user-role').textContent = res.role;
-          renderNav();
-          showPage('dashboard');
-          startSessionPolling();
-        }
+      if (json.success) {
+        resolve(json.result);
       } else {
-        showToast(res.message, 'error');
+        reject(json.error || 'Terjadi kesalahan pada server');
       }
     })
-    .withFailureHandler(function(err) {
+    .catch(err => {
       showLoading(false);
-      showToast('Error: ' + err.message, 'error');
-    })
-    .apiLogin(username, password);
+      reject(err.message || String(err));
+    });
+  });
 }
 
-function confirmLogout() {
-  if (!confirm('Apakah Anda yakin ingin keluar?')) return;
-  doLogout();
+function apiCallWithToken(funcName, extraData) {
+  const data = { token: AppState.token, ...extraData };
+  return apiCall(funcName, data);
 }
 
-function doLogout() {
-  localStorage.removeItem('absensi_token');
-  google.script.run.withSuccessHandler(() => {
-    APP_STATE = { token:null, role:null, idUser:null, nama:null, currentPage:'dashboard', masterSppg:[], masterJabatan:[], users:[], payrollKaryawan:[], signaturePad:null, deviceId:null, deviceLokasi:null, deviceCurrentUser:null, deviceCurrentDescriptor:null, regFaceDescriptor:null, regFotoProfilBase64:null, regFotoWajahBase64:null, resetToken:null };
-    location.reload();
-  }).apiLogout(APP_STATE.token);
-}
-
-function startSessionPolling() {
-  setInterval(() => {
-    if (!APP_STATE.token) return;
-    google.script.run.withSuccessHandler(function(res) {
-      if (!res.valid) {
-        showToast('Sesi berakhir atau akun dinonaktifkan', 'error');
-        setTimeout(() => location.reload(), 2000);
+// ==================== AUTH ====================
+async function doLogin() {
+  const username = $('#login-username').value.trim();
+  const password = $('#login-password').value;
+  if(!username || !password) { showAlert('Username dan password wajib diisi'); return; }
+  try {
+    const res = await apiCall('login', { username, password });
+    if(res.user) {
+      AppState.token = res.token;
+      AppState.user = res.user;
+      AppState.device = null;
+      localStorage.setItem('absensi_token', res.token);
+      localStorage.setItem('absensi_user', JSON.stringify(res.user));
+      localStorage.removeItem('absensi_device');
+      startSessionCheck();
+      if(res.user.role === 'DEVICE ABSEN') {
+        // seharusnya tidak terjadi karena device login ke sheet terpisah
+        navigateTo('device-absen');
+      } else {
+        navigateTo('dashboard');
       }
-    }).apiCheckSession(APP_STATE.token);
+    } else if(res.device) {
+      AppState.token = res.token;
+      AppState.device = res.device;
+      AppState.user = null;
+      localStorage.setItem('absensi_token', res.token);
+      localStorage.setItem('absensi_device', JSON.stringify(res.device));
+      localStorage.removeItem('absensi_user');
+      startSessionCheck();
+      navigateTo('device-absen');
+    }
+  } catch(e) {
+    showAlert(e);
+  }
+}
+
+async function doLogout() {
+  if(!confirm('Apakah Anda yakin ingin keluar?')) return;
+  try {
+    await apiCall('logout', { token: AppState.token });
+  } catch(e) {}
+  clearSession();
+  navigateTo('login');
+}
+
+function clearSession() {
+  AppState.token = null;
+  AppState.user = null;
+  AppState.device = null;
+  localStorage.removeItem('absensi_token');
+  localStorage.removeItem('absensi_user');
+  localStorage.removeItem('absensi_device');
+  if(AppState.sessionCheckInterval) clearInterval(AppState.sessionCheckInterval);
+  AppState.sessionCheckInterval = null;
+}
+
+function startSessionCheck() {
+  if(AppState.sessionCheckInterval) clearInterval(AppState.sessionCheckInterval);
+  AppState.sessionCheckInterval = setInterval(async () => {
+    if(!AppState.token) return;
+    try {
+      await apiCall('checkSession', { token: AppState.token });
+    } catch(e) {
+      if(e === 'SESI_HABIS' || e === 'AKUN_NONAKTIF' || e === 'DEVICE_NONAKTIF') {
+        clearSession();
+        showAlert('Sesi Anda telah berakhir atau akun dinonaktifkan. Silakan login kembali.', 'warning');
+        navigateTo('login');
+      }
+    }
   }, 30000);
 }
 
-// ===== JS: REGISTER =====
-function loadMasterData() {
-  google.script.run.withSuccessHandler(function(res) {
-    if (res.success) {
-      APP_STATE.masterSppg = res.sppg;
-      APP_STATE.masterJabatan = res.jabatan;
-      
-      const sppgSel = document.getElementById('reg-sppg');
-      sppgSel.innerHTML = '<option value="">Pilih SPPG</option>' + 
-        res.sppg.map(s => `<option value="${s}">${s}</option>`).join('') +
-        '<option value="LAINNYA">Lainnya</option>';
-      
-      const jabSel = document.getElementById('reg-jabatan');
-      jabSel.innerHTML = '<option value="">Pilih Jabatan</option>' + 
-        res.jabatan.map(j => `<option value="${j}">${j}</option>`).join('');
-      
-      // Also populate filter dropdowns
-      const absSppg = document.getElementById('filter-absen-sppg');
-      if (absSppg) absSppg.innerHTML = '<option value="">Semua</option>' + res.sppg.map(s => `<option value="${s}">${s}</option>`).join('');
-      
-      const absJab = document.getElementById('filter-absen-jabatan');
-      if (absJab) absJab.innerHTML = '<option value="">Semua</option>' + res.jabatan.map(j => `<option value="${j}">${j}</option>`).join('');
-    }
-  }).apiGetMasterData('');
-}
+// ==================== ROUTER ====================
+const Routes = {
+  'login': { el: 'page-login', auth: false, roles: null },
+  'register': { el: 'page-register', auth: false, roles: null },
+  'dashboard': { el: 'page-dashboard', auth: true, roles: ['ADMIN','AKUNTAN','USER'] },
+  'profil': { el: 'page-profil', auth: true, roles: ['ADMIN','AKUNTAN','USER'] },
+  'manajemen-user': { el: 'page-manajemen-user', auth: true, roles: ['ADMIN'] },
+  'data-karyawan': { el: 'page-data-karyawan', auth: true, roles: ['ADMIN','AKUNTAN'] },
+  'payroll': { el: 'page-payroll', auth: true, roles: ['ADMIN','AKUNTAN'] },
+  'my-payroll': { el: 'page-my-payroll', auth: true, roles: ['ADMIN','AKUNTAN','USER'] },
+  'absensi': { el: 'page-absensi', auth: true, roles: ['ADMIN','AKUNTAN'] },
+  'device-absen': { el: 'page-device-absen', auth: true, roles: null, type: 'device' },
+  'audit-log': { el: 'page-audit-log', auth: true, roles: ['ADMIN'] },
+};
 
-function handleSppgChange() {
-  const val = document.getElementById('reg-sppg').value;
-  document.getElementById('reg-sppg-lainnya').classList.toggle('hidden', val !== 'LAINNYA');
-}
+function navigateTo(page) {
+  const route = Routes[page];
+  if(!route) return;
 
-function showRegCameraError(title, detail) {
-  let box = document.getElementById('reg-camera-error-box');
-  if (!box) {
-    box = document.createElement('div');
-    box.id = 'reg-camera-error-box';
-    box.style.cssText = 'margin-top:8px;padding:10px;border-radius:8px;background:#fee2e2;color:#991b1b;font-size:0.85rem;';
-    document.getElementById('reg-face-status').insertAdjacentElement('afterend', box);
-  }
-  box.style.display = 'block';
-  box.innerHTML = '<strong>' + title + '</strong><br>' + detail;
-}
+  // Auth check
+  if(route.auth && !AppState.token) { page = 'login'; }
+  if(route.auth && AppState.user && route.roles && !route.roles.includes(AppState.user.role)) { page = 'dashboard'; }
+  if(route.type === 'device' && !AppState.device) { page = 'login'; }
+  if(page !== 'device-absen' && AppState.device) { page = 'device-absen'; }
 
-function tryGetUserMedia(constraints) {
-  return navigator.mediaDevices.getUserMedia(constraints);
-}
+  AppState.currentPage = page;
 
-function isRunningInIframe() {
-  try {
-    return window.self !== window.top;
-  } catch (e) {
-    // Jika akses window.top dilempar SecurityError, pasti dalam iframe cross-origin
-    return true;
-  }
-}
+  // Hide all pages
+  $$('.page').forEach(p => p.classList.add('hidden'));
 
-function showRegCameraIframeNotice() {
-  let box = document.getElementById('reg-camera-error-box');
-  if (!box) {
-    box = document.createElement('div');
-    box.id = 'reg-camera-error-box';
-    box.style.cssText = 'margin-top:8px;padding:10px;border-radius:8px;background:#fef3c7;color:#92400e;font-size:0.85rem;';
-    document.getElementById('reg-face-status').insertAdjacentElement('afterend', box);
-  }
-  const isTestDeployUrl = window.location.hostname === 'script.google.com';
-  box.style.display = 'block';
-  if (isTestDeployUrl) {
-    box.innerHTML = '<strong>Kamera diblokir oleh Google (bukan masalah kode)</strong><br>' +
-      'Anda sedang membuka link "Test deployments" dari editor Apps Script. Link ini selalu dibungkus iframe oleh Google dan kamera SELALU diblokir di sana, tidak peduli izin browser sudah "Allow".<br><br>' +
-      '<strong>Solusi:</strong> Di editor Apps Script, klik <em>Deploy → Manage deployments</em> (bukan tombol Test deployments), pastikan ada deployment versi Web app yang sudah di-Deploy, lalu salin dan buka URL tersebut langsung di tab baru.';
+  // Show target page
+  const target = document.getElementById(Routes[page].el);
+  if(target) target.classList.remove('hidden');
+
+  // Update UI
+  if(page === 'login' || page === 'register') {
+    $('#app-layout').classList.add('hidden');
+    $('#auth-layout').classList.remove('hidden');
   } else {
-    box.innerHTML = '<strong>Halaman terdeteksi dimuat di dalam iframe</strong><br>' +
-      'Browser menolak akses kamera untuk halaman yang dibuka via iframe. Klik tombol di bawah untuk membuka aplikasi ini di tab baru, lalu coba aktifkan kamera lagi dari sana.<br>' +
-      '<button type="button" class="btn btn-warning btn-sm mt-2" onclick="window.open(window.location.href, \'_blank\')">Buka di Tab Baru</button>';
-  }
-}
-
-function startRegCamera() {
-  const video = document.getElementById('reg-video');
-  const errBox = document.getElementById('reg-camera-error-box');
-  if (errBox) errBox.style.display = 'none';
-
-  if (!window.isSecureContext) {
-    showRegCameraError('Konteks tidak aman', 'Halaman harus diakses via HTTPS. URL exec Google Apps Script seharusnya sudah HTTPS — pastikan tidak ada redirect ke HTTP.');
-    return;
+    $('#auth-layout').classList.add('hidden');
+    $('#app-layout').classList.remove('hidden');
   }
 
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    if (isRunningInIframe()) {
-      showRegCameraIframeNotice();
-    } else {
-      showRegCameraError('Kamera tidak tersedia di browser/tampilan ini', 'navigator.mediaDevices tidak ditemukan pada browser ini.');
-    }
-    return;
-  }
+  // Update sidebar active
+  $$('.nav-item').forEach(n => n.classList.remove('active'));
+  const navItem = $(`.nav-item[data-page="${page}"]`);
+  if(navItem) navItem.classList.add('active');
 
-  tryGetUserMedia({ video: { facingMode: 'user' } })
-    .then(stream => {
-      video.srcObject = stream;
-      const p = video.play();
-      if (p && p.catch) p.catch(e => console.warn('video.play() gagal:', e));
-      showToast('Kamera aktif', 'success');
-    })
-    .catch(err => {
-      console.error('getUserMedia (facingMode user) error:', err.name, err.message);
-      // Fallback: coba tanpa facingMode (kamera apa pun yang tersedia)
-      tryGetUserMedia({ video: true })
-        .then(stream => {
-          video.srcObject = stream;
-          const p = video.play();
-          if (p && p.catch) p.catch(e => console.warn('video.play() gagal:', e));
-          showToast('Kamera aktif (mode fallback)', 'success');
-        })
-        .catch(err2 => {
-          console.error('getUserMedia (fallback) error:', err2.name, err2.message);
-
-          if (err2.name === 'NotAllowedError' && isRunningInIframe()) {
-            // Penyebab paling umum: izin sudah Allow di browser, tapi iframe Apps Script
-            // tidak mewarisi permission tersebut. Solusi: buka di tab baru.
-            showRegCameraIframeNotice();
-            showToast('Kamera diblokir karena halaman dimuat di iframe. Buka di tab baru.', 'error');
-            return;
-          }
-
-          let pesan = err2.message;
-          if (err2.name === 'NotAllowedError') {
-            pesan = 'Izin kamera ditolak/terblokir untuk halaman ini. Klik ikon 🔒 di address bar → Site settings → set Camera ke "Allow", lalu reload halaman (bukan hanya refresh form).';
-          } else if (err2.name === 'NotFoundError') {
-            pesan = 'Tidak ada perangkat kamera yang terdeteksi di komputer/HP ini.';
-          } else if (err2.name === 'NotReadableError') {
-            pesan = 'Kamera sedang dipakai aplikasi lain (Zoom, aplikasi kamera lain, dll). Tutup aplikasi tersebut lalu coba lagi.';
-          } else if (err2.name === 'OverconstrainedError') {
-            pesan = 'Tidak ada kamera yang cocok dengan permintaan. Coba di perangkat/browser lain.';
-          }
-          showRegCameraError('Gagal mengaktifkan kamera (' + err2.name + ')', pesan);
-          showToast('Kamera gagal diaktifkan: ' + err2.name, 'error');
-        });
-    });
-}
-
-function captureRegFace() {
-  const video = document.getElementById('reg-video');
-  const canvas = document.getElementById('reg-canvas');
-  if (!video.srcObject) { showToast('Kamera belum aktif', 'error'); return; }
-  
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0);
-  
-  APP_STATE.regFotoWajahBase64 = canvas.toDataURL('image/png');
-  document.getElementById('reg-face-status').innerHTML = '<span style="color:var(--success);">✅ Foto wajah berhasil diambil</span>';
-  showToast('Foto wajah berhasil diambil', 'success');
-}
-
-function previewRegFoto(input) {
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      APP_STATE.regFotoProfilBase64 = e.target.result;
-      document.getElementById('reg-foto-preview').src = e.target.result;
-      document.getElementById('reg-foto-preview').style.display = 'block';
-    };
-    reader.readAsDataURL(input.files[0]);
-  }
-}
-
-function doRegister() {
-  // Validation
-  const required = ['reg-nama','reg-username','reg-email','reg-whatsapp','reg-jabatan'];
-  for (let id of required) {
-    if (!document.getElementById(id).value.trim()) {
-      showToast('Field wajib belum lengkap', 'error'); return;
-    }
-  }
-  if (document.getElementById('reg-password').value.length < 6) {
-    showToast('Password minimal 6 karakter', 'error'); return;
-  }
-  if (document.getElementById('reg-password').value !== document.getElementById('reg-password2').value) {
-    showToast('Password tidak cocok', 'error'); return;
-  }
-  if (!document.getElementById('reg-setuju').checked) {
-    showToast('Anda harus menyetujui kebijakan data', 'error'); return;
-  }
-  if (!APP_STATE.regFotoWajahBase64) {
-    showToast('Pendaftaran wajah wajib dilakukan', 'error'); return;
-  }
-
-  
-  const sppgVal = document.getElementById('reg-sppg').value;
-  const data = {
-    namaLengkap: document.getElementById('reg-nama').value,
-    username: document.getElementById('reg-username').value,
-    tempatLahir: document.getElementById('reg-tempat-lahir').value,
-    tanggalLahir: document.getElementById('reg-tanggal-lahir').value,
-    jenisKelamin: document.querySelector('input[name="reg-jk"]:checked').value,
-    email: document.getElementById('reg-email').value,
-    noWhatsapp: document.getElementById('reg-whatsapp').value,
-    sppg: sppgVal,
-    sppgLainnya: sppgVal === 'LAINNYA' ? document.getElementById('reg-sppg-lainnya').value : '',
-    tanggalMulaiKerja: document.getElementById('reg-mulai-kerja').value,
-    jabatanDivisi: document.getElementById('reg-jabatan').value,
-    gajiHarian: document.getElementById('reg-gaji').value,
-    namaBank: document.getElementById('reg-bank').value,
-    atasNamaRekening: document.getElementById('reg-rekening').value,
-    password: document.getElementById('reg-password').value,
-    faceDescriptorJSON: '',
-    fotoProfilBase64: APP_STATE.regFotoProfilBase64,
-    fotoWajahBase64: APP_STATE.regFotoWajahBase64,
-    setujuKebijakan: true
+  // Update page title
+  const titles = {
+    'login': 'Login', 'register': 'Register', 'dashboard': 'Dashboard',
+    'profil': 'Profil', 'manajemen-user': 'Manajemen User', 'data-karyawan': 'Data Karyawan',
+    'payroll': 'Payroll', 'my-payroll': 'My Payroll', 'absensi': 'Data Absensi',
+    'device-absen': 'Absensi', 'audit-log': 'Catatan Aktivitas'
   };
-  
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    if (res.success) {
-      // Generate ID Card PDF client-side then upload
-      generateAndUploadIDCard(res.idUser, data.namaLengkap, data.jabatanDivisi, data.sppg === 'LAINNYA' ? data.sppgLainnya : data.sppg, res.idCard, APP_STATE.regFotoProfilBase64, function() {
-        showLoading(false);
-        showToast('Registrasi berhasil! Silakan login.', 'success');
-        document.querySelector('[onclick="switchLoginTab(\'login\')"]').click();
-      });
-    } else {
-      showLoading(false);
-      showToast(res.message, 'error');
-    }
-  }).withFailureHandler(function(err) {
-    showLoading(false);
-    showToast('Error: ' + err.message, 'error');
-  }).apiRegister(data);
+  $('#page-title').textContent = titles[page] || '';
+
+  // Close sidebar on mobile
+  $('#sidebar').classList.remove('open');
+  $('#sidebar-overlay').classList.remove('show');
+
+  // Page-specific init
+  if(page === 'dashboard') initDashboard();
+  if(page === 'profil') initProfil();
+  if(page === 'manajemen-user') initManajemenUser();
+  if(page === 'data-karyawan') initDataKaryawan();
+  if(page === 'payroll') initPayroll();
+  if(page === 'my-payroll') initMyPayroll();
+  if(page === 'absensi') initAbsensi();
+  if(page === 'device-absen') initDeviceAbsen();
+  if(page === 'audit-log') initAuditLog();
+  if(page === 'register') initRegister();
 }
 
-// ===== JS: LUPA PASSWORD =====
-function doRequestReset() {
-  const username = document.getElementById('lupa-username').value;
-  const email = document.getElementById('lupa-email').value;
-  const idCard = document.getElementById('lupa-idcard').value;
-  if (!username || !email || !idCard) { showToast('Semua field wajib diisi', 'error'); return; }
-  
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    if (res.success) {
-      APP_STATE.resetToken = res.token;
-      document.getElementById('lupa-step1').classList.add('hidden');
-      document.getElementById('lupa-step2').classList.remove('hidden');
-      showToast(res.message, 'success');
-    } else {
-      showToast(res.message, 'error');
-    }
-  }).apiRequestReset(username, email, idCard);
-}
-
-function doConfirmReset() {
-  const username = document.getElementById('lupa-username').value;
-  const pw = document.getElementById('lupa-password').value;
-  const pw2 = document.getElementById('lupa-password2').value;
-  if (pw !== pw2) { showToast('Password tidak cocok', 'error'); return; }
-  if (!APP_STATE.resetToken) { showToast('Token tidak valid, ulangi verifikasi', 'error'); return; }
-  
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    if (res.success) {
-      showToast('Password berhasil diperbarui', 'success');
-      APP_STATE.resetToken = null;
-      document.getElementById('lupa-step2').classList.add('hidden');
-      document.getElementById('lupa-step1').classList.remove('hidden');
-      document.querySelector('[onclick="switchLoginTab(\'login\')"]').click();
-    } else {
-      showToast(res.message, 'error');
-    }
-  }).apiConfirmReset(username, APP_STATE.resetToken, pw);
-}
-
-// ===== JS: DASHBOARD =====
-function loadDashboard() {
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    if (res.error) { showToast(res.error, 'error'); return; }
-    
-    if (res.role === 'ADMIN' || res.role === 'AKUNTAN') {
-      document.getElementById('dashboard-admin').classList.remove('hidden');
-      document.getElementById('dashboard-user').classList.add('hidden');
-      document.getElementById('dash-total-karyawan').textContent = res.totalKaryawan;
-      document.getElementById('dash-total-datang').textContent = res.totalDatang;
-      document.getElementById('dash-total-pulang').textContent = res.totalPulang;
-      document.getElementById('dash-total-payroll').textContent = formatRupiah(res.totalPayrollBulanIni);
-      
-      // SPPG table
-      let sppgHtml = '<table><thead><tr><th>SPPG</th><th>Datang</th><th>Pulang</th></tr></thead><tbody>';
-      for (let [sppg, data] of Object.entries(res.sppgData || {})) {
-        sppgHtml += `<tr><td>${sppg}</td><td>${data.datang}</td><td>${data.pulang}</td></tr>`;
+// ==================== INIT APP ====================
+document.addEventListener('DOMContentLoaded', () => {
+  // Check existing session
+  if(AppState.token) {
+    apiCall('checkSession', { token: AppState.token }).then(res => {
+      if(res.session.type === 'device') {
+        AppState.device = res.session;
+        navigateTo('device-absen');
+      } else {
+        AppState.user = { ...AppState.user, ...res.session };
+        startSessionCheck();
+        navigateTo('dashboard');
       }
-      sppgHtml += '</tbody></table>';
-      document.getElementById('dash-sppg-table').innerHTML = sppgHtml;
-      
-      // Jabatan table
-      let jabHtml = '<table><thead><tr><th>Jabatan</th><th>Datang</th><th>Pulang</th></tr></thead><tbody>';
-      for (let [jab, data] of Object.entries(res.jabatanData || {})) {
-        jabHtml += `<tr><td>${jab}</td><td>${data.datang}</td><td>${data.pulang}</td></tr>`;
-      }
-      jabHtml += '</tbody></table>';
-      document.getElementById('dash-jabatan-table').innerHTML = jabHtml;
-      
-      // Belum absen
-      let belumHtml = '<table class="table-responsive"><thead><tr><th>Nama</th><th>Jabatan</th><th>SPPG</th></tr></thead><tbody>';
-      (res.belumAbsen || []).forEach(u => {
-        belumHtml += `<tr><td data-label="Nama">${u.nama}</td><td data-label="Jabatan">${u.jabatan}</td><td data-label="SPPG">${u.sppg}</td></tr>`;
-      });
-      belumHtml += '</tbody></table>';
-      document.getElementById('dash-belum-absen').innerHTML = belumHtml;
-    } else {
-      document.getElementById('dashboard-admin').classList.add('hidden');
-      document.getElementById('dashboard-user').classList.remove('hidden');
-      document.getElementById('dash-user-hari').textContent = res.totalHariKerja;
-      document.getElementById('dash-user-slip').textContent = res.totalSlip;
-      document.getElementById('dash-user-gaji').textContent = formatRupiah(res.totalGajiDiterima);
-      
-      const bd = document.getElementById('badge-datang');
-      const bp = document.getElementById('badge-pulang');
-      if (res.statusHariIni.sudahDatang) { bd.className = 'badge badge-success'; bd.textContent = 'Sudah Datang'; }
-      else { bd.className = 'badge badge-warning'; bd.textContent = 'Belum Datang'; }
-      if (res.statusHariIni.sudahPulang) { bp.className = 'badge badge-success'; bp.textContent = 'Sudah Pulang'; }
-      else { bp.className = 'badge badge-warning'; bp.textContent = 'Belum Pulang'; }
-      
-      let riwHtml = '<table class="table-responsive"><thead><tr><th>Tanggal</th><th>Jenis</th><th>Waktu</th><th>Status</th></tr></thead><tbody>';
-      (res.riwayat || []).forEach(r => {
-        const badge = r.status === 'VALID' ? 'badge-success' : 'badge-danger';
-        riwHtml += `<tr><td data-label="Tanggal">${r.tanggal}</td><td data-label="Jenis">${r.jenis}</td><td data-label="Waktu">${r.waktu}</td><td data-label="Status"><span class="badge ${badge}">${r.status}</span></td></tr>`;
-      });
-      riwHtml += '</tbody></table>';
-      document.getElementById('dash-user-riwayat').innerHTML = riwHtml;
-    }
-  }).withFailureHandler(function(err) {
-    showLoading(false);
-    showToast('Error load dashboard: ' + err.message, 'error');
-  }).apiGetDashboard(APP_STATE.token);
+    }).catch(() => {
+      clearSession();
+      navigateTo('login');
+    });
+  } else {
+    navigateTo('login');
+  }
+
+  // Sidebar toggle
+  $('#menu-btn').addEventListener('click', () => {
+    $('#sidebar').classList.toggle('open');
+    $('#sidebar-overlay').classList.toggle('show');
+  });
+  $('#sidebar-overlay').addEventListener('click', () => {
+    $('#sidebar').classList.remove('open');
+    $('#sidebar-overlay').classList.remove('show');
+  });
+
+  // Nav items
+  $$('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const page = item.dataset.page;
+      if(page) navigateTo(page);
+    });
+  });
+
+  // Login form
+  $('#btn-login').addEventListener('click', doLogin);
+  $('#login-password').addEventListener('keypress', e => { if(e.key==='Enter') doLogin(); });
+
+  // Register form
+  $('#btn-register').addEventListener('click', doRegister);
+  $('#btn-to-register').addEventListener('click', () => navigateTo('register'));
+  $('#btn-to-login').addEventListener('click', () => navigateTo('login'));
+
+  // Lupa password
+  $('#btn-forgot').addEventListener('click', showForgotPassword);
+  $('#btn-reset-password').addEventListener('click', doResetPassword);
+  $('#btn-request-reset').addEventListener('click', doRequestReset);
+
+  // Logout
+  $('#btn-logout').addEventListener('click', doLogout);
+  $('#btn-logout-sidebar').addEventListener('click', doLogout);
+
+  // Profil
+  $('#btn-edit-profil').addEventListener('click', () => toggleProfilEdit(true));
+  $('#btn-cancel-profil').addEventListener('click', () => toggleProfilEdit(false));
+  $('#btn-save-profil').addEventListener('click', saveProfil);
+  $('#btn-update-wajah').addEventListener('click', showUpdateWajahModal);
+  $('#btn-save-wajah').addEventListener('click', saveUpdateWajah);
+  $('#btn-cancel-wajah').addEventListener('click', () => $('#modal-update-wajah').classList.remove('show'));
+  $('#btn-download-idcard').addEventListener('click', downloadIdCard);
+
+  // Manajemen User
+  $('#btn-register-device').addEventListener('click', showRegisterDeviceModal);
+  $('#btn-save-device').addEventListener('click', saveRegisterDevice);
+  $('#btn-cancel-device').addEventListener('click', () => $('#modal-register-device').classList.remove('show'));
+
+  // Payroll
+  $('#btn-proses-payroll').addEventListener('click', showPayrollModal);
+  $('#btn-cancel-payroll').addEventListener('click', () => $('#modal-payroll').classList.remove('show'));
+  $('#btn-accept-payroll').addEventListener('click', acceptPayroll);
+  $('#btn-clear-signature').addEventListener('click', () => { if(AppState.signaturePad) AppState.signaturePad.clear(); });
+
+  // Device Absen
+  $('#btn-device-absen').addEventListener('click', startDeviceFlow);
+  $('#btn-device-retry').addEventListener('click', () => startFaceScan());
+  $('#btn-device-done').addEventListener('click', resetDeviceFlow);
+
+  // Close modals
+  $$('.modal-close, .modal-cancel').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.closest('.modal-overlay').classList.remove('show');
+    });
+  });
+
+  // Register: SPPG lainnya toggle
+  $('#reg-sppg').addEventListener('change', e => {
+    $('#reg-sppg-lainnya-group').classList.toggle('hidden', e.target.value !== 'LAINNYA');
+  });
+
+  // Register: face capture
+  $('#btn-capture-face').addEventListener('click', captureFace);
+  $('#btn-capture-photo').addEventListener('click', capturePhoto);
+
+  // Load face-api models on first register page visit
+  // (lazy loaded in initRegister)
+});
+
+// ==================== REGISTER ====================
+let regFaceDescriptor = null;
+let regPhotoBase64 = null;
+let regFacePhotoBase64 = null;
+
+async function initRegister() {
+  // Load master data
+  try {
+    const masters = await apiCall('getMasterData', {});
+    const sppgSel = $('#reg-sppg');
+    sppgSel.innerHTML = '<option value="">Pilih SPPG</option>' + masters.sppg.map(s => `<option value="${s}">${s}</option>`).join('') + '<option value="LAINNYA">Lainnya</option>';
+    const jabSel = $('#reg-jabatan');
+    jabSel.innerHTML = '<option value="">Pilih Jabatan</option>' + masters.jabatan.map(j => `<option value="${j}">${j}</option>`).join('');
+  } catch(e) { console.error(e); }
+
+  // Load face-api models
+  await loadFaceApiModels();
 }
 
-// ===== JS: PROFIL =====
-let PROFIL_DATA = null;
-let EDIT_MODE = false;
+async function loadFaceApiModels() {
+  if(AppState.modelsLoaded) return;
+  try {
+    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/';
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    AppState.modelsLoaded = true;
+  } catch(e) {
+    console.error('Face API load error:', e);
+    showAlert('Gagal memuat model face recognition. Periksa koneksi internet.', 'warning');
+  }
+}
 
-function loadProfil() {
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    if (res.success) {
-      PROFIL_DATA = res.data;
-      renderProfil();
+async function captureFace() {
+  if(!AppState.modelsLoaded) await loadFaceApiModels();
+  const video = $('#reg-video');
+  const canvas = $('#reg-canvas');
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    AppState.videoStream = stream;
+    video.srcObject = stream;
+    video.play();
+    $('#reg-face-step').classList.remove('hidden');
+
+    // Auto capture after 3 seconds when face detected
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts++;
+      const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptor();
+      if(detections) {
+        clearInterval(interval);
+        regFaceDescriptor = Array.from(detections.descriptor);
+
+        // Draw on canvas
+        const dims = faceapi.matchDimensions(canvas, { width: video.videoWidth, height: video.videoHeight });
+        faceapi.draw.drawDetections(canvas, faceapi.resizeResults(detections, dims));
+
+        // Capture photo too
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        regFacePhotoBase64 = canvas.toDataURL('image/png');
+
+        stopVideo();
+        $('#reg-face-status').textContent = 'Wajah berhasil dideteksi dan dicatat.';
+        $('#reg-face-status').className = 'text-success';
+      }
+      if(attempts > 30) { // ~15 seconds
+        clearInterval(interval);
+        stopVideo();
+        $('#reg-face-status').textContent = 'Gagal mendeteksi wajah. Coba lagi.';
+        $('#reg-face-status').className = 'text-danger';
+      }
+    }, 500);
+  } catch(e) {
+    showAlert('Tidak bisa mengakses kamera: ' + e.message);
+  }
+}
+
+async function capturePhoto() {
+  const video = $('#reg-video-photo');
+  const canvas = $('#reg-canvas-photo');
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    AppState.videoStream = stream;
+    video.srcObject = stream;
+    video.play();
+    $('#reg-photo-step').classList.remove('hidden');
+
+    setTimeout(() => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      regPhotoBase64 = canvas.toDataURL('image/png');
+      $('#reg-photo-preview').src = regPhotoBase64;
+      $('#reg-photo-preview').classList.remove('hidden');
+      stopVideo();
+    }, 2000);
+  } catch(e) {
+    showAlert('Tidak bisa mengakses kamera: ' + e.message);
+  }
+}
+
+function stopVideo() {
+  if(AppState.videoStream) {
+    AppState.videoStream.getTracks().forEach(t => t.stop());
+    AppState.videoStream = null;
+  }
+}
+
+async function doRegister() {
+  const data = {
+    username: $('#reg-username').value.trim(),
+    password: $('#reg-password').value,
+    confirmPassword: $('#reg-confirm-password').value,
+    namaLengkap: $('#reg-nama').value.trim(),
+    tempatLahir: $('#reg-tempat-lahir').value.trim(),
+    tanggalLahir: $('#reg-tanggal-lahir').value,
+    jenisKelamin: document.querySelector('input[name="reg-jk"]:checked')?.value || '',
+    email: $('#reg-email').value.trim(),
+    noWhatsapp: $('#reg-whatsapp').value.trim(),
+    sppg: $('#reg-sppg').value,
+    sppgLainnya: $('#reg-sppg-lainnya').value.trim(),
+    tanggalMulaiKerja: $('#reg-tanggal-mulai').value,
+    jabatanDivisi: $('#reg-jabatan').value,
+    gajiHarian: parseFloat($('#reg-gaji').value) || 0,
+    namaBank: $('#reg-bank').value.trim(),
+    atasNamaRekening: $('#reg-rekening').value.trim(),
+    setujuKebijakan: $('#reg-setuju').checked,
+    faceDescriptor: regFaceDescriptor,
+    fotoProfilBase64: regPhotoBase64,
+    fotoWajahBase64: regFacePhotoBase64
+  };
+
+  if(!data.username || !data.password || !data.namaLengkap) { showAlert('Username, Password, dan Nama Lengkap wajib diisi'); return; }
+  if(data.password !== data.confirmPassword) { showAlert('Password dan konfirmasi tidak cocok'); return; }
+  if(!data.setujuKebijakan) { showAlert('Anda harus menyetujui kebijakan data'); return; }
+  if(!data.faceDescriptor) { showAlert('Pendaftaran wajah wajib dilakukan'); return; }
+
+  try {
+    const res = await apiCall('registerUser', data);
+    showAlert('Registrasi berhasil! ID Card: ' + res.idCardUnik + '. Silakan login.', 'success');
+    setTimeout(() => navigateTo('login'), 2000);
+  } catch(e) {
+    showAlert(e);
+  }
+}
+
+// ==================== FORGOT PASSWORD ====================
+function showForgotPassword() {
+  $('#forgot-password-section').classList.remove('hidden');
+  $('#login-form-section').classList.add('hidden');
+}
+
+async function doRequestReset() {
+  const username = $('#fp-username').value.trim();
+  const email = $('#fp-email').value.trim();
+  const idCard = $('#fp-idcard').value.trim();
+  if(!username || !email || !idCard) { showAlert('Semua field wajib diisi'); return; }
+  try {
+    const res = await apiCall('requestResetPassword', { username, email, idCardUnik: idCard });
+    $('#reset-token').value = res.token;
+    $('#reset-password-section').classList.remove('hidden');
+    $('#forgot-password-section').classList.add('hidden');
+    showAlert('Verifikasi berhasil. Silakan masukkan password baru.', 'success');
+  } catch(e) { showAlert(e); }
+}
+
+async function doResetPassword() {
+  const username = $('#fp-username').value.trim();
+  const token = $('#reset-token').value;
+  const newPass = $('#fp-new-password').value;
+  const confirmPass = $('#fp-confirm-password').value;
+  if(!newPass || newPass !== confirmPass) { showAlert('Password tidak cocok'); return; }
+  try {
+    await apiCall('resetPassword', { username, token, newPassword: newPass });
+    showAlert('Password berhasil diubah! Silakan login.', 'success');
+    $('#reset-password-section').classList.add('hidden');
+    $('#login-form-section').classList.remove('hidden');
+  } catch(e) { showAlert(e); }
+}
+
+// ==================== DASHBOARD ====================
+async function initDashboard() {
+  try {
+    const data = await apiCallWithToken('getDashboardData', {});
+    if(data.role === 'ADMIN' || data.role === 'AKUNTAN') {
+      renderDashboardAdmin(data);
+    } else {
+      renderDashboardUser(data);
     }
-  }).apiGetProfil(APP_STATE.token);
+  } catch(e) { showAlert(e); }
+}
+
+function renderDashboardAdmin(data) {
+  const container = $('#dashboard-admin');
+  container.classList.remove('hidden');
+  $('#dashboard-user').classList.add('hidden');
+
+  container.innerHTML = `
+    <div class="grid grid-4 mb-2">
+      <div class="card stat-card">
+        <div class="stat-icon blue">👥</div>
+        <div><div class="stat-value">${data.totalKaryawan}</div><div class="stat-label">Karyawan Aktif</div></div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-icon green">📥</div>
+        <div><div class="stat-value">${data.datangHariIni}</div><div class="stat-label">Absen Datang Hari Ini</div></div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-icon orange">📤</div>
+        <div><div class="stat-value">${data.pulangHariIni}</div><div class="stat-label">Absen Pulang Hari Ini</div></div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-icon blue">💰</div>
+        <div><div class="stat-value">${data.payrollBulanIni}</div><div class="stat-label">Payroll Bulan Ini</div></div>
+      </div>
+    </div>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">📊 Trend Absensi 7 Hari Terakhir</div></div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead><tr><th>Tanggal</th><th>Datang</th><th>Pulang</th></tr></thead>
+            <tbody>${data.trend7Hari.map(t => `<tr><td>${formatDate(t.tanggal)}</td><td>${t.datang}</td><td>${t.pulang}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">⚠️ Belum Absen Hari Ini</div></div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead><tr><th>Nama</th><th>Jabatan</th><th>SPPG</th></tr></thead>
+            <tbody>${data.belumAbsen.map(u => `<tr><td>${escapeHtml(u.nama)}</td><td>${escapeHtml(u.jabatan)}</td><td>${escapeHtml(u.sppg)}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">📍 Absensi per SPPG</div></div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead><tr><th>SPPG</th><th>Jumlah Karyawan</th></tr></thead>
+            <tbody>${Object.entries(data.sppgData).map(([k,v]) => `<tr><td>${escapeHtml(k)}</td><td>${v}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">💼 Absensi per Jabatan</div></div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead><tr><th>Jabatan</th><th>Jumlah Karyawan</th></tr></thead>
+            <tbody>${Object.entries(data.jabatanData).map(([k,v]) => `<tr><td>${escapeHtml(k)}</td><td>${v}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderDashboardUser(data) {
+  const container = $('#dashboard-user');
+  container.classList.remove('hidden');
+  $('#dashboard-admin').classList.add('hidden');
+
+  container.innerHTML = `
+    <div class="grid grid-2">
+      <div class="card stat-card">
+        <div class="stat-icon blue">📅</div>
+        <div><div class="stat-value">${data.totalHariKerja}</div><div class="stat-label">Total Hari Kerja</div></div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-icon green">💰</div>
+        <div><div class="stat-value">${formatRupiah(data.totalGajiDiterima)}</div><div class="stat-label">Total Gaji Diterima</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">📋 Status Absen Hari Ini</div></div>
+      <div class="flex gap-2 items-center">
+        <span class="badge ${data.sudahDatang ? 'badge-green' : 'badge-red'}">Datang: ${data.sudahDatang ? '✓ Sudah' : '✗ Belum'}</span>
+        <span class="badge ${data.sudahPulang ? 'badge-green' : 'badge-red'}">Pulang: ${data.sudahPulang ? '✓ Sudah' : '✗ Belum'}</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">📝 Riwayat Absensi Terakhir</div></div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead><tr><th>Tanggal</th><th>Jenis</th><th>Waktu</th><th>Status</th></tr></thead>
+          <tbody>${data.riwayat.map(r => `<tr><td>${formatDate(r.tanggal)}</td><td>${r.jenis}</td><td>${r.waktu}</td><td><span class="badge ${r.status==='VALID'?'badge-green':'badge-red'}">${r.status}</span></td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ==================== PROFIL ====================
+let profilData = null;
+let profilEditMode = false;
+
+async function initProfil() {
+  try {
+    const res = await apiCallWithToken('getProfilLengkap', {});
+    profilData = res.user;
+    renderProfil();
+  } catch(e) { showAlert(e); }
 }
 
 function renderProfil() {
-  const d = PROFIL_DATA;
-  const ro = document.getElementById('profil-readonly');
-  const ef = document.getElementById('profil-edit-form');
-  const actions = document.getElementById('profil-actions');
-  
-  if (!EDIT_MODE) {
-    ro.classList.remove('hidden');
-    ef.classList.add('hidden');
-    actions.innerHTML = `<button class="btn btn-primary" onclick="toggleEditProfil()">Edit Profil</button>
-      <button class="btn btn-secondary" onclick="showUpdateWajah()">Update Data Wajah</button>`;
-    
-    ro.innerHTML = `
-      <div class="grid grid-2">
-        <div><strong>Username:</strong> ${d.Username}</div>
-        <div><strong>Role:</strong> ${d.Role}</div>
-        <div><strong>Nama:</strong> ${d.Nama_Lengkap}</div>
-        <div><strong>Tempat Lahir:</strong> ${d.Tempat_Lahir}</div>
-        <div><strong>Tanggal Lahir:</strong> ${d.Tanggal_Lahir}</div>
-        <div><strong>Jenis Kelamin:</strong> ${d.Jenis_Kelamin}</div>
-        <div><strong>Email:</strong> ${d.Email}</div>
-        <div><strong>No. Whatsapp:</strong> ${d.No_Whatsapp}</div>
-        <div><strong>SPPG:</strong> ${d.SPPG}</div>
-        <div><strong>Jabatan:</strong> ${d.Jabatan_Divisi}</div>
-        <div><strong>Gaji Harian:</strong> ${formatRupiah(d.Gaji_Harian)}</div>
-        <div><strong>Bank:</strong> ${d.Nama_Bank}</div>
-        <div><strong>Rekening:</strong> ${d.Atas_Nama_Rekening}</div>
-        <div><strong>ID Card:</strong> ${d.ID_Card_Unik}</div>
-        <div><strong>Mulai Kerja:</strong> ${d.Tanggal_Mulai_Kerja}</div>
-      </div>
-      <div class="mt-3">
-        <img src="${d.URL_Foto_Profil || ''}" style="max-width:150px;border-radius:8px;" onerror="this.style.display='none'">
-      </div>
-    `;
-    renderIDCard(d);
-  } else {
-    ro.classList.add('hidden');
-    ef.classList.remove('hidden');
-    actions.innerHTML = `<button class="btn btn-success" onclick="saveProfil()">Simpan</button>
-      <button class="btn btn-outline" onclick="toggleEditProfil()">Batal</button>`;
-    
-    ef.innerHTML = `
-      <div class="grid grid-2">
-        <div class="form-group"><label class="form-label">Nama Lengkap</label><input type="text" id="edit-nama" class="form-input" value="${d.Nama_Lengkap}"></div>
-        <div class="form-group"><label class="form-label">Tempat Lahir</label><input type="text" id="edit-tempat" class="form-input" value="${d.Tempat_Lahir}"></div>
-        <div class="form-group"><label class="form-label">Tanggal Lahir</label><input type="date" id="edit-lahir" class="form-input" value="${d.Tanggal_Lahir}"></div>
-        <div class="form-group"><label class="form-label">Email</label><input type="email" id="edit-email" class="form-input" value="${d.Email}"></div>
-        <div class="form-group"><label class="form-label">No. Whatsapp</label><input type="text" id="edit-wa" class="form-input" value="${d.No_Whatsapp}"></div>
-        <div class="form-group"><label class="form-label">SPPG</label><input type="text" id="edit-sppg" class="form-input" value="${d.SPPG}"></div>
-        <div class="form-group"><label class="form-label">Jabatan</label><input type="text" id="edit-jabatan" class="form-input" value="${d.Jabatan_Divisi}"></div>
-        <div class="form-group"><label class="form-label">Gaji Harian</label><input type="number" id="edit-gaji" class="form-input" value="${d.Gaji_Harian}"></div>
-        <div class="form-group"><label class="form-label">Nama Bank</label><input type="text" id="edit-bank" class="form-input" value="${d.Nama_Bank}"></div>
-        <div class="form-group"><label class="form-label">Atas Nama Rekening</label><input type="text" id="edit-rek" class="form-input" value="${d.Atas_Nama_Rekening}"></div>
-      </div>
-      <div class="form-group mt-2">
-        <label class="form-label">Foto Profil Baru (opsional)</label>
-        <input type="file" id="edit-foto" class="form-input" accept="image/*" onchange="previewEditFoto(this)">
-        <img id="edit-foto-preview" style="max-width:120px;border-radius:8px;margin-top:8px;display:none;">
-      </div>
-    `;
-  }
-}
+  if(!profilData) return;
+  const u = profilData;
+  const isUser = AppState.user && AppState.user.role === 'USER';
 
-function toggleEditProfil() {
-  EDIT_MODE = !EDIT_MODE;
-  renderProfil();
-}
-
-function previewEditFoto(input) {
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      document.getElementById('edit-foto-preview').src = e.target.result;
-      document.getElementById('edit-foto-preview').style.display = 'block';
-    };
-    reader.readAsDataURL(input.files[0]);
-  }
-}
-
-function saveProfil() {
-  const data = {
-    Nama_Lengkap: document.getElementById('edit-nama').value,
-    Tempat_Lahir: document.getElementById('edit-tempat').value,
-    Tanggal_Lahir: document.getElementById('edit-lahir').value,
-    Email: document.getElementById('edit-email').value,
-    No_Whatsapp: document.getElementById('edit-wa').value,
-    SPPG: document.getElementById('edit-sppg').value,
-    Jabatan_Divisi: document.getElementById('edit-jabatan').value,
-    Gaji_Harian: document.getElementById('edit-gaji').value,
-    Nama_Bank: document.getElementById('edit-bank').value,
-    Atas_Nama_Rekening: document.getElementById('edit-rek').value
-  };
-  const fotoInput = document.getElementById('edit-foto');
-  if (fotoInput && fotoInput.files && fotoInput.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      data.fotoProfilBase64 = e.target.result;
-      submitProfilUpdate(data);
-    };
-    reader.readAsDataURL(fotoInput.files[0]);
-  } else {
-    submitProfilUpdate(data);
-  }
-}
-
-function submitProfilUpdate(data) {
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    if (res.success) {
-      showToast('Profil berhasil diperbarui', 'success');
-      EDIT_MODE = false;
-      loadProfil();
-      if (data.Nama_Lengkap !== PROFIL_DATA.Nama_Lengkap || data.Jabatan_Divisi !== PROFIL_DATA.Jabatan_Divisi || data.fotoProfilBase64) {
-        generateAndUploadIDCard(PROFIL_DATA.ID_User, data.Nama_Lengkap, data.Jabatan_Divisi, data.SPPG, PROFIL_DATA.ID_Card_Unik, data.fotoProfilBase64 || PROFIL_DATA.URL_Foto_Profil, function(){});
-      }
-    } else {
-      showToast(res.message || res.error, 'error');
-    }
-  }).withFailureHandler(function(err) {
-    showLoading(false);
-    showToast('Error: ' + err.message, 'error');
-  }).apiUpdateProfil(APP_STATE.token, data);
-}
-
-// ID Card
-function renderIDCard(data) {
-  const container = document.getElementById('id-card-container');
-  container.innerHTML = `
-    <div class="id-card-preview" id="id-card-el">
-      <div style="display:flex;gap:16px;align-items:center;">
-        <img src="${data.URL_Foto_Profil || ''}" class="id-card-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" style="display:${data.URL_Foto_Profil ? 'block' : 'none'}">
-        <div style="width:100px;height:120px;background:#e2e8f0;border-radius:4px;display:${data.URL_Foto_Profil ? 'none' : 'flex'};align-items:center;justify-content:center;color:#999;font-size:2rem;">👤</div>
-        <div class="id-card-info">
-          <div class="id-card-name">${data.Nama_Lengkap}</div>
-          <div class="id-card-role">${data.Jabatan_Divisi}</div>
-          <div class="id-card-sppg">${data.SPPG}</div>
-          <div style="margin-top:8px;font-size:0.75rem;color:#888;">ID: ${data.ID_Card_Unik}</div>
+  $('#profil-readonly').innerHTML = `
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">👤 Informasi Pribadi</div></div>
+        <div class="form-row form-row-2">
+          <div class="form-group"><label class="form-label">Nama Lengkap</label><input class="form-input" value="${escapeHtml(u.Nama_Lengkap||'')}" disabled></div>
+          <div class="form-group"><label class="form-label">Username</label><input class="form-input" value="${escapeHtml(u.Username||'')}" disabled></div>
+          <div class="form-group"><label class="form-label">ID User</label><input class="form-input" value="${escapeHtml(u.ID_User||'')}" disabled></div>
+          <div class="form-group"><label class="form-label">ID Card</label><input class="form-input" value="${escapeHtml(u.ID_Card_Unik||'')}" disabled></div>
+          <div class="form-group"><label class="form-label">Tempat Lahir</label><input class="form-input" value="${escapeHtml(u.Tempat_Lahir||'')}" disabled></div>
+          <div class="form-group"><label class="form-label">Tanggal Lahir</label><input class="form-input" value="${formatDate(u.Tanggal_Lahir)}" disabled></div>
+          <div class="form-group"><label class="form-label">Jenis Kelamin</label><input class="form-input" value="${escapeHtml(u.Jenis_Kelamin||'')}" disabled></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" value="${escapeHtml(u.Email||'')}" disabled></div>
+          <div class="form-group"><label class="form-label">No. Whatsapp</label><input class="form-input" value="${escapeHtml(u.No_Whatsapp||'')}" disabled></div>
+          <div class="form-group"><label class="form-label">SPPG</label><input class="form-input" value="${escapeHtml(u.SPPG||'')}" disabled></div>
+          <div class="form-group"><label class="form-label">Jabatan/Divisi</label><input class="form-input" value="${escapeHtml(u.Jabatan_Divisi||'')}" disabled></div>
+          <div class="form-group"><label class="form-label">Gaji Harian</label><input class="form-input" value="${formatRupiah(u.Gaji_Harian)}" disabled></div>
+          <div class="form-group"><label class="form-label">Nama Bank</label><input class="form-input" value="${escapeHtml(u.Nama_Bank||'')}" disabled></div>
+          <div class="form-group"><label class="form-label">Atas Nama Rekening</label><input class="form-input" value="${escapeHtml(u.Atas_Nama_Rekening||'')}" disabled></div>
+          <div class="form-group"><label class="form-label">Tanggal Mulai Kerja</label><input class="form-input" value="${formatDate(u.Tanggal_Mulai_Kerja)}" disabled></div>
+          <div class="form-group"><label class="form-label">Role</label><input class="form-input" value="${escapeHtml(u.Role||'')}" disabled></div>
+          <div class="form-group"><label class="form-label">Status</label><input class="form-input" value="${isActive(u.Status_Aktif)?'Aktif':'Nonaktif'}" disabled></div>
         </div>
       </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🪪 ID Card Digital</div></div>
+        <div id="id-card-preview-area" style="margin-bottom:1rem;"></div>
+        <button class="btn btn-primary btn-block" id="btn-download-idcard">⬇️ Download ID Card (PDF)</button>
+      </div>
+    </div>
+  `;
+
+  renderIdCardPreview(u);
+
+  if(isUser) {
+    $('#btn-edit-profil').classList.remove('hidden');
+  } else {
+    $('#btn-edit-profil').classList.add('hidden');
+  }
+}
+
+function isActive(val) { return val === true || val === 'TRUE' || val === '1' || val === 'true'; }
+
+function renderIdCardPreview(u) {
+  const container = $('#id-card-preview-area');
+  if(!container) return;
+  const qrData = u.ID_Card_Unik || '';
+  container.innerHTML = `
+    <div class="id-card-preview" id="id-card-render">
+      <div class="id-card-header">
+        <img src="${u.URL_Foto_Profil || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" class="id-card-photo" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'">
+        <div class="id-card-info">
+          <div class="id-card-name">${escapeHtml(u.Nama_Lengkap||'')}</div>
+          <div class="id-card-role">${escapeHtml(u.Jabatan_Divisi||'')}</div>
+        </div>
+      </div>
+      <div class="id-card-sppg">${escapeHtml(u.SPPG||'')}</div>
       <div class="id-card-qr" id="id-card-qr"></div>
     </div>
   `;
-  setTimeout(() => {
-    const qrEl = document.getElementById('id-card-qr');
-    if (qrEl && data.ID_Card_Unik) {
-      qrEl.innerHTML = '';
-      new QRCode(qrEl, {
-        text: data.ID_Card_Unik,
-        width: 60,
-        height: 60,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.H
-      });
-    }
-  }, 100);
-}
-
-function generateAndUploadIDCard(idUser, nama, jabatan, sppg, idCard, fotoUrlOrBase64, callback) {
-  const temp = document.createElement('div');
-  temp.innerHTML = `
-    <div style="width:344px;height:216px;background:white;border:1px solid #ccc;border-radius:8px;padding:20px;display:flex;gap:16px;position:relative;font-family:sans-serif;">
-      <div style="width:100px;height:120px;background:#e2e8f0;border-radius:4px;overflow:hidden;">
-        <img src="${fotoUrlOrBase64 || ''}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#999;font-size:2rem;\\'>👤</div>'">
-      </div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
-        <div style="font-size:1.1rem;font-weight:700;">${nama}</div>
-        <div style="font-size:0.85rem;color:#666;margin-top:4px;">${jabatan}</div>
-        <div style="font-size:0.8rem;color:#888;margin-top:2px;">${sppg}</div>
-        <div style="margin-top:8px;font-size:0.75rem;color:#888;">ID: ${idCard}</div>
-      </div>
-      <div id="temp-qr-${idUser}" style="position:absolute;bottom:16px;right:16px;"></div>
-    </div>
-  `;
-  document.getElementById('hidden-idcard').appendChild(temp);
-  
-  const qrDiv = document.createElement('div');
-  temp.querySelector(`#temp-qr-${idUser}`).appendChild(qrDiv);
-  new QRCode(qrDiv, { text: idCard, width: 60, height: 60, correctLevel: QRCode.CorrectLevel.H });
-  
-  setTimeout(() => {
-    html2canvas(temp.firstElementChild, { scale: 2 }).then(canvas => {
-      canvas.toBlob(function(blob) {
-        const reader = new FileReader();
-        reader.onloadend = function() {
-          const base64 = reader.result;
-          const fileName = idUser + '_idcard.pdf';
-          
-          const { jsPDF } = window.jspdf;
-          const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [86, 54] });
-          const imgData = canvas.toDataURL('image/png');
-          pdf.addImage(imgData, 'PNG', 0, 0, 86, 54);
-          const pdfBase64 = pdf.output('datauristring');
-          
-          google.script.run.withSuccessHandler(function(res) {
-            document.getElementById('hidden-idcard').innerHTML = '';
-            if (callback) callback();
-          }).withFailureHandler(function(err) {
-            document.getElementById('hidden-idcard').innerHTML = '';
-            if (callback) callback();
-          }).apiUploadGeneric(APP_STATE.token, 'ID_CARD', pdfBase64, fileName, 'application/pdf');
-        };
-        reader.readAsDataURL(blob);
-      });
-    });
-  }, 500);
-}
-
-function downloadIDCard(type) {
-  const el = document.getElementById('id-card-el');
-  if (!el) return;
-  html2canvas(el, { scale: 3 }).then(canvas => {
-    if (type === 'png') {
-      const link = document.createElement('a');
-      link.download = 'idcard_' + PROFIL_DATA.ID_Card_Unik + '.png';
-      link.href = canvas.toDataURL();
-      link.click();
-    } else {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [86, 54] });
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 86, 54);
-      pdf.save('idcard_' + PROFIL_DATA.ID_Card_Unik + '.pdf');
-    }
-  });
-}
-
-// Update Wajah
-function showUpdateWajah() {
-  openModal('modal-wajah');
-}
-
-function startWajahCamera() {
-  const video = document.getElementById('wajah-video');
-
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    if (isRunningInIframe()) {
-      showToast('Kamera diblokir karena halaman dimuat di iframe. Buka aplikasi di tab baru lalu ulangi.', 'error');
-    } else {
-      showToast('Kamera tidak didukung di browser ini', 'error');
-    }
-    return;
+  // Generate QR
+  if(typeof QRCode !== 'undefined' && qrData) {
+    new QRCode($('#id-card-qr'), { text: qrData, width: 60, height: 60 });
   }
-
-  tryGetUserMedia({ video: { facingMode: 'user' } })
-    .then(stream => { video.srcObject = stream; showToast('Kamera aktif', 'success'); })
-    .catch(err => {
-      tryGetUserMedia({ video: true })
-        .then(stream => { video.srcObject = stream; showToast('Kamera aktif (mode fallback)', 'success'); })
-        .catch(err2 => {
-          if (err2.name === 'NotAllowedError' && isRunningInIframe()) {
-            showToast('Kamera diblokir karena halaman dimuat di iframe. Buka di tab baru: ' + window.location.href, 'error');
-          } else {
-            showToast('Kamera error (' + err2.name + '): ' + err2.message, 'error');
-          }
-        });
-    });
 }
 
-function captureUpdateWajah() {
-  const video = document.getElementById('wajah-video');
-  if (!video.srcObject) { showToast('Kamera belum aktif', 'error'); return; }
-  
-  const canvas = document.createElement('canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
-  const fotoWajahBase64 = canvas.toDataURL('image/png');
-  
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    if (res.success) {
-      showToast('Foto wajah berhasil diperbarui', 'success');
-      closeModal('modal-wajah');
-    } else {
-      showToast(res.message, 'error');
-    }
-  }).withFailureHandler(function(err) {
-    showLoading(false);
-    showToast('Error: ' + err.message, 'error');
-  }).apiUpdateFaceDescriptor(APP_STATE.token, fotoWajahBase64);
+function toggleProfilEdit(enable) {
+  profilEditMode = enable;
+  $('#profil-edit-form').classList.toggle('hidden', !enable);
+  if(enable && profilData) {
+    const u = profilData;
+    $('#edit-nama').value = u.Nama_Lengkap || '';
+    $('#edit-tempat').value = u.Tempat_Lahir || '';
+    $('#edit-tanggal-lahir').value = u.Tanggal_Lahir ? new Date(u.Tanggal_Lahir).toISOString().split('T')[0] : '';
+    $('#edit-email').value = u.Email || '';
+    $('#edit-whatsapp').value = u.No_Whatsapp || '';
+    $('#edit-bank').value = u.Nama_Bank || '';
+    $('#edit-rekening').value = u.Atas_Nama_Rekening || '';
+  }
 }
 
-// ===== JS: MANAJEMEN USER =====
-function loadManajemenUser() {
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    if (res.success) {
-      APP_STATE.users = res.users;
-      const grid = document.getElementById('user-grid');
-      grid.innerHTML = res.users.map(u => `
-        <div class="user-card" onclick="showUserDetail('${u.ID_User}')">
-          <div class="user-card-img">
-            <img src="${u.URL_Foto_Profil || ''}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.parentElement.textContent='👤'">
-          </div>
-          <div class="user-card-body">
-            <div class="user-card-name">${u.Nama_Lengkap}</div>
-            <div class="user-card-role">${u.Jabatan_Divisi} • ${u.SPPG}</div>
-            <div class="mt-2">
-              <span class="badge ${u.Status_Aktif ? 'badge-success' : 'badge-danger'}">${u.Status_Aktif ? 'Aktif' : 'Nonaktif'}</span>
-              <span class="badge badge-info">${u.Role}</span>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    }
-  }).apiGetAllUsers(APP_STATE.token);
-}
-
-function showUserDetail(idUser) {
-  const u = APP_STATE.users.find(x => x.ID_User === idUser);
-  if (!u) return;
-  const content = document.getElementById('user-detail-content');
-  const footer = document.getElementById('user-detail-footer');
-  
-  content.innerHTML = `
-    <div class="grid grid-2">
-      <div><strong>ID:</strong> ${u.ID_User}</div>
-      <div><strong>Username:</strong> ${u.Username}</div>
-      <div><strong>Nama:</strong> ${u.Nama_Lengkap}</div>
-      <div><strong>Role:</strong> ${u.Role}</div>
-      <div><strong>Jabatan:</strong> ${u.Jabatan_Divisi}</div>
-      <div><strong>SPPG:</strong> ${u.SPPG}</div>
-      <div><strong>Email:</strong> ${u.Email}</div>
-      <div><strong>WA:</strong> ${u.No_Whatsapp}</div>
-      <div><strong>ID Card:</strong> ${u.ID_Card_Unik}</div>
-      <div><strong>Status:</strong> ${u.Status_Aktif ? 'Aktif' : 'Nonaktif'}</div>
-    </div>
-  `;
-  
-  footer.innerHTML = `
-    <button class="btn btn-outline" onclick="closeModal('modal-user-detail')">Tutup</button>
-    <button class="btn ${u.Status_Aktif ? 'btn-danger' : 'btn-success'}" onclick="toggleUserStatus('${u.ID_User}', ${!u.Status_Aktif})">${u.Status_Aktif ? 'Nonaktifkan' : 'Aktifkan'}</button>
-    <button class="btn btn-primary" onclick="editUserAdmin('${u.ID_User}')">Edit</button>
-  `;
-  openModal('modal-user-detail');
-}
-
-function toggleUserStatus(idUser, newStatus) {
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    closeModal('modal-user-detail');
-    if (res.success) {
-      showToast('Status user diperbarui', 'success');
-      loadManajemenUser();
-    } else {
-      showToast(res.message, 'error');
-    }
-  }).apiUpdateUser(APP_STATE.token, idUser, { Status_Aktif: newStatus });
-}
-
-function editUserAdmin(idUser) {
-  const u = APP_STATE.users.find(x => x.ID_User === idUser);
-  if (!u) return;
-  const role = prompt('Role (ADMIN/AKUNTAN/USER):', u.Role);
-  if (role === null) return;
-  const jabatan = prompt('Jabatan:', u.Jabatan_Divisi);
-  const gaji = prompt('Gaji Harian:', u.Gaji_Harian);
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    closeModal('modal-user-detail');
-    if (res.success) {
-      showToast('User diperbarui', 'success');
-      loadManajemenUser();
-    } else {
-      showToast(res.message, 'error');
-    }
-  }).apiUpdateUser(APP_STATE.token, idUser, {
-    Role: role,
-    Jabatan_Divisi: jabatan,
-    Gaji_Harian: parseFloat(gaji) || 0
-  });
-}
-
-function openRegisterDevice() {
-  const sel = document.getElementById('dev-sppg');
-  sel.innerHTML = APP_STATE.masterSppg.map(s => `<option value="${s}">${s}</option>`).join('');
-  openModal('modal-device');
-}
-
-function submitRegisterDevice() {
-  const data = {
-    usernameDevice: document.getElementById('dev-username').value,
-    password: document.getElementById('dev-password').value,
-    namaDevice: document.getElementById('dev-nama').value,
-    lokasiSppg: document.getElementById('dev-sppg').value
+async function saveProfil() {
+  const updates = {
+    'Nama_Lengkap': $('#edit-nama').value.trim(),
+    'Tempat_Lahir': $('#edit-tempat').value.trim(),
+    'Tanggal_Lahir': $('#edit-tanggal-lahir').value ? new Date($('#edit-tanggal-lahir').value) : '',
+    'Email': $('#edit-email').value.trim(),
+    'No_Whatsapp': $('#edit-whatsapp').value.trim(),
+    'Nama_Bank': $('#edit-bank').value.trim(),
+    'Atas_Nama_Rekening': $('#edit-rekening').value.trim()
   };
-  if (!data.usernameDevice || !data.password || !data.namaDevice) {
-    showToast('Field wajib belum lengkap', 'error'); return;
-  }
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    closeModal('modal-device');
-    if (res.success) {
-      showToast('Perangkat berhasil didaftarkan', 'success');
-    } else {
-      showToast(res.message, 'error');
-    }
-  }).apiRegisterDevice(APP_STATE.token, data);
+  try {
+    await apiCallWithToken('updateProfil', { updates });
+    showAlert('Profil berhasil diperbarui', 'success');
+    toggleProfilEdit(false);
+    initProfil();
+  } catch(e) { showAlert(e); }
 }
 
-// ===== JS: DATA KARYAWAN =====
-function loadDataKaryawan() {
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    if (res.success) {
-      const tbody = document.querySelector('#table-karyawan tbody');
-      tbody.innerHTML = res.data.map(k => `
-        <tr>
-          <td data-label="Nama">${k.Nama_Lengkap}</td>
-          <td data-label="Jabatan">${k.Jabatan_Divisi}</td>
-          <td data-label="JK">${k.Jenis_Kelamin}</td>
-          <td data-label="Email">${k.Email}</td>
-          <td data-label="WA">${k.No_Whatsapp}</td>
-          <td data-label="Mulai">${k.Tanggal_Mulai_Kerja}</td>
-          <td data-label="SPPG">${k.SPPG}</td>
-          <td data-label="Status"><span class="badge ${k.Status_Aktif ? 'badge-success' : 'badge-danger'}">${k.Status_Aktif ? 'Aktif' : 'Nonaktif'}</span></td>
-        </tr>
-      `).join('');
-    }
-  }).apiGetDataKaryawan(APP_STATE.token);
+function showUpdateWajahModal() {
+  $('#modal-update-wajah').classList.add('show');
+  startWajahCapture('update-wajah-video', 'update-wajah-canvas', 'update-wajah-status');
 }
 
-// ===== JS: PAYROLL =====
-function loadPayrollKaryawan() {
-  const mulai = document.getElementById('payroll-mulai').value;
-  const akhir = document.getElementById('payroll-akhir').value;
-  if (!mulai || !akhir) { showToast('Pilih periode', 'error'); return; }
-  
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    if (res.success) {
-      APP_STATE.payrollKaryawan = res.karyawan;
-      document.getElementById('payroll-karyawan-list').classList.remove('hidden');
-      const tbody = document.getElementById('payroll-tbody');
-      tbody.innerHTML = res.karyawan.map((k, idx) => `
-        <tr>
-          <td data-label="Pilih"><input type="checkbox" class="payroll-check" data-idx="${idx}"></td>
-          <td data-label="Nama">${k.Nama_Lengkap}</td>
-          <td data-label="Jabatan">${k.Jabatan_Divisi}</td>
-          <td data-label="Gaji">${formatRupiah(k.Gaji_Harian)}</td>
-          <td data-label="Lembur"><input type="number" class="form-input payroll-lembur" data-idx="${idx}" value="0" style="width:100px;"></td>
-          <td data-label="Bonus"><input type="number" class="form-input payroll-bonus" data-idx="${idx}" value="0" style="width:100px;"></td>
-          <td data-label="Potongan"><input type="number" class="form-input payroll-potongan" data-idx="${idx}" value="0" style="width:100px;"></td>
-          <td data-label="Keterangan"><input type="text" class="form-input payroll-ket" data-idx="${idx}" style="width:120px;"></td>
-        </tr>
-      `).join('');
-    }
-  }).apiGetPayrollKaryawan(APP_STATE.token);
+async function startWajahCapture(videoId, canvasId, statusId) {
+  if(!AppState.modelsLoaded) await loadFaceApiModels();
+  const video = $(`#${videoId}`);
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    AppState.videoStream = stream;
+    video.srcObject = stream;
+    video.play();
+
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts++;
+      const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptor();
+      if(detections) {
+        clearInterval(interval);
+        AppState.currentFaceDescriptor = Array.from(detections.descriptor);
+        const canvas = $(`#${canvasId}`);
+        const dims = faceapi.matchDimensions(canvas, { width: video.videoWidth, height: video.videoHeight });
+        faceapi.draw.drawDetections(canvas, faceapi.resizeResults(detections, dims));
+        stopVideo();
+        $(`#${statusId}`).textContent = 'Wajah berhasil dideteksi!';
+        $(`#${statusId}`).className = 'text-success';
+      }
+      if(attempts > 30) {
+        clearInterval(interval);
+        stopVideo();
+        $(`#${statusId}`).textContent = 'Gagal, coba lagi.';
+        $(`#${statusId}`).className = 'text-danger';
+      }
+    }, 500);
+  } catch(e) { showAlert('Gagal akses kamera: ' + e.message); }
 }
 
-function toggleCheckAll() {
-  const checked = document.getElementById('payroll-check-all').checked;
-  document.querySelectorAll('.payroll-check').forEach(c => c.checked = checked);
+async function saveUpdateWajah() {
+  if(!AppState.currentFaceDescriptor) { showAlert('Wajah belum dideteksi'); return; }
+  try {
+    await apiCallWithToken('updateFaceDescriptor', { faceDescriptor: AppState.currentFaceDescriptor });
+    showAlert('Data wajah berhasil diperbarui', 'success');
+    $('#modal-update-wajah').classList.remove('show');
+    AppState.currentFaceDescriptor = null;
+  } catch(e) { showAlert(e); }
 }
 
-function openPayrollModal() {
-  const selected = [];
-  document.querySelectorAll('.payroll-check:checked').forEach(c => {
-    selected.push(parseInt(c.dataset.idx));
-  });
-  if (selected.length === 0) { showToast('Pilih minimal 1 karyawan', 'error'); return; }
-  
-  openModal('modal-payroll');
-  setTimeout(() => {
-    const canvas = document.getElementById('payroll-ttd');
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    APP_STATE.signaturePad = new SignaturePad(canvas);
-  }, 300);
-  
-  let html = '<strong>Karyawan terpilih:</strong><ul>';
-  selected.forEach(idx => {
-    const k = APP_STATE.payrollKaryawan[idx];
-    html += `<li>${k.Nama_Lengkap} (${k.Jabatan_Divisi})</li>`;
-  });
-  html += '</ul>';
-  document.getElementById('payroll-summary').innerHTML = html;
-}
-
-function clearTtd() {
-  if (APP_STATE.signaturePad) APP_STATE.signaturePad.clear();
-}
-
-function submitPayroll() {
-  if (!APP_STATE.signaturePad || APP_STATE.signaturePad.isEmpty()) {
-    showToast('Tanda tangan wajib diisi', 'error'); return;
-  }
-  
-  const mulai = document.getElementById('payroll-mulai').value;
-  const akhir = document.getElementById('payroll-akhir').value;
-  const ttdData = APP_STATE.signaturePad.toDataURL('image/png');
-  
-  const karyawanList = [];
-  document.querySelectorAll('.payroll-check:checked').forEach(c => {
-    const idx = parseInt(c.dataset.idx);
-    const k = APP_STATE.payrollKaryawan[idx];
-    karyawanList.push({
-      idUser: k.ID_User,
-      namaLengkap: k.Nama_Lengkap,
-      jabatan: k.Jabatan_Divisi,
-      gajiHarian: k.Gaji_Harian,
-      lembur: document.querySelector(`.payroll-lembur[data-idx="${idx}"]`).value || 0,
-      bonus: document.querySelector(`.payroll-bonus[data-idx="${idx}"]`).value || 0,
-      potongan: document.querySelector(`.payroll-potongan[data-idx="${idx}"]`).value || 0,
-      keteranganPotongan: document.querySelector(`.payroll-ket[data-idx="${idx}"]`).value || ''
-    });
-  });
-  
-  const data = { periodeMulai: mulai, periodeAkhir: akhir, ttdBase64: ttdData, karyawanList: karyawanList };
-  
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    if (res.success) {
-      generateSlipPDFs(res.idPayroll, karyawanList, mulai, akhir, 0, function() {
-        showLoading(false);
-        closeModal('modal-payroll');
-        showToast('Payroll berhasil diproses: ' + res.idPayroll, 'success');
-        document.getElementById('payroll-karyawan-list').classList.add('hidden');
-      });
-    } else {
-      showLoading(false);
-      showToast(res.message, 'error');
-    }
-  }).withFailureHandler(function(err) {
-    showLoading(false);
-    showToast('Error: ' + err.message, 'error');
-  }).apiProsesPayroll(APP_STATE.token, data);
-}
-
-function generateSlipPDFs(idPayroll, karyawanList, mulai, akhir, index, callback) {
-  if (index >= karyawanList.length) {
-    if (callback) callback();
-    return;
-  }
-  const k = karyawanList[index];
-  const temp = document.createElement('div');
-  temp.innerHTML = `
-    <div style="width:600px;padding:40px;font-family:sans-serif;">
-      <h2 style="text-align:center;">SLIP GAJI</h2>
-      <p style="text-align:center;">Periode: ${mulai} s/d ${akhir}</p>
-      <hr>
-      <p><strong>Nama:</strong> ${k.namaLengkap}</p>
-      <p><strong>Jabatan:</strong> ${k.jabatan}</p>
-      <p><strong>Gaji Harian:</strong> ${formatRupiah(k.gajiHarian)}</p>
-      <p><strong>Lembur:</strong> ${formatRupiah(k.lembur)}</p>
-      <p><strong>Bonus:</strong> ${formatRupiah(k.bonus)}</p>
-      <p><strong>Potongan:</strong> ${formatRupiah(k.potongan)}</p>
-      <hr>
-      <p><strong>Total:</strong> ${formatRupiah((parseFloat(k.gajiHarian)||0) + (parseFloat(k.lembur)||0) + (parseFloat(k.bonus)||0) - (parseFloat(k.potongan)||0))}</p>
-    </div>
-  `;
-  document.getElementById('hidden-slip').appendChild(temp);
-  
-  html2canvas(temp.firstElementChild, { scale: 2 }).then(canvas => {
+async function downloadIdCard() {
+  if(!profilData) return;
+  try {
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgData = canvas.toDataURL('image/png');
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [86, 54] });
+
+    // Background
+    pdf.setFillColor(255,255,255);
+    pdf.rect(0,0,86,54,'F');
+
+    // Photo
+    if(profilData.URL_Foto_Profil) {
+      try {
+        const img = await loadImage(profilData.URL_Foto_Profil);
+        pdf.addImage(img, 'JPEG', 5, 5, 20, 20);
+      } catch(e) {}
+    }
+
+    // Text
+    pdf.setFontSize(10);
+    pdf.setTextColor(0,0,0);
+    pdf.text(profilData.Nama_Lengkap || '', 28, 12);
+    pdf.setFontSize(8);
+    pdf.text(profilData.Jabatan_Divisi || '', 28, 18);
+    pdf.text(profilData.SPPG || '', 28, 24);
+
+    // QR
+    const qrCanvas = document.createElement('canvas');
+    await new Promise(resolve => {
+      new QRCode(qrCanvas, { text: profilData.ID_Card_Unik || '', width: 60, height: 60, correctLevel: QRCode.CorrectLevel.H });
+      setTimeout(resolve, 500);
+    });
+    const qrDataUrl = qrCanvas.toDataURL('image/png');
+    pdf.addImage(qrDataUrl, 'PNG', 70, 38, 12, 12);
+
     const pdfBase64 = pdf.output('datauristring');
-    const fileName = k.idUser + '_' + idPayroll + '_slip.pdf';
-    
-    const idSlip = 'SLIP-' + k.idUser + '-' + idPayroll;
-    google.script.run.withSuccessHandler(() => {
-      document.getElementById('hidden-slip').innerHTML = '';
-      generateSlipPDFs(idPayroll, karyawanList, mulai, akhir, index + 1, callback);
-    }).withFailureHandler(() => {
-      document.getElementById('hidden-slip').innerHTML = '';
-      generateSlipPDFs(idPayroll, karyawanList, mulai, akhir, index + 1, callback);
-    }).apiUploadSlipPDF(APP_STATE.token, idSlip, pdfBase64, fileName);
+
+    // Upload to Drive
+    const res = await apiCallWithToken('updateIdCard', { pdfBase64 });
+    if(res.url) {
+      pdf.save('ID_Card_' + profilData.ID_Card_Unik + '.pdf');
+      showAlert('ID Card berhasil di-generate dan diupload', 'success');
+    }
+  } catch(e) { showAlert('Gagal generate ID Card: ' + e); }
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
   });
 }
 
-// ===== JS: MY PAYROLL =====
-function loadMyPayroll() {
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    if (res.success) {
-      const tbody = document.querySelector('#table-my-payroll tbody');
-      tbody.innerHTML = res.data.map(p => `
-        <tr>
-          <td data-label="Periode">${p.Periode_Mulai} s/d ${p.Periode_Akhir}</td>
-          <td data-label="Hari">${p.Jumlah_Hari_Kerja}</td>
-          <td data-label="Total">${formatRupiah(p.Total_Gaji_Diterima)}</td>
-          <td data-label="Aksi">
-            ${p.URL_PDF_Slip ? `<a href="${p.URL_PDF_Slip}" target="_blank" class="btn btn-sm btn-primary">Lihat</a>` : '<span class="badge badge-warning">PDF belum tersedia</span>'}
-          </td>
-        </tr>
-      `).join('');
-    }
-  }).apiGetMyPayroll(APP_STATE.token);
+// ==================== MANAJEMEN USER ====================
+async function initManajemenUser() {
+  try {
+    const res = await apiCallWithToken('getAllUsers', {});
+    renderUserGrid(res.users);
+  } catch(e) { showAlert(e); }
 }
 
-// ===== JS: DATA ABSENSI =====
-function loadDataAbsensi() {
-  const filters = {
-    tanggal: document.getElementById('filter-absen-tanggal').value,
-    sppg: document.getElementById('filter-absen-sppg').value,
-    jabatan: document.getElementById('filter-absen-jabatan').value
+function renderUserGrid(users) {
+  const container = $('#user-grid');
+  container.innerHTML = users.map(u => `
+    <div class="user-card" onclick="showUserDetail('${u.ID_User}')">
+      <img src="${u.URL_Foto_Profil || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" class="user-card-img" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'">
+      <div class="user-card-body">
+        <div class="user-card-name">${escapeHtml(u.Nama_Lengkap)}</div>
+        <div class="user-card-role">${escapeHtml(u.Jabatan_Divisi)} • ${escapeHtml(u.SPPG)}</div>
+        <span class="badge ${isActive(u.Status_Aktif)?'badge-green':'badge-red'}">${isActive(u.Status_Aktif)?'Aktif':'Nonaktif'}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+let selectedUserId = null;
+
+async function showUserDetail(idUser) {
+  selectedUserId = idUser;
+  try {
+    const res = await apiCallWithToken('getAllUsers', {});
+    const user = res.users.find(u => u.ID_User === idUser);
+    if(!user) return;
+
+    $('#modal-user-detail .modal-body').innerHTML = `
+      <div class="form-row form-row-2">
+        <div class="form-group"><label class="form-label">Nama Lengkap</label><input class="form-input" id="mu-nama" value="${escapeHtml(user.Nama_Lengkap||'')}"></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="mu-email" value="${escapeHtml(user.Email||'')}"></div>
+        <div class="form-group"><label class="form-label">No. Whatsapp</label><input class="form-input" id="mu-whatsapp" value="${escapeHtml(user.No_Whatsapp||'')}"></div>
+        <div class="form-group"><label class="form-label">Jabatan/Divisi</label><input class="form-input" id="mu-jabatan" value="${escapeHtml(user.Jabatan_Divisi||'')}"></div>
+        <div class="form-group"><label class="form-label">SPPG</label><input class="form-input" id="mu-sppg" value="${escapeHtml(user.SPPG||'')}"></div>
+        <div class="form-group"><label class="form-label">Gaji Harian</label><input class="form-input" id="mu-gaji" type="number" value="${user.Gaji_Harian||0}"></div>
+        <div class="form-group"><label class="form-label">Role</label>
+          <select class="form-select" id="mu-role">
+            <option value="USER" ${user.Role==='USER'?'selected':''}>USER</option>
+            <option value="ADMIN" ${user.Role==='ADMIN'?'selected':''}>ADMIN</option>
+            <option value="AKUNTAN" ${user.Role==='AKUNTAN'?'selected':''}>AKUNTAN</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Status Aktif</label>
+          <select class="form-select" id="mu-status">
+            <option value="TRUE" ${isActive(user.Status_Aktif)?'selected':''}>Aktif</option>
+            <option value="FALSE" ${!isActive(user.Status_Aktif)?'selected':''}>Nonaktif</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Password Hash</label><input class="form-input" value="${escapeHtml((user.Password_Hash||'').substring(0,20))}..." disabled></div>
+        <div class="form-group"><label class="form-label">ID Card</label><input class="form-input" value="${escapeHtml(user.ID_Card_Unik||'')}" disabled></div>
+      </div>
+    `;
+    $('#modal-user-detail').classList.add('show');
+  } catch(e) { showAlert(e); }
+}
+
+async function saveUserDetail() {
+  if(!selectedUserId) return;
+  const updates = {
+    'Nama_Lengkap': $('#mu-nama').value,
+    'Email': $('#mu-email').value,
+    'No_Whatsapp': $('#mu-whatsapp').value,
+    'Jabatan_Divisi': $('#mu-jabatan').value,
+    'SPPG': $('#mu-sppg').value,
+    'Gaji_Harian': parseFloat($('#mu-gaji').value) || 0,
+    'Role': $('#mu-role').value,
+    'Status_Aktif': $('#mu-status').value === 'TRUE'
   };
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    if (res.success) {
-      const tbody = document.querySelector('#table-absensi tbody');
-      tbody.innerHTML = res.data.map(a => `
-        <tr>
-          <td data-label="Nama">${a.Nama_Lengkap}</td>
-          <td data-label="Jabatan">${a.Jabatan_Divisi}</td>
-          <td data-label="SPPG">${a.SPPG}</td>
-          <td data-label="Tanggal">${a.Tanggal}</td>
-          <td data-label="Jenis"><span class="badge ${a.Jenis_Absen==='DATANG'?'badge-info':'badge-warning'}">${a.Jenis_Absen}</span></td>
-          <td data-label="Waktu">${a.Waktu_Timestamp}</td>
-          <td data-label="Status"><span class="badge ${a.Status_Validasi==='VALID'?'badge-success':'badge-danger'}">${a.Status_Validasi}</span></td>
-          <td data-label="Skor">${a.Skor_Kecocokan_Wajah ? a.Skor_Kecocokan_Wajah + '%' : '-'}</td>
-        </tr>
-      `).join('');
-    }
-  }).apiGetDataAbsensi(APP_STATE.token, filters);
+  try {
+    await apiCallWithToken('updateProfilByAdmin', { idUser: selectedUserId, updates });
+    showAlert('User berhasil diperbarui', 'success');
+    $('#modal-user-detail').classList.remove('show');
+    initManajemenUser();
+  } catch(e) { showAlert(e); }
 }
 
-// ===== JS: AUDIT LOG =====
-function loadAuditLog() {
-  const filters = {
-    jenisAktivitas: document.getElementById('filter-audit-jenis').value,
-    tanggal: document.getElementById('filter-audit-tanggal').value
+function showRegisterDeviceModal() {
+  $('#modal-register-device').classList.add('show');
+}
+
+async function saveRegisterDevice() {
+  const deviceData = {
+    username: $('#dev-username').value.trim(),
+    password: $('#dev-password').value,
+    namaDevice: $('#dev-nama').value.trim(),
+    lokasiSppg: $('#dev-sppg').value.trim()
   };
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    if (res.success) {
-      const tbody = document.querySelector('#table-audit tbody');
-      tbody.innerHTML = res.data.map(a => `
-        <tr>
-          <td data-label="Waktu">${a.Waktu}</td>
-          <td data-label="Pelaku">${a.ID_User_Pelaku}</td>
-          <td data-label="Jenis"><span class="badge badge-info">${a.Jenis_Aktivitas}</span></td>
-          <td data-label="Detail" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${a.Detail}</td>
-          <td data-label="IP">${a.IP_Address}</td>
-        </tr>
-      `).join('');
-    }
-  }).apiGetAuditLog(APP_STATE.token, filters);
+  if(!deviceData.username || !deviceData.password || !deviceData.namaDevice) { showAlert('Semua field wajib diisi'); return; }
+  try {
+    const res = await apiCallWithToken('registerDevice', { deviceData });
+    showAlert('Device berhasil didaftarkan. Password: ' + res.password, 'success');
+    $('#modal-register-device').classList.remove('show');
+  } catch(e) { showAlert(e); }
 }
 
-// ===== JS: DEVICE ABSEN =====
-let html5QrCode = null;
-let deviceVideoStream = null;
+// ==================== DATA KARYAWAN ====================
+async function initDataKaryawan() {
+  try {
+    const res = await apiCallWithToken('getDataKaryawan', {});
+    const tbody = $('#table-karyawan tbody');
+    tbody.innerHTML = res.karyawan.map(k => `
+      <tr>
+        <td>${escapeHtml(k.namaLengkap)}</td>
+        <td>${escapeHtml(k.jabatanDivisi)}</td>
+        <td>${escapeHtml(k.jenisKelamin)}</td>
+        <td>${escapeHtml(k.email)}</td>
+        <td>${escapeHtml(k.noWhatsapp)}</td>
+        <td>${formatDate(k.tanggalMulaiKerja)}</td>
+        <td>${escapeHtml(k.sppg)}</td>
+        <td>${formatRupiah(k.gajiHarian)}</td>
+      </tr>
+    `).join('');
+  } catch(e) { showAlert(e); }
+}
 
-function deviceStartAbsen() {
-  document.getElementById('device-step-1').classList.add('hidden');
-  document.getElementById('device-step-2').classList.remove('hidden');
-  
-  html5QrCode = new Html5Qrcode("qr-reader");
-  html5QrCode.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: { width: 250, height: 250 } },
-    (decodedText) => {
-      deviceHandleQR(decodedText);
-    },
-    (errorMessage) => {}
-  ).catch(err => {
-    showToast('QR Scanner error: ' + err, 'error');
-    deviceReset();
+// ==================== PAYROLL ====================
+let payrollKaryawan = [];
+let selectedPayrollKaryawan = [];
+
+async function initPayroll() {
+  try {
+    const res = await apiCallWithToken('getKaryawanForPayroll', {});
+    payrollKaryawan = res.karyawan;
+    renderPayrollTable();
+  } catch(e) { showAlert(e); }
+}
+
+function renderPayrollTable() {
+  const tbody = $('#table-payroll tbody');
+  tbody.innerHTML = payrollKaryawan.map(k => `
+    <tr>
+      <td><input type="checkbox" class="payroll-check" data-id="${k.idUser}" onchange="togglePayrollSelect('${k.idUser}')"></td>
+      <td>${escapeHtml(k.namaLengkap)}</td>
+      <td>${escapeHtml(k.jabatanDivisi)}</td>
+      <td>${escapeHtml(k.sppg)}</td>
+      <td>${formatRupiah(k.gajiHarian)}</td>
+    </tr>
+  `).join('');
+}
+
+function togglePayrollSelect(idUser) {
+  const idx = selectedPayrollKaryawan.indexOf(idUser);
+  if(idx >= 0) selectedPayrollKaryawan.splice(idx, 1);
+  else selectedPayrollKaryawan.push(idUser);
+}
+
+function showPayrollModal() {
+  if(selectedPayrollKaryawan.length === 0) { showAlert('Pilih minimal 1 karyawan'); return; }
+  $('#modal-payroll').classList.add('show');
+
+  // Init signature pad
+  setTimeout(() => {
+    const canvas = document.getElementById('signature-pad');
+    if(canvas && typeof SignaturePad !== 'undefined') {
+      AppState.signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgb(250,250,250)' });
+    }
+  }, 300);
+
+  // Render inputs per karyawan
+  const container = $('#payroll-karyawan-inputs');
+  container.innerHTML = selectedPayrollKaryawan.map(id => {
+    const k = payrollKaryawan.find(x => x.idUser === id);
+    return `
+      <div class="card" style="margin-bottom:0.75rem; padding:1rem;">
+        <div style="font-weight:600; margin-bottom:0.5rem;">${escapeHtml(k.namaLengkap)} (${escapeHtml(k.jabatanDivisi)})</div>
+        <div class="form-row form-row-3">
+          <div class="form-group"><label class="form-label">Bonus (Rp)</label><input class="form-input payroll-bonus" data-id="${id}" type="number" value="0"></div>
+          <div class="form-group"><label class="form-label">Lembur (Rp)</label><input class="form-input payroll-lembur" data-id="${id}" type="number" value="0"></div>
+          <div class="form-group"><label class="form-label">Potongan (Rp)</label><input class="form-input payroll-potongan" data-id="${id}" type="number" value="0"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Keterangan Potongan</label><input class="form-input payroll-keterangan" data-id="${id}" placeholder="Opsional"></div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function acceptPayroll() {
+  const periodeMulai = $('#payroll-mulai').value;
+  const periodeAkhir = $('#payroll-akhir').value;
+  if(!periodeMulai || !periodeAkhir) { showAlert('Periode wajib diisi'); return; }
+
+  const karyawanData = selectedPayrollKaryawan.map(id => {
+    const k = payrollKaryawan.find(x => x.idUser === id);
+    return {
+      idUser: id,
+      gajiHarian: k.gajiHarian,
+      bonus: $(`.payroll-bonus[data-id="${id}"]`).value || 0,
+      lembur: $(`.payroll-lembur[data-id="${id}"]`).value || 0,
+      potongan: $(`.payroll-potongan[data-id="${id}"]`).value || 0,
+      keteranganPotongan: $(`.payroll-keterangan[data-id="${id}"]`).value || ''
+    };
   });
-}
 
-function deviceHandleQR(idCard) {
-  if (html5QrCode) {
-    html5QrCode.stop().then(() => { html5QrCode = null; });
-  }
-  
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    if (res.success) {
-      APP_STATE.deviceCurrentUser = res.idUser;
-      document.getElementById('device-step-2').classList.add('hidden');
-      document.getElementById('device-step-3').classList.remove('hidden');
-      document.getElementById('device-user-info').textContent = res.nama + ' • ' + res.jabatan;
-      deviceStartFaceScan();
-    } else {
-      showToast(res.message, 'error');
-      deviceReset();
-    }
-  }).withFailureHandler(function(err) {
-    showLoading(false);
-    showToast('Error: ' + err.message, 'error');
-    deviceReset();
-  }).apiDeviceLookupByQR(APP_STATE.token, idCard);
-}
-
-function deviceStartFaceScan() {
-  const video = document.getElementById('device-video');
-  deviceSmileStreak = 0;
-  deviceSmileLoopActive = true;
-
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    if (isRunningInIframe()) {
-      showToast('Kamera diblokir karena halaman dimuat di iframe. Buka aplikasi di tab baru.', 'error');
-    } else {
-      showToast('Kamera tidak didukung di browser ini', 'error');
-    }
-    deviceReset();
-    return;
+  let tandaTanganBase64 = '';
+  if(AppState.signaturePad && !AppState.signaturePad.isEmpty()) {
+    tandaTanganBase64 = AppState.signaturePad.toDataURL('image/png');
   }
 
-  tryGetUserMedia({ video: { facingMode: 'user' } })
-    .then(stream => {
-      deviceVideoStream = stream;
-      video.srcObject = stream;
-      video.onloadedmetadata = () => deviceRunSmileLoop();
-    })
-    .catch(err => {
-      tryGetUserMedia({ video: true })
-        .then(stream => {
-          deviceVideoStream = stream;
-          video.srcObject = stream;
-          video.onloadedmetadata = () => deviceRunSmileLoop();
-        })
-        .catch(err2 => {
-          if (err2.name === 'NotAllowedError' && isRunningInIframe()) {
-            showToast('Kamera diblokir karena halaman dimuat di iframe. Buka di tab baru.', 'error');
-          } else {
-            showToast('Kamera error (' + err2.name + '): ' + err2.message, 'error');
-          }
-          deviceReset();
-        });
+  try {
+    const res = await apiCallWithToken('prosesPayroll', {
+      periodeMulai, periodeAkhir, karyawanData, tandaTanganBase64
     });
+    showAlert(res.message, 'success');
+    $('#modal-payroll').classList.remove('show');
+    selectedPayrollKaryawan = [];
+    initPayroll();
+  } catch(e) { showAlert(e); }
 }
 
-const SMILE_THRESHOLD = 0.7;
-const SMILE_HOLD_FRAMES = 3;
-let deviceSmileStreak = 0;
-let deviceSmileLoopActive = false;
-
-function deviceRunSmileLoop() {
-  const video = document.getElementById('device-video');
-  const statusEl = document.getElementById('device-face-status');
-  const barEl = document.getElementById('device-smile-bar');
-  
-  if (!APP_STATE.deviceCurrentUser || !deviceSmileLoopActive) return;
-  
-  faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-    .withFaceExpressions()
-    .then(detection => {
-      if (!deviceSmileLoopActive || !APP_STATE.deviceCurrentUser) return;
-      
-      if (!detection) {
-        deviceSmileStreak = 0;
-        if (barEl) barEl.style.width = '0%';
-        statusEl.textContent = 'Posisikan wajah di tengah frame...';
-        statusEl.style.color = 'var(--secondary)';
-        setTimeout(deviceRunSmileLoop, 400);
-        return;
-      }
-      
-      const skorSenyum = detection.expressions.happy || 0;
-      if (barEl) barEl.style.width = Math.min(100, skorSenyum * 100).toFixed(0) + '%';
-      
-      if (skorSenyum >= SMILE_THRESHOLD) {
-        deviceSmileStreak++;
-        statusEl.textContent = '😊 Senyum terdeteksi (' + (skorSenyum * 100).toFixed(0) + '%) — tahan sebentar...';
-        statusEl.style.color = 'var(--success)';
-        
-        if (deviceSmileStreak >= SMILE_HOLD_FRAMES) {
-          deviceSubmitAbsen(skorSenyum * 100);
-          return;
-        }
-        setTimeout(deviceRunSmileLoop, 250);
-      } else {
-        deviceSmileStreak = 0;
-        statusEl.textContent = 'Wajah terdeteksi. Coba senyum lebih lebar 🙂';
-        statusEl.style.color = 'var(--warning)';
-        setTimeout(deviceRunSmileLoop, 400);
-      }
-    })
-    .catch(() => {
-      setTimeout(deviceRunSmileLoop, 500);
-    });
+// ==================== MY PAYROLL ====================
+async function initMyPayroll() {
+  try {
+    const res = await apiCallWithToken('getMyPayroll', {});
+    const tbody = $('#table-my-payroll tbody');
+    tbody.innerHTML = res.payroll.map(p => `
+      <tr>
+        <td>${formatDate(p.periodeMulai)} - ${formatDate(p.periodeAkhir)}</td>
+        <td>${p.jumlahHariKerja}</td>
+        <td>${formatRupiah(p.totalGaji)}</td>
+        <td class="actions">
+          ${p.urlPdf ? `<a href="${p.urlPdf}" target="_blank" class="btn btn-sm btn-outline">Lihat PDF</a>` : '<span class="text-muted">-</span>'}
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) { showAlert(e); }
 }
 
-function deviceSubmitAbsen(skorSenyum) {
-  deviceSmileLoopActive = false;
-  if (deviceVideoStream) {
-    deviceVideoStream.getTracks().forEach(t => t.stop());
-    deviceVideoStream = null;
+// ==================== ABSENSI ====================
+async function initAbsensi() {
+  try {
+    const res = await apiCallWithToken('getAbsensiData', {});
+    renderAbsensiTable(res.absensi);
+  } catch(e) { showAlert(e); }
+}
+
+function renderAbsensiTable(data) {
+  const tbody = $('#table-absensi tbody');
+  tbody.innerHTML = data.map(a => `
+    <tr>
+      <td>${formatDate(a.Tanggal)}</td>
+      <td>${escapeHtml(a.namaLengkap)}</td>
+      <td>${escapeHtml(a.jabatanDivisi)}</td>
+      <td>${escapeHtml(a.sppg)}</td>
+      <td>${a.Jenis_Absen}</td>
+      <td>${a.Waktu_Timestamp ? new Date(a.Waktu_Timestamp).toLocaleTimeString('id-ID') : '-'}</td>
+      <td>${a.Skor_Kecocokan_Wajah ? (parseFloat(a.Skor_Kecocokan_Wajah)*100).toFixed(1) + '%' : '-'}</td>
+      <td><span class="badge ${a.Status_Validasi==='VALID'?'badge-green':'badge-red'}">${a.Status_Validasi}</span></td>
+    </tr>
+  `).join('');
+}
+
+async function filterAbsensi() {
+  const filters = {
+    tanggal: $('#filter-abs-tanggal').value,
+    sppg: $('#filter-abs-sppg').value,
+    jabatan: $('#filter-abs-jabatan').value
+  };
+  try {
+    const res = await apiCallWithToken('getAbsensiData', { filters });
+    renderAbsensiTable(res.absensi);
+  } catch(e) { showAlert(e); }
+}
+
+// ==================== DEVICE ABSEN ====================
+let deviceStep = 'idle'; // idle, qr, face, result
+let deviceIdUser = null;
+let deviceFaceDescriptor = null;
+
+function initDeviceAbsen() {
+  resetDeviceFlow();
+}
+
+function resetDeviceFlow() {
+  deviceStep = 'idle';
+  deviceIdUser = null;
+  deviceFaceDescriptor = null;
+  stopVideo();
+  $('#device-step-idle').classList.remove('hidden');
+  $('#device-step-qr').classList.add('hidden');
+  $('#device-step-face').classList.add('hidden');
+  $('#device-step-result').classList.add('hidden');
+}
+
+async function startDeviceFlow() {
+  deviceStep = 'qr';
+  $('#device-step-idle').classList.add('hidden');
+  $('#device-step-qr').classList.remove('hidden');
+
+  // Start QR scanner
+  try {
+    const html5QrCode = new Html5Qrcode('device-qr-video');
+    AppState.qrScanner = html5QrCode;
+    await html5QrCode.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      (decodedText) => {
+        html5QrCode.stop();
+        handleQrScanned(decodedText);
+      },
+      (err) => {}
+    );
+  } catch(e) {
+    showAlert('Gagal memulai QR scanner: ' + e.message);
+    resetDeviceFlow();
   }
-  
-  showLoading(true);
-  google.script.run.withSuccessHandler(function(res) {
-    showLoading(false);
-    document.getElementById('device-step-3').classList.add('hidden');
-    document.getElementById('device-step-4').classList.remove('hidden');
-    
-    if (res.success && res.jenisAbsen) {
-      document.getElementById('device-result-icon').textContent = '✅';
-      document.getElementById('device-result-title').textContent = 'Absen ' + res.jenisAbsen + ' Berhasil';
-      document.getElementById('device-result-msg').textContent = res.message + ' • Skor Senyum: ' + skorSenyum.toFixed(1) + '%';
-    } else {
-      document.getElementById('device-result-icon').textContent = '⚠️';
-      document.getElementById('device-result-title').textContent = 'Gagal';
-      document.getElementById('device-result-msg').textContent = res.message;
+}
+
+async function handleQrScanned(idCardUnik) {
+  try {
+    const res = await apiCall('lookupUserByIdCard', { idCardUnik });
+    if(!res.found) {
+      showDeviceResult(false, 'ID Card tidak valid');
+      return;
     }
-    
-    setTimeout(deviceReset, 4000);
-  }).withFailureHandler(function(err) {
-    showLoading(false);
-    document.getElementById('device-step-3').classList.add('hidden');
-    document.getElementById('device-step-4').classList.remove('hidden');
-    document.getElementById('device-result-icon').textContent = '❌';
-    document.getElementById('device-result-title').textContent = 'Error';
-    document.getElementById('device-result-msg').textContent = err.message;
-    setTimeout(deviceReset, 4000);
-  }).apiDeviceAbsen(APP_STATE.token, APP_STATE.deviceCurrentUser, 'AUTO', skorSenyum.toFixed(2), 'VALID');
+    deviceIdUser = res.user.idUser;
+    deviceFaceDescriptor = res.user.faceDescriptor;
+    $('#device-step-qr').classList.add('hidden');
+    $('#device-step-face').classList.remove('hidden');
+    startFaceScan();
+  } catch(e) {
+    showDeviceResult(false, 'Error: ' + e);
+  }
 }
 
-function deviceReset() {
-  if (html5QrCode) { html5QrCode.stop(); html5QrCode = null; }
-  if (deviceVideoStream) { deviceVideoStream.getTracks().forEach(t => t.stop()); deviceVideoStream = null; }
-  deviceSmileLoopActive = false;
-  deviceSmileStreak = 0;
-  APP_STATE.deviceCurrentUser = null;
-  
-  document.getElementById('device-step-1').classList.remove('hidden');
-  document.getElementById('device-step-2').classList.add('hidden');
-  document.getElementById('device-step-3').classList.add('hidden');
-  document.getElementById('device-step-4').classList.add('hidden');
-  document.getElementById('device-face-status').textContent = '';
-  const barEl = document.getElementById('device-smile-bar');
-  if (barEl) barEl.style.width = '0%';
-}
+async function startFaceScan() {
+  if(!AppState.modelsLoaded) await loadFaceApiModels();
+  const video = $('#device-face-video');
 
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    AppState.videoStream = stream;
+    video.srcObject = stream;
+    video.play();
 
-// ===== INIT =====
-window.onload = function() {
-  showLoading(true);
-  Promise.all([
-    faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'),
-    faceapi.nets.faceExpressionNet.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights')
-  ]).then(() => {
-    showLoading(false);
-    loadMasterData();
-    const savedToken = localStorage.getItem('absensi_token');
-    if (savedToken) {
-      APP_STATE.token = savedToken;
-      google.script.run.withSuccessHandler(function(res) {
-        if (res.valid) {
-          APP_STATE.role = res.role;
-          APP_STATE.idUser = res.idUser;
-          APP_STATE.nama = res.nama;
-          if (res.role === 'DEVICE') {
-            APP_STATE.deviceId = res.idDevice;
-            APP_STATE.deviceLokasi = res.lokasi;
-            document.getElementById('section-login').classList.add('hidden');
-            document.getElementById('section-device').classList.remove('hidden');
-            document.getElementById('device-lokasi').textContent = res.lokasi;
-          } else {
-            document.getElementById('section-login').classList.add('hidden');
-            document.getElementById('section-app').classList.remove('hidden');
-            document.getElementById('user-info').textContent = res.nama;
-            document.getElementById('user-role').textContent = res.role;
-            renderNav();
-            showPage('dashboard');
-            startSessionPolling();
-          }
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts++;
+      const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptor();
+      if(detections && deviceFaceDescriptor) {
+        const currentDesc = detections.descriptor;
+        const refDesc = new Float32Array(deviceFaceDescriptor);
+        const distance = faceapi.euclideanDistance(currentDesc, refDesc);
+        const skor = (1 - distance) * 100;
+
+        if(skor > 70) {
+          clearInterval(interval);
+          stopVideo();
+          await recordAbsensi(deviceIdUser, skor, 'VALID');
         } else {
-          localStorage.removeItem('absensi_token');
+          // Allow retry, show score
+          $('#device-face-status').textContent = `Skor: ${skor.toFixed(1)}% - Wajah tidak cocok, tetap di posisi...`;
         }
-      }).apiCheckSession(savedToken);
-    }
-  }).catch(err => {
-    showLoading(false);
-    showToast('Gagal memuat model face-api: ' + err.message, 'error');
-  });
-};
-</script>
+      }
+      if(attempts > 60) { // ~30 seconds
+        clearInterval(interval);
+        stopVideo();
+        await recordAbsensi(deviceIdUser, 0, 'GAGAL');
+      }
+    }, 500);
+  } catch(e) {
+    showDeviceResult(false, 'Gagal akses kamera: ' + e.message);
+  }
+}
 
+async function recordAbsensi(idUser, skor, status) {
+  try {
+    const res = await apiCallWithToken('recordAbsensi', { idUser, skorKecocokan: skor / 100, statusValidasi: status });
+    if(res.success) {
+      showDeviceResult(true, `${res.nama} - ${res.message} (${res.waktu})`);
+    } else {
+      showDeviceResult(false, res.message);
+    }
+  } catch(e) {
+    showDeviceResult(false, 'Error: ' + e);
+  }
+}
+
+function showDeviceResult(success, message) {
+  $('#device-step-face').classList.add('hidden');
+  $('#device-step-result').classList.remove('hidden');
+  $('#device-result-icon').textContent = success ? '✅' : '❌';
+  $('#device-result-text').textContent = message;
+  $('#device-result-text').className = success ? 'text-success' : 'text-danger';
+
+  // Auto reset after 5 seconds
+  setTimeout(() => {
+    resetDeviceFlow();
+  }, 5000);
+}
+
+// ==================== AUDIT LOG ====================
+async function initAuditLog() {
+  try {
+    const res = await apiCallWithToken('getAuditLog', {});
+    renderAuditLog(res.logs);
+  } catch(e) { showAlert(e); }
+}
+
+function renderAuditLog(logs) {
+  const tbody = $('#table-audit tbody');
+  tbody.innerHTML = logs.map(l => `
+    <tr>
+      <td>${formatDateTime(l.Waktu)}</td>
+      <td>${escapeHtml(l.ID_User_Pelaku)}</td>
+      <td><span class="badge badge-blue">${escapeHtml(l.Jenis_Aktivitas)}</span></td>
+      <td>${escapeHtml(l.Detail)}</td>
+    </tr>
+  `).join('');
+}
+
+async function filterAuditLog() {
+  const filters = {
+    jenisAktivitas: $('#filter-audit-jenis').value,
+    tanggal: $('#filter-audit-tanggal').value,
+    pelaku: $('#filter-audit-pelaku').value
+  };
+  try {
+    const res = await apiCallWithToken('getAuditLog', { filters });
+    renderAuditLog(res.logs);
+  } catch(e) { showAlert(e); }
+}
+
+// ==================== GLOBAL EVENTS (delegated) ====================
+document.addEventListener('click', e => {
+  if(e.target.matches('#btn-save-user-detail')) saveUserDetail();
+  if(e.target.matches('#btn-filter-absensi')) filterAbsensi();
+  if(e.target.matches('#btn-filter-audit')) filterAuditLog();
+});
+</script>
 </body>
 </html>
