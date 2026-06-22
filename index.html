@@ -30,7 +30,7 @@
   html, body { height: 100%; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
 
   /* Layout */
-  #app { display: flex; min-height: 100vh; }
+  #app, #app-layout { display: flex; min-height: 100vh; }
   #sidebar {
     width: var(--sidebar-width); background: #0f172a; color: white;
     position: fixed; top: 0; left: 0; height: 100vh; z-index: 1000;
@@ -228,7 +228,7 @@
 
   /* Responsive sidebar desktop */
   @media (min-width: 1024px) {
-    #app { flex-direction: row; align-items: flex-start; }
+    #app, #app-layout { flex-direction: row; align-items: flex-start; }
 
     #sidebar {
       position: sticky !important;
