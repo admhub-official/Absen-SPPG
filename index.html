@@ -3753,7 +3753,7 @@ async function restartAbsenQr(cameraId, cameras) {
 
 async function handleAbsenQrScanned(idCardUnik, cameras) {
   try {
-    const res = await apiCallWithToken('lookupUserByIdCard', { idCardUnik });
+    const res = await apiCallWithToken('lookupUserByIdCardSelf', { idCardUnik });
     if(!res.found) { showAbsenResult(false, 'ID Card tidak valid'); return; }
     absenIdUser = res.user.idUser; absenFaceDescriptor = res.user.faceDescriptor;
     $('#absen-step-qr').classList.add('hidden');
@@ -3776,7 +3776,7 @@ async function startAbsenFaceScan() {
         const skor = (1 - faceapi.euclideanDistance(det.descriptor, new Float32Array(absenFaceDescriptor))) * 100;
         if(skor > FACE_MATCH_THRESHOLD) {
           clearInterval(interval); stopVideo();
-          const res2 = await apiCallWithToken('recordAbsensi', { idUser: absenIdUser, skorKecocokan: skor/100, statusValidasi: 'VALID' });
+          const res2 = await apiCallWithToken('recordAbsensiSelf', { idUser: absenIdUser, skorKecocokan: skor/100, statusValidasi: 'VALID' });
           showAbsenResult(true, `${res2.nama} - ${res2.message} (${res2.waktu})`);
         } else { $('#absen-face-status').textContent = `Skor: ${skor.toFixed(1)}% - Wajah tidak cocok, coba lagi...`; }
       }
