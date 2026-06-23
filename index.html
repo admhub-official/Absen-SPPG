@@ -3090,16 +3090,15 @@ function isActive(val) { return val === true || val === 'TRUE' || val === '1' ||
 
 // Mengubah URL file Drive (format /file/d/{id}/view) jadi URL embed preview
 // yang bisa dimasukkan ke <iframe> tanpa memicu halaman download paksa.
-function getDrivePreviewUrl(driveUrl) {
+function getDriveFileId(driveUrl) {
   if (!driveUrl) return '';
   const match = driveUrl.match(/[-\w]{25,}/);
-  if (!match) return '';
-  return 'https://drive.google.com/file/d/' + match[0] + '/preview';
+  return match ? match[0] : '';
 }
 
 function renderIdCardPreview(u) {
   const container = $('#id-card-preview-area');
-  if(!container) return;
+  if (!container) return;
   const pdfUrl = u.URL_ID_Card_PDF || '';
 
   if (!pdfUrl) {
@@ -3107,19 +3106,35 @@ function renderIdCardPreview(u) {
       <div class="empty-state" style="padding:2rem 1rem;">
         <div class="empty-state-icon">${ICONS.image}</div>
         <div style="font-weight:600; margin-bottom:0.5rem;">ID Card belum dibuat</div>
-        <div class="text-muted" style="font-size:0.875rem;">Klik tombol "Generate ID Card" di bawah untuk membuat ID Card depan &amp; belakang dari template.</div>
+        <div class="text-muted" style="font-size:0.875rem;">Klik "Generate ID Card" untuk membuat ID Card dari template.</div>
       </div>
     `;
     return;
   }
 
-  const previewUrl = getDrivePreviewUrl(pdfUrl);
+  const fileId = getDriveFileId(pdfUrl);
+  // Google Drive memblokir iframe di GitHub Pages (CSP frame-ancestors).
+  // Gunakan thumbnail image sebagai preview — tidak kena blokir CSP.
+  const thumbUrl = fileId
+    ? 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w800'
+    : '';
+
   container.innerHTML = `
-    <div style="border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; background:#f8fafc;">
-      <iframe src="${previewUrl}" style="width:100%; height:480px; border:none; display:block;" allow="autoplay"></iframe>
-    </div>
-    <div class="text-muted" style="font-size:0.75rem; margin-top:0.5rem; text-align:center;">
-      ID Card 2 sisi (depan &amp; belakang) — hasil generate dari template resmi
+    <div style="border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; background:#f8fafc; text-align:center; padding:1rem;">
+      ${thumbUrl ? `
+        <img src="${thumbUrl}" alt="Preview ID Card"
+          style="max-width:100%; border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:0.75rem; cursor:pointer;"
+          onclick="window.open('${escapeHtml(pdfUrl)}','_blank')"
+          onerror="this.style.display='none'; document.getElementById('idcard-no-preview').style.display='block'">
+        <div id="idcard-no-preview" style="display:none; color:var(--text-muted); font-size:0.875rem; padding:1rem;">
+          Preview tidak tersedia — klik Download untuk melihat.
+        </div>
+      ` : `
+        <div style="color:var(--text-muted); font-size:0.875rem; padding:2rem;">Preview tidak tersedia</div>
+      `}
+      <div class="text-muted" style="font-size:0.75rem; margin-top:0.25rem;">
+        ID Card 2 sisi — klik gambar atau tombol Download untuk membuka
+      </div>
     </div>
   `;
 }
