@@ -1745,6 +1745,79 @@
       #content-area { padding-bottom: max(1.25rem, env(safe-area-inset-bottom)); }
     }
 
+    /* ==================== MOBILE BOTTOM BAR ==================== */
+    #mobile-bottom-bar {
+      display: none;
+    }
+
+    @media (max-width: 1023px) {
+      #mobile-bottom-bar {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--border);
+        align-items: center;
+        justify-content: center;
+        z-index: 998;
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+
+      .bottom-bar-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+        padding: 0.5rem 1.5rem;
+        border: none;
+        background: none;
+        cursor: pointer;
+        border-radius: var(--radius-lg);
+        transition: var(--transition);
+        color: var(--text-secondary);
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        min-width: 72px;
+      }
+
+      .bottom-bar-btn svg {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2;
+        transition: var(--transition);
+      }
+
+      .bottom-bar-btn.active {
+        color: var(--primary);
+      }
+
+      .bottom-bar-btn.active svg {
+        stroke: var(--primary);
+      }
+
+      .bottom-bar-btn:active {
+        transform: scale(0.92);
+        background: var(--primary-light);
+        color: var(--primary);
+      }
+
+      /* Beri ruang bawah agar konten tidak tertutup bottom bar */
+      #content-area {
+        padding-bottom: calc(64px + max(1.25rem, env(safe-area-inset-bottom, 0px)));
+      }
+
+      .device-ui {
+        padding-bottom: calc(64px + max(2rem, env(safe-area-inset-bottom, 0px)));
+      }
+    }
+
     /* ==================== SESSION LOADING SCREEN ==================== */
     #session-loading {
       position: fixed;
@@ -1964,6 +2037,14 @@
       <div class="auth-footer"><a id="btn-to-login">← Sudah punya akun? Login</a></div>
     </div>
   </div>
+</div>
+
+<!-- ==================== MOBILE BOTTOM BAR ==================== -->
+<div id="mobile-bottom-bar">
+  <button class="bottom-bar-btn" id="bottom-bar-absen-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    Absen
+  </button>
 </div>
 
 <!-- ==================== APP LAYOUT ==================== -->
@@ -2978,6 +3059,19 @@ function navigateTo(page) {
   $$('.nav-item').forEach(n => n.classList.remove('active'));
   const navItem = $(`.nav-item[data-page="${page}"]`);
   if(navItem) navItem.classList.add('active');
+
+  // Sync active state bottom bar
+  const bottomBtn = document.getElementById('bottom-bar-absen-btn');
+  if(bottomBtn) {
+    bottomBtn.classList.toggle('active', page === 'absen-manual');
+  }
+
+  // Sembunyikan bottom bar di halaman login/register/device
+  const bottomBar = document.getElementById('mobile-bottom-bar');
+  if(bottomBar) {
+    const hideOnPages = ['login', 'register', 'device-absen'];
+    bottomBar.style.display = hideOnPages.includes(page) ? 'none' : '';
+  }
   const titles = {
     'login': 'Login', 'register': 'Register', 'dashboard': 'Dashboard',
     'profil': 'Profil', 'manajemen-user': 'Manajemen User', 'data-karyawan': 'Data Karyawan',
@@ -3083,6 +3177,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if(page) navigateTo(page);
     });
   });
+
+  // Mobile bottom bar - tombol Absen
+  const bottomAbsenBtn = document.getElementById('bottom-bar-absen-btn');
+  if(bottomAbsenBtn) {
+    bottomAbsenBtn.addEventListener('click', () => {
+      if(!AppState.token) { navigateTo('login'); return; }
+      navigateTo('absen-manual');
+    });
+  }
 
   const pwaBtn = document.getElementById('btn-pwa-install');
   if (pwaBtn) {
@@ -4802,7 +4905,7 @@ function applyUserUI() {
     return;
   }
   $('#header-nama').textContent = AppState.user.nama || '';
-  $('#header-role').textContent = AppState.user.jabatanDivisi || AppState.user.jabatan || AppState.user.role || '';
+  $('#header-role').textContent = AppState.user.role || '';
   if(AppState.user.fotoProfil) {
     const headerFoto = $('#header-foto');
     if(headerFoto) headerFoto.src = AppState.user.fotoProfil;
