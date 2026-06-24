@@ -1629,6 +1629,61 @@
       .device-ui { padding-bottom: max(2rem, env(safe-area-inset-bottom)); }
       #content-area { padding-bottom: max(1.25rem, env(safe-area-inset-bottom)); }
     }
+
+    /* ==================== SESSION LOADING SCREEN ==================== */
+    #session-loading {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      transition: opacity 0.3s ease;
+    }
+
+    #session-loading.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .session-loading-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: white;
+      letter-spacing: -0.025em;
+    }
+
+    .session-loading-logo-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--primary);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .session-loading-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: #60a5fa;
+      border-right-color: #60a5fa;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .session-loading-text {
+      font-size: 0.875rem;
+      color: #94a3b8;
+      font-weight: 500;
+    }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1636,6 +1691,18 @@
 <base target="_blank">
 </head>
 <body>
+
+<!-- Session Loading Screen (mencegah flash halaman login saat refresh) -->
+<div id="session-loading">
+  <div class="session-loading-logo">
+    <div class="session-loading-logo-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    Sistem Absensi
+  </div>
+  <div class="session-loading-spinner"></div>
+  <div class="session-loading-text">Memverifikasi sesi...</div>
+</div>
 
 <!-- Top Loading Bar (pengganti overlay full screen) -->
 <div id="top-loading-bar"></div>
@@ -2732,11 +2799,19 @@ function navigateTo(page) {
 }
 
 // ==================== INIT APP ====================
+function hideSessionLoading() {
+  const sl = document.getElementById('session-loading');
+  if(!sl) return;
+  sl.classList.add('hide');
+  setTimeout(() => { sl.style.display = 'none'; }, 350);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   if(AppState.token) {
     apiCall('checkSession', { token: AppState.token }).then(res => {
       if(res.session.type === 'device') {
         AppState.device = res.session;
+        hideSessionLoading();
         navigateTo('device-absen');
       } else {
         AppState.user = { ...AppState.user, ...res.session };
@@ -2746,13 +2821,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const route = Routes[lastPage];
         const role = AppState.user.role;
         const allowed = route && (!route.roles || route.roles.includes(role));
+        hideSessionLoading();
         navigateTo(allowed ? lastPage : 'dashboard');
       }
     }).catch(() => {
       clearSession();
+      hideSessionLoading();
       navigateTo('login');
     });
   } else {
+    hideSessionLoading();
     navigateTo('login');
   }
 
