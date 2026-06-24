@@ -2496,7 +2496,7 @@ document.getElementById('pwa-favicon').setAttribute('href', PWA_ICON_192);
       self.addEventListener('activate', e => self.clients.claim());
       self.addEventListener('fetch', e => {
         // Pass-through sederhana; tidak melakukan caching khusus
-        e.respondWith(fetch(e.request).catch(() => fetch(e.request)));
+        e.respondWith(fetch(e.request).catch(() => new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } })));
       });
     `;
     const swBlob = new Blob([swCode], { type: 'application/javascript' });
@@ -2723,7 +2723,7 @@ let cropState = {
 };
 
 // ==================== API WRAPPER ====================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwgp1KrdZKLm3IL6wY8BaDJwxeGzD9DM64wMYa6Q1yxtfs1qj_dQ4K_i_nxmkLPiKm3/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw7CwhPq6wVK9jR5VQ0u5lc9dvLOT8i8iK3GeVGElinrEG3Cfvi-K40DOjeRrvgQ_9o/exec';
 
 function apiCall(funcName, data, opts) {
   const silent = opts && opts.silent;
@@ -2885,7 +2885,12 @@ function navigateTo(page) {
   if(page === 'payroll') initPayroll();
   if(page === 'my-payroll') initMyPayroll();
   if(page === 'absensi') initAbsensi();
-  if(page === 'device-absen') initDeviceAbsen();
+   if(page === 'device-absen') {
+    initDeviceAbsen();
+  } else if(window._clockInterval) {
+    clearInterval(window._clockInterval);
+    window._clockInterval = null;
+  }
   if(page === 'audit-log') initAuditLog();
   if(page === 'absen-manual') initAbsenManual();
   if(page === 'register') initRegister();
@@ -3002,6 +3007,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#btn-register-device').addEventListener('click', showRegisterDeviceModal);
   $('#btn-save-device').addEventListener('click', saveRegisterDevice);
   $('#btn-cancel-device').addEventListener('click', () => $('#modal-register-device').classList.remove('show'));
+  $('#btn-save-user-detail').addEventListener('click', saveUserDetail);
   $('#btn-proses-payroll').addEventListener('click', showPayrollModal);
   $('#btn-cancel-payroll').addEventListener('click', () => $('#modal-payroll').classList.remove('show'));
   $('#btn-accept-payroll').addEventListener('click', acceptPayroll);
@@ -3423,6 +3429,8 @@ function openCropModal(imageSrc, callback) {
   cropState.dragging = false;
   cropState.dx = 0;
   cropState.dy = 0;
+  cropState.scale = 1;
+  cropState._circleCanvas = null;
 
   const img = new Image();
   img.onload = () => {
@@ -3752,7 +3760,8 @@ function renderProfil() {
       <div class="card">
         <div class="card-header"><div class="card-title">${ICONS.image} ID Card Digital</div></div>
         <div id="id-card-preview-area" style="margin-bottom:1.25rem;"></div>
-        <a class="btn btn-outline btn-block" id="btn-download-qrpdf" href="${u.Link_PDF_QR || '#'}" target="_blank" rel="noopener" style="margin-top:0.625rem; ${!u.Link_PDF_QR ? 'opacity:0.6; pointer-events:none;' : ''}">
+                <a class="btn btn-outline btn-block" id="btn-download-qrpdf" href="${u.Link_PDF_QR ? encodeURI(u.Link_PDF_QR) : '#'}" target="_blank" rel="noopener" style="margin-top:0.625rem; ${!u.Link_PDF_QR ? 'opacity:0.6; pointer-events:none;' : ''}">
+
           ${ICONS.download} Download QR Code (PDF)
         </a>
       </div>
@@ -3795,15 +3804,18 @@ function renderIdCardPreview(u) {
   }
 
   if (urlDepan && urlBelakang) {
+    const safePdf = encodeURI(pdfUrl);
+    const safeDepan = encodeURI(urlDepan);
+    const safeBelakang = encodeURI(urlBelakang);
     container.innerHTML = `
       <div style="border:1px solid var(--border); border-radius:var(--radius-lg); background:#f8fafc; text-align:center; padding:1rem;">
         <div class="id-card-sides-wrap">
           <div class="id-card-side-box">
-            <img src="${urlDepan}" alt="ID Card Depan" onclick="window.open('${escapeHtml(pdfUrl)}','_blank')">
+            <img src="${safeDepan}" alt="ID Card Depan" onclick="window.open('${safePdf}','_blank')">
             <div class="id-card-side-label">Depan</div>
           </div>
           <div class="id-card-side-box">
-            <img src="${urlBelakang}" alt="ID Card Belakang" onclick="window.open('${escapeHtml(pdfUrl)}','_blank')">
+            <img src="${safeBelakang}" alt="ID Card Belakang" onclick="window.open('${safePdf}','_blank')">
             <div class="id-card-side-label">Belakang</div>
           </div>
         </div>
@@ -3823,9 +3835,9 @@ function renderIdCardPreview(u) {
   container.innerHTML = `
     <div style="border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; background:#f8fafc; text-align:center; padding:1rem;">
       ${thumbUrl ? `
-        <img src="${thumbUrl}" alt="Preview ID Card"
+        <img src="${encodeURI(thumbUrl)}" alt="Preview ID Card"
           style="max-width:100%; border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:0.75rem; cursor:pointer;"
-          onclick="window.open('${escapeHtml(pdfUrl)}','_blank')"
+          onclick="window.open('${encodeURI(pdfUrl)}','_blank')"
           onerror="this.style.display='none'; document.getElementById('idcard-no-preview').style.display='block'">
         <div id="idcard-no-preview" style="display:none; color:var(--text-muted); font-size:0.875rem; padding:1rem;">
           Preview tidak tersedia — klik Download untuk melihat.
@@ -4387,7 +4399,49 @@ async function _renderPayrollKaryawanInputs() {
         <div class="form-row form-row-3">
           <div class="form-group">
             <label class="form-label">Bonus (Rp)</label>
-            <input
+            <input class="form-input payroll-bonus" data-id="${escapeHtml(id)}" type="number" min="0" value="0"
+              oninput="updatePayrollEstimasi('${escapeHtml(id)}')">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Lembur (Rp)</label>
+            <input class="form-input payroll-lembur" data-id="${escapeHtml(id)}" type="number" min="0" value="0"
+              oninput="updatePayrollEstimasi('${escapeHtml(id)}')">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Potongan (Rp)</label>
+            <input class="form-input payroll-potongan" data-id="${escapeHtml(id)}" type="number" min="0" value="0"
+              oninput="updatePayrollEstimasi('${escapeHtml(id)}')">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Keterangan Potongan</label>
+          <input class="form-input payroll-keterangan" data-id="${escapeHtml(id)}" placeholder="Opsional">
+        </div>
+        <div style="margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.875rem; color:var(--text-secondary);">Estimasi Total Gaji:</span>
+          <span style="font-size:1.1rem; font-weight:700; color:var(--success);" id="preview-total-${escapeHtml(id)}">${estimasiGaji}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Simpan data absensi untuk kalkulasi live
+  window._payrollAbsensiData = absensiPerUser;
+}
+
+function updatePayrollEstimasi(idUser) {
+  const k = payrollKaryawan.find(x => x.idUser === idUser);
+  if(!k) return;
+  const info = (window._payrollAbsensiData || {})[idUser] || {};
+  const hariKerja = typeof info.jumlahHariKerja === 'number' ? info.jumlahHariKerja : 0;
+  const gajiHarian = parseFloat(k.gajiHarian) || 0;
+  const bonus    = parseFloat(document.querySelector(`.payroll-bonus[data-id="${idUser}"]`)?.value) || 0;
+  const lembur   = parseFloat(document.querySelector(`.payroll-lembur[data-id="${idUser}"]`)?.value) || 0;
+  const potongan = parseFloat(document.querySelector(`.payroll-potongan[data-id="${idUser}"]`)?.value) || 0;
+  const total = (hariKerja * gajiHarian) + bonus + lembur - potongan;
+  const elTotal = document.getElementById('preview-total-' + idUser);
+  if(elTotal) elTotal.textContent = formatRupiah(total);
+}
 
 async function acceptPayroll() {
   const periodeMulai = $('#payroll-mulai').value;
@@ -4618,7 +4672,21 @@ function applyUserUI() {
   $('#header-nama').textContent = AppState.user.nama || '';
   if(AppState.user.fotoProfil) $('#sidebar-foto').src = AppState.user.fotoProfil;
   const role = AppState.user.role;
-  $$('.nav-item[data-page]').forEach(n => n.classList.remove('hidden'));
+  $$('.nav-item[data-page]').forEach(n => {
+    const page = n.dataset.page;
+    const route = Routes[page];
+    if(route && route.roles && !route.roles.includes(role)) {
+      n.classList.add('hidden');
+    } else {
+      n.classList.remove('hidden');
+    }
+    if(n.classList.contains('admin-only') && role !== 'ADMIN') {
+      if(!n.classList.contains('akuntan-only') || role !== 'AKUNTAN') {
+        n.classList.add('hidden');
+      }
+    }
+  });
+}
   $$('.nav-item.admin-only').forEach(n => n.classList.toggle('hidden', role !== 'ADMIN'));
   $$('.nav-item.akuntan-only').forEach(n => n.classList.toggle('hidden', !(role === 'ADMIN' || role === 'AKUNTAN')));
 }
