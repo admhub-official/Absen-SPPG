@@ -828,23 +828,63 @@
     }
 
     .camera-container video { 
-      width: 100%; 
-      border-radius: var(--radius-lg); 
-      display: block; 
-    }
+  width: 100%; 
+  border-radius: var(--radius-lg); 
+  display: block;
+  transform: scaleX(-1);
+}
 
     .face-guide { 
-      position: absolute; 
-      top: 50%; 
-      left: 50%; 
-      transform: translate(-50%, -50%); 
-      width: 220px; 
-      height: 280px; 
-      border: 3px dashed rgba(255,255,255,0.8); 
-      border-radius: 50%; 
-      pointer-events: none;
-      box-shadow: 0 0 0 9999px rgba(0,0,0,0.4);
-    }
+  position: absolute; 
+  top: 50%; 
+  left: 50%; 
+  transform: translate(-50%, -50%); 
+  width: 220px; 
+  height: 280px; 
+  border: 3px dashed rgba(255,255,255,0.8); 
+  border-radius: 50%; 
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.4);
+  transition: border-color 0.3s ease;
+}
+
+.face-guide.liveness-ok {
+  border-color: #10b981;
+  border-style: solid;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.4), 0 0 20px rgba(16,185,129,0.6);
+}
+
+.face-guide.liveness-warn {
+  border-color: #f59e0b;
+  border-style: solid;
+}
+
+.liveness-status-box {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15,23,42,0.82);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  pointer-events: none;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(4px);
+  transition: background 0.3s;
+  z-index: 10;
+}
+
+.liveness-status-box.ok {
+  background: rgba(16,185,129,0.9);
+}
+
+.liveness-status-box.warn {
+  background: rgba(245,158,11,0.9);
+}
 
     .qr-overlay { 
       position: absolute; 
@@ -1919,15 +1959,15 @@
               <div class="crop-controls">
                 <div class="crop-control-row">
                   <label>Zoom</label>
-                  <input type="range" id="crop-zoom" min="0.5" max="3" step="0.01" value="1">
+                  <input type="range" id="crop-zoom" min="0.05" max="5" step="0.01" value="1">
                 </div>
                 <div class="crop-control-row">
                   <label>Posisi Horizontal</label>
-                  <input type="range" id="crop-pan-x" min="-150" max="150" step="1" value="0">
+                  <input type="range" id="crop-pan-x" min="-600" max="600" step="1" value="0">
                 </div>
                 <div class="crop-control-row">
                   <label>Posisi Vertikal</label>
-                  <input type="range" id="crop-pan-y" min="-150" max="150" step="1" value="0">
+                  <input type="range" id="crop-pan-y" min="-600" max="600" step="1" value="0">
                 </div>
               </div>
               <div>
@@ -1942,6 +1982,10 @@
             <button id="btn-apply-crop" class="btn btn-primary">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               Terapkan
+            </button>
+            <button id="btn-reset-crop" class="btn btn-outline" onclick="resetCrop()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.41"/></svg>
+              Reset
             </button>
             <button class="btn btn-outline modal-cancel">Batal</button>
           </div>
@@ -2846,32 +2890,160 @@ async function captureFace() {
   const video = $('#reg-video');
   const canvas = $('#reg-canvas');
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width:{ideal:640}, height:{ideal:480} } });
     AppState.videoStream = stream;
     video.srcObject = stream;
+    video.style.transform = 'scaleX(-1)';
     video.play();
     $('#reg-face-step').classList.remove('hidden');
+
+    // Tambah liveness status box ke dalam camera-container
+    const camContainer = video.closest('.camera-container');
+    let statusBox = camContainer.querySelector('.liveness-status-box');
+    if(!statusBox) {
+      statusBox = document.createElement('div');
+      statusBox.className = 'liveness-status-box';
+      camContainer.appendChild(statusBox);
+    }
+    const guide = camContainer.querySelector('.face-guide');
+
+    // --- Liveness state ---
+    const livenessState = {
+      lookCenter: false,    // wajah di tengah & frontal
+      blinkCount: 0,        // hitungan kedip
+      lastEyeOpen: true,
+      blinkDetected: false,
+      prevEarLeft: null,
+      prevEarRight: null,
+      stable: false,
+      stableFrames: 0,
+      capturedDescriptor: null,
+    };
+    const BLINK_REQUIRED = 2;
+    const EAR_THRESHOLD = 0.22;
+
+    function getEAR(eye) {
+      // Eye Aspect Ratio (6 titik mata)
+      // eye: array 6 titik {x,y} dari faceLandmarks
+      const A = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
+      const B = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
+      const C = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
+      return (A + B) / (2.0 * C);
+    }
+
+    function isFrontal(landmarks) {
+      // Periksa apakah wajah menghadap kamera (frontal) berdasarkan posisi hidung relatif terhadap mata
+      const pts = landmarks.positions;
+      const leftEyeX  = (pts[36].x + pts[39].x) / 2;
+      const rightEyeX = (pts[42].x + pts[45].x) / 2;
+      const noseX = pts[30].x;
+      const eyeCenter = (leftEyeX + rightEyeX) / 2;
+      const faceWidth = Math.abs(rightEyeX - leftEyeX);
+      const offsetRatio = Math.abs(noseX - eyeCenter) / (faceWidth + 1);
+      return offsetRatio < 0.18; // semakin kecil = semakin frontal
+    }
+
+    function isFaceCentered(detection, videoW, videoH) {
+      const box = detection.detection.box;
+      const cx = box.x + box.width / 2;
+      const cy = box.y + box.height / 2;
+      const okX = Math.abs(cx - videoW/2) < videoW * 0.22;
+      const okY = Math.abs(cy - videoH/2) < videoH * 0.22;
+      const okSize = box.width > videoW * 0.20 && box.width < videoW * 0.85;
+      return okX && okY && okSize;
+    }
+
     let attempts = 0;
+    const MAX_ATTEMPTS = 180; // ~90 detik
+
     const interval = setInterval(async () => {
       attempts++;
-      const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptor();
-      if(detections) {
-        clearInterval(interval);
-        regFaceDescriptor = Array.from(detections.descriptor);
-        const dims = faceapi.matchDimensions(canvas, { width: video.videoWidth, height: video.videoHeight });
-        faceapi.draw.drawDetections(canvas, faceapi.resizeResults(detections, dims));
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        regFacePhotoBase64 = canvas.toDataURL('image/png');
-        stopVideo();
-        $('#reg-face-status').textContent = 'Wajah berhasil dideteksi dan dicatat.';
-        $('#reg-face-status').className = 'text-success';
-      }
-      if(attempts > 30) {
+      if(attempts > MAX_ATTEMPTS) {
         clearInterval(interval);
         stopVideo();
-        $('#reg-face-status').textContent = 'Gagal mendeteksi wajah. Coba lagi.';
+        if(guide) { guide.className = 'face-guide'; }
+        statusBox.textContent = '';
+        $('#reg-face-status').textContent = 'Waktu habis. Silakan coba lagi.';
         $('#reg-face-status').className = 'text-danger';
+        return;
+      }
+
+      const detections = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if(!detections) {
+        livenessState.stableFrames = 0;
+        livenessState.lookCenter = false;
+        if(guide) guide.className = 'face-guide';
+        statusBox.className = 'liveness-status-box warn';
+        statusBox.textContent = '👁 Arahkan wajah ke kamera';
+        return;
+      }
+
+      const vW = video.videoWidth || 640;
+      const vH = video.videoHeight || 480;
+      const centered  = isFaceCentered(detections, vW, vH);
+      const frontal   = isFrontal(detections.landmarks);
+
+      // EAR untuk kedua mata
+      const pts = detections.landmarks.positions;
+      const leftEye  = [pts[36],pts[37],pts[38],pts[39],pts[40],pts[41]];
+      const rightEye = [pts[42],pts[43],pts[44],pts[45],pts[46],pts[47]];
+      const earLeft  = getEAR(leftEye);
+      const earRight = getEAR(rightEye);
+      const earAvg   = (earLeft + earRight) / 2;
+
+      // Deteksi kedip: transisi buka→tutup→buka
+      const eyesClosed = earAvg < EAR_THRESHOLD;
+      if(!eyesClosed && !livenessState.lastEyeOpen) {
+        // baru saja buka mata → satu kedip selesai
+        livenessState.blinkCount++;
+      }
+      livenessState.lastEyeOpen = !eyesClosed;
+
+      const step1ok = centered && frontal;
+      if(step1ok) livenessState.stableFrames++;
+      else livenessState.stableFrames = 0;
+
+      const needsLookCenter = !livenessState.lookCenter;
+      const needsBlink = livenessState.blinkCount < BLINK_REQUIRED;
+
+      // Update UI
+      if(!centered || !frontal) {
+        if(guide) guide.className = 'face-guide liveness-warn';
+        statusBox.className = 'liveness-status-box warn';
+        statusBox.textContent = !centered ? '↔ Posisikan wajah di tengah oval' : '👤 Hadapkan wajah ke depan';
+      } else if(needsBlink) {
+        livenessState.lookCenter = true;
+        if(guide) guide.className = 'face-guide liveness-warn';
+        statusBox.className = 'liveness-status-box warn';
+        statusBox.textContent = `👁 Kedipkan mata ${BLINK_REQUIRED - livenessState.blinkCount}x lagi`;
+      } else {
+        // Semua liveness terpenuhi
+        if(guide) guide.className = 'face-guide liveness-ok';
+        statusBox.className = 'liveness-status-box ok';
+        statusBox.textContent = '✅ Liveness OK — Merekam wajah...';
+
+        if(!livenessState.capturedDescriptor) {
+          livenessState.capturedDescriptor = Array.from(detections.descriptor);
+          clearInterval(interval);
+
+          // Mirror-safe: gambar canvas tanpa transform CSS (flip manual)
+          const snapCanvas = document.createElement('canvas');
+          snapCanvas.width = vW; snapCanvas.height = vH;
+          const ctx2 = snapCanvas.getContext('2d');
+          ctx2.save(); ctx2.scale(-1, 1); ctx2.drawImage(video, -vW, 0, vW, vH); ctx2.restore();
+          regFacePhotoBase64 = snapCanvas.toDataURL('image/jpeg', 0.92);
+          regFaceDescriptor = livenessState.capturedDescriptor;
+
+          stopVideo();
+          if(guide) guide.className = 'face-guide liveness-ok';
+          statusBox.textContent = '';
+          $('#reg-face-status').textContent = '✅ Wajah berhasil diverifikasi & dicatat!';
+          $('#reg-face-status').className = 'text-success';
+        }
       }
     }, 500);
   } catch(e) {
@@ -3066,14 +3238,20 @@ async function doRegister() {
 // ==================== CROP MODAL ====================
 function openCropModal(imageSrc, callback) {
   cropState.callback = callback;
-  cropState.scale = 1;
+  cropState.dragging = false;
   cropState.dx = 0;
   cropState.dy = 0;
-  cropState.dragging = false;
+
   const img = new Image();
   img.onload = () => {
     cropState.img = img;
-    $('#crop-zoom').value = 1;
+
+    // Auto-fit: hitung scale agar seluruh gambar muat dalam canvas saat pertama dibuka
+    const size = cropState.canvasSize;
+    const fitScale = Math.min(size / img.width, size / img.height);
+    cropState.scale = fitScale;
+
+    $('#crop-zoom').value = fitScale;
     $('#crop-pan-x').value = 0;
     $('#crop-pan-y').value = 0;
     drawCrop();
@@ -3087,24 +3265,63 @@ function drawCrop() {
   if(!canvas || !cropState.img) return;
   const ctx = canvas.getContext('2d');
   const size = cropState.canvasSize;
+
+  // Bersihkan dengan warna abu muda agar area kosong terlihat jelas
   ctx.clearRect(0, 0, size, size);
-  const img = cropState.img;
+  ctx.fillStyle = '#e2e8f0';
+  ctx.fillRect(0, 0, size, size);
+
+  const img   = cropState.img;
   const scale = cropState.scale;
-  const imgW = img.width * scale;
-  const imgH = img.height * scale;
+  const imgW  = img.width  * scale;
+  const imgH  = img.height * scale;
   const x = (size - imgW) / 2 + cropState.dx;
   const y = (size - imgH) / 2 + cropState.dy;
   ctx.drawImage(img, x, y, imgW, imgH);
 
-  // Update preview
+  // Crop lingkaran: ambil area tengah 240x240 lalu export sebagai preview
+  const cropSize = 240;
+  const cx = (size - cropSize) / 2;
+  const cy = (size - cropSize) / 2;
+
+  // Buat canvas sementara khusus hasil crop lingkaran
+  const circleCanvas = document.createElement('canvas');
+  circleCanvas.width  = cropSize;
+  circleCanvas.height = cropSize;
+  const cctx = circleCanvas.getContext('2d');
+  cctx.clearRect(0, 0, cropSize, cropSize);
+  cctx.beginPath();
+  cctx.arc(cropSize/2, cropSize/2, cropSize/2, 0, Math.PI*2);
+  cctx.closePath();
+  cctx.clip();
+  cctx.drawImage(canvas, cx, cy, cropSize, cropSize, 0, 0, cropSize, cropSize);
+
+  // Update preview lingkaran
   const preview = $('#crop-preview-img');
-  if(preview) preview.src = canvas.toDataURL('image/jpeg', 0.92);
+  if(preview) preview.src = circleCanvas.toDataURL('image/jpeg', 0.92);
+
+  // Simpan canvas lingkaran ke cropState agar applyCrop pakai yang sudah di-clip
+  cropState._circleCanvas = circleCanvas;
 }
 
 function updateCrop() {
   cropState.scale = parseFloat($('#crop-zoom').value);
-  cropState.dx = parseInt($('#crop-pan-x').value);
-  cropState.dy = parseInt($('#crop-pan-y').value);
+  cropState.dx    = parseInt($('#crop-pan-x').value);
+  cropState.dy    = parseInt($('#crop-pan-y').value);
+  drawCrop();
+}
+
+// Reset posisi & zoom ke fit awal (tombol reset opsional, dipanggil jika perlu)
+function resetCrop() {
+  if(!cropState.img) return;
+  const size = cropState.canvasSize;
+  const fitScale = Math.min(size / cropState.img.width, size / cropState.img.height);
+  cropState.scale = fitScale;
+  cropState.dx = 0;
+  cropState.dy = 0;
+  $('#crop-zoom').value = fitScale;
+  $('#crop-pan-x').value = 0;
+  $('#crop-pan-y').value = 0;
   drawCrop();
 }
 
@@ -3139,9 +3356,13 @@ function endCropDrag() {
 
 function applyCrop() {
   if(cropState.callback) {
-    const canvas = $('#crop-canvas');
-    cropState.callback(canvas.toDataURL('image/jpeg', 0.95));
+    // Gunakan canvas lingkaran hasil crop jika tersedia, fallback ke full canvas
+    const src = cropState._circleCanvas
+      ? cropState._circleCanvas.toDataURL('image/jpeg', 0.95)
+      : $('#crop-canvas').toDataURL('image/jpeg', 0.95);
+    cropState.callback(src);
   }
+  cropState._circleCanvas = null;
   $('#modal-crop-foto').classList.remove('show');
 }
 
@@ -3464,32 +3685,92 @@ async function startWajahCapture(videoId, canvasId, statusId) {
   if(!AppState.modelsLoaded) await loadFaceApiModels();
   const video = $(`#${videoId}`);
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width:{ideal:640}, height:{ideal:480} } });
     AppState.videoStream = stream;
     video.srcObject = stream;
+    video.style.transform = 'scaleX(-1)';
     video.play();
-    let attempts = 0;
+
+    const camContainer = video.closest('.camera-container');
+    let statusBox = camContainer ? camContainer.querySelector('.liveness-status-box') : null;
+    if(camContainer && !statusBox) {
+      statusBox = document.createElement('div');
+      statusBox.className = 'liveness-status-box';
+      camContainer.appendChild(statusBox);
+    }
+    const guide = camContainer ? camContainer.querySelector('.face-guide') : null;
+    const statusEl = $(`#${statusId}`);
+
+    function getEAR(eye) {
+      const A = Math.hypot(eye[1].x-eye[5].x, eye[1].y-eye[5].y);
+      const B = Math.hypot(eye[2].x-eye[4].x, eye[2].y-eye[4].y);
+      const C = Math.hypot(eye[0].x-eye[3].x, eye[0].y-eye[3].y);
+      return (A+B)/(2*C);
+    }
+    function isFrontal(landmarks) {
+      const pts = landmarks.positions;
+      const lx = (pts[36].x+pts[39].x)/2, rx = (pts[42].x+pts[45].x)/2;
+      const nx = pts[30].x, cx = (lx+rx)/2, fw = Math.abs(rx-lx);
+      return Math.abs(nx-cx)/(fw+1) < 0.18;
+    }
+    function isFaceCentered(det, vW, vH) {
+      const b = det.detection.box;
+      const cx = b.x+b.width/2, cy = b.y+b.height/2;
+      return Math.abs(cx-vW/2)<vW*0.22 && Math.abs(cy-vH/2)<vH*0.22 && b.width>vW*0.20 && b.width<vW*0.85;
+    }
+
+    const EAR_THRESHOLD = 0.22, BLINK_REQUIRED = 2;
+    let blinkCount=0, lastEyeOpen=true, lookCenter=false, captured=false, attempts=0;
+
     const interval = setInterval(async () => {
       attempts++;
-      const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptor();
-      if(detections) {
-        clearInterval(interval);
-        AppState.currentFaceDescriptor = Array.from(detections.descriptor);
-        const canvas = $(`#${canvasId}`);
-        const dims = faceapi.matchDimensions(canvas, { width: video.videoWidth, height: video.videoHeight });
-        faceapi.draw.drawDetections(canvas, faceapi.resizeResults(detections, dims));
-        stopVideo();
-        $(`#${statusId}`).textContent = 'Wajah berhasil dideteksi!';
-        $(`#${statusId}`).className = 'text-success';
+      if(attempts > 180) {
+        clearInterval(interval); stopVideo();
+        if(guide) guide.className='face-guide';
+        if(statusBox) statusBox.textContent='';
+        if(statusEl) { statusEl.textContent='Waktu habis. Coba lagi.'; statusEl.className='text-danger'; }
+        return;
       }
-      if(attempts > 30) {
-        clearInterval(interval);
-        stopVideo();
-        $(`#${statusId}`).textContent = 'Gagal, coba lagi.';
-        $(`#${statusId}`).className = 'text-danger';
+      const det = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({inputSize:416, scoreThreshold:0.5}))
+        .withFaceLandmarks().withFaceDescriptor();
+
+      if(!det) {
+        if(guide) guide.className='face-guide'; 
+        if(statusBox) { statusBox.className='liveness-status-box warn'; statusBox.textContent='👁 Arahkan wajah ke kamera'; }
+        if(statusEl) statusEl.textContent='Menunggu wajah terdeteksi...';
+        return;
+      }
+      const vW=video.videoWidth||640, vH=video.videoHeight||480;
+      const centered=isFaceCentered(det,vW,vH), frontal=isFrontal(det.landmarks);
+      const pts=det.landmarks.positions;
+      const lEye=[pts[36],pts[37],pts[38],pts[39],pts[40],pts[41]];
+      const rEye=[pts[42],pts[43],pts[44],pts[45],pts[46],pts[47]];
+      const earAvg=(getEAR(lEye)+getEAR(rEye))/2;
+      const eyesClosed=earAvg<EAR_THRESHOLD;
+      if(!eyesClosed && !lastEyeOpen) blinkCount++;
+      lastEyeOpen=!eyesClosed;
+
+      if(!centered||!frontal) {
+        if(guide) guide.className='face-guide liveness-warn';
+        if(statusBox) { statusBox.className='liveness-status-box warn'; statusBox.textContent=!centered?'↔ Posisikan wajah di tengah':'👤 Hadapkan wajah ke depan'; }
+        if(statusEl) statusEl.textContent='Posisikan wajah dengan benar...';
+      } else if(blinkCount < BLINK_REQUIRED) {
+        lookCenter=true;
+        if(guide) guide.className='face-guide liveness-warn';
+        if(statusBox) { statusBox.className='liveness-status-box warn'; statusBox.textContent=`👁 Kedipkan mata ${BLINK_REQUIRED-blinkCount}x lagi`; }
+        if(statusEl) statusEl.textContent=`Kedipkan mata ${BLINK_REQUIRED-blinkCount}x lagi...`;
+      } else if(!captured) {
+        captured=true;
+        if(guide) guide.className='face-guide liveness-ok';
+        if(statusBox) { statusBox.className='liveness-status-box ok'; statusBox.textContent='✅ Liveness OK!'; }
+        AppState.currentFaceDescriptor=Array.from(det.descriptor);
+        clearInterval(interval); stopVideo();
+        if(statusBox) setTimeout(()=>{ statusBox.textContent=''; },1500);
+        if(statusEl) { statusEl.textContent='✅ Wajah berhasil diverifikasi!'; statusEl.className='text-success'; }
       }
     }, 500);
-  } catch(e) { showAlert('Gagal akses kamera: ' + e.message); }
+  } catch(e) { showAlert('Gagal akses kamera: '+e.message); }
 }
 
 async function saveUpdateWajah() {
@@ -4007,35 +4288,106 @@ async function startFaceScan() {
   if(!AppState.modelsLoaded) await loadFaceApiModels();
   const video = $('#device-face-video');
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width:{ideal:640}, height:{ideal:480} } });
     AppState.videoStream = stream;
     video.srcObject = stream;
+    video.style.transform = 'scaleX(-1)';
     video.play();
-    let attempts = 0;
+
+    const camContainer = video.closest('.camera-container');
+    let statusBox = camContainer ? camContainer.querySelector('.liveness-status-box') : null;
+    if(camContainer && !statusBox) {
+      statusBox = document.createElement('div');
+      statusBox.className = 'liveness-status-box';
+      camContainer.appendChild(statusBox);
+    }
+    const guide = camContainer ? camContainer.querySelector('.face-guide') : null;
+    const statusEl = $('#device-face-status');
+
+    function getEAR(eye) {
+      const A=Math.hypot(eye[1].x-eye[5].x,eye[1].y-eye[5].y);
+      const B=Math.hypot(eye[2].x-eye[4].x,eye[2].y-eye[4].y);
+      const C=Math.hypot(eye[0].x-eye[3].x,eye[0].y-eye[3].y);
+      return (A+B)/(2*C);
+    }
+    function isFrontal(landmarks) {
+      const pts=landmarks.positions;
+      const lx=(pts[36].x+pts[39].x)/2, rx=(pts[42].x+pts[45].x)/2;
+      const nx=pts[30].x, cx=(lx+rx)/2, fw=Math.abs(rx-lx);
+      return Math.abs(nx-cx)/(fw+1)<0.18;
+    }
+    function isFaceCentered(det,vW,vH) {
+      const b=det.detection.box;
+      const cx=b.x+b.width/2,cy=b.y+b.height/2;
+      return Math.abs(cx-vW/2)<vW*0.25 && Math.abs(cy-vH/2)<vH*0.25 && b.width>vW*0.18 && b.width<vW*0.88;
+    }
+
+    const EAR_THRESHOLD=0.22, BLINK_REQUIRED=1; // Cukup 1 kedip untuk absen (UX lebih cepat)
+    let blinkCount=0, lastEyeOpen=true, livenessOk=false, attempts=0, done=false;
+
     const interval = setInterval(async () => {
+      if(done) return;
       attempts++;
-      const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptor();
-      if(detections && deviceFaceDescriptor) {
-        const currentDesc = detections.descriptor;
-        const refDesc = new Float32Array(deviceFaceDescriptor);
-        const distance = faceapi.euclideanDistance(currentDesc, refDesc);
-        const skor = (1 - distance) * 100;
-        if(skor > FACE_MATCH_THRESHOLD) {
-          clearInterval(interval);
-          stopVideo();
-          await recordAbsensi(deviceIdUser, skor, 'VALID');
-        } else {
-          $('#device-face-status').textContent = `Skor: ${skor.toFixed(1)}% - Wajah tidak cocok, tetap di posisi...`;
-        }
-      }
-      if(attempts > 60) {
-        clearInterval(interval);
-        stopVideo();
+      if(attempts > 120) {
+        done=true; clearInterval(interval); stopVideo();
         await recordAbsensi(deviceIdUser, 0, 'GAGAL');
+        return;
+      }
+      const det = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:0.5}))
+        .withFaceLandmarks().withFaceDescriptor();
+
+      if(!det) {
+        if(guide) guide.className='face-guide';
+        if(statusBox) { statusBox.className='liveness-status-box warn'; statusBox.textContent='👁 Arahkan wajah ke kamera'; }
+        if(statusEl) statusEl.textContent='Posisikan wajah di dalam oval...';
+        return;
+      }
+
+      const vW=video.videoWidth||640, vH=video.videoHeight||480;
+      const centered=isFaceCentered(det,vW,vH), frontal=isFrontal(det.landmarks);
+      const pts=det.landmarks.positions;
+      const lEye=[pts[36],pts[37],pts[38],pts[39],pts[40],pts[41]];
+      const rEye=[pts[42],pts[43],pts[44],pts[45],pts[46],pts[47]];
+      const earAvg=(getEAR(lEye)+getEAR(rEye))/2;
+      const eyesClosed=earAvg<EAR_THRESHOLD;
+      if(!eyesClosed && !lastEyeOpen) blinkCount++;
+      lastEyeOpen=!eyesClosed;
+
+      if(!centered||!frontal) {
+        if(guide) guide.className='face-guide liveness-warn';
+        if(statusBox) { statusBox.className='liveness-status-box warn'; statusBox.textContent=!centered?'↔ Posisikan wajah di tengah':'👤 Hadapkan wajah ke depan'; }
+        if(statusEl) statusEl.textContent=!centered?'Posisikan wajah di tengah oval...':'Hadapkan wajah ke depan kamera...';
+        return;
+      }
+
+      if(blinkCount < BLINK_REQUIRED) {
+        if(guide) guide.className='face-guide liveness-warn';
+        if(statusBox) { statusBox.className='liveness-status-box warn'; statusBox.textContent='👁 Kedipkan mata 1x untuk verifikasi'; }
+        if(statusEl) statusEl.textContent='Kedipkan mata sekali...';
+        return;
+      }
+
+      // Liveness OK → cocokkan wajah
+      if(guide) guide.className='face-guide liveness-ok';
+      if(statusBox) { statusBox.className='liveness-status-box ok'; statusBox.textContent='✅ Liveness OK — Mencocokkan...'; }
+
+      if(deviceFaceDescriptor) {
+        const refDesc = new Float32Array(deviceFaceDescriptor);
+        const distance = faceapi.euclideanDistance(det.descriptor, refDesc);
+        const skor = (1 - distance) * 100;
+        if(statusEl) statusEl.textContent = `Skor kecocokan: ${skor.toFixed(1)}%`;
+        if(skor > FACE_MATCH_THRESHOLD) {
+          done=true; clearInterval(interval); stopVideo();
+          await recordAbsensi(deviceIdUser, skor, 'VALID');
+        } else if(attempts > 80) {
+          done=true; clearInterval(interval); stopVideo();
+          await recordAbsensi(deviceIdUser, skor, 'GAGAL');
+        }
       }
     }, 500);
   } catch(e) {
-    showDeviceResult(false, 'Gagal akses kamera: ' + e.message);
+    showDeviceResult(false, 'Gagal akses kamera: '+e.message);
   }
 }
 
@@ -4142,23 +4494,102 @@ async function startAbsenFaceScan() {
   if(!AppState.modelsLoaded) await loadFaceApiModels();
   const video = $('#absen-face-video');
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-    AppState.videoStream = stream; video.srcObject = stream; video.play();
-    let attempts = 0;
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width:{ideal:640}, height:{ideal:480} } });
+    AppState.videoStream = stream;
+    video.srcObject = stream;
+    video.style.transform = 'scaleX(-1)';
+    video.play();
+
+    const camContainer = video.closest('.camera-container');
+    let statusBox = camContainer ? camContainer.querySelector('.liveness-status-box') : null;
+    if(camContainer && !statusBox) {
+      statusBox = document.createElement('div');
+      statusBox.className = 'liveness-status-box';
+      camContainer.appendChild(statusBox);
+    }
+    const guide = camContainer ? camContainer.querySelector('.face-guide') : null;
+    const statusEl = $('#absen-face-status');
+
+    function getEAR(eye) {
+      const A=Math.hypot(eye[1].x-eye[5].x,eye[1].y-eye[5].y);
+      const B=Math.hypot(eye[2].x-eye[4].x,eye[2].y-eye[4].y);
+      const C=Math.hypot(eye[0].x-eye[3].x,eye[0].y-eye[3].y);
+      return (A+B)/(2*C);
+    }
+    function isFrontal(landmarks) {
+      const pts=landmarks.positions;
+      const lx=(pts[36].x+pts[39].x)/2, rx=(pts[42].x+pts[45].x)/2;
+      const nx=pts[30].x, cx=(lx+rx)/2, fw=Math.abs(rx-lx);
+      return Math.abs(nx-cx)/(fw+1)<0.18;
+    }
+    function isFaceCentered(det,vW,vH) {
+      const b=det.detection.box;
+      const cx=b.x+b.width/2, cy=b.y+b.height/2;
+      return Math.abs(cx-vW/2)<vW*0.25 && Math.abs(cy-vH/2)<vH*0.25 && b.width>vW*0.18 && b.width<vW*0.88;
+    }
+
+    const EAR_THRESHOLD=0.22, BLINK_REQUIRED=1;
+    let blinkCount=0, lastEyeOpen=true, attempts=0, done=false;
+
     const interval = setInterval(async () => {
+      if(done) return;
       attempts++;
-      const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({inputSize:416, scoreThreshold:0.5})).withFaceLandmarks().withFaceDescriptor();
-      if(det && absenFaceDescriptor) {
-        const skor = (1 - faceapi.euclideanDistance(det.descriptor, new Float32Array(absenFaceDescriptor))) * 100;
+      if(attempts > 120) {
+        done=true; clearInterval(interval); stopVideo();
+        showAbsenResult(false, 'Waktu habis. Silakan coba lagi.');
+        return;
+      }
+      const det = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:0.5}))
+        .withFaceLandmarks().withFaceDescriptor();
+
+      if(!det) {
+        if(guide) guide.className='face-guide';
+        if(statusBox) { statusBox.className='liveness-status-box warn'; statusBox.textContent='👁 Arahkan wajah ke kamera'; }
+        if(statusEl) statusEl.textContent='Posisikan wajah di dalam oval...';
+        return;
+      }
+      const vW=video.videoWidth||640, vH=video.videoHeight||480;
+      const centered=isFaceCentered(det,vW,vH), frontal=isFrontal(det.landmarks);
+      const pts=det.landmarks.positions;
+      const lEye=[pts[36],pts[37],pts[38],pts[39],pts[40],pts[41]];
+      const rEye=[pts[42],pts[43],pts[44],pts[45],pts[46],pts[47]];
+      const earAvg=(getEAR(lEye)+getEAR(rEye))/2;
+      const eyesClosed=earAvg<EAR_THRESHOLD;
+      if(!eyesClosed && !lastEyeOpen) blinkCount++;
+      lastEyeOpen=!eyesClosed;
+
+      if(!centered||!frontal) {
+        if(guide) guide.className='face-guide liveness-warn';
+        if(statusBox) { statusBox.className='liveness-status-box warn'; statusBox.textContent=!centered?'↔ Posisikan wajah di tengah':'👤 Hadapkan wajah ke depan'; }
+        if(statusEl) statusEl.textContent=!centered?'Posisikan wajah di tengah oval...':'Hadapkan wajah ke depan kamera...';
+        return;
+      }
+
+      if(blinkCount < BLINK_REQUIRED) {
+        if(guide) guide.className='face-guide liveness-warn';
+        if(statusBox) { statusBox.className='liveness-status-box warn'; statusBox.textContent='👁 Kedipkan mata 1x untuk verifikasi'; }
+        if(statusEl) statusEl.textContent='Kedipkan mata sekali...';
+        return;
+      }
+
+      if(guide) guide.className='face-guide liveness-ok';
+      if(statusBox) { statusBox.className='liveness-status-box ok'; statusBox.textContent='✅ Liveness OK — Mencocokkan...'; }
+
+      if(absenFaceDescriptor) {
+        const skor=(1-faceapi.euclideanDistance(det.descriptor, new Float32Array(absenFaceDescriptor)))*100;
+        if(statusEl) statusEl.textContent=`Skor kecocokan: ${skor.toFixed(1)}%`;
         if(skor > FACE_MATCH_THRESHOLD) {
-          clearInterval(interval); stopVideo();
+          done=true; clearInterval(interval); stopVideo();
           const res2 = await apiCallWithToken('recordAbsensiSelf', { idUser: absenIdUser, skorKecocokan: skor/100, statusValidasi: 'VALID' });
           showAbsenResult(true, `${res2.nama} - ${res2.message} (${res2.waktu})`);
-        } else { $('#absen-face-status').textContent = `Skor: ${skor.toFixed(1)}% - Wajah tidak cocok, coba lagi...`; }
+        } else if(attempts > 80) {
+          done=true; clearInterval(interval); stopVideo();
+          showAbsenResult(false, 'Wajah tidak cocok. Silakan coba lagi.');
+        }
       }
-      if(attempts > 60) { clearInterval(interval); stopVideo(); showAbsenResult(false, 'Wajah tidak terverifikasi. Silakan coba lagi.'); }
     }, 500);
-  } catch(e) { showAbsenResult(false, 'Gagal akses kamera: ' + e.message); }
+  } catch(e) { showAbsenResult(false, 'Gagal akses kamera: '+e.message); }
 }
 
 function showAbsenResult(success, message) {
