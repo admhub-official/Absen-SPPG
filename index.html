@@ -5164,8 +5164,9 @@ function applyUserUI() {
 }
 
 async function handleQrScanned(idCardUnik) {
+  const idCardUnikClean = (idCardUnik || '').trim().toUpperCase();
   try {
-    const res = await apiCallWithToken('lookupUserByIdCard', { idCardUnik });
+    const res = await apiCallWithToken('lookupUserByIdCard', { idCardUnik: idCardUnikClean });
     if(!res.found) {
       showDeviceResult(false, 'ID Card tidak valid');
       return;
@@ -5358,8 +5359,9 @@ async function restartAbsenQr(cameraId, cameras) {
 }
 
 async function handleAbsenQrScanned(idCardUnik, cameras) {
+  const idCardUnikClean = (idCardUnik || '').trim().toUpperCase();
   try {
-    const res = await apiCallWithToken('lookupUserByIdCardSelf', { idCardUnik });
+    const res = await apiCallWithToken('lookupUserByIdCardSelf', { idCardUnik: idCardUnikClean });
     if(!res.found) { showAbsenResult(false, 'ID Card tidak valid'); return; }
     absenIdUser = res.user.idUser; absenFaceDescriptor = res.user.faceDescriptor;
     $('#absen-step-qr').classList.add('hidden');
