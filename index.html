@@ -675,7 +675,15 @@
       }
     }
 
-    .user-card-grid { 
+    /* Saat mobile, pastikan tabel tersembunyi jika card list aktif */
+    @media (max-width: 639px) {
+      #absensi-card-list + .table-scroll-mobile,
+      .table-scroll-mobile:has(+ #absensi-card-list) {
+        display: none;
+      }
+    }
+
+    .user-card-grid {
       display: grid; 
       gap: 1.25rem; 
       grid-template-columns: repeat(1, 1fr); 
@@ -4174,9 +4182,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Re-render tabel/card saat ukuran layar berubah melewati breakpoint mobile (640px),
   // misalnya saat rotasi HP atau resize browser desktop
-  let _lastIsMobile = isMobileView();
+  let _lastIsMobile = window.innerWidth < 640;
   window.addEventListener('resize', () => {
-    const nowMobile = isMobileView();
+    const nowMobile = window.innerWidth < 640;
     if(nowMobile !== _lastIsMobile) {
       _lastIsMobile = nowMobile;
       if(AppState.currentPage === 'absensi') initAbsensi();
@@ -6162,6 +6170,11 @@ function showSlipDetail(idx) {
 // ==================== ABSENSI ====================
 async function initAbsensi() {
   const tbody = $('#table-absensi tbody');
+  // Reset card list lama agar tidak double render saat navigasi ulang
+  const cardContainer = document.getElementById('absensi-card-list');
+  if(cardContainer) { cardContainer.innerHTML = ''; cardContainer.style.display = 'none'; }
+  const wrapper = tbody ? tbody.closest('.table-scroll-mobile') : null;
+  if(wrapper) wrapper.style.display = '';
   renderTableSkeleton(tbody, 8, 6);
   try {
     const res = await apiCallWithToken('getAbsensiData', {});
@@ -6260,6 +6273,11 @@ async function filterAbsensi() {
     sppg: $('#filter-abs-sppg').value,
     jabatan: $('#filter-abs-jabatan').value
   };
+  // Reset card list lama agar tidak tumpang tindih saat filter ulang
+  const cardContainer = document.getElementById('absensi-card-list');
+  if(cardContainer) cardContainer.innerHTML = '';
+  const wrapper = document.querySelector('#table-absensi')?.closest('.table-scroll-mobile');
+  if(wrapper) wrapper.style.display = '';
   try {
     const res = await apiCallWithToken('getAbsensiData', { filters });
     renderAbsensiTable(res.absensi);
