@@ -2687,8 +2687,6 @@
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <base target="_blank">
-<base target="_blank">
 </head>
 <body>
 
@@ -4307,11 +4305,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#reg-jabatan-lainnya-group').classList.toggle('hidden', e.target.value !== 'LAINNYA');
   });
 
-  
-  // Helper null-safe binding — mencegah crash jika elemen tidak ada di halaman
-  // PENTING: pakai function declaration (bukan const arrow function) agar di-hoisting,
-  // karena dipanggil di banyak tempat SEBELUM baris ini dieksekusi.
-  function safeOn(selector, event, handler) {
+function safeOn(selector, event, handler) {
     const el = document.querySelector(selector);
     if (el) {
       el.addEventListener(event, handler);
@@ -4319,7 +4313,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('[INIT] Elemen tidak ditemukan, skip listener:', selector);
     }
   }
-
   safeOn('#btn-pick-photo', 'click', () => {
     const f = document.getElementById('reg-photo-file');
     if (f) f.click();
