@@ -2555,26 +2555,6 @@
         <div class="form-group"><label class="form-label">Atas Nama Rekening</label><input type="text" id="reg-rekening" class="form-input" placeholder="1234567890 a.n. Nama"></div>
       </div>
 
-      <!-- Face Capture -->
-      <div class="card" style="margin:1.25rem 0; padding:1.25rem;">
-        <div class="card-title mb-2">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Pendaftaran Wajah *
-        </div>
-        <div id="reg-face-step">
-          <div class="camera-container">
-            <video id="reg-video" style="width:100%; border-radius:var(--radius-lg);" autoplay playsinline muted></video>
-            <div class="face-guide"></div>
-            <canvas id="reg-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%;"></canvas>
-          </div>
-        </div>
-        <div id="reg-face-status" class="text-muted mt-2">Klik tombol di bawah untuk memulai pendaftaran wajah</div>
-        <button id="btn-capture-face" class="btn btn-secondary btn-sm mt-3">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          Mulai Pendaftaran Wajah
-        </button>
-      </div>
-
       <div class="checkbox-row mb-3">
         <input type="checkbox" id="reg-setuju">
         <label for="reg-setuju">Saya menyetujui kebijakan penggunaan data pribadi</label>
@@ -4086,7 +4066,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   safeOn('#update-foto-file', 'change', handleUpdateFotoFile);
   safeOn('#btn-save-foto-profil', 'click', saveUpdateFotoProfil);
-  safeOn('#btn-capture-face', 'click', captureFace);
   safeOn('#btn-capture-photo', 'click', capturePhoto);
 
   // Crop listeners
@@ -4106,25 +4085,17 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==================== REGISTER ====================
-let regFaceDescriptor = null;
 let regPhotoBase64 = null;
 let regPhotoOriginalBase64 = null;
-let regFacePhotoBase64 = null;
 
 async function initRegister() {
   console.log('[REGISTER] initRegister() dipanggil');
 
-  // Reset state pendaftaran wajah setiap kali halaman register dibuka
-  regFaceDescriptor = null;
+  // Reset state foto profil setiap kali halaman register dibuka
+  // (pendaftaran wajah sudah dipindahkan ke menu Profil setelah akun dibuat)
   regPhotoBase64 = null;
   regPhotoOriginalBase64 = null;
-  regFacePhotoBase64 = null;
 
-  // Stop interval deteksi wajah yang mungkin masih berjalan dari sesi sebelumnya
-  if (AppState._captureFaceInterval) {
-    clearInterval(AppState._captureFaceInterval);
-    AppState._captureFaceInterval = null;
-  }
   stopVideo();
 
   // Muat data master (SPPG & Jabatan)
@@ -4146,33 +4117,6 @@ async function initRegister() {
   } catch (e) {
     console.error('[REGISTER] Gagal memuat master data:', e);
     showAlert('Gagal memuat data SPPG/Jabatan: ' + e + '. Coba refresh halaman.', 'warning');
-  }
-
-  // Muat model face-api di background (non-blocking agar form bisa diisi duluan)
-  const statusEl = document.getElementById('reg-face-status');
-  const btnCapture = document.getElementById('btn-capture-face');
-
-  if (!AppState.modelsLoaded) {
-    if (statusEl) { statusEl.textContent = '⏳ Memuat model pengenalan wajah di latar belakang...'; statusEl.className = 'text-muted'; }
-    if (btnCapture) btnCapture.disabled = true;
-
-    try {
-      await loadFaceApiModels();
-      if (statusEl) { statusEl.textContent = '✅ Model siap. Klik tombol di bawah untuk mendaftar wajah.'; statusEl.className = 'text-success'; }
-      if (btnCapture) btnCapture.disabled = false;
-      console.log('[REGISTER] Model face-api berhasil dimuat');
-    } catch (eModel) {
-      console.error('[REGISTER] Gagal memuat model:', eModel.message);
-      if (statusEl) { statusEl.textContent = '⚠️ Model pengenalan wajah gagal dimuat. Periksa koneksi internet, lalu refresh halaman.'; statusEl.className = 'text-danger'; }
-      if (btnCapture) {
-        btnCapture.disabled = false; // tetap enable agar bisa retry
-        btnCapture.title = 'Klik untuk mencoba memuat model lagi';
-      }
-    }
-  } else {
-    if (statusEl) { statusEl.textContent = 'Klik tombol di bawah untuk memulai pendaftaran wajah.'; statusEl.className = 'text-muted'; }
-    if (btnCapture) btnCapture.disabled = false;
-    console.log('[REGISTER] Model face-api sudah tersedia (dari cache)');
   }
 }
 
@@ -4216,269 +4160,6 @@ async function loadFaceApiModels() {
     const msg = 'Gagal memuat model face recognition. Periksa koneksi internet dan coba lagi.';
     showAlert(msg, 'warning');
     throw new Error(msg); // re-throw agar caller tahu ada kegagalan
-  }
-}
-
-async function captureFace() {
-  console.log('[WAJAH] captureFace() dipanggil');
-
-  // Guard: cek browser support
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    const msg = 'Browser ini tidak mendukung akses kamera. Pastikan menggunakan HTTPS dan browser modern.';
-    showAlert(msg);
-    const statusEl = document.getElementById('reg-face-status');
-    if (statusEl) { statusEl.textContent = msg; statusEl.className = 'text-danger'; }
-    return;
-  }
-
-  // Guard: cek elemen video
-  const video = document.getElementById('reg-video');
-  if (!video) {
-    console.error('[WAJAH] Elemen #reg-video tidak ditemukan di DOM');
-    showAlert('Komponen kamera tidak ditemukan. Coba refresh halaman.');
-    return;
-  }
-
-  const statusEl = document.getElementById('reg-face-status');
-  const btnCapture = document.getElementById('btn-capture-face');
-
-  // Disable tombol agar tidak double-click
-  if (btnCapture) btnCapture.disabled = true;
-
-  // PENTING: minta akses kamera LEBIH DULU, selagi "user gesture" dari klik tombol
-  // masih aktif. Beberapa browser/WebView (terutama di Android/iOS) akan diam-diam
-  // menolak/mengabaikan getUserMedia() jika dipanggil setelah ada `await` yang lama
-  // (seperti loading model face-api dari CDN) karena dianggap bukan respons langsung
-  // dari interaksi user. Inilah sebab utama "kamera tidak terbuka tanpa error" di
-  // halaman Register, padahal di halaman Profil (Update Wajah) modelnya sudah
-  // ter-load sebelumnya sehingga getUserMedia() langsung terpanggil tanpa delay.
-  if (statusEl) { statusEl.textContent = '📷 Membuka kamera...'; statusEl.className = 'text-muted'; }
-
-  // Stop stream lama jika ada
-  stopVideo();
-
-  let stream;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
-    });
-    console.log('[WAJAH] Stream kamera berhasil didapat');
-  } catch (camErr) {
-    console.error('[WAJAH] Gagal akses kamera:', camErr.name, camErr.message);
-    let userMsg = 'Tidak bisa mengakses kamera: ' + camErr.message;
-    if (camErr.name === 'NotAllowedError' || camErr.name === 'PermissionDeniedError') {
-      userMsg = 'Akses kamera ditolak. Izinkan akses kamera di pengaturan browser Anda, lalu coba lagi.';
-    } else if (camErr.name === 'NotFoundError' || camErr.name === 'DevicesNotFoundError') {
-      userMsg = 'Kamera tidak ditemukan. Pastikan perangkat Anda memiliki kamera yang terhubung.';
-    } else if (camErr.name === 'NotReadableError' || camErr.name === 'TrackStartError') {
-      userMsg = 'Kamera sedang digunakan aplikasi lain. Tutup aplikasi lain dan coba lagi.';
-    } else if (camErr.name === 'OverconstrainedError') {
-      userMsg = 'Kamera tidak mendukung resolusi yang diminta. Coba dengan kamera lain.';
-    }
-    showAlert(userMsg, 'danger');
-    if (statusEl) { statusEl.textContent = '❌ ' + userMsg; statusEl.className = 'text-danger'; }
-    if (btnCapture) btnCapture.disabled = false;
-    return;
-  }
-
-  AppState.videoStream = stream;
-
-  // Guard: cek faceapi library (boleh dicek setelah kamera terbuka, tidak menghalangi preview)
-  if (typeof faceapi === 'undefined') {
-    console.error('[WAJAH] Library face-api.js belum dimuat');
-    showAlert('Library pengenalan wajah belum siap. Periksa koneksi internet dan refresh halaman.');
-    if (statusEl) { statusEl.textContent = '⚠️ Library pengenalan wajah belum siap.'; statusEl.className = 'text-danger'; }
-    if (btnCapture) btnCapture.disabled = false;
-    return;
-  }
-
-  // Feedback loading model (kamera sudah tampil duluan ke user)
-  if (statusEl) {
-    statusEl.textContent = '⏳ Memuat model pengenalan wajah...';
-    statusEl.className = 'text-muted';
-  }
-
-  try {
-    // Load model jika belum (sekarang kamera sudah aktif, jadi tidak menghalangi izin)
-    if (!AppState.modelsLoaded) {
-      console.log('[WAJAH] Memuat model face-api...');
-      await loadFaceApiModels();
-    }
-
-    if (!AppState.modelsLoaded) {
-      throw new Error('Model face recognition gagal dimuat. Periksa koneksi internet.');
-    }
-
-    console.log('[WAJAH] Model OK, melanjutkan deteksi wajah...');
-
-    video.srcObject = stream;
-    video.style.transform = 'scaleX(-1)';
-
-    // Tunggu video benar-benar siap sebelum mulai deteksi
-    await new Promise((resolve) => {
-      video.onloadedmetadata = () => {
-        console.log('[WAJAH] Video metadata loaded, size:', video.videoWidth, 'x', video.videoHeight);
-        resolve();
-      };
-      video.onerror = () => resolve(); // jangan reject; lanjutkan saja walau metadata gagal dibaca
-      setTimeout(() => resolve(), 3000); // fallback timeout
-    });
-
-    try {
-      await video.play();
-      console.log('[WAJAH] video.play() berhasil');
-    } catch (playErr) {
-      console.warn('[WAJAH] video.play() gagal (mungkin autoplay policy):', playErr.message);
-    }
-
-    // Tampilkan step kamera
-    const regFaceStep = document.getElementById('reg-face-step');
-    if (regFaceStep) regFaceStep.classList.remove('hidden');
-
-    if (statusEl) { statusEl.textContent = '😊 Posisikan wajah di dalam oval dan tersenyum'; statusEl.className = 'text-muted'; }
-
-    // Setup liveness status box
-    const camContainer = video.closest('.camera-container');
-    let statusBox = camContainer ? camContainer.querySelector('.liveness-status-box') : null;
-    if (camContainer && !statusBox) {
-      statusBox = document.createElement('div');
-      statusBox.className = 'liveness-status-box warn';
-      camContainer.appendChild(statusBox);
-    }
-    const guide = camContainer ? camContainer.querySelector('.face-guide') : null;
-
-    const livenessState = { phase: 'center', capturedDescriptor: null };
-    const SMILE_THRESHOLD = 0.70;
-    let attempts = 0;
-    const MAX_ATTEMPTS = 300;
-
-    // Simpan interval ID ke AppState agar bisa di-clear jika diperlukan
-    if (AppState._captureFaceInterval) {
-      clearInterval(AppState._captureFaceInterval);
-      AppState._captureFaceInterval = null;
-    }
-
-    function isFaceCentered(detection, videoW, videoH) {
-      const box = detection.detection.box;
-      const cx = box.x + box.width / 2;
-      const cy = box.y + box.height / 2;
-      return Math.abs(cx - videoW / 2) < videoW * 0.30 &&
-             Math.abs(cy - videoH / 2) < videoH * 0.30 &&
-             box.width > videoW * 0.15 && box.width < videoW * 0.90;
-    }
-
-    AppState._captureFaceInterval = setInterval(async () => {
-      attempts++;
-
-      if (attempts > MAX_ATTEMPTS) {
-        clearInterval(AppState._captureFaceInterval);
-        AppState._captureFaceInterval = null;
-        stopVideo();
-        if (guide) guide.className = 'face-guide';
-        if (statusBox) statusBox.textContent = '';
-        if (statusEl) { statusEl.textContent = '⏱ Waktu habis. Klik tombol untuk mencoba lagi.'; statusEl.className = 'text-danger'; }
-        if (btnCapture) btnCapture.disabled = false;
-        return;
-      }
-
-      // Pastikan video masih aktif
-      if (video.readyState < 2 || video.paused) {
-        console.warn('[WAJAH] Video belum siap, skip frame', attempts);
-        return;
-      }
-
-      let detections = null;
-      try {
-        detections = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 }))
-          .withFaceLandmarks()
-          .withFaceDescriptor()
-          .withFaceExpressions();
-      } catch (detectErr) {
-        console.warn('[WAJAH] Deteksi gagal pada frame', attempts, ':', detectErr.message);
-        return;
-      }
-
-      if (!detections) {
-        livenessState.phase = 'center';
-        if (guide) guide.className = 'face-guide';
-        if (statusBox) { statusBox.className = 'liveness-status-box warn'; statusBox.textContent = '👁 Arahkan wajah ke kamera'; }
-        return;
-      }
-
-      const vW = video.videoWidth || 640;
-      const vH = video.videoHeight || 480;
-      const centered = isFaceCentered(detections, vW, vH);
-      const smileScore = (detections.expressions && detections.expressions.happy) ? detections.expressions.happy : 0;
-
-      if (!centered && livenessState.phase === 'center') {
-        if (guide) guide.className = 'face-guide liveness-warn';
-        if (statusBox) { statusBox.className = 'liveness-status-box warn'; statusBox.textContent = '↔ Posisikan wajah di tengah oval'; }
-        return;
-      }
-
-      switch (livenessState.phase) {
-        case 'center':
-          if (guide) guide.className = 'face-guide liveness-warn';
-          if (statusBox) { statusBox.className = 'liveness-status-box warn'; statusBox.textContent = '🙂 Tersenyum untuk mendaftar wajah'; }
-          if (smileScore >= SMILE_THRESHOLD) {
-            console.log('[WAJAH] Senyum terdeteksi, skor:', smileScore.toFixed(2));
-            livenessState.phase = 'done';
-          }
-          break;
-
-        case 'done':
-          if (!livenessState.capturedDescriptor) {
-            livenessState.capturedDescriptor = Array.from(detections.descriptor);
-            clearInterval(AppState._captureFaceInterval);
-            AppState._captureFaceInterval = null;
-
-            if (guide) guide.className = 'face-guide liveness-ok';
-            if (statusBox) { statusBox.className = 'liveness-status-box ok'; statusBox.textContent = '✅ Liveness OK — Menyimpan data wajah...'; }
-
-            // Ambil snapshot wajah (mirror-corrected)
-            try {
-              const snapCanvas = document.createElement('canvas');
-              snapCanvas.width = vW;
-              snapCanvas.height = vH;
-              const ctx2 = snapCanvas.getContext('2d');
-              ctx2.save();
-              ctx2.scale(-1, 1);
-              ctx2.drawImage(video, -vW, 0, vW, vH);
-              ctx2.restore();
-              regFacePhotoBase64 = snapCanvas.toDataURL('image/jpeg', 0.92);
-            } catch (snapErr) {
-              console.warn('[WAJAH] Gagal ambil snapshot:', snapErr.message);
-            }
-
-            regFaceDescriptor = livenessState.capturedDescriptor;
-            console.log('[WAJAH] Descriptor wajah berhasil direkam, panjang:', regFaceDescriptor.length);
-
-            stopVideo();
-
-            if (statusBox) setTimeout(() => { if (statusBox) statusBox.textContent = ''; }, 1500);
-            if (statusEl) { statusEl.textContent = '✅ Wajah berhasil diverifikasi & dicatat!'; statusEl.className = 'text-success'; }
-            if (btnCapture) {
-              btnCapture.disabled = false;
-              btnCapture.textContent = '🔄 Ulangi Pendaftaran Wajah';
-            }
-          }
-          break;
-      }
-    }, 500);
-
-  } catch (e) {
-    console.error('[WAJAH] captureFace() error (setelah kamera terbuka):', e.name, e.message);
-    stopVideo();
-    if (AppState._captureFaceInterval) {
-      clearInterval(AppState._captureFaceInterval);
-      AppState._captureFaceInterval = null;
-    }
-
-    const userMsg = e.message || 'Gagal memuat model pengenalan wajah. Periksa koneksi internet dan coba lagi.';
-    showAlert(userMsg, 'danger');
-    if (statusEl) { statusEl.textContent = '❌ ' + userMsg; statusEl.className = 'text-danger'; }
-    if (btnCapture) btnCapture.disabled = false;
   }
 }
 
@@ -4731,15 +4412,12 @@ async function doRegister() {
     namaBank: $('#reg-bank').value.trim(),
     atasNamaRekening: $('#reg-rekening').value.trim(),
     setujuKebijakan: $('#reg-setuju').checked,
-    faceDescriptor: regFaceDescriptor,
     fotoProfilBase64: regPhotoBase64,
-    fotoProfilOriginalBase64: regPhotoOriginalBase64,
-    fotoWajahBase64: regFacePhotoBase64
+    fotoProfilOriginalBase64: regPhotoOriginalBase64
   };
   if(!data.username || !data.password || !data.namaLengkap) { showAlert('Username, Password, dan Nama Lengkap wajib diisi'); return; }
   if(data.password !== data.confirmPassword) { showAlert('Password dan konfirmasi tidak cocok'); return; }
   if(!data.setujuKebijakan) { showAlert('Anda harus menyetujui kebijakan data'); return; }
-  if(!data.faceDescriptor) { showAlert('Pendaftaran wajah wajib dilakukan'); return; }
   try {
     const res = await apiCall('registerUser', data);
     showAlert('Registrasi berhasil! Silakan login.', 'success');
@@ -5034,7 +4712,7 @@ function renderDashboardUser(data) {
   if (!fotoAda && !sessionStorage.getItem(welcomeKey)) {
     sessionStorage.setItem(welcomeKey, '1');
     setTimeout(() => {
-      showAlert('Selamat datang! Silakan lengkapi <strong>Foto Profil</strong> melalui menu <strong>Profil</strong>, kemudian lakukan <strong>Generate ID Card</strong> agar kartu identitas dapat digunakan.', 'info', { duration: 9000 });
+      showAlert('Selamat datang! Silakan lengkapi <strong>Foto Profil</strong> dan <strong>Update Data Wajah</strong> melalui menu <strong>Profil</strong>, kemudian lakukan <strong>Generate ID Card</strong> agar kartu identitas dan absensi wajah dapat digunakan.', 'info', { duration: 9000 });
     }, 800);
   }
 
