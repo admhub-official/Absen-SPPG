@@ -96,6 +96,101 @@
 
     #sidebar.open { transform: translateX(0); }
 
+    /* ===== MOBILE: Sidebar jadi Bottom Sheet / Drawer dari bawah ===== */
+    @media (max-width: 1023px) {
+      #sidebar {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: auto;
+        max-height: 88vh;
+        transform: translateY(110%);
+        border-radius: 20px 20px 0 0;
+        padding: 0;
+        box-shadow: 0 -8px 40px rgba(0,0,0,0.25);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Handle bar drag area */
+        padding-top: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      #sidebar.open { transform: translateY(0); }
+
+      /* Handle bar visual di atas drawer */
+      #sidebar::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: rgba(255,255,255,0.25);
+        border-radius: 2px;
+        margin: 14px auto 10px;
+        flex-shrink: 0;
+      }
+
+      /* Di mobile: sembunyikan brand karena sudah ada header */
+      .sidebar-brand { display: none; }
+
+      /* User info jadi lebih kompak horizontal */
+      .sidebar-user {
+        padding: 0.875rem 1.25rem;
+        margin-bottom: 0;
+        border-bottom-color: rgba(255,255,255,0.08);
+      }
+
+      .sidebar-user img { width: 40px; height: 40px; }
+
+      /* Nav items jadi grid 2 kolom di mobile untuk hemat ruang vertikal */
+      .nav-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.25rem;
+        padding: 0.75rem;
+        padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+      }
+
+      .nav-item {
+        border-radius: var(--radius-lg);
+        padding: 0.75rem 0.875rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.375rem;
+        font-size: 0.8125rem;
+        background: rgba(255,255,255,0.04);
+      }
+
+      .nav-item:hover, .nav-item.active {
+        background: rgba(59,130,246,0.2);
+      }
+
+      .nav-item.active::before { display: none; }
+
+      .nav-item svg { width: 18px; height: 18px; }
+
+      /* Tombol logout tetap full-width di bawah */
+      .nav-item.logout {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        justify-content: center;
+        background: rgba(239,68,68,0.12);
+        border: 1px solid rgba(239,68,68,0.2);
+      }
+
+      /* Label drawer di atas nav section */
+      .sidebar-drawer-label {
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(255,255,255,0.4);
+        padding: 0.5rem 1rem 0;
+        grid-column: 1 / -1;
+      }
+    }
+
     #sidebar-overlay {
       display: none;
       position: fixed;
@@ -2306,8 +2401,9 @@
       .modal-body { padding: 1.125rem; }
       .modal-footer { padding: 0.875rem 1.125rem; }
 
-      /* ===== Header lebih ringkas di mobile ===== */
-      #header { padding: 0 0.75rem; }
+      /* ===== Header lebih ringkas & informatif di mobile ===== */
+      #header { padding: 0 0.75rem; height: 56px; }
+
       .page-title {
         flex: 1 1 auto;
         min-width: 0;
@@ -2316,16 +2412,51 @@
         white-space: nowrap;
         font-size: 1rem;
       }
-      .profile-trigger { padding: 0.25rem; gap: 0.375rem; }
-      .profile-trigger .profile-role { display: none; }
-      .profile-trigger .profile-name {
-        max-width: 92px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: 0.8125rem;
+
+      /* Sembunyikan nama & role teks, ganti dengan foto saja */
+      .profile-trigger { padding: 0.25rem; gap: 0; }
+      .profile-trigger .profile-info { display: none; }
+      .profile-trigger .chevron { display: none; }
+      .profile-trigger img {
+        width: 36px;
+        height: 36px;
+        border: 2px solid var(--primary);
       }
       #btn-pwa-install { padding: 0.375rem 0.625rem; font-size: 0.75rem; }
+
+      /* Chip status absen hari ini di header — muncul hanya di dashboard/beranda */
+      #header-absen-chip {
+        display: none;
+        align-items: center;
+        gap: 5px;
+        background: var(--success-light);
+        color: #065f46;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid #6ee7b7;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: var(--transition);
+        flex-shrink: 0;
+      }
+
+      #header-absen-chip.belum {
+        background: var(--danger-light);
+        color: #991b1b;
+        border-color: #fca5a5;
+      }
+
+      #header-absen-chip.show { display: flex; }
+
+      #header-absen-chip .chip-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        flex-shrink: 0;
+      }
 
       /* ===== Dashboard: kartu statistik jadi grid 2 kolom rapat ===== */
       #dashboard-admin .grid-4,
@@ -2466,11 +2597,146 @@
 
       /* Beri ruang bawah agar konten tidak tertutup bottom bar */
       #content-area {
-        padding-bottom: calc(64px + max(1.25rem, env(safe-area-inset-bottom, 0px)));
+        padding-bottom: calc(72px + max(1.25rem, env(safe-area-inset-bottom, 0px)));
       }
 
       .device-ui {
-        padding-bottom: calc(64px + max(2rem, env(safe-area-inset-bottom, 0px)));
+        padding-bottom: calc(72px + max(2rem, env(safe-area-inset-bottom, 0px)));
+      }
+    }
+
+    /* ===== BOTTOM BAR EXTENDED STYLES ===== */
+    @media (max-width: 1023px) {
+      #mobile-bottom-bar {
+        height: 72px;
+        gap: 0;
+        padding: 0 4px;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+
+      .bottom-bar-btn {
+        flex: 1;
+        padding: 0.375rem 0.25rem 0.5rem;
+        min-width: 0;
+        gap: 0.2rem;
+        font-size: 0.625rem;
+        letter-spacing: 0.01em;
+        position: relative;
+      }
+
+      .bottom-bar-icon-wrap {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .bottom-bar-icon-wrap svg {
+        width: 22px;
+        height: 22px;
+        stroke-width: 2;
+        transition: var(--transition);
+      }
+
+      .bottom-bar-btn.active .bottom-bar-icon-wrap svg {
+        stroke: var(--primary);
+      }
+
+      .bottom-bar-btn.active span {
+        color: var(--primary);
+        font-weight: 700;
+      }
+
+      /* Indikator aktif: titik kecil di bawah ikon */
+      .bottom-bar-btn.active::after {
+        content: '';
+        position: absolute;
+        bottom: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--primary);
+      }
+
+      /* ===== FAB (Floating Action Button) Absen Tengah ===== */
+      .bottom-bar-absen-center {
+        flex: 1.2;
+        padding-bottom: 0.5rem;
+        padding-top: 0;
+      }
+
+      .bottom-bar-absen-center::after { display: none !important; }
+
+      .bottom-bar-absen-fab {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        margin-top: -20px;
+        box-shadow: 0 4px 16px rgba(37,99,235,0.45), 0 1px 4px rgba(0,0,0,0.15);
+        border: 3px solid white;
+        transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
+        flex-shrink: 0;
+      }
+
+      .bottom-bar-absen-center:active .bottom-bar-absen-fab {
+        transform: scale(0.88);
+        box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+      }
+
+      .bottom-bar-absen-center span {
+        font-size: 0.625rem;
+        font-weight: 700;
+        color: var(--primary);
+        letter-spacing: 0.02em;
+      }
+
+      /* Badge notifikasi kecil di atas ikon */
+      .bottom-bar-badge {
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        background: var(--danger);
+        color: white;
+        font-size: 0.5625rem;
+        font-weight: 700;
+        min-width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+        border: 1.5px solid white;
+        animation: badgePop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        pointer-events: none;
+      }
+
+      @keyframes badgePop {
+        from { transform: scale(0); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+
+      /* Foto profil mini di ikon tab Profil */
+      .bottom-bar-profil-img {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--border);
+        display: block;
+      }
+
+      .bottom-bar-btn.active .bottom-bar-profil-img {
+        border-color: var(--primary);
       }
     }
 
@@ -2934,9 +3200,36 @@
 
 <!-- ==================== MOBILE BOTTOM BAR ==================== -->
 <div id="mobile-bottom-bar">
-  <button class="bottom-bar-btn" id="bottom-bar-absen-btn">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-    Absen
+  <button class="bottom-bar-btn" id="bottom-bar-dashboard-btn" data-nav="dashboard">
+    <div class="bottom-bar-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    </div>
+    <span>Beranda</span>
+  </button>
+  <button class="bottom-bar-btn" id="bottom-bar-absensi-btn" data-nav="my-absensi">
+    <div class="bottom-bar-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+    </div>
+    <span>Absensi</span>
+  </button>
+  <!-- Tombol Absen tengah — menonjol -->
+  <button class="bottom-bar-btn bottom-bar-absen-center" id="bottom-bar-absen-btn" data-nav="absen-manual">
+    <div class="bottom-bar-absen-fab">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    </div>
+    <span>Absen</span>
+  </button>
+  <button class="bottom-bar-btn" id="bottom-bar-payroll-btn" data-nav="my-payroll">
+    <div class="bottom-bar-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </div>
+    <span>Gaji</span>
+  </button>
+  <button class="bottom-bar-btn" id="bottom-bar-profil-btn" data-nav="profil">
+    <div class="bottom-bar-icon-wrap" id="bottom-bar-profil-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
+    <span>Profil</span>
   </button>
 </div>
 
@@ -2950,6 +3243,7 @@
       <span class="sidebar-brand-text">Sistem Absensi</span>
     </div>
     <nav class="nav-section">
+      <div class="sidebar-drawer-label">Menu Utama</div>
       <div class="nav-item" data-page="dashboard">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         <span class="nav-item-text">Dashboard</span>
@@ -2958,6 +3252,7 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
         <span class="nav-item-text">Absen</span>
       </div>
+      <div class="sidebar-drawer-label admin-only akuntan-only">Administrasi</div>
       <div class="nav-item admin-only" data-page="manajemen-user">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span class="nav-item-text">Manajemen User</span>
@@ -2985,11 +3280,16 @@
 
   <div id="main-content">
     <div id="header">
-      <button id="menu-btn" class="menu-btn">
+      <button id="menu-btn" class="menu-btn" title="Menu">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div class="page-title" id="page-title">Dashboard</div>
-      <div style="display:flex; align-items:center; gap:0.75rem;">
+      <div style="display:flex; align-items:center; gap:0.5rem;">
+        <!-- Chip status absen hari ini (hanya muncul di mobile saat di beranda) -->
+        <div id="header-absen-chip" onclick="navigateTo('absen-manual')">
+          <span class="chip-dot"></span>
+          <span id="header-absen-chip-text">Belum Absen</span>
+        </div>
         <button id="btn-pwa-install" class="btn btn-sm btn-primary hidden">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Install App
@@ -4170,6 +4470,9 @@ function navigateTo(page) {
   if(route.type === 'device' && !AppState.device) { page = 'login'; }
   if(page !== 'device-absen' && AppState.device) { page = 'device-absen'; }
   AppState.currentPage = page;
+  // Sembunyikan chip absen jika bukan di dashboard
+  const absenChip = document.getElementById('header-absen-chip');
+  if(absenChip && page !== 'dashboard') absenChip.classList.remove('show');
   if(page !== 'login' && page !== 'register') {
     localStorage.setItem('absensi_last_page', page);
   }
@@ -4187,10 +4490,27 @@ function navigateTo(page) {
   const navItem = $(`.nav-item[data-page="${page}"]`);
   if(navItem) navItem.classList.add('active');
 
-  // Sync active state bottom bar
-  const bottomBtn = document.getElementById('bottom-bar-absen-btn');
-  if(bottomBtn) {
-    bottomBtn.classList.toggle('active', page === 'absen-manual');
+  // Sync active state bottom bar (semua tab)
+  const navMap = {
+    'dashboard': 'bottom-bar-dashboard-btn',
+    'my-absensi': 'bottom-bar-absensi-btn',
+    'absen-manual': 'bottom-bar-absen-btn',
+    'my-payroll': 'bottom-bar-payroll-btn',
+    'profil': 'bottom-bar-profil-btn'
+  };
+  document.querySelectorAll('#mobile-bottom-bar .bottom-bar-btn').forEach(b => b.classList.remove('active'));
+  const activeBtnId = navMap[page];
+  if(activeBtnId) {
+    const activeBtn = document.getElementById(activeBtnId);
+    if(activeBtn) activeBtn.classList.add('active');
+  }
+
+  // Foto mini di tab Profil (jika user sudah login)
+  if(AppState.user && AppState.user.fotoProfil) {
+    const profilIconWrap = document.getElementById('bottom-bar-profil-icon');
+    if(profilIconWrap && !profilIconWrap.querySelector('img')) {
+      profilIconWrap.innerHTML = `<img src="${AppState.user.fotoProfil}" class="bottom-bar-profil-img" onerror="this.style.display='none'">`;
+    }
   }
 
   // Sembunyikan bottom bar di halaman login/register/device/absen-manual
@@ -4318,14 +4638,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Mobile bottom bar - tombol Absen
-  const bottomAbsenBtn = document.getElementById('bottom-bar-absen-btn');
-  if(bottomAbsenBtn) {
-    bottomAbsenBtn.addEventListener('click', () => {
+  // Mobile bottom bar - semua tombol navigasi
+  document.querySelectorAll('#mobile-bottom-bar .bottom-bar-btn[data-nav]').forEach(btn => {
+    btn.addEventListener('click', () => {
       if(!AppState.token) { navigateTo('login'); return; }
-      navigateTo('absen-manual');
+      navigateTo(btn.dataset.nav);
     });
-  }
+  });
 
   const pwaBtn = document.getElementById('btn-pwa-install');
   if (pwaBtn) {
@@ -5161,6 +5480,25 @@ function renderDashboardUser(data) {
   const container = $('#dashboard-user');
   container.classList.remove('hidden');
   $('#dashboard-admin').classList.add('hidden');
+
+// Update chip status absen di header mobile
+  (function updateHeaderAbsenChip() {
+    if(window.innerWidth >= 1024) return;
+    const chip = document.getElementById('header-absen-chip');
+    const chipText = document.getElementById('header-absen-chip-text');
+    if(!chip || !chipText) return;
+    chip.classList.add('show');
+    if(data.sudahPulang) {
+      chip.classList.remove('belum');
+      chipText.textContent = '✓ Sudah Pulang';
+    } else if(data.sudahDatang) {
+      chip.classList.remove('belum');
+      chipText.textContent = '✓ Sudah Datang';
+    } else {
+      chip.classList.add('belum');
+      chipText.textContent = 'Belum Absen';
+    }
+  })();
 
   // Notifikasi selamat datang jika foto profil belum diisi
   const welcomeKey = 'welcomed_' + (AppState.user && AppState.user.idUser);
