@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="Absensi">
   <link rel="manifest" id="pwa-manifest-link">
   <link rel="apple-touch-icon" id="pwa-apple-icon">
-<link rel="icon" type="image/webp" href="" id="pwa-favicon">
+<link rel="icon" type="image/png" href="https://drive.google.com/thumbnail?id=1FLInXFlendmnziCYZiPY6qmBCqRZ_fu3&sz=w64" id="pwa-favicon">
   <title>Sistem Absensi Multi-User</title>
 
   <!-- Libraries -->
@@ -3961,7 +3961,7 @@ const PWA_ICON_180 = 'data:image/webp;base64,UklGRiYXAABXRUJQVlA4WAoAAAAQAAAAswA
   const manifestUrl = URL.createObjectURL(manifestBlob);
   document.getElementById('pwa-manifest-link').setAttribute('href', manifestUrl);
   document.getElementById('pwa-apple-icon').setAttribute('href', PWA_ICON_180);
-document.getElementById('pwa-favicon').setAttribute('href', PWA_ICON_192);
+document.getElementById('pwa-favicon').setAttribute('href', 'https://drive.google.com/thumbnail?id=1FLInXFlendmnziCYZiPY6qmBCqRZ_fu3&sz=w64');
   // Service Worker minimal (wajib ada agar Chrome menganggap app "installable").
   // Didaftarkan via Blob URL karena Apps Script tidak bisa serve file JS terpisah.
   if ('serviceWorker' in navigator) {
