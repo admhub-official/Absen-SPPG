@@ -4325,7 +4325,69 @@ let cropState = {
 // ==================== API WRAPPER ====================
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw7CwhPq6wVK9jR5VQ0u5lc9dvLOT8i8iK3GeVGElinrEG3Cfvi-K40DOjeRrvgQ_9o/exec';
 
+// Client-side cache: simpan hasil API call di memori untuk menghindari
+// fetch berulang saat user pindah halaman bolak-balik.
+const _apiCache = {};
+const _API_CACHE_TTL = {
+  // TTL dalam milidetik per fungsi (0 = tidak di-cache)
+  'getDashboardData':        60000,   // 1 menit
+  'getProfilLengkap':        120000,  // 2 menit
+  'getDataKaryawan':         60000,
+  'getKaryawanForPayroll':   60000,
+  'getMyPayroll':            120000,
+  'getMyAbsensi':            60000,
+  'getAbsensiData':          30000,
+  'getAuditLog':             30000,
+  'getAllUsers':              60000,
+  'getMasterData':           300000,  // 5 menit (jarang berubah)
+};
+
+function _cacheKey(funcName, data) {
+  // Buat key unik berdasarkan nama fungsi + parameter penting
+  // Token sengaja TIDAK dimasukkan ke key agar tidak bocor, tapi kita
+  // prefix dengan token 6 karakter pertama untuk isolasi per-user.
+  const tokenPrefix = (data && data.token) ? data.token.substring(0, 8) : 'anon';
+  const dataStr = JSON.stringify({ ...data, token: undefined });
+  return tokenPrefix + ':' + funcName + ':' + dataStr;
+}
+
+function invalidateCache(funcName) {
+  // Hapus semua cache entry untuk fungsi tertentu (dipanggil setelah mutasi data)
+  if (!funcName) { Object.keys(_apiCache).forEach(k => delete _apiCache[k]); return; }
+  Object.keys(_apiCache).forEach(k => {
+    if (k.includes(':' + funcName + ':')) delete _apiCache[k];
+  });
+}
+
+// Fungsi-fungsi yang MENULIS data — setelah dipanggil, invalidasi cache terkait
+const _MUTATION_INVALIDATE = {
+  'updateProfil':         ['getProfilLengkap', 'getAllUsers', 'getDataKaryawan'],
+  'updateFotoProfil':     ['getProfilLengkap', 'getAllUsers'],
+  'updateFaceDescriptor': ['getProfilLengkap'],
+  'updateProfilByAdmin':  ['getAllUsers', 'getDataKaryawan', 'getKaryawanForPayroll'],
+  'toggleUserStatus':     ['getAllUsers', 'getDataKaryawan', 'getKaryawanForPayroll'],
+  'registerDevice':       ['getAllUsers'],
+  'prosesPayroll':        ['getMyPayroll', 'getAbsensiData', 'getDashboardData', 'getAbsensiForPayrollPreview', 'getMyAbsensi'],
+  'recordAbsensi':        ['getDashboardData', 'getAbsensiData'],
+  'recordAbsensiSelf':    ['getDashboardData', 'getAbsensiData', 'getMyAbsensi'],
+  'generateIdCard':       ['getProfilLengkap'],
+  'registerUser':         ['getAllUsers', 'getDataKaryawan', 'getKaryawanForPayroll'],
+};
+
 function apiCall(funcName, data, opts) {
+  const silent = opts && opts.silent;
+  const forceRefresh = opts && opts.forceRefresh;
+  const ttl = _API_CACHE_TTL[funcName] || 0;
+  const cacheKey = ttl > 0 ? _cacheKey(funcName, data) : null;
+
+  // Coba ambil dari cache (hanya untuk read-only calls)
+  if (cacheKey && !forceRefresh) {
+    const cached = _apiCache[cacheKey];
+    if (cached && (Date.now() - cached.ts) < ttl) {
+      // Cache hit — return instantly tanpa loading bar
+      return Promise.resolve(cached.data);
+    }
+  }
   const silent = opts && opts.silent;
   return new Promise((resolve, reject) => {
     if(!silent) showLoading(true);
@@ -4338,6 +4400,15 @@ function apiCall(funcName, data, opts) {
     .then(json => {
       if(!silent) showLoading(false);
       if (json.success) {
+        // Simpan ke cache jika fungsi ini mendukung caching
+        if (cacheKey) {
+          _apiCache[cacheKey] = { data: json.result, ts: Date.now() };
+        }
+        // Invalidasi cache terkait jika ini adalah operasi mutasi
+        const toInvalidate = _MUTATION_INVALIDATE[funcName];
+        if (toInvalidate) {
+          toInvalidate.forEach(fn => invalidateCache(fn));
+        }
         resolve(json.result);
       } else {
         reject(json.error || 'Terjadi kesalahan pada server');
@@ -4353,6 +4424,38 @@ function apiCall(funcName, data, opts) {
 function apiCallWithToken(funcName, extraData) {
   const data = { token: AppState.token, ...extraData };
   return apiCall(funcName, data);
+}
+
+// ==================== PREFETCH ====================
+// Memuat data yang sering dipakai ke cache di background,
+// sehingga ketika user navigasi ke halaman tersebut sudah tersedia instan.
+function prefetchCommonData() {
+  if (!AppState.token || !AppState.user) return;
+  const role = AppState.user.role;
+
+  // Dashboard selalu di-prefetch
+  apiCall('getDashboardData', { token: AppState.token }, { silent: true }).catch(() => {});
+
+  // Data profil
+  apiCall('getProfilLengkap', { token: AppState.token }, { silent: true }).catch(() => {});
+
+  // Data sesuai role
+  if (role === 'ADMIN' || role === 'AKUNTAN') {
+    apiCall('getDataKaryawan', { token: AppState.token }, { silent: true }).catch(() => {});
+    apiCall('getKaryawanForPayroll', { token: AppState.token }, { silent: true }).catch(() => {});
+    // Absensi hari ini
+    const today = new Date().toISOString().split('T')[0];
+    apiCall('getAbsensiData', { token: AppState.token, filters: { tanggal: today } }, { silent: true }).catch(() => {});
+  }
+
+  // Payroll & absensi milik sendiri
+  apiCall('getMyPayroll', { token: AppState.token }, { silent: true }).catch(() => {});
+  const now = new Date();
+  const bulan = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  apiCall('getMyAbsensi', { token: AppState.token, filterBulan: bulan }, { silent: true }).catch(() => {});
+
+  // Master data (jarang berubah, cache 5 menit)
+  apiCall('getMasterData', {}, { silent: true }).catch(() => {});
 }
 
 // ==================== AUTH ====================
@@ -4377,6 +4480,8 @@ async function doLogin() {
         navigateTo('device-absen');
       } else {
         navigateTo('dashboard');
+        // Prefetch data yang sering dipakai agar halaman berikutnya instant
+        setTimeout(() => prefetchCommonData(), 500);
       }
     } else if(res.device) {
       AppState.token = res.token;
@@ -4573,6 +4678,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const allowed = route && (!route.roles || route.roles.includes(role));
         hideSessionLoading();
         navigateTo(allowed ? lastPage : 'dashboard');
+        // Prefetch data di background setelah halaman pertama muncul
+        setTimeout(() => prefetchCommonData(), 800);
       }
     }).catch(() => {
       clearSession();
@@ -5337,14 +5444,28 @@ async function doResetPassword() {
 
 // ==================== DASHBOARD ====================
 async function initDashboard() {
+  // Stale-while-revalidate: tampilkan cache lama dulu (jika ada) sambil fetch baru
+  const cacheKey = _cacheKey('getDashboardData', { token: AppState.token });
+  const cached = _apiCache[cacheKey];
+  if (cached && cached.data) {
+    // Render data lama secara instan
+    if(cached.data.role === 'ADMIN' || cached.data.role === 'AKUNTAN') {
+      renderDashboardAdmin(cached.data);
+    } else {
+      renderDashboardUser(cached.data);
+    }
+  }
   try {
-    const data = await apiCallWithToken('getDashboardData', {});
+    // Fetch data terbaru di background (forceRefresh agar cache diperbarui)
+    const data = await apiCallWithToken('getDashboardData', {}, { forceRefresh: !!cached });
     if(data.role === 'ADMIN' || data.role === 'AKUNTAN') {
       renderDashboardAdmin(data);
     } else {
       renderDashboardUser(data);
     }
-  } catch(e) { showAlert(e); }
+  } catch(e) {
+    if (!cached) showAlert(e); // hanya tampilkan error jika tidak ada data lama
+  }
 }
 
 function renderDashboardAdmin(data) {
