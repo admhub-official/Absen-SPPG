@@ -502,27 +502,7 @@
       border: 1px solid var(--border);
     }
 
-    @media (max-width: 768px) {
-      .table-container .data-table {
-        min-width: 520px;
-      }
-      .table-container .data-table th {
-        font-size: 0.7rem;
-        padding: 0.625rem 0.75rem;
-        white-space: nowrap;
-      }
-      .table-container .data-table td {
-        font-size: 0.8rem;
-        padding: 0.625rem 0.75rem;
-        white-space: nowrap;
-      }
-      .table-container .data-table td .badge {
-        font-size: 0.68rem;
-        padding: 0.25rem 0.55rem;
-      }
-    }
-
-    .data-table { 
+    .data-table {
       width: 100%; 
       border-collapse: collapse; 
       font-size: 0.875rem; 
@@ -2917,46 +2897,6 @@
       <!-- PAGE: PROFIL -->
       <div id="page-profil" class="page hidden">
         <div id="profil-readonly"></div>
-        <div id="profil-edit-form" class="hidden card" style="margin-top:1.25rem;">
-          <div class="card-header"><div class="card-title">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Edit Profil
-          </div></div>
-          <div class="form-row form-row-2">
-            <div class="form-group"><label class="form-label">Nama Lengkap</label><input type="text" id="edit-nama" class="form-input"></div>
-            <div class="form-group"><label class="form-label">Tempat Lahir</label><input type="text" id="edit-tempat" class="form-input"></div>
-            <div class="form-group"><label class="form-label">Tanggal Lahir</label><input type="date" id="edit-tanggal-lahir" class="form-input"></div>
-            <div class="form-group"><label class="form-label">Email</label><input type="email" id="edit-email" class="form-input"></div>
-            <div class="form-group"><label class="form-label">No. Whatsapp</label><input type="text" id="edit-whatsapp" class="form-input"></div>
-            <div class="form-group"><label class="form-label">Nama Bank</label><input type="text" id="edit-bank" class="form-input"></div>
-            <div class="form-group"><label class="form-label">Atas Nama Rekening</label><input type="text" id="edit-rekening" class="form-input"></div>
-          </div>
-          <div class="flex gap-2 mt-3">
-            <button id="btn-save-profil" class="btn btn-primary">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              Simpan
-            </button>
-            <button id="btn-cancel-profil" class="btn btn-outline">Batal</button>
-          </div>
-        </div>
-        <div class="flex gap-2 mt-3 flex-wrap">
-          <button id="btn-edit-profil" class="btn btn-outline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Edit Profil
-          </button>
-          <button id="btn-update-wajah" class="btn btn-outline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Update Data Wajah
-          </button>
-          <button id="btn-update-foto-profil" class="btn btn-outline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            Update Foto Profil
-          </button>
-          <button id="btn-generate-idcard" class="btn btn-outline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            Generate ID Card
-          </button>
-        </div>
       </div>
 
       <!-- Modal Update Foto Profil -->
