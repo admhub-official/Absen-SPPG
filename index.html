@@ -1184,16 +1184,6 @@
       line-height: 1.4;
     }
 
-    .qr-overlay { 
-      position: absolute; 
-      top: 0; 
-      left: 0; 
-      width: 100%; 
-      height: 100%; 
-      border: 2px solid var(--primary); 
-      border-radius: var(--radius-lg);
-    }
-
     .signature-pad-container { 
       border: 2px dashed var(--border); 
       border-radius: var(--radius); 
@@ -3800,6 +3790,11 @@ function showLoading(show=true) {
   }
 }
 function escapeHtml(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
+// Helper: deteksi apakah viewport saat ini termasuk mobile (<640px),
+// dipakai untuk memilih render tabel (desktop) vs list/card (mobile)
+function isMobileView() {
+  return window.innerWidth < 640;
+}
 
 // ==================== SKELETON / EMPTY / ERROR STATE HELPERS ====================
 function renderTableSkeleton(tbody, cols, rows=5) {
@@ -4340,11 +4335,6 @@ function safeOn(selector, event, handler) {
       console.warn('[INIT] Elemen tidak ditemukan, skip listener:', selector);
     }
   }
-  safeOn('#btn-pick-photo', 'click', () => {
-    const f = document.getElementById('reg-photo-file');
-    if (f) f.click();
-  });
-  safeOn('#reg-photo-file', 'change', handleRegPhotoFile);
   safeOn('#btn-update-foto-profil', 'click', showUpdateFotoModal);
   safeOn('#btn-generate-idcard', 'click', generateIdCardManual);
   safeOn('#btn-update-foto-kamera', 'click', captureUpdateFotoKamera);
@@ -4354,7 +4344,6 @@ function safeOn(selector, event, handler) {
   });
   safeOn('#update-foto-file', 'change', handleUpdateFotoFile);
   safeOn('#btn-save-foto-profil', 'click', saveUpdateFotoProfil);
-  safeOn('#btn-capture-photo', 'click', capturePhoto);
 
   // Crop listeners
   $('#btn-apply-crop').addEventListener('click', applyCrop);
@@ -4373,16 +4362,8 @@ function safeOn(selector, event, handler) {
 });
 
 // ==================== REGISTER ====================
-let regPhotoBase64 = null;
-let regPhotoOriginalBase64 = null;
-
 async function initRegister() {
   console.log('[REGISTER] initRegister() dipanggil');
-
-  // Reset state foto profil setiap kali halaman register dibuka
-  // (pendaftaran wajah sudah dipindahkan ke menu Profil setelah akun dibuat)
-  regPhotoBase64 = null;
-  regPhotoOriginalBase64 = null;
 
   stopVideo();
 
@@ -4451,35 +4432,6 @@ async function loadFaceApiModels() {
   }
 }
 
-async function capturePhoto() {
-  const video = $('#reg-video-photo');
-  const canvas = $('#reg-canvas-photo');
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-    AppState.videoStream = stream;
-    video.srcObject = stream;
-    video.play();
-    $('#reg-photo-step').classList.remove('hidden');
-    setTimeout(() => {
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0);
-      const rawBase64 = canvas.toDataURL('image/jpeg', 0.95);
-      regPhotoOriginalBase64 = rawBase64;
-      stopVideo();
-      video.classList.add('hidden');
-      openCropModal(rawBase64, (croppedBase64) => {
-        regPhotoBase64 = croppedBase64;
-        $('#reg-photo-preview').src = croppedBase64;
-        $('#reg-photo-preview').classList.remove('hidden');
-      });
-    }, 1500);
-  } catch(e) {
-    showAlert('Tidak bisa mengakses kamera: ' + e.message);
-  }
-}
-
 function stopVideo() {
   if(AppState.videoStream) {
     AppState.videoStream.getTracks().forEach(t => t.stop());
@@ -4513,23 +4465,6 @@ function fileToResizedBase64(file, maxSize = 1200) {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
-}
-
-async function handleRegPhotoFile(e) {
-  const file = e.target.files[0];
-  if(!file) return;
-  try {
-    const resized = await fileToResizedBase64(file, 1200);
-    regPhotoOriginalBase64 = resized;
-    $('#reg-video-photo').classList.add('hidden');
-    openCropModal(resized, (croppedBase64) => {
-      regPhotoBase64 = croppedBase64;
-      $('#reg-photo-preview').src = croppedBase64;
-      $('#reg-photo-preview').classList.remove('hidden');
-    });
-  } catch(err) {
-    showAlert('Gagal memproses gambar: ' + err);
-  }
 }
 
 let editProfilFotoBase64 = null;
@@ -4699,9 +4634,7 @@ async function doRegister() {
     gajiHarian: parseFloat($('#reg-gaji').value) || 0,
     namaBank: $('#reg-bank').value.trim(),
     atasNamaRekening: $('#reg-rekening').value.trim(),
-    setujuKebijakan: $('#reg-setuju').checked,
-    fotoProfilBase64: regPhotoBase64,
-    fotoProfilOriginalBase64: regPhotoOriginalBase64
+    setujuKebijakan: $('#reg-setuju').checked
   };
   if(!data.username || !data.password || !data.namaLengkap) { showAlert('Username, Password, dan Nama Lengkap wajib diisi'); return; }
   if(data.password !== data.confirmPassword) { showAlert('Password dan konfirmasi tidak cocok'); return; }
@@ -4927,7 +4860,10 @@ function renderDashboardAdmin(data) {
   const container = $('#dashboard-admin');
   container.classList.remove('hidden');
   $('#dashboard-user').classList.add('hidden');
-  container.innerHTML = `
+
+  const mobile = isMobileView();
+
+  const statCardsHtml = `
     <div class="grid grid-4 mb-2">
       <div class="card stat-card">
         <div class="stat-icon blue">${ICONS.karyawan}</div>
@@ -4946,7 +4882,26 @@ function renderDashboardAdmin(data) {
         <div><div class="stat-value">${data.payrollBulanIni}</div><div class="stat-label">Payroll Bulan Ini</div></div>
       </div>
     </div>
-    <div class="grid grid-2">
+  `;
+
+  // ===== TREND ABSENSI =====
+  let trendHtml;
+  if(mobile) {
+    const rows = data.trend7Hari.map(t => `
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0; border-bottom:1px solid var(--border-light);">
+        <div style="font-size:0.8125rem; color:var(--text-secondary); font-weight:500;">${formatDate(t.tanggal)}</div>
+        <div style="display:flex; gap:0.875rem;">
+          <span style="font-size:0.8125rem;"><span style="color:var(--success); font-weight:700;">${t.datang}</span> <span style="color:var(--text-muted);">datang</span></span>
+          <span style="font-size:0.8125rem;"><span style="color:var(--warning); font-weight:700;">${t.pulang}</span> <span style="color:var(--text-muted);">pulang</span></span>
+        </div>
+      </div>`).join('');
+    trendHtml = `
+      <div class="card">
+        <div class="card-header"><div class="card-title">Trend Absensi 7 Hari Terakhir</div></div>
+        <div>${rows || '<div class="text-muted" style="text-align:center; padding:1rem 0; font-size:0.8125rem;">Belum ada data</div>'}</div>
+      </div>`;
+  } else {
+    trendHtml = `
       <div class="card">
         <div class="card-header"><div class="card-title">Trend Absensi 7 Hari Terakhir</div></div>
         <div class="table-container">
@@ -4955,7 +4910,27 @@ function renderDashboardAdmin(data) {
             <tbody>${data.trend7Hari.map(t => `<tr><td>${formatDate(t.tanggal)}</td><td>${t.datang}</td><td>${t.pulang}</td></tr>`).join('')}</tbody>
           </table>
         </div>
-      </div>
+      </div>`;
+  }
+
+  // ===== BELUM ABSEN HARI INI =====
+  let belumAbsenHtml;
+  if(mobile) {
+    const rows = data.belumAbsen.map(u => `
+      <div style="display:flex; align-items:center; gap:0.625rem; padding:0.5rem 0; border-bottom:1px solid var(--border-light);">
+        <span style="width:7px; height:7px; border-radius:50%; background:var(--danger); flex-shrink:0;"></span>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:0.8125rem; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(u.nama)}</div>
+          <div style="font-size:0.6875rem; color:var(--text-muted);">${escapeHtml(u.jabatan)} &middot; ${escapeHtml(u.sppg)}</div>
+        </div>
+      </div>`).join('');
+    belumAbsenHtml = `
+      <div class="card">
+        <div class="card-header"><div class="card-title">Belum Absen Hari Ini</div></div>
+        <div>${rows || '<div class="text-muted" style="text-align:center; padding:1rem 0; font-size:0.8125rem;">Semua karyawan sudah absen 🎉</div>'}</div>
+      </div>`;
+  } else {
+    belumAbsenHtml = `
       <div class="card">
         <div class="card-header"><div class="card-title">Belum Absen Hari Ini</div></div>
         <div class="table-container">
@@ -4964,28 +4939,49 @@ function renderDashboardAdmin(data) {
             <tbody>${data.belumAbsen.map(u => `<tr><td>${escapeHtml(u.nama)}</td><td>${escapeHtml(u.jabatan)}</td><td>${escapeHtml(u.sppg)}</td></tr>`).join('')}</tbody>
           </table>
         </div>
-      </div>
-    </div>
-    <div class="grid grid-2">
+      </div>`;
+  }
+
+  // ===== ABSENSI PER SPPG & PER JABATAN =====
+  function renderDistribusiCard(title, dataObj) {
+    const entries = Object.entries(dataObj);
+    const maxVal = Math.max(1, ...entries.map(([,v]) => v));
+    if(mobile) {
+      const rows = entries.map(([k,v]) => `
+        <div style="padding:0.5rem 0; border-bottom:1px solid var(--border-light);">
+          <div style="display:flex; justify-content:space-between; font-size:0.8125rem; margin-bottom:0.3rem;">
+            <span style="font-weight:600; color:var(--text);">${escapeHtml(k)}</span>
+            <span style="font-weight:700; color:var(--primary);">${v}</span>
+          </div>
+          <div style="background:#f1f5f9; height:6px; border-radius:3px; overflow:hidden;">
+            <div style="background:var(--primary); height:100%; width:${Math.round((v/maxVal)*100)}%; border-radius:3px;"></div>
+          </div>
+        </div>`).join('');
+      return `
+        <div class="card">
+          <div class="card-header"><div class="card-title">${title}</div></div>
+          <div>${rows || '<div class="text-muted" style="text-align:center; padding:1rem 0; font-size:0.8125rem;">Belum ada data</div>'}</div>
+        </div>`;
+    }
+    return `
       <div class="card">
-        <div class="card-header"><div class="card-title">Absensi per SPPG</div></div>
+        <div class="card-header"><div class="card-title">${title}</div></div>
         <div class="table-container">
           <table class="data-table">
-            <thead><tr><th>SPPG</th><th>Jumlah Karyawan</th></tr></thead>
-            <tbody>${Object.entries(data.sppgData).map(([k,v]) => `<tr><td>${escapeHtml(k)}</td><td>${v}</td></tr>`).join('')}</tbody>
+            <thead><tr><th>${title.includes('SPPG') ? 'SPPG' : 'Jabatan'}</th><th>Jumlah Karyawan</th></tr></thead>
+            <tbody>${entries.map(([k,v]) => `<tr><td>${escapeHtml(k)}</td><td>${v}</td></tr>`).join('')}</tbody>
           </table>
         </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">Absensi per Jabatan</div></div>
-        <div class="table-container">
-          <table class="data-table">
-            <thead><tr><th>Jabatan</th><th>Jumlah Karyawan</th></tr></thead>
-            <tbody>${Object.entries(data.jabatanData).map(([k,v]) => `<tr><td>${escapeHtml(k)}</td><td>${v}</td></tr>`).join('')}</tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      </div>`;
+  }
+
+  const sppgHtml = renderDistribusiCard('Absensi per SPPG', data.sppgData);
+  const jabatanHtml = renderDistribusiCard('Absensi per Jabatan', data.jabatanData);
+
+  container.innerHTML = `
+    ${statCardsHtml}
+    <div class="grid grid-2">${trendHtml}${belumAbsenHtml}</div>
+    <div class="grid grid-2">${sppgHtml}${jabatanHtml}</div>
   `;
 }
 
