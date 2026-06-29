@@ -5424,11 +5424,44 @@ document.getElementById('pwa-favicon').setAttribute('href', 'https://drive.googl
   // Didaftarkan via Blob URL karena Apps Script tidak bisa serve file JS terpisah.
   if ('serviceWorker' in navigator) {
     const swCode = `
+      const STATIC_CACHE = 'absensi-static-v1';
+      const CDN_PATTERNS = ['cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
+
       self.addEventListener('install', e => self.skipWaiting());
-      self.addEventListener('activate', e => self.clients.claim());
+      self.addEventListener('activate', e => {
+        self.clients.claim();
+        // Bersihkan cache versi lama jika ada
+        e.waitUntil(
+          caches.keys().then(keys =>
+            Promise.all(keys.filter(k => k !== STATIC_CACHE).map(k => caches.delete(k)))
+          )
+        );
+      });
+
       self.addEventListener('fetch', e => {
-        // Pass-through sederhana; tidak melakukan caching khusus
-        e.respondWith(fetch(e.request).catch(() => new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } })));
+        const url = e.request.url;
+        const isCdnAsset = CDN_PATTERNS.some(p => url.includes(p));
+
+        if (isCdnAsset && e.request.method === 'GET') {
+          // Cache-first: asset CDN (library JS, font) jarang berubah,
+          // jadi begitu tersimpan, langsung dipakai dari cache tanpa fetch ulang.
+          e.respondWith(
+            caches.open(STATIC_CACHE).then(cache =>
+              cache.match(e.request).then(cached => {
+                if (cached) return cached;
+                return fetch(e.request).then(res => {
+                  if (res && res.status === 200) {
+                    cache.put(e.request, res.clone());
+                  }
+                  return res;
+                }).catch(() => cached || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } }));
+              })
+            )
+          );
+        } else {
+          // Request lain (API Apps Script, dsb): pass-through seperti semula
+          e.respondWith(fetch(e.request).catch(() => new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } })));
+        }
       });
     `;
     const swBlob = new Blob([swCode], { type: 'application/javascript' });
@@ -5783,9 +5816,56 @@ let cropState = {
 // ==================== API WRAPPER ====================
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyr3IvTL1DK3WhNM2qbDoq1HBXb4BCdUu7HaBr0bsBGL4KgBANdf840dWRNzTMl3nGB/exec';
 
-// Client-side cache: simpan hasil API call di memori untuk menghindari
-// fetch berulang saat user pindah halaman bolak-balik.
-const _apiCache = {};
+// ==================== PERSIST CACHE KE LOCALSTORAGE ====================
+// _apiCache normalnya hanya hidup di RAM (hilang saat reload/F5).
+// Dengan persist ke localStorage, saat halaman dibuka ulang kita bisa
+// langsung render data lama (stale-while-revalidate) sebelum fetch baru
+// selesai, sehingga reload terasa instan meski data tetap di-refresh
+// di background.
+const _APICACHE_STORAGE_KEY = 'absensi_apicache_v1';
+const _APICACHE_MAX_AGE_RESTORE = 10 * 60 * 1000; // jangan restore entry lebih tua dari 10 menit
+
+function _loadApiCacheFromStorage() {
+  try {
+    const raw = localStorage.getItem(_APICACHE_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    const now = Date.now();
+    const cleaned = {};
+    Object.keys(parsed).forEach(k => {
+      const entry = parsed[k];
+      if (entry && entry.ts && (now - entry.ts) < _APICACHE_MAX_AGE_RESTORE) {
+        cleaned[k] = entry;
+      }
+    });
+    return cleaned;
+  } catch (e) {
+    console.warn('[CACHE] Gagal memuat cache dari localStorage:', e);
+    return {};
+  }
+}
+
+let _apiCacheSaveTimer = null;
+function _persistApiCacheToStorage() {
+  // Debounce agar tidak menulis ke localStorage terlalu sering saat banyak
+  // request berurutan (misalnya saat prefetchCommonData berjalan)
+  if (_apiCacheSaveTimer) clearTimeout(_apiCacheSaveTimer);
+  _apiCacheSaveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(_APICACHE_STORAGE_KEY, JSON.stringify(_apiCache));
+    } catch (e) {
+      // Kemungkinan localStorage penuh (quota exceeded) — hapus cache lama lalu coba sekali lagi
+      console.warn('[CACHE] Gagal menyimpan cache, mencoba membersihkan storage lama:', e);
+      try {
+        localStorage.removeItem(_APICACHE_STORAGE_KEY);
+        localStorage.setItem(_APICACHE_STORAGE_KEY, JSON.stringify(_apiCache));
+      } catch (e2) {
+        console.warn('[CACHE] Tetap gagal menyimpan cache setelah dibersihkan:', e2);
+      }
+    }
+  }, 400);
+}
+
 const _API_CACHE_TTL = {
   // TTL dalam milidetik per fungsi (0 = tidak di-cache)
   'getDashboardData':        60000,   // 1 menit
@@ -5811,10 +5891,11 @@ function _cacheKey(funcName, data) {
 
 function invalidateCache(funcName) {
   // Hapus semua cache entry untuk fungsi tertentu (dipanggil setelah mutasi data)
-  if (!funcName) { Object.keys(_apiCache).forEach(k => delete _apiCache[k]); return; }
+  if (!funcName) { Object.keys(_apiCache).forEach(k => delete _apiCache[k]); _persistApiCacheToStorage(); return; }
   Object.keys(_apiCache).forEach(k => {
     if (k.includes(':' + funcName + ':')) delete _apiCache[k];
   });
+  _persistApiCacheToStorage();
 }
 
 // Fungsi-fungsi yang MENULIS data — setelah dipanggil, invalidasi cache terkait
@@ -5860,6 +5941,7 @@ function apiCall(funcName, data, opts) {
         // Simpan ke cache jika fungsi ini mendukung caching
         if (cacheKey) {
           _apiCache[cacheKey] = { data: json.result, ts: Date.now() };
+          _persistApiCacheToStorage();
         }
         // Invalidasi cache terkait jika ini adalah operasi mutasi
         const toInvalidate = _MUTATION_INVALIDATE[funcName];
@@ -5985,6 +6067,8 @@ function clearSession() {
   localStorage.removeItem('absensi_user');
   localStorage.removeItem('absensi_device');
   localStorage.removeItem('absensi_last_page');
+  localStorage.removeItem(_APICACHE_STORAGE_KEY);
+  Object.keys(_apiCache).forEach(k => delete _apiCache[k]);
   if(AppState.sessionCheckInterval) clearInterval(AppState.sessionCheckInterval);
   AppState.sessionCheckInterval = null;
 }
