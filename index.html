@@ -5596,6 +5596,10 @@ const PWA_ICON_512 = 'https://lh3.googleusercontent.com/d/1FLInXFlendmnziCYZiPY6
 const PWA_ICON_180 = 'https://lh3.googleusercontent.com/d/1FLInXFlendmnziCYZiPY6qmBCqRZ_fu3';
 
 // ==================== PWA: MANIFEST & SERVICE WORKER ====================
+// PENTING: Naikkan nilai ini setiap kali deploy versi baru (boleh tanggal/angka apa saja, asal berubah).
+// Ini memaksa SW & Cache lama di HP otomatis terhapus + reload sekali tanpa user perlu clear cache manual.
+const APP_VERSION = '2026-06-30-01';
+
 (function setupPWA() {
   // Ikon resmi Absensi (embedded base64 WebP, tidak bergantung koneksi eksternal)
   const iconDataUri = PWA_ICON_192;
@@ -5626,7 +5630,7 @@ document.getElementById('pwa-favicon').setAttribute('href', 'https://drive.googl
   // Didaftarkan via Blob URL karena Apps Script tidak bisa serve file JS terpisah.
   if ('serviceWorker' in navigator) {
     const swCode = `
-      const STATIC_CACHE = 'absensi-static-v1';
+      const STATIC_CACHE = 'absensi-static-${APP_VERSION}';
       const CDN_PATTERNS = ['cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
       self.addEventListener('install', e => self.skipWaiting());
@@ -5668,9 +5672,38 @@ document.getElementById('pwa-favicon').setAttribute('href', 'https://drive.googl
     `;
     const swBlob = new Blob([swCode], { type: 'application/javascript' });
     const swUrl = URL.createObjectURL(swBlob);
-    navigator.serviceWorker.register(swUrl).catch(err => {
-      console.warn('Service Worker registration gagal (tidak fatal):', err);
-    });
+
+    (async function registerSwWithVersionCheck() {
+      const VKEY = 'absensi_app_version';
+      const RELOAD_GUARD = 'absensi_just_force_reloaded';
+      const savedVersion = localStorage.getItem(VKEY);
+
+      if (savedVersion && savedVersion !== APP_VERSION) {
+        // Versi berubah: bersihkan total SW lama + semua cache, lalu reload sekali.
+        console.log('[PWA] Versi baru terdeteksi (' + savedVersion + ' -> ' + APP_VERSION + '). Membersihkan cache lama...');
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        } catch (e) {
+          console.warn('[PWA] Gagal membersihkan SW/cache lama:', e);
+        }
+        localStorage.setItem(VKEY, APP_VERSION);
+
+        if (!sessionStorage.getItem(RELOAD_GUARD)) {
+          sessionStorage.setItem(RELOAD_GUARD, '1');
+          location.reload();
+          return; // hentikan, halaman akan reload dengan kondisi bersih
+        }
+      } else if (!savedVersion) {
+        localStorage.setItem(VKEY, APP_VERSION);
+      }
+
+      navigator.serviceWorker.register(swUrl).catch(err => {
+        console.warn('Service Worker registration gagal (tidak fatal):', err);
+      });
+    })();
   }
 
   // Tangkap event beforeinstallprompt agar bisa tampilkan tombol Install custom (opsional)
@@ -6016,7 +6049,7 @@ let cropState = {
 };
 
 // ==================== API WRAPPER ====================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyr3IvTL1DK3WhNM2qbDoq1HBXb4BCdUu7HaBr0bsBGL4KgBANdf840dWRNzTMl3nGB/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSn87UGwjehF4WZotA5IV1lyI_QHh2uMAZEMSr2wUrYi6g6dU_u9WsYxxmwKHq1wZD/exec';
 
 // ==================== INISIALISASI CACHE (harus sebelum apiCall) ====================
 let _apiCache = {};
