@@ -109,9 +109,8 @@
         transform: translateY(110%);
         border-radius: 24px 24px 0 0;
         padding: 0;
-        box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.2), 0 -4px 16px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.25), 0 -4px 16px rgba(0, 0, 0, 0.15);
         transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-        /* Handle bar drag area */
         padding-top: 0;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
@@ -215,6 +214,11 @@
         color: rgba(255,255,255,0.4);
         padding: 0.75rem 1rem 0.5rem;
         grid-column: 1 / -1;
+      }
+
+      /* Hide Inbox Pengaduan from sidebar on mobile since it's now in header */
+      .nav-item[data-page="inbox-pengaduan"] {
+        display: none !important;
       }
     }
 
@@ -365,17 +369,19 @@
 
     #header {
       height: var(--header-height);
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 1.25rem;
+      padding: 0 1rem;
       position: sticky;
       top: 0;
       z-index: 50;
       width: 100%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
 
     #header .menu-btn { 
@@ -394,6 +400,62 @@
     }
 
     #header .menu-btn:hover { background: var(--bg); }
+
+    /* Header action buttons (notification & profile) */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .header-action-btn {
+      position: relative;
+      background: rgba(59, 130, 246, 0.08);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius);
+      transition: var(--transition);
+      color: var(--primary);
+    }
+
+    .header-action-btn:hover {
+      background: rgba(59, 130, 246, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .header-action-btn:active {
+      transform: scale(0.95);
+    }
+
+    .header-notification-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: var(--danger);
+      color: white;
+      font-size: 0.625rem;
+      font-weight: 700;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
+      animation: badgePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes badgePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
 
     .page-title { 
       font-size: 1.125rem; 
@@ -2805,6 +2867,13 @@
         50% { opacity: 0.6; transform: scale(0.9); }
       }
 
+      /* Hide absen chip on desktop since there's more space */
+      @media (min-width: 1024px) {
+        #header-absen-chip {
+          display: none !important;
+        }
+      }
+
       /* ===== Dashboard: kartu statistik jadi grid 2 kolom rapat ===== */
       #dashboard-admin .grid-4,
       #dashboard-user .grid-2 {
@@ -4716,7 +4785,12 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div class="page-title" id="page-title">Dashboard</div>
-      <div style="display:flex; align-items:center; gap:0.5rem;">
+      <div class="header-actions">
+        <!-- Tombol Inbox Pengaduan (hanya untuk ADMIN) -->
+        <button id="header-inbox-btn" class="header-action-btn admin-only hidden" onclick="navigateTo('inbox-pengaduan')" title="Inbox Pengaduan">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span class="header-notification-badge hidden" id="header-inbox-badge">0</span>
+        </button>
         <!-- Chip status absen hari ini (hanya muncul di mobile saat di beranda) -->
         <div id="header-absen-chip" onclick="navigateTo('absen-manual')">
           <span class="chip-dot"></span>
@@ -9198,6 +9272,12 @@ function applyUserUI() {
   });
   $$('.nav-item.admin-only').forEach(n => n.classList.toggle('hidden', role !== 'ADMIN'));
   $$('.nav-item.akuntan-only').forEach(n => n.classList.toggle('hidden', !(role === 'ADMIN' || role === 'AKUNTAN')));
+  
+  // Toggle header inbox button visibility for ADMIN only
+  const headerInboxBtn = document.getElementById('header-inbox-btn');
+  if(headerInboxBtn) {
+    headerInboxBtn.classList.toggle('hidden', role !== 'ADMIN');
+  }
 }
 
 async function handleQrScanned(idCardUnik) {
@@ -10262,11 +10342,18 @@ function _updateInboxUnreadBadge(list) {
     badgeEl.classList.toggle('hidden', jumlah === 0);
   }
 
-  // Badge di nav sidebar
+  // Badge di nav sidebar (desktop)
   const navBadge = document.getElementById('nav-inbox-badge');
   if(navBadge) {
     navBadge.textContent = jumlah > 99 ? '99+' : jumlah;
     navBadge.classList.toggle('hidden', jumlah === 0);
+  }
+  
+  // Badge di header action button (mobile & desktop)
+  const headerBadge = document.getElementById('header-inbox-badge');
+  if(headerBadge) {
+    headerBadge.textContent = jumlah > 99 ? '99+' : jumlah;
+    headerBadge.classList.toggle('hidden', jumlah === 0);
   }
 }
 
