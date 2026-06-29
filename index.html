@@ -7213,6 +7213,30 @@ let absenQrScanner = null;
 let absenIdUser = null;
 let absenFaceDescriptor = null;
 let currentFacingMode = 'user'; // 'user' = depan (selfie), 'environment' = belakang
+let absenLat = null;
+let absenLng = null;
+
+// Ambil lokasi GPS saat ini sebagai Promise. Reject dengan pesan singkat
+// yang mudah dibaca user (bukan objek GeolocationPositionError mentah).
+function getCurrentLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject('Browser tidak mendukung GPS');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (err) => {
+        let msg = 'Tidak dapat mengakses lokasi';
+        if (err.code === 1) msg = 'Izin lokasi ditolak. Aktifkan izin lokasi untuk browser/HP ini';
+        else if (err.code === 2) msg = 'Lokasi tidak tersedia. Pastikan GPS aktif';
+        else if (err.code === 3) msg = 'Waktu permintaan lokasi habis. Coba lagi';
+        reject(msg);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  });
+}
 
 function initAbsenManual() {
   resetAbsenFlow();
@@ -7239,6 +7263,7 @@ function initAbsenManual() {
 
 function resetAbsenFlow() {
   absenIdUser = null; absenFaceDescriptor = null;
+  absenLat = null; absenLng = null;
   currentFacingMode = 'user';
   stopVideo();
   if(absenQrScanner) { try { absenQrScanner.stop().catch(()=>{}); absenQrScanner.clear(); } catch(e){} absenQrScanner = null; }
@@ -7277,6 +7302,18 @@ async function switchCameraFacing(videoElId) {
 // ==================== ABSEN WAJAH SAYA (tanpa QR) ====================
 async function startAbsenSelfFlow() {
   $('#absen-step-idle').classList.add('hidden');
+  showLoading(true);
+  try {
+    const loc = await getCurrentLocation();
+    absenLat = loc.lat;
+    absenLng = loc.lng;
+  } catch(eLoc) {
+    showLoading(false);
+    showAlert('Gagal mendapatkan lokasi GPS: ' + eLoc + '. Aktifkan izin lokasi untuk melakukan absen.', 'danger');
+    resetAbsenFlow();
+    return;
+  }
+  showLoading(false);
   $('#absen-step-face-self').classList.remove('hidden');
   currentFacingMode = 'user';
   try {
@@ -7401,8 +7438,16 @@ async function startAbsenSelfFaceScan() {
             if(statusEl) statusEl.textContent=`Skor kecocokan: ${skor.toFixed(1)}%`;
             if(skor>FACE_MATCH_THRESHOLD){
               done=true;clearInterval(interval);stopVideo();
-              const res2=await apiCallWithToken('recordAbsensiSelf',{idUser:absenIdUser,skorKecocokan:skor/100,statusValidasi:'VALID'});
-              showAbsenSelfResult(true,`${res2.nama} - ${res2.message} (${res2.waktu})`);
+              try {
+                const res2=await apiCallWithToken('recordAbsensiSelf',{idUser:absenIdUser,skorKecocokan:skor/100,statusValidasi:'VALID',lat:absenLat,lng:absenLng});
+                if(res2.success === false){
+                  showAbsenSelfResult(false, res2.message || 'Absen tidak berhasil.');
+                } else {
+                  showAbsenSelfResult(true,`${res2.nama} - ${res2.message} (${res2.waktu})`);
+                }
+              } catch(eAbsen) {
+                showAbsenSelfResult(false, getErrorMessage(eAbsen));
+              }
             } else if(attempts>160){
               done=true;clearInterval(interval);stopVideo();
               showAbsenSelfResult(false,'Wajah tidak cocok dengan data Anda. Silakan coba lagi.');
@@ -7428,6 +7473,18 @@ function showAbsenSelfResult(success, message) {
 
 async function startAbsenFlow() {
   $('#absen-step-idle').classList.add('hidden');
+  showLoading(true);
+  try {
+    const loc = await getCurrentLocation();
+    absenLat = loc.lat;
+    absenLng = loc.lng;
+  } catch(eLoc) {
+    showLoading(false);
+    showAlert('Gagal mendapatkan lokasi GPS: ' + eLoc + '. Aktifkan izin lokasi untuk melakukan absen.', 'danger');
+    resetAbsenFlow();
+    return;
+  }
+  showLoading(false);
   $('#absen-step-qr').classList.remove('hidden');
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     showAlert('Browser tidak mendukung akses kamera. Gunakan HTTPS dan browser modern.'); resetAbsenFlow(); return;
@@ -7549,8 +7606,16 @@ async function startAbsenFaceScan() {
             if(statusEl) statusEl.textContent=`Skor kecocokan: ${skor.toFixed(1)}%`;
             if(skor>FACE_MATCH_THRESHOLD){
               done=true;clearInterval(interval);stopVideo();
-              const res2=await apiCallWithToken('recordAbsensiSelf',{idUser:absenIdUser,skorKecocokan:skor/100,statusValidasi:'VALID'});
-              showAbsenResult(true,`${res2.nama} - ${res2.message} (${res2.waktu})`);
+              try {
+                const res2=await apiCallWithToken('recordAbsensiSelf',{idUser:absenIdUser,skorKecocokan:skor/100,statusValidasi:'VALID',lat:absenLat,lng:absenLng});
+                if(res2.success === false){
+                  showAbsenResult(false, res2.message || 'Absen tidak berhasil.');
+                } else {
+                  showAbsenResult(true,`${res2.nama} - ${res2.message} (${res2.waktu})`);
+                }
+              } catch(eAbsen) {
+                showAbsenResult(false, getErrorMessage(eAbsen));
+              }
             } else if(attempts>160){
               done=true;clearInterval(interval);stopVideo();
               showAbsenResult(false,'Wajah tidak cocok. Silakan coba lagi.');
