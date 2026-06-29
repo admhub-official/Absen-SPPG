@@ -3306,6 +3306,655 @@
       margin-top: 0.875rem;
       flex-wrap: wrap;
     }
+
+/* ==================== PENGADUAN ==================== */
+    .pengaduan-list { display: flex; flex-direction: column; gap: 0.625rem; }
+
+    .pengaduan-item {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.125rem;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pengaduan-item:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+
+    .pengaduan-item.belum-dibaca {
+      border-left: 4px solid var(--primary);
+      background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+    }
+
+    .pengaduan-item.belum-dibaca .pengaduan-item-title {
+      color: var(--primary);
+    }
+
+    .pengaduan-item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-bottom: 0.375rem;
+    }
+
+    .pengaduan-item-title {
+      font-weight: 700;
+      font-size: 0.875rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .pengaduan-item-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .pengaduan-item-preview {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      margin-top: 0.375rem;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Dot merah penanda belum dibaca */
+    .unread-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      flex-shrink: 0;
+      display: inline-block;
+      animation: dotPulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.75); }
+    }
+
+    /* Badge notifikasi di ikon nav inbox */
+    .nav-notif-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--danger);
+      color: white;
+      font-size: 0.5625rem;
+      font-weight: 700;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 3px;
+      border: 1.5px solid #1e293b;
+      pointer-events: none;
+      animation: badgePop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    /* Badge di bottom bar */
+    .bottom-bar-badge.pengaduan-badge {
+      top: -4px;
+      right: -4px;
+    }
+
+    /* Modal pengaduan detail — lebih lebar */
+    #modal-pengaduan-detail .modal { max-width: 680px; }
+
+    .pengaduan-detail-section {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.125rem;
+      margin-bottom: 1rem;
+    }
+
+    .pengaduan-detail-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.375rem;
+    }
+
+    .pengaduan-detail-value {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .pengaduan-tanggapan-wrap {
+      background: var(--primary-light);
+      border: 1.5px solid #bfdbfe;
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.125rem;
+      margin-bottom: 1rem;
+    }
+
+    .pengaduan-tanggapan-wrap .pengaduan-detail-label { color: #1e40af; }
+
+    .pengaduan-tanggapan-wrap .form-textarea {
+      background: white;
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    /* Filter bar pengaduan */
+    .pengaduan-filter-bar {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    /* Form kirim pengaduan (user) */
+    .pengaduan-form-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .pengaduan-form-header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      padding: 1.5rem;
+      color: white;
+    }
+
+    .pengaduan-form-header-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .pengaduan-form-header-sub {
+      font-size: 0.8125rem;
+      color: rgba(255,255,255,0.75);
+      margin-top: 0.375rem;
+    }
+
+    .pengaduan-form-body { padding: 1.5rem; }
+
+    .pengaduan-kategori-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (min-width: 480px) {
+      .pengaduan-kategori-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .pengaduan-kategori-chip {
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 0.625rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: var(--transition);
+      color: var(--text-secondary);
+      background: var(--surface);
+      user-select: none;
+    }
+
+    .pengaduan-kategori-chip:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .pengaduan-kategori-chip.selected {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+    }
+
+    .pengaduan-anon-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #f8fafc;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 0.875rem 1rem;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-bottom: 1.25rem;
+    }
+
+    .pengaduan-anon-toggle:hover { border-color: var(--primary); background: var(--primary-light); }
+
+    .pengaduan-anon-toggle input[type="checkbox"] {
+      width: 18px; height: 18px;
+      accent-color: var(--primary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .pengaduan-anon-info {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .pengaduan-anon-info strong { color: var(--text); }
+
+    /* Riwayat pengaduan user */
+    .pengaduan-riwayat-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.875rem 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .pengaduan-riwayat-item:last-child { border-bottom: none; }
+
+    .pengaduan-riwayat-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .pengaduan-riwayat-icon.belum { background: var(--primary-light); color: var(--primary); }
+    .pengaduan-riwayat-icon.sudah { background: var(--success-light); color: var(--success); }
+
+    .pengaduan-riwayat-body { flex: 1; min-width: 0; }
+
+    .pengaduan-riwayat-kat {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 0.2rem;
+    }
+
+    .pengaduan-riwayat-preview {
+      font-size: 0.8125rem;
+      color: var(--text);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pengaduan-riwayat-time {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* Empty state khusus pengaduan */
+    .pengaduan-empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .pengaduan-empty-icon {
+      font-size: 3rem;
+      margin-bottom: 0.875rem;
+      opacity: 0.45;
+    }
+
+    /* ==================== PENGADUAN ==================== */
+    .pengaduan-list { display: flex; flex-direction: column; gap: 0.625rem; }
+
+    .pengaduan-item {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.125rem;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pengaduan-item:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+
+    .pengaduan-item.belum-dibaca {
+      border-left: 4px solid var(--primary);
+      background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+    }
+
+    .pengaduan-item.belum-dibaca .pengaduan-item-title {
+      color: var(--primary);
+    }
+
+    .pengaduan-item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-bottom: 0.375rem;
+    }
+
+    .pengaduan-item-title {
+      font-weight: 700;
+      font-size: 0.875rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .pengaduan-item-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .pengaduan-item-preview {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      margin-top: 0.375rem;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Dot merah penanda belum dibaca */
+    .unread-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      flex-shrink: 0;
+      display: inline-block;
+      animation: dotPulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.75); }
+    }
+
+    /* Badge notifikasi di ikon nav inbox */
+    .nav-notif-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--danger);
+      color: white;
+      font-size: 0.5625rem;
+      font-weight: 700;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 3px;
+      border: 1.5px solid #1e293b;
+      pointer-events: none;
+      animation: badgePop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    /* Badge di bottom bar */
+    .bottom-bar-badge.pengaduan-badge {
+      top: -4px;
+      right: -4px;
+    }
+
+    /* Modal pengaduan detail — lebih lebar */
+    #modal-pengaduan-detail .modal { max-width: 680px; }
+
+    .pengaduan-detail-section {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.125rem;
+      margin-bottom: 1rem;
+    }
+
+    .pengaduan-detail-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.375rem;
+    }
+
+    .pengaduan-detail-value {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .pengaduan-tanggapan-wrap {
+      background: var(--primary-light);
+      border: 1.5px solid #bfdbfe;
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.125rem;
+      margin-bottom: 1rem;
+    }
+
+    .pengaduan-tanggapan-wrap .pengaduan-detail-label { color: #1e40af; }
+
+    .pengaduan-tanggapan-wrap .form-textarea {
+      background: white;
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    /* Filter bar pengaduan */
+    .pengaduan-filter-bar {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    /* Form kirim pengaduan (user) */
+    .pengaduan-form-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .pengaduan-form-header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      padding: 1.5rem;
+      color: white;
+    }
+
+    .pengaduan-form-header-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .pengaduan-form-header-sub {
+      font-size: 0.8125rem;
+      color: rgba(255,255,255,0.75);
+      margin-top: 0.375rem;
+    }
+
+    .pengaduan-form-body { padding: 1.5rem; }
+
+    .pengaduan-kategori-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (min-width: 480px) {
+      .pengaduan-kategori-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .pengaduan-kategori-chip {
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 0.625rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: var(--transition);
+      color: var(--text-secondary);
+      background: var(--surface);
+      user-select: none;
+    }
+
+    .pengaduan-kategori-chip:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .pengaduan-kategori-chip.selected {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+    }
+
+    .pengaduan-anon-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #f8fafc;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 0.875rem 1rem;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-bottom: 1.25rem;
+    }
+
+    .pengaduan-anon-toggle:hover { border-color: var(--primary); background: var(--primary-light); }
+
+    .pengaduan-anon-toggle input[type="checkbox"] {
+      width: 18px; height: 18px;
+      accent-color: var(--primary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .pengaduan-anon-info {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .pengaduan-anon-info strong { color: var(--text); }
+
+    /* Riwayat pengaduan user */
+    .pengaduan-riwayat-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.875rem 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .pengaduan-riwayat-item:last-child { border-bottom: none; }
+
+    .pengaduan-riwayat-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .pengaduan-riwayat-icon.belum { background: var(--primary-light); color: var(--primary); }
+    .pengaduan-riwayat-icon.sudah { background: var(--success-light); color: var(--success); }
+
+    .pengaduan-riwayat-body { flex: 1; min-width: 0; }
+
+    .pengaduan-riwayat-kat {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 0.2rem;
+    }
+
+    .pengaduan-riwayat-preview {
+      font-size: 0.8125rem;
+      color: var(--text);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pengaduan-riwayat-time {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* Empty state khusus pengaduan */
+    .pengaduan-empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .pengaduan-empty-icon {
+      font-size: 3rem;
+      margin-bottom: 0.875rem;
+      opacity: 0.45;
+    }
+
 /* ==================== MODAL LOGOUT KONFIRMASI ==================== */
     #modal-logout-confirm .modal {
       max-width: 360px;
@@ -3907,6 +4556,15 @@
       <div class="nav-item admin-only akuntan-only" data-page="absensi">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
         <span class="nav-item-text">Data Absensi</span>
+      </div>
+      <div class="nav-item admin-only" data-page="inbox-pengaduan" style="position:relative;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="nav-item-text">Inbox Pengaduan</span>
+        <span class="nav-notif-badge hidden" id="nav-inbox-badge">0</span>
+      </div>
+      <div class="nav-item" data-page="pengaduan" style="position:relative;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+        <span class="nav-item-text">Pengaduan</span>
       </div>
       <div class="nav-item admin-only" data-page="audit-log">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -4521,6 +5179,148 @@
               </thead>
               <tbody></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+<!-- PAGE: PENGADUAN (USER) -->
+      <div id="page-pengaduan" class="page hidden">
+        <!-- Form Kirim Pengaduan -->
+        <div class="pengaduan-form-card" style="margin-bottom:1.25rem;">
+          <div class="pengaduan-form-header">
+            <div class="pengaduan-form-header-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Kirim Pengaduan
+            </div>
+            <div class="pengaduan-form-header-sub">Sampaikan keluhan, saran, atau laporan Anda secara aman dan terpercaya.</div>
+          </div>
+          <div class="pengaduan-form-body">
+            <!-- Pilih Kategori -->
+            <div class="form-group">
+              <label class="form-label">Kategori Pengaduan *</label>
+              <div class="pengaduan-kategori-grid" id="pengaduan-kategori-grid">
+                <div class="pengaduan-kategori-chip" data-val="Fasilitas">🏢 Fasilitas</div>
+                <div class="pengaduan-kategori-chip" data-val="Pelayanan">🤝 Pelayanan</div>
+                <div class="pengaduan-kategori-chip" data-val="Gaji & Payroll">💰 Gaji & Payroll</div>
+                <div class="pengaduan-kategori-chip" data-val="Absensi">📋 Absensi</div>
+                <div class="pengaduan-kategori-chip" data-val="Lingkungan Kerja">🌿 Lingkungan</div>
+                <div class="pengaduan-kategori-chip" data-val="Lainnya">📌 Lainnya</div>
+              </div>
+              <input type="hidden" id="pengaduan-kategori-val">
+            </div>
+
+            <!-- Isi Pengaduan -->
+            <div class="form-group">
+              <label class="form-label">Isi Pengaduan *</label>
+              <textarea id="pengaduan-isi" class="form-textarea" rows="5"
+                placeholder="Tuliskan pengaduan Anda secara jelas dan detail. Semakin detail, semakin mudah kami menindaklanjuti."
+                style="resize:vertical; min-height:130px;"></textarea>
+              <div id="pengaduan-isi-count" style="font-size:0.75rem; color:var(--text-muted); text-align:right; margin-top:0.25rem;">0 karakter</div>
+            </div>
+
+            <!-- Toggle Anonymous -->
+            <label class="pengaduan-anon-toggle">
+              <input type="checkbox" id="pengaduan-anon-check">
+              <div>
+                <div class="pengaduan-anon-info">
+                  <strong>Kirim secara Anonim</strong><br>
+                  Identitas Anda tidak akan ditampilkan kepada Admin.
+                </div>
+              </div>
+            </label>
+
+            <button id="btn-kirim-pengaduan" class="btn btn-primary btn-block btn-lg">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Kirim Pengaduan
+            </button>
+          </div>
+        </div>
+
+        <!-- Riwayat Pengaduan User -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Riwayat Pengaduan Saya
+            </div>
+            <button class="btn btn-sm btn-outline" onclick="loadRiwayatPengaduan()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.41"/></svg>
+              Refresh
+            </button>
+          </div>
+          <div id="pengaduan-riwayat-list">
+            <div class="pengaduan-empty">
+              <div class="pengaduan-empty-icon">📭</div>
+              <div style="font-weight:600; color:var(--text); margin-bottom:0.25rem;">Belum ada riwayat</div>
+              <div style="font-size:0.875rem;">Pengaduan yang Anda kirim akan muncul di sini.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: INBOX PENGADUAN (ADMIN) -->
+      <div id="page-inbox-pengaduan" class="page hidden">
+        <div class="card">
+          <div class="card-header flex flex-between items-center flex-wrap" style="gap:0.75rem;">
+            <div class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Inbox Pengaduan
+              <span id="inbox-unread-badge" class="badge badge-red hidden" style="font-size:0.7rem; padding:0.2rem 0.6rem; margin-left:0.375rem;"></span>
+            </div>
+            <button class="btn btn-sm btn-outline" onclick="loadInboxPengaduan()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.41"/></svg>
+              Refresh
+            </button>
+          </div>
+
+          <!-- Filter Bar -->
+          <div class="pengaduan-filter-bar">
+            <select id="filter-inbox-status" class="form-select" style="width:auto;">
+              <option value="">Semua Status</option>
+              <option value="Belum Dibaca">Belum Dibaca</option>
+              <option value="Sudah Dibaca">Sudah Dibaca</option>
+            </select>
+            <select id="filter-inbox-kategori" class="form-select" style="width:auto;">
+              <option value="">Semua Kategori</option>
+              <option value="Fasilitas">Fasilitas</option>
+              <option value="Pelayanan">Pelayanan</option>
+              <option value="Gaji & Payroll">Gaji & Payroll</option>
+              <option value="Absensi">Absensi</option>
+              <option value="Lingkungan Kerja">Lingkungan Kerja</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="filterInboxPengaduan()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Filter
+            </button>
+          </div>
+
+          <!-- List Pengaduan -->
+          <div id="inbox-pengaduan-list" class="pengaduan-list"></div>
+        </div>
+      </div>
+
+      <!-- MODAL: DETAIL PENGADUAN (ADMIN) -->
+      <div id="modal-pengaduan-detail" class="modal-overlay">
+        <div class="modal modal-lg">
+          <div class="modal-header">
+            <div class="modal-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.35rem;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Detail Pengaduan
+            </div>
+            <button class="modal-close modal-cancel">&times;</button>
+          </div>
+          <div class="modal-body" id="modal-pengaduan-detail-body"></div>
+          <div class="modal-footer" id="modal-pengaduan-detail-footer">
+            <button id="btn-tandai-dibaca" class="btn btn-primary hidden">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Tandai Sudah Dibaca
+            </button>
+            <button id="btn-simpan-tanggapan" class="btn btn-success hidden">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Simpan Tanggapan
+            </button>
+            <button class="btn btn-outline modal-cancel">Tutup</button>
           </div>
         </div>
       </div>
@@ -5193,7 +5993,9 @@ const Routes = {
   'my-payroll': { el: 'page-my-payroll', auth: true, roles: ['ADMIN','AKUNTAN','USER'] },
   'absensi': { el: 'page-absensi', auth: true, roles: ['ADMIN','AKUNTAN'] },
   'device-absen': { el: 'page-device-absen', auth: true, roles: null, type: 'device' },
-  'audit-log': { el: 'page-audit-log', auth: true, roles: ['ADMIN'] },
+  
+  'pengaduan': { el: 'page-pengaduan', auth: true, roles: ['ADMIN','AKUNTAN','USER'] },
+  'inbox-pengaduan': { el: 'page-inbox-pengaduan', auth: true, roles: ['ADMIN'] },
   'absen-manual': { el: 'page-absen-manual', auth: true, roles: ['ADMIN','AKUNTAN','USER'] },
   'my-absensi': { el: 'page-my-absensi', auth: true, roles: ['ADMIN','AKUNTAN','USER'] },
 };
@@ -5272,6 +6074,7 @@ function navigateTo(page) {
       'profil': 'Profil', 'manajemen-user': 'Manajemen User', 'data-karyawan': 'Data Karyawan',
       'payroll': 'Payroll', 'my-payroll': 'My Payroll', 'absensi': 'Data Absensi',
       'device-absen': 'Absensi', 'audit-log': 'Catatan Aktivitas', 'absen-manual': 'Absen',
+      'pengaduan': 'Pengaduan', 'inbox-pengaduan': 'Inbox Pengaduan',
       'my-absensi': 'Absensi Saya'
     };
   $('#page-title').textContent = titles[page] || '';
@@ -5292,6 +6095,8 @@ function navigateTo(page) {
   }
   if(page === 'my-absensi') initMyAbsensi();
   if(page === 'audit-log') initAuditLog();
+  if(page === 'pengaduan') initPengaduan();
+  if(page === 'inbox-pengaduan') initInboxPengaduan();
   if(page === 'absen-manual') initAbsenManual();
   if(page === 'register') initRegister();
 }
@@ -8898,6 +9703,411 @@ function renderMyAbsensiPage(res) {
       <td data-label="Status">${statusBadge}</td>
     </tr>`;
   }).join('');
+}
+
+// ==================== PENGADUAN ====================
+
+// State modul pengaduan
+const PengaduanState = {
+  allInbox: [],          // cache inbox admin
+  selectedId: null,      // ID pengaduan yang sedang dibuka di modal
+  notifInterval: null    // interval polling badge notifikasi
+};
+
+// Daftar kategori lengkap (dipakai untuk render chip & badge warna)
+const PENGADUAN_KATEGORI_COLOR = {
+  'Fasilitas'      : 'badge-blue',
+  'Pelayanan'      : 'badge-green',
+  'Gaji & Payroll' : 'badge-orange',
+  'Absensi'        : 'badge-gray',
+  'Lingkungan Kerja': 'badge-green',
+  'Lainnya'        : 'badge-gray'
+};
+
+// ==================== INIT HALAMAN PENGADUAN (USER) ====================
+function initPengaduan() {
+  // Reset form
+  document.querySelectorAll('.pengaduan-kategori-chip').forEach(c => c.classList.remove('selected'));
+  const isiEl = document.getElementById('pengaduan-isi');
+  const countEl = document.getElementById('pengaduan-isi-count');
+  if(isiEl) { isiEl.value = ''; }
+  const anonCheck = document.getElementById('pengaduan-anon-check');
+  if(anonCheck) anonCheck.checked = false;
+
+  // Chip kategori: pilih satu
+  document.querySelectorAll('.pengaduan-kategori-chip').forEach(chip => {
+    chip.onclick = () => {
+      document.querySelectorAll('.pengaduan-kategori-chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      const hidden = document.getElementById('pengaduan-kategori-val');
+      if(hidden) hidden.value = chip.dataset.val;
+    };
+  });
+
+  // Counter karakter textarea
+  if(isiEl && countEl) {
+    isiEl.oninput = () => {
+      countEl.textContent = isiEl.value.length + ' karakter';
+      countEl.style.color = isiEl.value.length > 1000 ? 'var(--danger)' : 'var(--text-muted)';
+    };
+  }
+
+  // Tombol kirim
+  const btnKirim = document.getElementById('btn-kirim-pengaduan');
+  if(btnKirim) {
+    btnKirim.onclick = kirimPengaduan;
+  }
+
+  // Muat riwayat
+  loadRiwayatPengaduan();
+}
+
+// ==================== KIRIM PENGADUAN ====================
+async function kirimPengaduan() {
+  const kategori = document.getElementById('pengaduan-kategori-val')?.value;
+  const isi = document.getElementById('pengaduan-isi')?.value.trim();
+  const isAnon = document.getElementById('pengaduan-anon-check')?.checked;
+
+  if(!kategori) { showAlert('Pilih kategori pengaduan terlebih dahulu.', 'warning'); return; }
+  if(!isi || isi.length < 10) { showAlert('Isi pengaduan minimal 10 karakter.', 'warning'); return; }
+  if(isi.length > 2000) { showAlert('Isi pengaduan maksimal 2000 karakter.', 'warning'); return; }
+
+  const btn = document.getElementById('btn-kirim-pengaduan');
+  setButtonLoading(btn, true, 'Mengirim...');
+
+  try {
+    const res = await apiCallWithToken('kirimPengaduan', {
+      Kategori: kategori,
+      Isi_Pengaduan: isi,
+      Jenis_Pengirim: isAnon ? 'Anonymous' : 'Terdaftar'
+    });
+
+    showAlert('Pengaduan berhasil dikirim! ID: ' + res.idPengaduan, 'success');
+
+    // Reset form
+    document.getElementById('pengaduan-isi').value = '';
+    document.getElementById('pengaduan-isi-count').textContent = '0 karakter';
+    document.querySelectorAll('.pengaduan-kategori-chip').forEach(c => c.classList.remove('selected'));
+    document.getElementById('pengaduan-kategori-val').value = '';
+    document.getElementById('pengaduan-anon-check').checked = false;
+
+    // Refresh riwayat
+    loadRiwayatPengaduan();
+
+  } catch(e) {
+    showAlert('Gagal mengirim: ' + e, 'danger');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
+
+// ==================== RIWAYAT PENGADUAN USER ====================
+async function loadRiwayatPengaduan() {
+  const container = document.getElementById('pengaduan-riwayat-list');
+  if(!container) return;
+
+  container.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--text-muted);">
+    <div class="spinner" style="width:28px; height:28px; margin:0 auto 0.5rem;"></div>
+    Memuat riwayat...
+  </div>`;
+
+  try {
+    // Ambil semua pengaduan dari inbox, filter milik user ini
+    // (backend hanya mengembalikan data yang relevan sesuai token)
+    const res = await apiCallWithToken('getRiwayatPengaduanSaya', {});
+    const list = res.pengaduan || [];
+
+    if(list.length === 0) {
+      container.innerHTML = `<div class="pengaduan-empty">
+        <div class="pengaduan-empty-icon">📭</div>
+        <div style="font-weight:600; color:var(--text); margin-bottom:0.25rem;">Belum ada riwayat</div>
+        <div style="font-size:0.875rem;">Pengaduan yang Anda kirim akan muncul di sini.</div>
+      </div>`;
+      return;
+    }
+
+    container.innerHTML = list.map(p => {
+      const isSudah = p.Status_Baca === 'Sudah Dibaca';
+      const iconClass = isSudah ? 'sudah' : 'belum';
+      const iconEmoji = isSudah ? '✅' : '🕐';
+      const badgeClass = isSudah ? 'badge-green' : 'badge-blue';
+      const tanggapanHtml = p.Tanggapan_Admin
+        ? `<div style="margin-top:0.375rem; background:var(--primary-light); border-left:3px solid var(--primary); padding:0.375rem 0.625rem; border-radius:0 var(--radius-sm) var(--radius-sm) 0; font-size:0.75rem; color:#1e40af; font-weight:500;">
+             💬 Ada tanggapan dari Admin
+           </div>`
+        : '';
+      return `
+        <div class="pengaduan-riwayat-item">
+          <div class="pengaduan-riwayat-icon ${iconClass}">${iconEmoji}</div>
+          <div class="pengaduan-riwayat-body">
+            <div class="pengaduan-riwayat-kat">${escapeHtml(p.Kategori)} &bull; <span class="badge ${badgeClass}" style="font-size:0.65rem; padding:0.15rem 0.5rem;">${escapeHtml(p.Status_Baca)}</span></div>
+            <div class="pengaduan-riwayat-preview">${escapeHtml(p.Isi_Pengaduan)}</div>
+            ${tanggapanHtml}
+            <div class="pengaduan-riwayat-time">${formatDateTime(p.Timestamp)}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch(e) {
+    container.innerHTML = `<div class="error-state">
+      <div class="error-state-icon">${ICONS.danger}</div>
+      <div style="font-weight:600; margin-bottom:0.25rem;">Gagal memuat riwayat</div>
+      <div class="error-state-msg">${escapeHtml(String(e))}</div>
+      <button class="btn btn-sm btn-primary" onclick="loadRiwayatPengaduan()">Coba Lagi</button>
+    </div>`;
+  }
+}
+
+// ==================== INIT INBOX ADMIN ====================
+function initInboxPengaduan() {
+  loadInboxPengaduan();
+  // Mulai polling badge setiap 60 detik saat di halaman inbox
+  startPengaduanNotifPolling();
+}
+
+async function loadInboxPengaduan() {
+  const container = document.getElementById('inbox-pengaduan-list');
+  if(!container) return;
+
+  container.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--text-muted);">
+    <div class="spinner" style="width:28px; height:28px; margin:0 auto 0.5rem;"></div>
+    Memuat inbox...
+  </div>`;
+
+  try {
+    const res = await apiCallWithToken('getDaftarPengaduan', {});
+    PengaduanState.allInbox = res.pengaduan || [];
+    _renderInboxList(PengaduanState.allInbox);
+    _updateInboxUnreadBadge(PengaduanState.allInbox);
+  } catch(e) {
+    container.innerHTML = `<div class="error-state">
+      <div class="error-state-icon">${ICONS.danger}</div>
+      <div style="font-weight:600; margin-bottom:0.25rem;">Gagal memuat inbox</div>
+      <div class="error-state-msg">${escapeHtml(String(e))}</div>
+      <button class="btn btn-sm btn-primary" onclick="loadInboxPengaduan()">Coba Lagi</button>
+    </div>`;
+  }
+}
+
+function filterInboxPengaduan() {
+  const status = document.getElementById('filter-inbox-status')?.value || '';
+  const kategori = document.getElementById('filter-inbox-kategori')?.value || '';
+  let filtered = PengaduanState.allInbox;
+  if(status) filtered = filtered.filter(p => p.Status_Baca === status);
+  if(kategori) filtered = filtered.filter(p => p.Kategori === kategori);
+  _renderInboxList(filtered);
+}
+
+function _renderInboxList(list) {
+  const container = document.getElementById('inbox-pengaduan-list');
+  if(!container) return;
+
+  if(!list || list.length === 0) {
+    container.innerHTML = `<div class="pengaduan-empty">
+      <div class="pengaduan-empty-icon">📬</div>
+      <div style="font-weight:600; color:var(--text); margin-bottom:0.25rem;">Tidak ada pengaduan</div>
+      <div style="font-size:0.875rem;">Belum ada pengaduan masuk sesuai filter yang dipilih.</div>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = list.map(p => {
+    const isBelum = p.Status_Baca === 'Belum Dibaca';
+    const badgeClass = PENGADUAN_KATEGORI_COLOR[p.Kategori] || 'badge-gray';
+    const unreadDot = isBelum ? '<span class="unread-dot"></span>' : '';
+    const statusBadge = isBelum
+      ? '<span class="badge badge-blue" style="font-size:0.65rem; padding:0.2rem 0.55rem;">Baru</span>'
+      : '<span class="badge badge-gray" style="font-size:0.65rem; padding:0.2rem 0.55rem;">Dibaca</span>';
+    const tanggapanBadge = p.Tanggapan_Admin
+      ? '<span class="badge badge-green" style="font-size:0.65rem; padding:0.2rem 0.55rem;">Ada Tanggapan</span>'
+      : '';
+    const pengirimText = p.Jenis_Pengirim === 'Anonymous'
+      ? '🎭 Anonymous'
+      : '👤 ' + escapeHtml(p.User_Pengirim || '-');
+
+    return `
+      <div class="pengaduan-item ${isBelum ? 'belum-dibaca' : ''}"
+           onclick="showDetailPengaduan('${escapeHtml(p.ID_Pengaduan)}')">
+        <div class="pengaduan-item-top">
+          <div class="pengaduan-item-title">
+            ${unreadDot}
+            <span class="badge ${badgeClass}" style="font-size:0.7rem;">${escapeHtml(p.Kategori)}</span>
+          </div>
+          <div style="display:flex; gap:0.375rem; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end;">
+            ${statusBadge}
+            ${tanggapanBadge}
+          </div>
+        </div>
+        <div class="pengaduan-item-preview">${escapeHtml(p.Isi_Pengaduan)}</div>
+        <div class="pengaduan-item-meta">
+          <span>${pengirimText}</span>
+          <span style="color:var(--border);">|</span>
+          <span>🕐 ${formatDateTime(p.Timestamp)}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function _updateInboxUnreadBadge(list) {
+  const jumlah = (list || []).filter(p => p.Status_Baca === 'Belum Dibaca').length;
+
+  // Badge di header card halaman inbox
+  const badgeEl = document.getElementById('inbox-unread-badge');
+  if(badgeEl) {
+    badgeEl.textContent = jumlah + ' belum dibaca';
+    badgeEl.classList.toggle('hidden', jumlah === 0);
+  }
+
+  // Badge di nav sidebar
+  const navBadge = document.getElementById('nav-inbox-badge');
+  if(navBadge) {
+    navBadge.textContent = jumlah > 99 ? '99+' : jumlah;
+    navBadge.classList.toggle('hidden', jumlah === 0);
+  }
+}
+
+// ==================== MODAL DETAIL PENGADUAN ====================
+function showDetailPengaduan(idPengaduan) {
+  const p = PengaduanState.allInbox.find(x => x.ID_Pengaduan === idPengaduan);
+  if(!p) return;
+  PengaduanState.selectedId = idPengaduan;
+
+  const isBelum = p.Status_Baca === 'Belum Dibaca';
+  const pengirimText = p.Jenis_Pengirim === 'Anonymous' ? '🎭 Anonymous' : '👤 ' + escapeHtml(p.User_Pengirim || '-');
+  const dibacaInfo = p.Waktu_Dibaca
+    ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.375rem;">
+         Dibaca oleh <strong>${escapeHtml(p.Ditandai_Oleh||'-')}</strong> pada ${formatDateTime(p.Waktu_Dibaca)}
+       </div>`
+    : '';
+
+  document.getElementById('modal-pengaduan-detail-body').innerHTML = `
+    <!-- Meta -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+      <div class="pengaduan-detail-section" style="margin-bottom:0;">
+        <div class="pengaduan-detail-label">ID Pengaduan</div>
+        <div class="pengaduan-detail-value" style="font-family:'Courier New',monospace; font-size:0.8rem; color:var(--primary);">${escapeHtml(p.ID_Pengaduan)}</div>
+      </div>
+      <div class="pengaduan-detail-section" style="margin-bottom:0;">
+        <div class="pengaduan-detail-label">Waktu Kirim</div>
+        <div class="pengaduan-detail-value">${formatDateTime(p.Timestamp)}</div>
+      </div>
+      <div class="pengaduan-detail-section" style="margin-bottom:0;">
+        <div class="pengaduan-detail-label">Kategori</div>
+        <div class="pengaduan-detail-value">
+          <span class="badge ${PENGADUAN_KATEGORI_COLOR[p.Kategori]||'badge-gray'}">${escapeHtml(p.Kategori)}</span>
+        </div>
+      </div>
+      <div class="pengaduan-detail-section" style="margin-bottom:0;">
+        <div class="pengaduan-detail-label">Pengirim</div>
+        <div class="pengaduan-detail-value">${pengirimText}</div>
+      </div>
+    </div>
+
+    <!-- Isi Pengaduan -->
+    <div class="pengaduan-detail-section">
+      <div class="pengaduan-detail-label">Isi Pengaduan</div>
+      <div class="pengaduan-detail-value">${escapeHtml(p.Isi_Pengaduan)}</div>
+    </div>
+
+    <!-- Status -->
+    <div class="pengaduan-detail-section" style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+      <div>
+        <div class="pengaduan-detail-label">Status</div>
+        <span class="badge ${isBelum ? 'badge-blue' : 'badge-green'}">${escapeHtml(p.Status_Baca)}</span>
+      </div>
+      ${dibacaInfo}
+    </div>
+
+    <!-- Tanggapan Admin -->
+    <div class="pengaduan-tanggapan-wrap">
+      <div class="pengaduan-detail-label">Tanggapan Admin</div>
+      <textarea id="input-tanggapan-admin" class="form-textarea"
+        rows="4" placeholder="Tulis tanggapan atau tindak lanjut di sini (opsional)..."
+        style="resize:vertical; min-height:100px; margin-top:0.5rem; background:white;">${escapeHtml(p.Tanggapan_Admin || '')}</textarea>
+    </div>
+  `;
+
+  // Tombol footer
+  const btnTandai = document.getElementById('btn-tandai-dibaca');
+  const btnSimpan = document.getElementById('btn-simpan-tanggapan');
+
+  if(btnTandai) {
+    btnTandai.classList.toggle('hidden', !isBelum);
+    btnTandai.onclick = () => doTandaiSudahDibaca(idPengaduan);
+  }
+  if(btnSimpan) {
+    btnSimpan.classList.remove('hidden');
+    btnSimpan.onclick = () => doSimpanTanggapan(idPengaduan);
+  }
+
+  document.getElementById('modal-pengaduan-detail').classList.add('show');
+}
+
+// ==================== TANDAI SUDAH DIBACA ====================
+async function doTandaiSudahDibaca(idPengaduan) {
+  const btn = document.getElementById('btn-tandai-dibaca');
+  setButtonLoading(btn, true, 'Menandai...');
+  try {
+    await apiCallWithToken('tandaiSudahDibaca', { idPengaduan });
+    showAlert('Pengaduan ditandai sudah dibaca.', 'success');
+    document.getElementById('modal-pengaduan-detail').classList.remove('show');
+    // Update cache lokal tanpa fetch ulang ke server
+    const idx = PengaduanState.allInbox.findIndex(p => p.ID_Pengaduan === idPengaduan);
+    if(idx >= 0) {
+      PengaduanState.allInbox[idx].Status_Baca = 'Sudah Dibaca';
+      PengaduanState.allInbox[idx].Ditandai_Oleh = AppState.user?.idUser || '-';
+      PengaduanState.allInbox[idx].Waktu_Dibaca = new Date().toISOString();
+    }
+    _renderInboxList(PengaduanState.allInbox);
+    _updateInboxUnreadBadge(PengaduanState.allInbox);
+  } catch(e) {
+    showAlert('Gagal menandai: ' + e, 'danger');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
+
+// ==================== SIMPAN TANGGAPAN ADMIN ====================
+async function doSimpanTanggapan(idPengaduan) {
+  const tanggapan = document.getElementById('input-tanggapan-admin')?.value.trim() || '';
+  const btn = document.getElementById('btn-simpan-tanggapan');
+  setButtonLoading(btn, true, 'Menyimpan...');
+  try {
+    await apiCallWithToken('simpanTanggapanAdmin', { idPengaduan, tanggapan });
+    showAlert('Tanggapan berhasil disimpan.', 'success');
+    // Update cache
+    const idx = PengaduanState.allInbox.findIndex(p => p.ID_Pengaduan === idPengaduan);
+    if(idx >= 0) PengaduanState.allInbox[idx].Tanggapan_Admin = tanggapan;
+    document.getElementById('modal-pengaduan-detail').classList.remove('show');
+    _renderInboxList(PengaduanState.allInbox);
+  } catch(e) {
+    showAlert('Gagal menyimpan tanggapan: ' + e, 'danger');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
+
+// ==================== POLLING NOTIFIKASI ====================
+function startPengaduanNotifPolling() {
+  if(PengaduanState.notifInterval) clearInterval(PengaduanState.notifInterval);
+  // Langsung cek satu kali, lalu tiap 60 detik
+  _pollPengaduanNotif();
+  PengaduanState.notifInterval = setInterval(_pollPengaduanNotif, 60000);
+}
+
+async function _pollPengaduanNotif() {
+  if(!AppState.token || !AppState.user || AppState.user.role !== 'ADMIN') return;
+  try {
+    const res = await apiCall('getNotifikasiAdmin', { token: AppState.token }, { silent: true });
+    const jumlah = res.jumlah || 0;
+    const navBadge = document.getElementById('nav-inbox-badge');
+    if(navBadge) {
+      navBadge.textContent = jumlah > 99 ? '99+' : jumlah;
+      navBadge.classList.toggle('hidden', jumlah === 0);
+    }
+  } catch(e) {
+    // Silent fail — polling tidak boleh ganggu UX
+  }
 }
 
 // ==================== GLOBAL EVENTS ====================
