@@ -6004,6 +6004,18 @@ function navigateTo(page) {
   if(route.type === 'device' && !AppState.device) { page = 'login'; }
   if(page !== 'device-absen' && AppState.device) { page = 'device-absen'; }
   AppState.currentPage = page;
+  localStorage.setItem('absensi_last_page', page);
+
+  // Tampilkan/sembunyikan layout sesuai status halaman (auth vs app)
+  const isAuthPage = (page === 'login' || page === 'register');
+  $('#auth-layout').classList.toggle('hidden', !isAuthPage);
+  $('#app-layout').classList.toggle('hidden', isAuthPage);
+
+  // Sembunyikan semua page, lalu tampilkan hanya page tujuan
+  $$('.page').forEach(p => p.classList.add('hidden'));
+  const targetPageEl = document.getElementById(route.el);
+  if(targetPageEl) targetPageEl.classList.remove('hidden');
+
   // Sync active state bottom bar (semua tab)
   const navMap = {
     'dashboard': 'bottom-bar-dashboard-btn',
