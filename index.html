@@ -70,10 +70,30 @@
     }
 
     /* Force portrait orientation lock on mobile devices */
-    @supports (orientation: portrait) {
-      @media (max-width: 1023px) {
+    @media (max-width: 1023px) {
+      html, body {
+        touch-action: pan-x pan-y;
+        overflow-x: hidden;
+        width: 100%;
+        max-width: 100vw;
+      }
+      /* Lock to portrait orientation using CSS transforms */
+      @supports (orientation: portrait) {
+        html {
+          orientation: portrait !important;
+        }
+      }
+      /* Prevent screen rotation even when device is tilted */
+      @media (orientation: landscape) {
         html, body {
-          touch-action: pan-x pan-y;
+          transform: rotate(90deg);
+          transform-origin: left top;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vh;
+          height: 100vw;
+          overflow: hidden;
         }
       }
     }
@@ -3201,6 +3221,116 @@
         border-color: var(--primary);
         box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
       }
+
+      /* Mobile Bottom Bar Dropdown (Lainnya) */
+      .mobile-bottom-bar-dropdown {
+        display: none;
+        position: fixed;
+        bottom: 72px;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.15), 0 -2px 8px rgba(0, 0, 0, 0.08);
+        z-index: 997;
+        max-height: 70vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .mobile-bottom-bar-dropdown.show {
+        display: block;
+      }
+
+      @keyframes slideUp {
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+
+      .mobile-bottom-bar-dropdown-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg);
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+
+      .mobile-bottom-bar-dropdown-header span {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .mobile-bottom-bar-dropdown-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius);
+        transition: var(--transition);
+        color: var(--text-secondary);
+      }
+
+      .mobile-bottom-bar-dropdown-close:hover {
+        background: rgba(0, 0, 0, 0.05);
+        color: var(--text);
+      }
+
+      .mobile-bottom-bar-dropdown-items {
+        padding: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .mobile-bottom-bar-dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.875rem;
+        padding: 0.875rem 1rem;
+        border-radius: var(--radius-lg);
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text);
+        transition: var(--transition);
+      }
+
+      .mobile-bottom-bar-dropdown-item:hover {
+        background: var(--bg);
+      }
+
+      .mobile-bottom-bar-dropdown-item.logout {
+        color: var(--danger);
+      }
+
+      .mobile-bottom-bar-dropdown-item.logout:hover {
+        background: var(--danger-light);
+      }
+
+      .mobile-bottom-bar-dropdown-item svg {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+      }
+
+      .mobile-bottom-bar-dropdown-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 0.5rem 0.25rem;
+      }
+
+      .mobile-bottom-bar-dropdown-item.hidden {
+        display: none !important;
+      }
     }
 
     /* ==================== PROFIL PAGE MODERN ==================== */
@@ -4354,12 +4484,45 @@
     </div>
     <span>Gaji</span>
   </button>
-  <button class="bottom-bar-btn" id="bottom-bar-profil-btn" data-nav="profil">
-    <div class="bottom-bar-icon-wrap" id="bottom-bar-profil-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  <button class="bottom-bar-btn" id="bottom-bar-lainnya-btn" data-nav="lainnya">
+    <div class="bottom-bar-icon-wrap" id="bottom-bar-lainnya-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
     </div>
-    <span>Profil</span>
+    <span>Lainnya</span>
   </button>
+</div>
+
+<!-- Mobile Bottom Bar Dropdown Menu (Lainnya) -->
+<div id="mobile-bottom-bar-dropdown" class="mobile-bottom-bar-dropdown hidden">
+  <div class="mobile-bottom-bar-dropdown-header">
+    <span>Menu Lainnya</span>
+    <button id="mobile-bottom-bar-dropdown-close" class="mobile-bottom-bar-dropdown-close">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="mobile-bottom-bar-dropdown-items">
+    <div class="mobile-bottom-bar-dropdown-item" data-page="profil">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Profil</span>
+    </div>
+    <div class="mobile-bottom-bar-dropdown-item" data-page="my-absensi">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+      <span>My Absensi</span>
+    </div>
+    <div class="mobile-bottom-bar-dropdown-item" data-page="my-payroll">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <span>My Payroll</span>
+    </div>
+    <div class="mobile-bottom-bar-dropdown-item user-only" data-page="pengaduan">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+      <span>Pengaduan</span>
+    </div>
+    <div class="mobile-bottom-bar-dropdown-divider"></div>
+    <div class="mobile-bottom-bar-dropdown-item logout" id="btn-logout-mobile">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      <span>Logout</span>
+    </div>
+  </div>
 </div>
 
 <!-- ==================== APP LAYOUT ==================== -->
@@ -4449,10 +4612,6 @@
             <div class="profile-dropdown-item" data-page="my-payroll">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               My Payroll
-            </div>
-            <div class="profile-dropdown-item user-only" data-page="pengaduan">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
-              Pengaduan
             </div>
             <div class="profile-dropdown-divider"></div>
             <div class="profile-dropdown-item logout" id="btn-logout-dropdown">
@@ -6190,8 +6349,61 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       if(typeof navigateTo !== 'function') { console.error('navigateTo belum tersedia'); return; }
       if(!AppState.token) { navigateTo('login'); return; }
+      
+      // Handle "Lainnya" button to show dropdown
+      if(btn.dataset.nav === 'lainnya') {
+        const dropdown = document.getElementById('mobile-bottom-bar-dropdown');
+        if(dropdown) {
+          dropdown.classList.toggle('show');
+        }
+        return;
+      }
+      
       navigateTo(btn.dataset.nav);
     });
+  });
+  
+  // Mobile bottom bar dropdown item click handlers
+  $$('#mobile-bottom-bar-dropdown .mobile-bottom-bar-dropdown-item[data-page]').forEach(item => {
+    item.addEventListener('click', () => {
+      const dropdown = document.getElementById('mobile-bottom-bar-dropdown');
+      if(dropdown) {
+        dropdown.classList.remove('show');
+      }
+      navigateTo(item.dataset.page);
+    });
+  });
+  
+  // Mobile bottom bar dropdown close button
+  const mobileDropdownClose = document.getElementById('mobile-bottom-bar-dropdown-close');
+  if(mobileDropdownClose) {
+    mobileDropdownClose.addEventListener('click', () => {
+      const dropdown = document.getElementById('mobile-bottom-bar-dropdown');
+      if(dropdown) {
+        dropdown.classList.remove('show');
+      }
+    });
+  }
+  
+  // Mobile bottom bar logout button
+  const btnLogoutMobile = document.getElementById('btn-logout-mobile');
+  if(btnLogoutMobile) {
+    btnLogoutMobile.addEventListener('click', () => {
+      const dropdown = document.getElementById('mobile-bottom-bar-dropdown');
+      if(dropdown) {
+        dropdown.classList.remove('show');
+      }
+      doLogout();
+    });
+  }
+  
+  // Close mobile dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('mobile-bottom-bar-dropdown');
+    const lainnyaBtn = document.getElementById('bottom-bar-lainnya-btn');
+    if(dropdown && !dropdown.contains(e.target) && (!lainnyaBtn || !lainnyaBtn.contains(e.target))) {
+      dropdown.classList.remove('show');
+    }
   });
 
   const pwaBtn = document.getElementById('btn-pwa-install');
@@ -8913,6 +9125,20 @@ function applyUserUI() {
   $$('.nav-item.admin-only').forEach(n => n.classList.toggle('hidden', role !== 'ADMIN'));
   $$('.nav-item.akuntan-only').forEach(n => n.classList.toggle('hidden', !(role === 'ADMIN' || role === 'AKUNTAN')));
   $$('.nav-item.user-only').forEach(n => n.classList.toggle('hidden', role !== 'USER'));
+  
+  // Apply role-based visibility to mobile bottom bar dropdown items
+  $$('.mobile-bottom-bar-dropdown-item[data-page]').forEach(item => {
+    const page = item.dataset.page;
+    const route = Routes[page];
+    if(route && route.roles && !route.roles.includes(role)) {
+      item.classList.add('hidden');
+    } else {
+      item.classList.remove('hidden');
+    }
+    if(item.classList.contains('user-only')) {
+      item.classList.toggle('hidden', role !== 'USER');
+    }
+  });
 }
 
 async function handleQrScanned(idCardUnik) {
