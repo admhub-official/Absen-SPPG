@@ -5788,8 +5788,10 @@ function apiCall(funcName, data, opts) {
   const ttl = _API_CACHE_TTL[funcName] || 0;
   const cacheKey = ttl > 0 ? _cacheKey(funcName, data) : null;
 
-  // Coba ambil dari cache (hanya untuk read-only calls)
-  if (cacheKey && !forceRefresh) {
+  // Jangan gunakan cache untuk operasi login dan autentikasi
+  if (funcName === 'login' || funcName === 'checkSession' || funcName === 'logout') {
+    // Skip cache - selalu fresh untuk keamanan
+  } else if (cacheKey && !forceRefresh) {
     const cached = _apiCache[cacheKey];
     if (cached && (Date.now() - cached.ts) < ttl) {
       // Cache hit — return instantly tanpa loading bar
@@ -5807,8 +5809,8 @@ function apiCall(funcName, data, opts) {
     .then(json => {
       if(!silent) showLoading(false);
       if (json.success) {
-        // Simpan ke cache jika fungsi ini mendukung caching
-        if (cacheKey) {
+        // Jangan cache response dari operasi login/logout/checkSession
+        if (cacheKey && funcName !== 'login' && funcName !== 'checkSession' && funcName !== 'logout') {
           _apiCache[cacheKey] = { data: json.result, ts: Date.now() };
           _persistApiCacheToStorage();
         }
@@ -5883,14 +5885,18 @@ async function doLogin() {
       localStorage.setItem('absensi_user', JSON.stringify(res.user));
       localStorage.removeItem('absensi_device');
       startSessionCheck();
-      applyUserUI();
-      if(res.user.role === 'DEVICE ABSEN') {
-        navigateTo('device-absen');
-      } else {
-        navigateTo('dashboard');
-        // Prefetch data yang sering dipakai agar halaman berikutnya instant
-        setTimeout(() => prefetchCommonData(), 500);
-      }
+      // Terapkan UI user dengan error handling
+      try { applyUserUI(); } catch(e) { console.warn('[LOGIN] applyUserUI error:', e); }
+      // Navigasi dengan timeout untuk memastikan state sudah siap
+      setTimeout(() => {
+        if(res.user.role === 'DEVICE ABSEN') {
+          navigateTo('device-absen');
+        } else {
+          navigateTo('dashboard');
+          // Prefetch data yang sering dipakai agar halaman berikutnya instant
+          setTimeout(() => prefetchCommonData(), 500);
+        }
+      }, 100);
     } else if(res.device) {
       AppState.token = res.token;
       AppState.device = res.device;
@@ -5899,8 +5905,8 @@ async function doLogin() {
       localStorage.setItem('absensi_device', JSON.stringify(res.device));
       localStorage.removeItem('absensi_user');
       startSessionCheck();
-      applyUserUI();
-      navigateTo('device-absen');
+      try { applyUserUI(); } catch(e) { console.warn('[LOGIN] applyUserUI error:', e); }
+      setTimeout(() => navigateTo('device-absen'), 100);
     }
   } catch(e) {
     showAlert(e);
