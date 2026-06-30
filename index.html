@@ -6086,9 +6086,9 @@ function apiCall(funcName, data, opts) {
   });
 }
 
-function apiCallWithToken(funcName, extraData) {
+function apiCallWithToken(funcName, extraData, opts) {
   const data = { token: AppState.token, ...extraData };
-  return apiCall(funcName, data);
+  return apiCall(funcName, data, opts);
 }
 
 // ==================== PREFETCH ====================
