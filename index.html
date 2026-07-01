@@ -2372,6 +2372,12 @@
       .table-scroll-hint { display: none !important; }
     }
 
+@media (min-width: 1024px) {
+      #mobile-bottom-bar-dropdown {
+        display: none !important;
+      }
+    }
+
     @media (min-width: 1024px) {
       #app-layout { flex-direction: row; align-items: flex-start; }
 
@@ -6398,6 +6404,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if(localStorage.getItem('sidebar_collapsed') === '1') {
         $('#sidebar').classList.add('collapsed');
       }
+      const mobileDropdown = document.getElementById('mobile-bottom-bar-dropdown');
+      if(mobileDropdown) mobileDropdown.classList.remove('show');
     }
   });
 
