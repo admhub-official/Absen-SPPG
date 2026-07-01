@@ -7010,7 +7010,7 @@ function navigateTo(page) {
   if(AppState.user && AppState.user.fotoProfil) {
     const profilIconWrap = document.getElementById('bottom-bar-profil-icon');
     if(profilIconWrap && !profilIconWrap.querySelector('img')) {
-      profilIconWrap.innerHTML = `<img src="${AppState.user.fotoProfil}" class="bottom-bar-profil-img" onerror="this.style.display='none'">`;
+      profilIconWrap.innerHTML = `<img src="${escapeHtml(AppState.user.fotoProfil)}" class="bottom-bar-profil-img" onerror="this.style.display='none'">`;
     }
   }
 
@@ -8650,7 +8650,8 @@ function renderProfil() {
   const sppg = escapeHtml(u.SPPG || '-');
   const role = escapeHtml(u.Role || '-');
   const statusAktif = isActive(u.Status_Aktif);
-  const fotoUrl = u.URL_Foto_Profil || '';
+    const fotoUrl = escapeHtml(u.URL_Foto_Profil || '');
+
 
   $('#profil-readonly').innerHTML = `
     <!-- HERO SECTION -->
@@ -9128,7 +9129,7 @@ function renderUserGrid(users) {
   }
   container.innerHTML = users.map(u => `
     <div class="user-card" onclick="showUserDetail('${u.ID_User}')">
-      <img src="${u.URL_Foto_Profil || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" class="user-card-img" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'">
+      <img src="${u.URL_Foto_Profil ? escapeHtml(encodeURI(u.URL_Foto_Profil)) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" class="user-card-img" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'">
       <div class="user-card-body">
         <div class="user-card-name">${escapeHtml(u.Nama_Lengkap)}</div>
         <div class="user-card-role">${escapeHtml(u.Jabatan_Divisi)} &bull; ${escapeHtml(u.SPPG)}</div>
@@ -9769,7 +9770,7 @@ function renderMyPayrollView(data) {
         </div>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; padding-top:0.625rem; border-top:1px dashed var(--border);">
           <button class="btn btn-sm btn-primary" onclick="showSlipDetail(${idx})">${ICONS.image} Lihat Slip</button>
-          ${p.urlPdf ? `<a href="${p.urlPdf}" target="_blank" class="btn btn-sm btn-outline">PDF</a>` : ''}
+          ${p.urlPdf ? `<a href="${escapeHtml(encodeURI(p.urlPdf))}" target="_blank" class="btn btn-sm btn-outline">PDF</a>` : ''}
         </div>
       </div>
     `).join('');
@@ -9793,7 +9794,7 @@ function renderMyPayrollView(data) {
       <td>
         <div class="flex gap-1 flex-wrap">
           <button class="btn btn-sm btn-primary" onclick="showSlipDetail(${idx})">${ICONS.image} Lihat Slip</button>
-          ${p.urlPdf ? `<a href="${p.urlPdf}" target="_blank" class="btn btn-sm btn-outline">PDF</a>` : ''}
+          ${p.urlPdf ? `<a href="${escapeHtml(encodeURI(p.urlPdf))}" target="_blank" class="btn btn-sm btn-outline">PDF</a>` : ''}
         </div>
       </td>
     </tr>
