@@ -4237,6 +4237,532 @@
     @media (prefers-reduced-motion: reduce) {
       .session-loading-logo-icon { animation: none; }
     }
+    
+    /* ==================== ABSEN PAGE MODERN UI ==================== */
+    .absen-page-wrapper {
+      min-height: calc(100vh - 64px);
+      background: #F6F8FC;
+      padding: 1.5rem 1rem;
+      position: relative;
+      overflow-x: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Background Decorations */
+    .absen-bg-decoration {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .absen-bg-blob-1 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
+      top: -100px;
+      right: -100px;
+      animation: absenBlobFloat 8s ease-in-out infinite;
+    }
+    
+    .absen-bg-blob-2 {
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(147,197,253,0.1) 0%, transparent 70%);
+      bottom: -80px;
+      left: -80px;
+      animation: absenBlobFloat 10s ease-in-out infinite reverse;
+    }
+    
+    @keyframes absenBlobFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(10px, -15px) scale(1.05); }
+      66% { transform: translate(-10px, 10px) scale(0.95); }
+    }
+    
+    /* Main Card */
+    .absen-main-card {
+      background: #FFFFFF;
+      border-radius: 30px;
+      padding: 2rem;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+      position: relative;
+      z-index: 1;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Header Section */
+    .absen-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .absen-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      background: #FFFFFF;
+      border: 1px solid #EEF2F7;
+      border-radius: 999px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #6B7280;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    
+    .absen-back-btn:hover {
+      background: #F9FAFB;
+      border-color: #E5E7EB;
+      color: #3B82F6;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    .absen-back-btn svg {
+      stroke-width: 2.5;
+    }
+    
+    .absen-profile-section {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .absen-online-indicator {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 12px;
+      height: 12px;
+      background: #22C55E;
+      border: 2px solid #FFFFFF;
+      border-radius: 50%;
+      z-index: 2;
+      box-shadow: 0 0 0 2px rgba(34,197,94,0.2);
+    }
+    
+    .absen-profile-img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #EEF2F7;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    
+    /* Title Section */
+    .absen-title-section {
+      text-align: left;
+      margin-bottom: 1.5rem;
+    }
+    
+    .absen-main-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #111827;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+      line-height: 1.2;
+    }
+    
+    .absen-subtitle {
+      font-size: 0.9375rem;
+      color: #6B7280;
+      font-weight: 500;
+    }
+    
+    /* Clock Card */
+    .absen-clock-card {
+      background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+      border-radius: 24px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      border: 1px solid #EEF2F7;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.5);
+    }
+    
+    .absen-clock-display {
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: #111827;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 0.5rem;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    }
+    
+    .absen-date-display {
+      font-size: 0.9375rem;
+      color: #6B7280;
+      font-weight: 500;
+    }
+    
+    /* Action Cards */
+    .absen-action-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .absen-action-card {
+      background: #FFFFFF;
+      border-radius: 24px;
+      padding: 1.25rem;
+      border: 1px solid #EEF2F7;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .absen-action-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(59,130,246,0.03) 0%, transparent 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    
+    .absen-action-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      border-color: #DBEAFE;
+    }
+    
+    .absen-action-card:hover::before {
+      opacity: 1;
+    }
+    
+    .absen-action-card:active {
+      transform: translateY(-1px);
+    }
+    
+    .absen-action-card-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .absen-card-left {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      flex: 1;
+    }
+    
+    .absen-icon-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+    }
+    
+    .absen-icon-circle.primary {
+      background: linear-gradient(135deg, #EAF2FF 0%, #DBEAFE 100%);
+      color: #3B82F6;
+    }
+    
+    .absen-icon-circle.secondary {
+      background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%);
+      color: #22C55E;
+    }
+    
+    .absen-action-card:hover .absen-icon-circle {
+      transform: scale(1.08);
+    }
+    
+    .absen-card-texts {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      text-align: left;
+    }
+    
+    .absen-recommended-badge {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #3B82F6;
+      background: #EAF2FF;
+      padding: 0.25rem 0.625rem;
+      border-radius: 999px;
+      align-self: flex-start;
+      display: inline-block;
+    }
+    
+    .absen-card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #111827;
+      line-height: 1.3;
+    }
+    
+    .absen-card-desc {
+      font-size: 0.8125rem;
+      color: #6B7280;
+      line-height: 1.4;
+      font-weight: 500;
+    }
+    
+    .absen-card-arrow {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #F9FAFB;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9CA3AF;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
+    
+    .absen-action-card:hover .absen-card-arrow {
+      background: #3B82F6;
+      color: #FFFFFF;
+      transform: translateX(3px);
+    }
+    
+    /* Footer Info */
+    .absen-footer-info {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      background: #F9FAFB;
+      border-radius: 18px;
+      padding: 1rem 1.25rem;
+      border: 1px solid #EEF2F7;
+    }
+    
+    .absen-footer-info svg {
+      color: #22C55E;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    
+    .absen-footer-info p {
+      font-size: 0.8125rem;
+      color: #6B7280;
+      font-weight: 500;
+      line-height: 1.5;
+      margin: 0;
+    }
+    
+    /* Step Containers */
+    .absen-step-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 64px);
+      padding: 1.5rem 1rem;
+    }
+    
+    .absen-step-card {
+      background: #FFFFFF;
+      border-radius: 30px;
+      padding: 2rem;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .absen-step-header {
+      margin-bottom: 1.5rem;
+    }
+    
+    .absen-step-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+    }
+    
+    .absen-step-icon.primary {
+      background: linear-gradient(135deg, #EAF2FF 0%, #DBEAFE 100%);
+      color: #3B82F6;
+    }
+    
+    .absen-step-icon.secondary {
+      background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%);
+      color: #22C55E;
+    }
+    
+    .absen-step-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #111827;
+      margin: 0;
+    }
+    
+    .absen-camera-wrapper {
+      margin: 1.5rem 0;
+    }
+    
+    .absen-video-container {
+      width: 100%;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: #000;
+    }
+    
+    .absen-camera-container {
+      max-width: 420px;
+      margin: 0 auto;
+    }
+    
+    .absen-step-hint {
+      font-size: 0.9375rem;
+      color: #6B7280;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+    }
+    
+    .absen-cancel-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: #FFFFFF;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #6B7280;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .absen-cancel-btn:hover {
+      background: #F9FAFB;
+      border-color: #D1D5DB;
+      color: #EF4444;
+      transform: translateY(-1px);
+    }
+    
+    /* Result Card */
+    .result-card {
+      max-width: 400px;
+    }
+    
+    .absen-result-icon {
+      font-size: 5rem;
+      margin-bottom: 1.25rem;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+    }
+    
+    .absen-result-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 1.5rem;
+    }
+    
+    .absen-ok-btn {
+      display: inline-block;
+      padding: 0.875rem 3rem;
+      background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 16px rgba(59,130,246,0.35);
+    }
+    
+    .absen-ok-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(59,130,246,0.45);
+    }
+    
+    .absen-ok-btn:active {
+      transform: translateY(0);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+      .absen-page-wrapper {
+        padding: 1rem 0.875rem;
+      }
+      
+      .absen-main-card {
+        padding: 1.5rem;
+        border-radius: 24px;
+      }
+      
+      .absen-main-title {
+        font-size: 1.75rem;
+      }
+      
+      .absen-clock-display {
+        font-size: 2.75rem;
+      }
+      
+      .absen-clock-card {
+        padding: 1.5rem 1.25rem;
+      }
+      
+      .absen-action-card {
+        padding: 1rem;
+      }
+      
+      .absen-icon-circle {
+        width: 48px;
+        height: 48px;
+      }
+      
+      .absen-card-arrow {
+        width: 36px;
+        height: 36px;
+      }
+      
+      .absen-step-card {
+        padding: 1.5rem;
+        border-radius: 24px;
+      }
+    }
+    
+    @media (min-width: 641px) {
+      .absen-page-wrapper {
+        padding: 2rem 1.5rem;
+      }
+    }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -5139,105 +5665,183 @@
 
       <!-- PAGE: ABSEN MANUAL -->
       <div id="page-absen-manual" class="page hidden">
-        <div class="device-ui" style="min-height:calc(100vh - 60px);">
-          <div id="absen-step-idle">
-            <button onclick="navigateTo('dashboard')" class="btn btn-outline btn-sm mb-3" style="width:auto; display:inline-flex; align-items:center; gap:0.5rem;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-              Kembali ke Dashboard
-            </button>
-            <div class="device-time" id="absen-clock">--:--</div>
-            <div class="device-date" id="absen-date">-</div>
-            <div class="absen-mode-grid">
-              <div class="absen-mode-card primary" id="btn-absen-manual">
-                <div class="absen-mode-icon">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                </div>
-                <div class="absen-mode-title">Scan QR + Wajah</div>
-                <div class="absen-mode-desc">Scan ID Card (milik sendiri/orang lain), lalu verifikasi wajah</div>
-              </div>
-              <div class="absen-mode-card secondary" id="btn-absen-self">
-                <div class="absen-mode-icon">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </div>
-                <div class="absen-mode-title">Absen Wajah Saya</div>
-                <div class="absen-mode-desc">Langsung scan wajah sendiri, tanpa QR Code</div>
+        <div class="absen-page-wrapper">
+          <!-- Decorative Background Elements -->
+          <div class="absen-bg-decoration absen-bg-blob-1"></div>
+          <div class="absen-bg-decoration absen-bg-blob-2"></div>
+          
+          <div id="absen-step-idle" class="absen-main-card">
+            <!-- Header Section -->
+            <div class="absen-header">
+              <button onclick="navigateTo('dashboard')" class="absen-back-btn" id="btn-absen-back">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                <span>Kembali ke Dashboard</span>
+              </button>
+              <div class="absen-profile-section">
+                <div class="absen-online-indicator"></div>
+                <img src="" alt="Profile" class="absen-profile-img" id="absen-profile-image">
               </div>
             </div>
-            <div class="device-status mt-2">Pilih salah satu metode di atas</div>
+            
+            <!-- Title Section -->
+            <div class="absen-title-section">
+              <h1 class="absen-main-title">Absen</h1>
+              <p class="absen-subtitle">Hai, selamat datang kembali!</p>
+            </div>
+            
+            <!-- Clock Card -->
+            <div class="absen-clock-card">
+              <div class="absen-clock-display" id="absen-clock">--:--:--</div>
+              <div class="absen-date-display" id="absen-date">-</div>
+            </div>
+            
+            <!-- Action Cards -->
+            <div class="absen-action-cards">
+              <!-- Card 1: Scan QR + Wajah -->
+              <div class="absen-action-card primary" id="btn-absen-manual">
+                <div class="absen-action-card-content">
+                  <div class="absen-card-left">
+                    <div class="absen-icon-circle primary">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </div>
+                    <div class="absen-card-texts">
+                      <span class="absen-recommended-badge">Rekomendasi</span>
+                      <h3 class="absen-card-title">Scan QR + Wajah</h3>
+                      <p class="absen-card-desc">Scan ID Card (milik sendiri/orang lain), lalu verifikasi wajah</p>
+                    </div>
+                  </div>
+                  <div class="absen-card-arrow">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Card 2: Absen Wajah Saya -->
+              <div class="absen-action-card secondary" id="btn-absen-self">
+                <div class="absen-action-card-content">
+                  <div class="absen-card-left">
+                    <div class="absen-icon-circle secondary">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div class="absen-card-texts">
+                      <h3 class="absen-card-title">Absen Wajah Saya</h3>
+                      <p class="absen-card-desc">Langsung scan wajah sendiri tanpa QR Code</p>
+                    </div>
+                  </div>
+                  <div class="absen-card-arrow">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Footer Info -->
+            <div class="absen-footer-info">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+              <p>Data absensi Anda aman dan hanya digunakan untuk keperluan kerja.</p>
+            </div>
           </div>
-          <div id="absen-step-qr" class="hidden" style="width:100%; max-width:520px; text-align:center;">
-            <div class="card-title mb-3" style="font-size:1.5rem; font-weight:700;">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.5rem;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              Scan QR Code ID Card
-            </div>
-            <div class="form-group hidden" id="absen-qr-cam-group" style="margin-bottom:1.25rem;">
-              <label class="form-label">Pilih Kamera</label>
-              <select id="absen-qr-cam-select" class="form-select"></select>
-            </div>
-            <div id="absen-qr-video" style="width:100%; border-radius:var(--radius-lg); overflow:hidden;"></div>
-            <div class="device-status mt-3">Arahkan QR Code ke kamera</div>
-            <button id="btn-absen-qr-cancel" class="btn btn-outline mt-3">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              Batal
-            </button>
-          </div>
-          <div id="absen-step-face" class="hidden" style="width:100%; max-width:420px; text-align:center;">
-            <div class="card-title mb-3" style="font-size:1.5rem; font-weight:700;">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.5rem;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              Scan Wajah
-            </div>
-            <div class="camera-container">
-              <video id="absen-face-video" style="width:100%; border-radius:var(--radius-lg);" autoplay playsinline muted></video>
-              <div class="face-guide"></div>
-              <button class="camera-switch-btn" id="btn-switch-cam-absen" title="Ganti Kamera">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          
+          <!-- Step QR -->
+          <div id="absen-step-qr" class="hidden absen-step-container">
+            <div class="absen-step-card">
+              <div class="absen-step-header">
+                <div class="absen-step-icon primary">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                </div>
+                <h2 class="absen-step-title">Scan QR Code ID Card</h2>
+              </div>
+              <div class="form-group hidden" id="absen-qr-cam-group" style="margin-bottom:1rem;">
+                <label class="form-label">Pilih Kamera</label>
+                <select id="absen-qr-cam-select" class="form-select"></select>
+              </div>
+              <div class="absen-camera-wrapper">
+                <div id="absen-qr-video" class="absen-video-container"></div>
+              </div>
+              <p class="absen-step-hint">Arahkan QR Code ke kamera</p>
+              <button id="btn-absen-qr-cancel" class="absen-cancel-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Batal
               </button>
             </div>
-            <div id="absen-face-status" class="device-status mt-3">Posisikan wajah di dalam oval...</div>
-            <button id="btn-absen-face-cancel" class="btn btn-outline mt-3">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              Batal
-            </button>
           </div>
-          <div id="absen-step-face-self" class="hidden" style="width:100%; max-width:420px; text-align:center;">
-            <div class="card-title mb-3" style="font-size:1.5rem; font-weight:700;">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.5rem;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              Absen Wajah Saya
-            </div>
-            <div class="camera-container">
-              <video id="absen-self-video" style="width:100%; border-radius:var(--radius-lg);" autoplay playsinline muted></video>
-              <div class="face-guide"></div>
-              <button class="camera-switch-btn" id="btn-switch-cam-self" title="Ganti Kamera">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          
+          <!-- Step Face (QR Flow) -->
+          <div id="absen-step-face" class="hidden absen-step-container">
+            <div class="absen-step-card">
+              <div class="absen-step-header">
+                <div class="absen-step-icon primary">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <h2 class="absen-step-title">Scan Wajah</h2>
+              </div>
+              <div class="absen-camera-wrapper">
+                <div class="camera-container absen-camera-container">
+                  <video id="absen-face-video" autoplay playsinline muted></video>
+                  <div class="face-guide"></div>
+                  <button class="camera-switch-btn" id="btn-switch-cam-absen" title="Ganti Kamera">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                  </button>
+                </div>
+              </div>
+              <p class="absen-step-hint" id="absen-face-status">Posisikan wajah di dalam oval...</p>
+              <button id="btn-absen-face-cancel" class="absen-cancel-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Batal
               </button>
             </div>
-            <div class="scan-steps" id="absen-self-scan-steps">
-              <div class="scan-step" data-step="detect">
-                <div class="scan-step-circle">1</div>
-                <div class="scan-step-label">Deteksi</div>
-              </div>
-              <div class="scan-step-connector" data-connector="1"></div>
-              <div class="scan-step" data-step="center">
-                <div class="scan-step-circle">2</div>
-                <div class="scan-step-label">Posisi</div>
-              </div>
-              <div class="scan-step-connector" data-connector="2"></div>
-              <div class="scan-step" data-step="smile">
-                <div class="scan-step-circle">3</div>
-                <div class="scan-step-label">Senyum</div>
-              </div>
-            </div>
-            <div class="scan-hint-box" id="absen-self-hint-box">Posisikan wajah di dalam oval</div>
-            <div id="absen-self-status" class="device-status mt-3 hidden">Posisikan wajah di dalam oval...</div>
-            <button id="btn-absen-self-cancel" class="btn btn-outline mt-3">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              Batal
-            </button>
           </div>
-          <div id="absen-step-result" class="hidden" style="text-align:center;">
-            <div id="absen-result-icon" style="font-size:5rem; margin-bottom:1.25rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));"></div>
-            <div id="absen-result-text" style="font-size:1.5rem; font-weight:700;"></div>
-            <button id="btn-absen-result-ok" class="btn btn-primary btn-lg mt-3" style="min-width:160px;">OK</button>
+          
+          <!-- Step Face Self -->
+          <div id="absen-step-face-self" class="hidden absen-step-container">
+            <div class="absen-step-card">
+              <div class="absen-step-header">
+                <div class="absen-step-icon secondary">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <h2 class="absen-step-title">Absen Wajah Saya</h2>
+              </div>
+              <div class="absen-camera-wrapper">
+                <div class="camera-container absen-camera-container">
+                  <video id="absen-self-video" autoplay playsinline muted></video>
+                  <div class="face-guide"></div>
+                  <button class="camera-switch-btn" id="btn-switch-cam-self" title="Ganti Kamera">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="scan-steps" id="absen-self-scan-steps">
+                <div class="scan-step" data-step="detect">
+                  <div class="scan-step-circle">1</div>
+                  <div class="scan-step-label">Deteksi</div>
+                </div>
+                <div class="scan-step-connector" data-connector="1"></div>
+                <div class="scan-step" data-step="center">
+                  <div class="scan-step-circle">2</div>
+                  <div class="scan-step-label">Posisi</div>
+                </div>
+                <div class="scan-step-connector" data-connector="2"></div>
+                <div class="scan-step" data-step="smile">
+                  <div class="scan-step-circle">3</div>
+                  <div class="scan-step-label">Senyum</div>
+                </div>
+              </div>
+              <div class="scan-hint-box" id="absen-self-hint-box">Posisikan wajah di dalam oval</div>
+              <div id="absen-self-status" class="device-status mt-3 hidden">Posisikan wajah di dalam oval...</div>
+              <button id="btn-absen-self-cancel" class="absen-cancel-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Batal
+              </button>
+            </div>
+          </div>
+          
+          <!-- Step Result -->
+          <div id="absen-step-result" class="hidden absen-step-container">
+            <div class="absen-step-card result-card">
+              <div id="absen-result-icon" class="absen-result-icon"></div>
+              <div id="absen-result-text" class="absen-result-text"></div>
+              <button id="btn-absen-result-ok" class="absen-ok-btn">OK</button>
+            </div>
           </div>
         </div>
       </div>
@@ -9434,6 +10038,16 @@ function getCurrentLocation() {
 
 function initAbsenManual() {
   resetAbsenFlow();
+  
+  // Set profile image from currentUser if available
+  const profileImg = $('#absen-profile-image');
+  if (profileImg && window.currentUser) {
+    const photoUrl = window.currentUser.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(window.currentUser.displayName || 'User') + '&background=3B82F6&color=fff&size=128';
+    profileImg.src = photoUrl;
+  } else if (profileImg) {
+    profileImg.src = 'https://ui-avatars.com/api/?name=User&background=3B82F6&color=fff&size=128';
+  }
+  
   function updateAbsenClock() {
     const now = new Date();
     const c = $('#absen-clock'); const d = $('#absen-date');
