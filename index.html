@@ -4923,7 +4923,8 @@
       <!-- Reset Password -->
       <div id="reset-password-section" class="hidden">
         <h3 style="margin-bottom:1.25rem; font-size:1.25rem; font-weight:700;">Reset Password</h3>
-        <input type="hidden" id="reset-token">
+        <p style="margin-bottom:1rem; font-size:0.875rem; color:#64748b;">Kode reset telah dikirim ke email Anda. Cek Inbox/Spam, lalu masukkan kodenya di bawah ini.</p>
+        <div class="form-group"><label class="form-label">Kode Reset (dari Email)</label><input type="text" id="reset-token" class="form-input" placeholder="Tempel kode dari email di sini"></div>
         <div class="form-group"><label class="form-label">Password Baru</label><input type="password" id="fp-new-password" class="form-input"></div>
         <div class="form-group"><label class="form-label">Konfirmasi Password Baru</label><input type="password" id="fp-confirm-password" class="form-input"></div>
         <button id="btn-reset-password" class="btn btn-primary btn-block">Update Password</button>
@@ -8506,15 +8507,16 @@ async function doRequestReset() {
     const res = await apiCall('requestResetPassword', { username, email, idCardUnik: idCard });
     $('#reset-password-section').classList.remove('hidden');
     $('#forgot-password-section').classList.add('hidden');
-    showAlert('Verifikasi berhasil. Silakan masukkan password baru.', 'success');
+    showAlert('Verifikasi berhasil. Kode reset telah dikirim ke email Anda.', 'success');
   } catch(e) { showAlert(e); }
 }
 
 async function doResetPassword() {
   const username = $('#fp-username').value.trim();
-  const token = $('#reset-token').value;
+  const token = $('#reset-token').value.trim();
   const newPass = $('#fp-new-password').value;
   const confirmPass = $('#fp-confirm-password').value;
+  if(!token) { showAlert('Masukkan kode reset yang dikirim ke email Anda'); return; }
   if(!newPass || newPass !== confirmPass) { showAlert('Password tidak cocok'); return; }
   try {
     await apiCall('resetPassword', { username, token, newPassword: newPass });
