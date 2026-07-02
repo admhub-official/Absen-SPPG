@@ -4926,24 +4926,10 @@
 
     /* --- Floating Action Bar: "Hapus Data Terpilih (X item)" --- */
     .crud-batch-fab {
-      position: fixed;
-      left: 50%;
-      bottom: 24px;
-      transform: translateX(-50%) translateY(120%);
-      z-index: 1050;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      background: var(--text);
-      color: #fff;
-      padding: 0.75rem 1rem 0.75rem 1.25rem;
-      border-radius: var(--radius-full);
-      box-shadow: var(--shadow-2xl);
-      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-      max-width: calc(100vw - 2rem);
+      display: none !important;
     }
     .crud-batch-fab.show {
-      transform: translateX(-50%) translateY(0);
+      display: none !important;
     }
     .crud-batch-fab-label {
       font-size: 0.8125rem;
