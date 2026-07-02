@@ -54,23 +54,30 @@
       --border-light: #f1f5f9;
       --border-dark: #cbd5e1;
       
-      /* ===== SHADOWS (ELEVATION SYSTEM) ===== */
-      --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
-      --shadow-sm: 0 2px 4px -1px rgb(0 0 0 / 0.06), 0 1px 2px -2px rgb(0 0 0 / 0.03);
-      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.06);
-      --shadow-md: 0 6px 10px -2px rgb(0 0 0 / 0.1), 0 3px 6px -3px rgb(0 0 0 / 0.08);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-      --shadow-2xl: 0 24px 48px -12px rgb(0 0 0 / 0.15), 0 12px 24px -8px rgb(0 0 0 / 0.1);
+      /* ===== SHADOWS (ELEVATION SYSTEM) — L2 FIX ===== */
+/* Disederhanakan ke 4 level utama agar konsisten */
+--shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+--shadow-sm: 0 2px 4px -1px rgb(0 0 0 / 0.06), 0 1px 2px -2px rgb(0 0 0 / 0.03);
+--shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+--shadow-md: 0 6px 10px -2px rgb(0 0 0 / 0.1), 0 3px 6px -3px rgb(0 0 0 / 0.08);
+--shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+--shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+--shadow-2xl: 0 24px 48px -12px rgb(0 0 0 / 0.15), 0 12px 24px -8px rgb(0 0 0 / 0.1);
+/* Alias semantic untuk memudahkan pemilihan */
+--shadow-subtle: var(--shadow-sm);
+--shadow-default: var(--shadow);
+--shadow-elevated: var(--shadow-lg);
+--shadow-modal: var(--shadow-xl);
       
-      /* ===== BORDER RADIUS (CONSISTENT SCALE) ===== */
-      --radius-sm: 0.375rem;   /* 6px */
-      --radius: 0.5rem;        /* 8px */
-      --radius-md: 0.625rem;   /* 10px */
-      --radius-lg: 0.75rem;    /* 12px */
-      --radius-xl: 1rem;       /* 16px */
-      --radius-2xl: 1.5rem;    /* 24px */
-      --radius-full: 9999px;
+      /* ===== BORDER RADIUS (CONSISTENT SCALE) — L1 FIX ===== */
+/* Disederhanakan ke 4 level utama agar konsisten di seluruh aplikasi */
+--radius-sm: 0.5rem;     /* 8px */
+--radius: 0.5rem;        /* 8px — alias untuk backward compatibility */
+--radius-md: 0.75rem;    /* 12px */
+--radius-lg: 1rem;       /* 16px */
+--radius-xl: 1.5rem;     /* 24px */
+--radius-2xl: 1.5rem;    /* 24px — alias untuk backward compatibility */
+--radius-full: 9999px;
       
       /* ===== SPACING SCALE ===== */
       --space-1: 0.25rem;
@@ -86,10 +93,11 @@
       --sidebar-collapsed: 72px;
       --header-height: 64px;
       
-      /* ===== TRANSITIONS ===== */
-      --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      /* ===== TRANSITIONS — L3 FIX ===== */
+/* Standarisasi ke 3 speed utama agar animasi kohesif */
+--transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+--transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+--transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       
       /* ===== TYPOGRAPHY SCALE (MOBILE-FIRST) ===== */
       --text-xs: 0.75rem;      /* 12px */
@@ -388,22 +396,23 @@
       color: white; 
     }
 
-    .nav-item.active { 
-      background: rgba(59, 130, 246, 0.15);
-      color: #60a5fa;
-    }
-
-    .nav-item.active::before {
-      content: '';
-      position: absolute;
-      left: -0.75rem;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 3px;
-      height: 24px;
-      background: #60a5fa;
-      border-radius: 0 3px 3px 0;
-    }
+    /* L7 FIX: Active state lebih subtle — hanya garis kiri + teks putih */
+.nav-item.active {
+background: rgba(59, 130, 246, 0.08);
+color: white;
+font-weight: 600;
+}
+.nav-item.active::before {
+content: '';
+position: absolute;
+left: -0.75rem;
+top: 50%;
+transform: translateY(-50%);
+width: 3px;
+height: 24px;
+background: #60a5fa;
+border-radius: 0 3px 3px 0;
+}
 
     .nav-item svg { 
       width: 20px; 
@@ -660,6 +669,12 @@
       transition: var(--transition-fast);
       outline: none;
     }
+
+    /* L9 FIX: Form input vertical centering di mobile */
+.form-input, .form-select {
+display: flex;
+align-items: center;
+}
 
     .form-input:focus, .form-select:focus, .form-textarea:focus { 
       border-color: var(--primary); 
@@ -1042,6 +1057,14 @@
       border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     }
 
+    /* L8 FIX: Modal header di mobile — ganti border jadi shadow agar lebih modern */
+@media (max-width: 1023px) {
+.modal-header {
+border-bottom: none;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+}
+
     .modal-title { 
       font-size: 1.125rem; 
       font-weight: 600;
@@ -1099,6 +1122,17 @@
       pointer-events: none;
     }
 
+    /* M12 FIX: Alert di mobile dipindah ke bawah header agar tidak menutupi konten penting */
+@media (max-width: 639px) {
+#alert-box {
+top: 64px; /* di bawah header mobile */
+right: 8px;
+left: 8px;
+width: auto;
+max-width: none;
+}
+}
+
     .alert { 
       padding: 1rem 1.25rem; 
       border-radius: var(--radius-lg); 
@@ -1113,6 +1147,32 @@
       pointer-events: all;
       border: 1px solid transparent;
     }
+
+    /* M12 FIX: Tombol close manual di pojok alert */
+.alert-close-btn {
+position: absolute;
+top: 0.5rem;
+right: 0.5rem;
+background: rgba(0,0,0,0.08);
+border: none;
+width: 24px;
+height: 24px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+color: inherit;
+opacity: 0.6;
+transition: opacity 0.2s, background 0.2s;
+font-size: 0.875rem;
+line-height: 1;
+padding: 0;
+}
+.alert-close-btn:hover {
+opacity: 1;
+background: rgba(0,0,0,0.15);
+}
 
     .alert-success { background: #f0fdf4; color: #166534; border-color: #86efac; }
     .alert-danger { background: #fff1f2; color: #991b1b; border-color: #fca5a5; }
@@ -1647,13 +1707,19 @@ border-radius: 2px;
       position: relative;
     }
 
-    .signature-pad-container canvas { 
-      width: 100%; 
-      height: 220px; 
-      display: block; 
-      cursor: crosshair;
-      touch-action: none;
-    }
+    .signature-pad-container canvas {
+width: 100%;
+height: 220px;
+display: block;
+cursor: crosshair;
+touch-action: none;
+}
+/* M4 FIX: Signature pad lebih besar di mobile agar mudah ditandatangani */
+@media (max-width: 639px) {
+.signature-pad-container canvas {
+height: 280px;
+}
+}
 
     .signature-pad-line {
       position: absolute;
@@ -2197,14 +2263,14 @@ border-radius: 2px;
       box-shadow: var(--shadow-sm);
     }
 
-    .device-time { 
-      font-size: 3.5rem; 
-      font-weight: 800; 
-      color: var(--text); 
-      letter-spacing: -0.03em;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-    }
+    .device-time {
+font-size: 3.5rem;
+font-weight: 700;
+color: var(--text);
+letter-spacing: -0.03em;
+line-height: 1;
+font-variant-numeric: tabular-nums;
+}
 
     .device-date { 
       font-size: 1rem; 
@@ -2303,11 +2369,17 @@ border-radius: 2px;
       letter-spacing: 0.01em;
     }
 
-    .badge-green { background: #dcfce7; color: #166534; }
-    .badge-red { background: #fee2e2; color: #991b1b; }
-    .badge-blue { background: #dbeafe; color: #1e40af; }
-    .badge-gray { background: #f1f5f9; color: #475569; }
-    .badge-orange { background: #fef3c7; color: #92400e; }
+    /* L6 FIX: Semantic color untuk badge — konsisten di seluruh aplikasi */
+/* Success (aktif, valid, selesai) */
+.badge-green { background: #dcfce7; color: #166534; }
+/* Danger (nonaktif, invalid, gagal) */
+.badge-red { background: #fee2e2; color: #991b1b; }
+/* Info (role, netral, baru) */
+.badge-blue { background: #dbeafe; color: #1e40af; }
+/* Neutral (default, draft) */
+.badge-gray { background: #f1f5f9; color: #475569; }
+/* Warning (pending, belum lengkap) */
+.badge-orange { background: #fef3c7; color: #92400e; }
 
     .progress-bar { 
       height: 8px; 
@@ -2507,6 +2579,24 @@ border-radius: 2px;
         height: 40px; 
       }
 
+      /* ===== M1 FIX: Badge notifikasi inbox di sidebar collapsed ===== */
+#sidebar.collapsed .nav-item {
+position: relative;
+}
+#sidebar.collapsed .nav-notif-badge {
+top: auto;
+bottom: 6px;
+right: 50%;
+transform: translateX(50%);
+min-width: 8px;
+width: 8px;
+height: 8px;
+padding: 0;
+font-size: 0;
+border-radius: 50%;
+border: 1.5px solid #1e293b;
+}
+
       #main-content { 
         flex: 1; 
         min-width: 0; 
@@ -2552,33 +2642,46 @@ border-radius: 2px;
     }
 
     .empty-state {
-      text-align: center;
-      padding: 3rem 1rem;
-      color: var(--text-muted);
-    }
-
-    .empty-state-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-      opacity: 0.5;
-    }
+text-align: center;
+padding: 3rem 1rem;
+color: var(--text-muted);
+}
+.empty-state-icon {
+font-size: 3.5rem;
+margin-bottom: 1rem;
+opacity: 0.6;
+filter: grayscale(0.2);
+}
+/* L5 FIX: Tambahkan background subtle untuk empty state agar lebih modern */
+.empty-state:has(.empty-state-icon) {
+background: linear-gradient(135deg, rgba(241,245,249,0.5) 0%, rgba(226,232,240,0.3) 100%);
+border-radius: var(--radius-lg);
+border: 1px dashed var(--border);
+}
 
     .empty-state-action {
       margin-top: 1.25rem;
     }
 
     /* ==================== SKELETON LOADING ==================== */
-    .skeleton-shimmer {
-      background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 37%, #e2e8f0 63%);
-      background-size: 400% 100%;
-      animation: skeletonShimmer 1.4s ease-in-out infinite;
-      border-radius: var(--radius-sm);
-    }
-
-    @keyframes skeletonShimmer {
-      0% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
+    /* L10 FIX: Skeleton shimmer lebih lambat & subtle */
+.skeleton-shimmer {
+background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+background-size: 200% 100%;
+animation: skeletonShimmer 1.8s ease-in-out infinite;
+border-radius: var(--radius-sm);
+}
+@keyframes skeletonShimmer {
+0% { background-position: 200% 0; }
+100% { background-position: -200% 0; }
+}
+/* Respect user preference untuk reduced motion */
+@media (prefers-reduced-motion: reduce) {
+.skeleton-shimmer {
+animation: none;
+background: #f1f5f9;
+}
+}
 
     .skeleton-row td { padding: 0.875rem 1rem; }
     .skeleton-line { height: 14px; width: 100%; }
@@ -2663,10 +2766,10 @@ border-radius: 2px;
     }
 
     .dash-admin-hero-greeting {
-      font-size: 1.15rem;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-    }
+font-size: 1.15rem;
+font-weight: 600;
+letter-spacing: -0.01em;
+}
 
     .dash-admin-hero-sub {
       font-size: 0.8125rem;
@@ -2729,11 +2832,11 @@ border-radius: 2px;
     }
 
     .dash-admin-hero-stat-value {
-      font-size: 1.55rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      line-height: 1;
-    }
+font-size: 1.55rem;
+font-weight: 700;
+letter-spacing: -0.02em;
+line-height: 1;
+}
 
     .dash-admin-hero-stat-label {
       font-size: 0.7rem;
@@ -2804,6 +2907,34 @@ border-radius: 2px;
       color: var(--text-muted);
       text-transform: uppercase;
     }
+
+    /* ===== M8 FIX: Tooltip visual untuk trend chart ===== */
+.dash-chart-col {
+position: relative;
+cursor: pointer;
+}
+.dash-chart-col:hover::after {
+content: attr(data-tooltip);
+position: absolute;
+bottom: calc(100% + 8px);
+left: 50%;
+transform: translateX(-50%);
+background: rgba(15, 23, 42, 0.95);
+color: white;
+font-size: 0.75rem;
+font-weight: 600;
+padding: 0.5rem 0.75rem;
+border-radius: var(--radius);
+white-space: nowrap;
+z-index: 10;
+box-shadow: var(--shadow-lg);
+pointer-events: none;
+animation: tooltipFadeIn 0.2s ease;
+}
+@keyframes tooltipFadeIn {
+from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
 
     .dash-chart-legend {
       display: flex;
@@ -3310,23 +3441,24 @@ stroke-width: 5 !important;
 
       .bottom-bar-absen-center::after { display: none !important; }
 
-      .bottom-bar-absen-fab {
-        width: 58px;
-        height: 58px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto;
-        margin-top: -24px;
-        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5), 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(255, 255, 255, 0.2);
-        border: 3.5px solid white;
-        transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-        flex-shrink: 0;
-        position: relative;
-        overflow: hidden;
-      }
+      /* L11 FIX: FAB absen lebih clean — 1 shadow layer + border 3px */
+.bottom-bar-absen-fab {
+width: 58px;
+height: 58px;
+border-radius: 50%;
+background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+display: flex;
+align-items: center;
+justify-content: center;
+margin: 0 auto;
+margin-top: -24px;
+box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);
+border: 3px solid white;
+transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+flex-shrink: 0;
+position: relative;
+overflow: hidden;
+}
       
       .bottom-bar-absen-fab::before {
         content: '';
@@ -4107,14 +4239,16 @@ stroke-width: 5 !important;
     }
 
     /* ==================== PENGADUAN MOBILE TABS ==================== */
-    .pengaduan-mobile-tabs {
-      display: none;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      background: #f1f5f9;
-      padding: 0.3rem;
-      border-radius: var(--radius-lg);
-    }
+    /* M5 FIX: Tab pengaduan tampil di semua ukuran layar (bukan hanya mobile) */
+.pengaduan-mobile-tabs {
+display: flex;
+gap: 0.5rem;
+margin-bottom: 1rem;
+background: #f1f5f9;
+padding: 0.3rem;
+border-radius: var(--radius-lg);
+max-width: 480px;
+}
 
     .pengaduan-tab-btn {
       flex: 1;
@@ -4141,13 +4275,6 @@ stroke-width: 5 !important;
 
     @media (max-width: 639px) {
       .pengaduan-mobile-tabs { display: flex; }
-    }
-
-    @media (min-width: 640px) {
-      #pengaduan-tab-kirim,
-      #pengaduan-tab-riwayat {
-        display: block !important;
-      }
     }
 
 /* ==================== MODAL LOGOUT KONFIRMASI ==================== */
@@ -4499,9 +4626,9 @@ transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     
     /* Main Card */
     .absen-main-card {
-      background: #FFFFFF;
-      border-radius: 30px;
-      padding: 2rem;
+background: #FFFFFF;
+border-radius: var(--radius-xl);
+padding: 2rem;
       max-width: 520px;
       width: 100%;
       box-shadow: 0 20px 48px -12px rgba(15,23,42,0.14), 0 4px 12px rgba(15,23,42,0.06);
@@ -4553,12 +4680,12 @@ transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .absen-main-title {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: #111827;
-      letter-spacing: -0.02em;
-      margin-bottom: 0;
-      line-height: 1.35;
+font-size: 1.5rem;
+font-weight: 700;
+color: #111827;
+letter-spacing: -0.02em;
+margin-bottom: 0;
+line-height: 1.35;
     }
     
     .absen-subtitle {
@@ -4569,9 +4696,9 @@ transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     
     /* Clock Card */
     .absen-clock-card {
-      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #1d4ed8 100%);
-      border-radius: 24px;
-      padding: 2.25rem 1.5rem;
+background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #1d4ed8 100%);
+border-radius: var(--radius-xl);
+padding: 2.25rem 1.5rem;
       text-align: center;
       margin-bottom: 1.5rem;
       position: relative;
@@ -4600,11 +4727,11 @@ transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .absen-clock-display {
-      font-size: 3.25rem;
-      font-weight: 800;
-      color: #ffffff;
-      letter-spacing: -0.03em;
-      line-height: 1;
+font-size: 3.25rem;
+font-weight: 700;
+color: #ffffff;
+letter-spacing: -0.03em;
+line-height: 1;
       font-variant-numeric: tabular-nums;
       margin-bottom: 0.625rem;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
@@ -4636,9 +4763,9 @@ transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .absen-action-card {
-      background: #FFFFFF;
-      border-radius: 24px;
-      padding: 1.25rem;
+background: #FFFFFF;
+border-radius: var(--radius-xl);
+padding: 1.25rem;
       border: 1px solid #EEF2F7;
       box-shadow: 0 2px 8px rgba(0,0,0,0.04);
       cursor: pointer;
@@ -4772,12 +4899,12 @@ transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     
     /* Footer Info */
     .absen-footer-info {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.75rem;
-      background: #F9FAFB;
-      border-radius: 18px;
-      padding: 1rem 1.25rem;
+display: flex;
+align-items: flex-start;
+gap: 0.75rem;
+background: #F9FAFB;
+border-radius: var(--radius-lg);
+padding: 1rem 1.25rem;
       border: 1px solid #EEF2F7;
     }
     
@@ -4836,9 +4963,9 @@ transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .absen-step-card {
-      background: #FFFFFF;
-      border-radius: 30px;
-      padding: 2rem;
+background: #FFFFFF;
+border-radius: var(--radius-xl);
+padding: 2rem;
       max-width: 480px;
       width: 100%;
       box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
@@ -4966,10 +5093,10 @@ transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     
     /* Responsive adjustments */
     @media (max-width: 640px) {
-      .absen-main-card {
-        padding: 1.5rem;
-        border-radius: 24px;
-      }
+.absen-main-card {
+padding: 1.5rem;
+border-radius: var(--radius-xl);
+}
       
       .absen-main-title {
         font-size: 1.25rem;
@@ -4998,9 +5125,9 @@ transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       }
       
       .absen-step-card {
-        padding: 1.5rem;
-        border-radius: 24px;
-      }
+padding: 1.5rem;
+border-radius: var(--radius-xl);
+}
     }
     
 /* ==================== CRUD ADMIN/AKUNTAN: CHECKBOX, BATCH DELETE, DETAIL CARD ==================== */
@@ -5567,17 +5694,17 @@ display: flex !important;
     <span>Gaji</span>
   </button>
   <button class="bottom-bar-btn" id="bottom-bar-lainnya-btn" data-nav="lainnya">
-    <div class="bottom-bar-icon-wrap" id="bottom-bar-lainnya-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-    </div>
-    <span>Lainnya</span>
-  </button>
+<div class="bottom-bar-icon-wrap" id="bottom-bar-lainnya-icon">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+</div>
+<span>Menu</span>
+</button>
 </div>
 
 <!-- Mobile Bottom Bar Dropdown Menu (Lainnya) -->
 <div id="mobile-bottom-bar-dropdown" class="mobile-bottom-bar-dropdown">
   <div class="mobile-bottom-bar-dropdown-header">
-    <span>Menu Lainnya</span>
+<span>Menu</span>
     <button id="mobile-bottom-bar-dropdown-close" class="mobile-bottom-bar-dropdown-close">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
@@ -5795,19 +5922,19 @@ display: flex !important;
                 <div class="crop-mask"></div>
               </div>
               <div class="crop-controls">
-                <div class="crop-control-row">
-                  <label>Zoom</label>
-                  <input type="range" id="crop-zoom" min="0.05" max="5" step="0.01" value="1">
-                </div>
-                <div class="crop-control-row">
-                  <label>Posisi Horizontal</label>
-                  <input type="range" id="crop-pan-x" min="-600" max="600" step="1" value="0">
-                </div>
-                <div class="crop-control-row">
-                  <label>Posisi Vertikal</label>
-                  <input type="range" id="crop-pan-y" min="-600" max="600" step="1" value="0">
-                </div>
-              </div>
+<div class="crop-control-row">
+<label>Zoom</label>
+<input type="range" id="crop-zoom" min="0.5" max="3" step="0.05" value="1">
+</div>
+<div class="crop-control-row">
+<label>Posisi Horizontal</label>
+<input type="range" id="crop-pan-x" min="-300" max="300" step="2" value="0">
+</div>
+<div class="crop-control-row">
+<label>Posisi Vertikal</label>
+<input type="range" id="crop-pan-y" min="-300" max="300" step="2" value="0">
+</div>
+</div>
               <div>
                 <div class="crop-preview-label">Preview</div>
                 <div class="crop-preview-circle">
@@ -6074,13 +6201,13 @@ display: flex !important;
               Data Absensi
             </div>
             <div class="flex gap-2 flex-wrap" style="flex-wrap:wrap;">
-              <input type="date" id="filter-abs-tanggal" class="form-input" style="width:auto;">
-              <input type="text" id="filter-abs-sppg" class="form-input" placeholder="SPPG" style="width:120px;">
-              <input type="text" id="filter-abs-jabatan" class="form-input" placeholder="Jabatan" style="width:120px;">
-              <button id="btn-filter-absensi" class="btn btn-primary btn-sm">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                Filter
-              </button>
+              <input type="date" id="filter-abs-tanggal" class="form-input" style="width:auto;" onchange="filterAbsensi()">
+<input type="text" id="filter-abs-sppg" class="form-input" placeholder="SPPG" style="width:120px;" onkeypress="if(event.key==='Enter')filterAbsensi()">
+<input type="text" id="filter-abs-jabatan" class="form-input" placeholder="Jabatan" style="width:120px;" onkeypress="if(event.key==='Enter')filterAbsensi()">
+<button id="btn-filter-absensi" class="btn btn-primary btn-sm">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+Filter
+</button>
             </div>
           </div>
           <div class="table-scroll-hint">
@@ -6369,8 +6496,8 @@ display: flex !important;
               Riwayat Absensi Saya
             </div>
             <div class="flex gap-1 flex-wrap">
-              <input type="month" id="filter-myabs-bulan" class="form-input" style="width:auto;">
-              <button id="btn-filter-myabs" class="btn btn-primary btn-sm">
+              <input type="month" id="filter-myabs-bulan" class="form-input" style="width:auto;" onchange="initMyAbsensi()">
+<button id="btn-filter-myabs" class="btn btn-primary btn-sm">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 Filter
               </button>
@@ -6576,10 +6703,10 @@ display: flex !important;
               Catatan Aktivitas
             </div>
             <div class="flex gap-2 flex-wrap">
-              <input type="text" id="filter-audit-jenis" class="form-input" placeholder="Jenis Aktivitas" style="width:150px;">
-              <input type="date" id="filter-audit-tanggal" class="form-input" style="width:auto;">
-              <input type="text" id="filter-audit-pelaku" class="form-input" placeholder="ID Pelaku (UUID)" style="width:150px;" title="Filter berdasarkan ID_User mentah, bukan nama. Salin ID dari kolom Pelaku jika diperlukan.">
-              <button id="btn-filter-audit" class="btn btn-primary btn-sm">
+              <input type="text" id="filter-audit-jenis" class="form-input" placeholder="Jenis Aktivitas" style="width:150px;" onkeypress="if(event.key==='Enter')filterAuditLog()">
+<input type="date" id="filter-audit-tanggal" class="form-input" style="width:auto;" onchange="filterAuditLog()">
+<input type="text" id="filter-audit-pelaku" class="form-input" placeholder="ID Pelaku (UUID)" style="width:150px;" title="Filter berdasarkan ID_User mentah, bukan nama. Salin ID dari kolom Pelaku jika diperlukan." onkeypress="if(event.key==='Enter')filterAuditLog()">
+<button id="btn-filter-audit" class="btn btn-primary btn-sm">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 Filter
               </button>
@@ -6819,18 +6946,19 @@ function closeIdCardPopup() {
 }
 
 // ==================== ICONS (SVG Stroke) ====================
+// L12 FIX: Standarisasi stroke-width ke 2px untuk icon 18px
 const ICONS = {
-  dashboard: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
-  profil: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-  manajemen: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-  karyawan: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-  payroll: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
-  mypayroll: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
-  absensi: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>`,
-  audit: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
-  absen: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
-  logout: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
-  camera: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+dashboard: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
+profil: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+manajemen: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+karyawan: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+payroll: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+mypayroll: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+absensi: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>`,
+audit: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+absen: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+logout: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
+camera: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
   edit: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
   save: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,
   check: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
@@ -6883,8 +7011,8 @@ function showAlert(msg, type='danger', opts) {
   div.id = id;
   div.className = `alert alert-${type}`;
   const undoHtml = options.onUndo ? `<button class="alert-undo-btn" id="${id}-undo">${escapeHtml(options.undoLabel || 'Urungkan')}</button>` : '';
-  div.innerHTML = `<span class="alert-icon">${icon}</span><div class="alert-body"><div class="alert-msg">${msg}</div>${undoHtml}</div><div class="alert-progress" style="animation-duration:${duration}ms;"></div>`;
-  box.appendChild(div);
+  div.innerHTML = `<button class="alert-close-btn" onclick="this.parentElement.remove()" aria-label="Tutup">✕</button><span class="alert-icon">${icon}</span><div class="alert-body"><div class="alert-msg">${msg}</div>${undoHtml}</div><div class="alert-progress" style="animation-duration:${duration}ms;"></div>`;
+box.appendChild(div);
 
   if(options.onUndo) {
     const undoBtn = document.getElementById(id + '-undo');
@@ -9104,19 +9232,21 @@ function renderDashboardAdmin(data) {
   // ===== TREND ABSENSI (mini bar chart) =====
   const maxTrendVal = Math.max(1, ...data.trend7Hari.map(t => Math.max(t.datang, t.pulang)));
   const dayShort = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
-  const chartCols = data.trend7Hari.map(t => {
-    const d = new Date(t.tanggal);
-    const hDatang = Math.max(3, Math.round((t.datang / maxTrendVal) * 110));
-    const hPulang = Math.max(3, Math.round((t.pulang / maxTrendVal) * 110));
-    return `
-      <div class="dash-chart-col" title="${escapeHtml(formatDate(t.tanggal))}: ${t.datang} datang, ${t.pulang} pulang">
-        <div class="dash-chart-bars">
-          <div class="dash-chart-bar datang" style="height:${hDatang}px;"></div>
-          <div class="dash-chart-bar pulang" style="height:${hPulang}px;"></div>
-        </div>
-        <div class="dash-chart-label">${dayShort[d.getDay()]}</div>
-      </div>`;
-  }).join('');
+  // M8 FIX: Tambahkan tooltip visual yang lebih informatif saat hover
+const chartCols = data.trend7Hari.map(t => {
+const d = new Date(t.tanggal);
+const hDatang = Math.max(3, Math.round((t.datang / maxTrendVal) * 110));
+const hPulang = Math.max(3, Math.round((t.pulang / maxTrendVal) * 110));
+const tanggalFormatted = formatDate(t.tanggal);
+return `
+<div class="dash-chart-col" data-tooltip="${escapeHtml(tanggalFormatted)}: ${t.datang} datang, ${t.pulang} pulang">
+<div class="dash-chart-bars">
+<div class="dash-chart-bar datang" style="height:${hDatang}px;" title="${t.datang} datang"></div>
+<div class="dash-chart-bar pulang" style="height:${hPulang}px;" title="${t.pulang} pulang"></div>
+</div>
+<div class="dash-chart-label">${dayShort[d.getDay()]}</div>
+</div>`;
+}).join('');
 
   const trendHtml = `
     <div class="card">
@@ -9624,9 +9754,14 @@ function renderIdCardPreview(u) {
       ` : `
         <div style="color:var(--text-muted); font-size:0.875rem; padding:2rem;">Preview tidak tersedia</div>
       `}
-      <div class="text-muted" style="font-size:0.75rem; margin-top:0.25rem;">
-        ID Card 2 sisi — klik gambar atau tombol Download untuk membuka. Klik "Generate ID Card" untuk memperbarui ke tampilan sebelahan.
-      </div>
+      <div style="margin-top:0.75rem; padding:0.75rem; background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%); border:1px solid #bfdbfe; border-radius:var(--radius); text-align:center;">
+<div style="font-size:0.8125rem; color:#1e40af; font-weight:600; margin-bottom:0.375rem;">✨ Tampilan 2 sisi tersedia</div>
+<div style="font-size:0.75rem; color:#475569; margin-bottom:0.5rem;">Generate ulang untuk melihat tampilan depan & belakang secara sebelahan</div>
+<button onclick="generateIdCardManual()" class="btn btn-sm btn-primary" style="font-size:0.75rem; padding:0.4rem 0.875rem;">
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:0.25rem;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.41"/></svg>
+Generate Ulang (2 Sisi)
+</button>
+</div>
     </div>
   `;
 }
@@ -9849,12 +9984,12 @@ function renderUserGrid(users) {
       <div class="user-card-body">
         <div class="user-card-name">${escapeHtml(u.Nama_Lengkap)}</div>
         <div class="user-card-role">${escapeHtml(u.Jabatan_Divisi)} &bull; ${escapeHtml(u.SPPG)}</div>
-        <div class="flex flex-between items-center" style="margin-top:0.5rem; gap:0.4rem; flex-wrap:wrap;">
-          <span class="badge ${isActive(u.Status_Aktif)?'badge-green':'badge-red'}" id="status-badge-${u.ID_User}">${isActive(u.Status_Aktif)?'Aktif':'Nonaktif'}</span>
-          <button class="btn btn-sm btn-outline js-toggle-user-status" data-id-user="${escapeHtml(u.ID_User)}" data-currently-active="${isActive(u.Status_Aktif)}" data-nama-lengkap="${escapeHtml(u.Nama_Lengkap)}">
-            ${isActive(u.Status_Aktif) ? 'Nonaktifkan' : 'Aktifkan'}
-          </button>
-        </div>
+        <div class="flex flex-between items-center" style="margin-top:0.75rem; gap:0.5rem; flex-wrap:wrap; padding-top:0.75rem; border-top:1px solid var(--border-light);">
+<span class="badge ${isActive(u.Status_Aktif)?'badge-green':'badge-red'}" id="status-badge-${u.ID_User}">${isActive(u.Status_Aktif)?'Aktif':'Nonaktif'}</span>
+<button class="btn btn-sm btn-outline js-toggle-user-status" data-id-user="${escapeHtml(u.ID_User)}" data-currently-active="${isActive(u.Status_Aktif)}" data-nama-lengkap="${escapeHtml(u.Nama_Lengkap)}" style="padding:0.5rem 1rem; font-size:0.75rem; font-weight:600; border:1.5px solid var(--border-dark);">
+${isActive(u.Status_Aktif) ? 'Nonaktifkan' : 'Aktifkan'}
+</button>
+</div>
       </div>
     </div>
   `).join('');
@@ -10524,9 +10659,12 @@ function renderMyPayrollView(data) {
           <span class="badge badge-green">${formatRupiah(p.totalGaji)}</span>
         </div>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; padding-top:0.625rem; border-top:1px dashed var(--border);">
-          <button class="btn btn-sm btn-primary" onclick="showSlipDetail(${idx})">${ICONS.image} Lihat Slip</button>
-          ${p.urlPdf ? `<a href="${escapeHtml(encodeURI(p.urlPdf))}" target="_blank" class="btn btn-sm btn-outline">PDF</a>` : ''}
-        </div>
+<button class="btn btn-sm btn-primary" onclick="showSlipDetail(${idx})">${ICONS.image} Lihat Slip</button>
+${p.urlPdf
+? `<a href="${escapeHtml(encodeURI(p.urlPdf))}" target="_blank" class="btn btn-sm btn-outline">PDF</a>`
+: `<button class="btn btn-sm btn-outline" disabled title="PDF sedang di-generate" style="opacity:0.5; cursor:not-allowed;">PDF (proses)</button>`
+}
+</div>
       </div>
     `).join('');
     cardContainer.style.display = '';
@@ -10548,9 +10686,12 @@ function renderMyPayrollView(data) {
       <td style="font-weight:600;">${formatRupiah(p.totalGaji)}</td>
       <td>
         <div class="flex gap-1 flex-wrap">
-          <button class="btn btn-sm btn-primary" onclick="showSlipDetail(${idx})">${ICONS.image} Lihat Slip</button>
-          ${p.urlPdf ? `<a href="${escapeHtml(encodeURI(p.urlPdf))}" target="_blank" class="btn btn-sm btn-outline">PDF</a>` : ''}
-        </div>
+<button class="btn btn-sm btn-primary" onclick="showSlipDetail(${idx})">${ICONS.image} Lihat Slip</button>
+${p.urlPdf
+? `<a href="${escapeHtml(encodeURI(p.urlPdf))}" target="_blank" class="btn btn-sm btn-outline">PDF</a>`
+: `<button class="btn btn-sm btn-outline" disabled title="PDF sedang di-generate" style="opacity:0.5; cursor:not-allowed;">PDF (proses)</button>`
+}
+</div>
       </td>
     </tr>
   `).join('');
@@ -10836,10 +10977,12 @@ async function startQrScannerWithCamera(cameraId) {
   try {
     const html5QrCode = new Html5Qrcode('device-qr-video');
     AppState.qrScanner = html5QrCode;
-    await html5QrCode.start(
-      cameraId,
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      (decodedText) => {
+    // M7 FIX: qrbox responsif berdasarkan lebar viewport (70% atau max 320px)
+const qrBoxSize = Math.min(Math.round(window.innerWidth * 0.7), 320);
+await html5QrCode.start(
+cameraId,
+{ fps: 10, qrbox: { width: qrBoxSize, height: qrBoxSize } },
+(decodedText) => {
         html5QrCode.stop();
         handleQrScanned(decodedText);
       },
@@ -11526,7 +11669,9 @@ async function startAbsenQrCamera(cameraId, cameras) {
   try {
     const qr = new Html5Qrcode('absen-qr-video');
     absenQrScanner = qr;
-    await qr.start(cameraId, {fps:10, qrbox:{width:250,height:250}}, (decoded) => { qr.stop(); handleAbsenQrScanned(decoded, cameras); }, ()=>{});
+    // M7 FIX: qrbox responsif berdasarkan lebar viewport
+const qrBoxSizeAbsen = Math.min(Math.round(window.innerWidth * 0.7), 320);
+await qr.start(cameraId, {fps:10, qrbox:{width:qrBoxSizeAbsen,height:qrBoxSizeAbsen}}, (decoded) => { qr.stop(); handleAbsenQrScanned(decoded, cameras); }, ()=>{});
   } catch(e) { showAlert('Gagal QR scanner: ' + getErrorMessage(e)); resetAbsenFlow(); }
 }
 
@@ -11710,17 +11855,39 @@ function formatAuditDetail(detail) {
     return detail.map(v => (typeof v === 'object' ? JSON.stringify(v) : String(v))).join('; ');
   }
 
-  // Object: render sebagai "key: value" dipisah koma, skip nilai kosong/null
-  if (typeof detail === 'object') {
-    const parts = Object.keys(detail)
-      .filter(k => detail[k] !== null && detail[k] !== undefined && detail[k] !== '')
-      .map(k => {
-        let v = detail[k];
-        if (typeof v === 'object') v = JSON.stringify(v);
-        return `${k}: ${v}`;
-      });
-    return parts.length > 0 ? parts.join(', ') : '-';
-  }
+  // M10 FIX: Object kompleks → tampilkan ringkasan singkat, bukan flatten semua field
+if (typeof detail === 'object') {
+const keys = Object.keys(detail).filter(k => detail[k] !== null && detail[k] !== undefined && detail[k] !== '');
+// Jika ada field "perubahan" (array), tampilkan ringkasan field yang diubah
+if (detail.perubahan && Array.isArray(detail.perubahan)) {
+const fieldsChanged = detail.perubahan.map(p => p.field || p).join(', ');
+return `Mengubah: ${fieldsChanged}`;
+}
+// Jika ada field "ringkasanData", pakai itu
+if (detail.ringkasanData) {
+const ringkasan = detail.ringkasanData;
+if (typeof ringkasan === 'object') {
+return Object.entries(ringkasan).map(([k,v]) => `${k}: ${v}`).join(', ');
+}
+return String(ringkasan);
+}
+// Fallback: tampilkan max 3 field pertama saja
+if (keys.length > 3) {
+const summary = keys.slice(0, 3).map(k => {
+let v = detail[k];
+if (typeof v === 'object') v = JSON.stringify(v);
+return `${k}: ${v}`;
+});
+return summary.join(', ') + ` (+${keys.length - 3} field lain)`;
+}
+// Object kecil: tampilkan semua
+const parts = keys.map(k => {
+let v = detail[k];
+if (typeof v === 'object') v = JSON.stringify(v);
+return `${k}: ${v}`;
+});
+return parts.length > 0 ? parts.join(', ') : '-';
+}
 
   return String(detail);
 }
