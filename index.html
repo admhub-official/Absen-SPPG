@@ -5057,13 +5057,6 @@
       }
     }
   </style>
-
-    @media (min-width: 641px) {
-      .absen-page-wrapper {
-        padding: 2rem 1.5rem;
-      }
-    }
-  </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -7325,6 +7318,15 @@ function navigateTo(page) {
   if(page !== 'device-absen' && AppState.device) { page = 'device-absen'; }
   AppState.currentPage = page;
   localStorage.setItem('absensi_last_page', page);
+
+  // Reset state seleksi batch-delete CRUD setiap pindah halaman.
+  // Untuk halaman yang memang punya fitur seleksi (absensi, data-karyawan,
+  // manajemen-user), state ini akan diisi ulang secara benar oleh fungsi
+  // render masing-masing (crudResetSelection) segera setelah ini.
+  CrudState.selectedIds.clear();
+  CrudState.mobileSelectionMode = false;
+  const fabEl = document.getElementById('crud-batch-fab');
+  if(fabEl) fabEl.classList.remove('show');
 
   // Tampilkan/sembunyikan layout sesuai status halaman (auth vs app)
   const isAuthPage = (page === 'login' || page === 'register');
