@@ -9611,11 +9611,12 @@ document.addEventListener('click', function(e) {
   const btn = e.target.closest('.js-toggle-user-status');
   if (!btn) return;
   e.stopPropagation();
+  e.preventDefault();
   const idUser = btn.dataset.idUser;
   const currentlyActive = btn.dataset.currentlyActive === 'true';
   const namaLengkap = btn.dataset.namaLengkap;
   quickToggleUserStatus(idUser, currentlyActive, namaLengkap);
-});
+}, true); // capture phase — hentikan event SEBELUM mencapai onclick milik .user-card
 
 
 function quickToggleUserStatus(idUser, currentlyActive, namaLengkap) {
@@ -12476,10 +12477,6 @@ async function crudOpenDetailUserFromKaryawan(idUser) {
 // Panggil ulang fungsi init halaman yang sedang aktif, supaya state ter-refresh
 // tanpa reload browser. Dipetakan dari nama menu ke fungsi init masing-masing.
 const CRUD_MENU_REFRESH_FN = {
-
-// Panggil ulang fungsi init halaman yang sedang aktif, supaya state ter-refresh
-// tanpa reload browser. Dipetakan dari nama menu ke fungsi init masing-masing.
-const CRUD_MENU_REFRESH_FN = {
   users: () => { if (typeof initManajemenUser === 'function') initManajemenUser(); if (typeof initDataKaryawan === 'function') initDataKaryawan(); },
   absensi: () => { if (typeof initAbsensi === 'function') initAbsensi(); },
   payroll: () => { if (typeof initManajemenPayroll === 'function') initManajemenPayroll(); },
@@ -12513,19 +12510,6 @@ function crudBindGlobalEvents() {
   });
 }
 document.addEventListener('DOMContentLoaded', crudBindGlobalEvents);
-
-// ==================== SAFEОН (hoisted helper) ====================
-// Didefinisikan ulang sebagai function declaration agar tidak TDZ
-// ketika dipanggil di DOMContentLoaded sebelum deklarasi const/let
-function safeOn(selector, event, handler) {
-  const el = document.querySelector(selector);
-  if (el) {
-    el.addEventListener(event, handler);
-  } else {
-    console.warn('[INIT] Elemen tidak ditemukan, skip listener:', selector);
-  }
-}
-</script>
 
 // ==================== SAFEОН (hoisted helper) ====================
 // Didefinisikan ulang sebagai function declaration agar tidak TDZ
