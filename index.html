@@ -1484,9 +1484,9 @@ position: relative;
 content: '';
 position: absolute;
 inset: 0;
-background: rgba(0,0,0,0.35);
+background: rgba(0,0,0,0.15);
 /* "Lubang" di tengah menggunakan box-shadow untuk efek spotlight */
-box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+box-shadow: 0 0 0 9999px rgba(0,0,0,0.65);
 border-radius: 12px;
 }
 .qr-viewfinder-corner {
@@ -4931,6 +4931,108 @@ padding: 1rem 1.25rem;
       padding: 1.5rem 1rem;
     }
 
+    /* ===== ABSEN UNIFIED DARK SCAN CARD ===== */
+    .absen-scan-dark-card {
+      background: #0f172a !important;
+      border: 1px solid rgba(255,255,255,0.08) !important;
+      box-shadow: 0 24px 60px -12px rgba(0,0,0,0.6) !important;
+      padding: 1.25rem !important;
+      max-width: 400px;
+    }
+    .absen-scan-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .absen-scan-phase-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(59,130,246,0.18);
+      border: 1px solid rgba(59,130,246,0.35);
+      color: #93c5fd;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+    }
+    .absen-cam-select-dark {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      outline: none;
+      max-width: 160px;
+    }
+    .absen-unified-scan-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-height: 340px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #020617;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .absen-scan-layer {
+      width: 100%;
+      height: 100%;
+    }
+    .absen-scan-viewfinder {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+    .absen-scan-viewfinder .qr-viewfinder-frame {
+      width: 58%;
+      max-width: 200px;
+    }
+    .absen-scan-status-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 8;
+      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+      padding: 1rem 0.75rem 0.75rem;
+      text-align: center;
+    }
+    #absen-scan-status-text {
+      background: rgba(15,23,42,0.9);
+      color: #e2e8f0;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      letter-spacing: 0.02em;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .absen-cancel-dark {
+      margin-top: 1rem;
+      width: 100%;
+      justify-content: center;
+      background: rgba(255,255,255,0.06) !important;
+      border: 1px solid rgba(255,255,255,0.12) !important;
+      color: #94a3b8 !important;
+    }
+    .absen-cancel-dark:hover {
+      background: rgba(239,68,68,0.15) !important;
+      border-color: rgba(239,68,68,0.4) !important;
+      color: #fca5a5 !important;
+    }
+
     /* Parent (#main-content > #content-area) sudah flex-container yang
        otomatis mengisi tinggi viewport. Di mobile, wrapper Absen diubah
        dari mode "flex-center full height" (penyebab overflow-y:auto
@@ -6373,65 +6475,58 @@ Filter
           
           <!-- Step QR -->
           <div id="absen-step-qr" class="hidden absen-step-container">
-            <div class="absen-step-card">
-              <div class="absen-step-header">
-                <div class="absen-step-icon primary">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <div class="absen-step-card absen-scan-dark-card">
+              <!-- Header -->
+              <div class="absen-scan-topbar">
+                <div id="absen-scan-phase-label" class="absen-scan-phase-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  <span>Scan QR Code ID Card</span>
                 </div>
-                <h2 class="absen-step-title">Scan QR Code ID Card</h2>
-              </div>
-              <div class="form-group hidden" id="absen-qr-cam-group" style="margin-bottom:1rem;">
-                <label class="form-label">Pilih Kamera</label>
-                <select id="absen-qr-cam-select" class="form-select"></select>
-              </div>
-              <div class="absen-camera-wrapper">
-                <div class="qr-viewfinder-wrap">
-                  <div id="absen-qr-video" class="absen-video-container"></div>
-                  <div class="qr-viewfinder">
-                    <div class="qr-viewfinder-frame">
-                      <span class="qr-viewfinder-corner tl"></span>
-                      <span class="qr-viewfinder-corner tr"></span>
-                      <span class="qr-viewfinder-corner bl"></span>
-                      <span class="qr-viewfinder-corner br"></span>
-                      <span class="qr-viewfinder-scanline"></span>
-                      </div>
-                      </div>
-                      <div class="qr-viewfinder-hint">📷 Posisikan QR Code di dalam kotak</div>
-                      </div>
-                      </div>
-                      <p class="absen-step-hint">Arahkan QR Code ID Card ke dalam kotak</p>
-              <button id="btn-absen-qr-cancel" class="absen-cancel-btn">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                Batal
-              </button>
-            </div>
-          </div>
-          
-          <!-- Step Face (QR Flow) -->
-          <div id="absen-step-face" class="hidden absen-step-container">
-            <div class="absen-step-card">
-              <div class="absen-step-header">
-                <div class="absen-step-icon primary">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <div class="form-group" id="absen-qr-cam-group" style="display:none; margin:0;">
+                  <select id="absen-qr-cam-select" class="absen-cam-select-dark"></select>
                 </div>
-                <h2 class="absen-step-title">Scan Wajah</h2>
               </div>
-              <div class="absen-camera-wrapper">
-                <div class="camera-container absen-camera-container">
-                  <video id="absen-face-video" autoplay playsinline muted></video>
-                  <div class="face-guide"></div>
+
+              <!-- Single Unified Scanner Box -->
+              <div class="absen-unified-scan-box">
+                <!-- QR Video Layer -->
+                <div id="absen-qr-video" class="absen-video-container absen-scan-layer" style="position:relative; z-index:1;"></div>
+                <!-- Face Video Layer (hidden until face phase) -->
+                <div class="absen-scan-layer" id="absen-face-layer" style="display:none; position:absolute; inset:0; z-index:2;">
+                  <video id="absen-face-video" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; border-radius:inherit;"></video>
+                  <div class="face-guide" id="absen-face-guide"></div>
                   <button class="camera-switch-btn" id="btn-switch-cam-absen" title="Ganti Kamera">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
                   </button>
                 </div>
+                <!-- QR Viewfinder Overlay -->
+                <div class="absen-scan-viewfinder" id="absen-qr-viewfinder">
+                  <div class="qr-viewfinder-frame">
+                    <span class="qr-viewfinder-corner tl"></span>
+                    <span class="qr-viewfinder-corner tr"></span>
+                    <span class="qr-viewfinder-corner bl"></span>
+                    <span class="qr-viewfinder-corner br"></span>
+                    <span class="qr-viewfinder-scanline"></span>
+                  </div>
+                </div>
+                <!-- Status box inside camera -->
+                <div class="absen-scan-status-overlay" id="absen-scan-status-overlay">
+                  <span id="absen-scan-status-text">📷 Posisikan QR Code di dalam kotak</span>
+                </div>
               </div>
-              <p class="absen-step-hint" id="absen-face-status">Posisikan wajah di dalam oval...</p>
-              <button id="btn-absen-face-cancel" class="absen-cancel-btn">
+
+              <!-- Face status hint (shown during face phase) -->
+              <p class="absen-step-hint" id="absen-face-status" style="display:none;">Posisikan wajah di dalam oval...</p>
+
+              <button id="btn-absen-qr-cancel" class="absen-cancel-btn absen-cancel-dark" onclick="resetAbsenFlow()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 Batal
               </button>
             </div>
           </div>
+
+          <!-- Step Face (QR Flow) — HIDDEN, dikelola oleh step-qr sekarang -->
+          <div id="absen-step-face" class="hidden" style="display:none !important;"></div>
           
           <!-- Step Face Self -->
           <div id="absen-step-face-self" class="hidden absen-step-container">
@@ -9357,21 +9452,25 @@ function renderDashboardUser(data) {
   const progressBulanPct = Math.min(100, Math.round((data.totalHariKerja / totalHariTarget) * 100));
 
   const heroStatusBadge = data.sudahPulang
-    ? `<span style="background:rgba(16,185,129,0.2); color:#6ee7b7; font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px;">SELESAI HARI INI</span>`
+    ? `<span style="background:rgba(16,185,129,0.2); color:#6ee7b7; font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px;">✅ SELESAI HARI INI</span>`
     : data.sudahDatang
-      ? `<span style="background:rgba(251,191,36,0.2); color:#fde68a; font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px;">SUDAH DATANG</span>`
-      : `<span style="background:rgba(239,68,68,0.2); color:#fca5a5; font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px;">BELUM ABSEN</span>`;
+      ? `<span style="background:rgba(251,191,36,0.2); color:#fde68a; font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px;">🟡 SUDAH ABSEN DATANG</span>`
+      : `<span style="background:rgba(239,68,68,0.2); color:#fca5a5; font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px;">🔴 BELUM ABSEN</span>`;
 
   const pulangStatusHtml = data.sudahPulang
     ? `<div style="display:flex; align-items:center; gap:6px; color:#6ee7b7; font-size:14px; font-weight:600;">
          <span style="width:8px; height:8px; border-radius:50%; background:#6ee7b7; display:inline-block;"></span>
          Sudah absen pulang ${jamPulang ? '· ' + jamPulang.waktu : ''}
+       </div>
+       <div style="margin-top:8px; font-size:11px; color:rgba(255,255,255,0.45); background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); border-radius:8px; padding:5px 10px; display:inline-block;">
+         🎉 Absensi hari ini lengkap
        </div>`
     : data.sudahDatang
-      ? `<div style="display:flex; align-items:center; gap:6px; color:#fca5a5; font-size:14px; font-weight:600;">
-           <span style="width:8px; height:8px; border-radius:50%; background:#fca5a5; display:inline-block;"></span>
-           Belum absen pulang
+      ? `<div style="display:flex; align-items:center; gap:6px; color:#fde68a; font-size:14px; font-weight:600;">
+           <span style="width:8px; height:8px; border-radius:50%; background:#fde68a; display:inline-block;"></span>
+           Sudah absen datang ${jamDatang ? '· ' + jamDatang.waktu : ''}
          </div>
+         <div style="margin-top:4px; font-size:12px; color:rgba(255,255,255,0.5);">Jangan lupa absen pulang ya!</div>
          <button onclick="navigateTo('absen-manual')" style="margin-top:10px; background:white; color:#0f172a; border:none; padding:7px 14px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer;">Absen Pulang →</button>`
       : `<div style="display:flex; align-items:center; gap:6px; color:#fca5a5; font-size:14px; font-weight:600;">
            <span style="width:8px; height:8px; border-radius:50%; background:#fca5a5; display:inline-block;"></span>
@@ -11322,6 +11421,15 @@ function resetAbsenFlow() {
   $('#absen-step-face').classList.add('hidden');
   $('#absen-step-face-self').classList.add('hidden');
   $('#absen-step-result').classList.add('hidden');
+  // Reset state layer gabungan QR+Wajah
+  const faceLayer = document.getElementById('absen-face-layer');
+  if(faceLayer) faceLayer.style.display = 'none';
+  const qrViewfinder = document.getElementById('absen-qr-viewfinder');
+  if(qrViewfinder) qrViewfinder.style.display = 'flex';
+  const phaseBadge = document.querySelector('#absen-scan-phase-label span');
+  if(phaseBadge) phaseBadge.textContent = 'Scan QR Code ID Card';
+  const faceHint = document.getElementById('absen-face-status');
+  if(faceHint) faceHint.style.display = 'none';
   updateScanSteps('absen-self-scan-steps', 'absen-self-hint-box', 'detect', 'Posisikan wajah di dalam oval');
 }
 
@@ -11574,10 +11682,27 @@ $('#absen-step-face-self').classList.add('hidden');
 $('#absen-step-result').classList.remove('hidden');
 const iconEl = $('#absen-result-icon');
 const textEl = $('#absen-result-text');
-iconEl.textContent = success ? '✅' : '❌';
 textEl.className = success ? 'text-success' : 'text-danger';
 if(success) {
-textEl.textContent = message;
+  const upperMsg = (message || '').toUpperCase();
+  if(upperMsg.includes('DATANG')) {
+    iconEl.textContent = '🟢';
+    const parts = message.split(' - ');
+    const nama = parts[0] || '';
+    const waktuMatch = message.match(/\(([^)]+)\)/);
+    const waktu = waktuMatch ? waktuMatch[1] : '';
+    textEl.innerHTML = `<div style="font-size:1.1rem;font-weight:700;color:#10b981;margin-bottom:4px;">✅ Absen Datang Berhasil</div><div style="font-size:0.95rem;color:var(--text);font-weight:600;">${escapeHtml(nama)}</div>${waktu ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Pukul ${escapeHtml(waktu)}</div>` : ''}`;
+  } else if(upperMsg.includes('PULANG')) {
+    iconEl.textContent = '🔵';
+    const parts = message.split(' - ');
+    const nama = parts[0] || '';
+    const waktuMatch = message.match(/\(([^)]+)\)/);
+    const waktu = waktuMatch ? waktuMatch[1] : '';
+    textEl.innerHTML = `<div style="font-size:1.1rem;font-weight:700;color:#3b82f6;margin-bottom:4px;">✅ Absen Pulang Berhasil</div><div style="font-size:0.95rem;color:var(--text);font-weight:600;">${escapeHtml(nama)}</div>${waktu ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Pukul ${escapeHtml(waktu)}</div>` : ''}`;
+  } else {
+    iconEl.textContent = '✅';
+    textEl.textContent = message;
+  }
 setTimeout(resetAbsenFlow, 5000);
 } else {
     // Tampilkan pesan utama + detail skor (jika ada) + tombol coba lagi
@@ -11650,6 +11775,18 @@ async function startAbsenFlow() {
   }
   showLoading(false);
   $('#absen-step-qr').classList.remove('hidden');
+  // Pastikan layer QR aktif, layer wajah tersembunyi
+  const faceLayer = document.getElementById('absen-face-layer');
+  if(faceLayer) faceLayer.style.display = 'none';
+  const qrViewfinder = document.getElementById('absen-qr-viewfinder');
+  if(qrViewfinder) qrViewfinder.style.display = 'flex';
+  const phaseBadge = document.querySelector('#absen-scan-phase-label span');
+  if(phaseBadge) phaseBadge.textContent = 'Scan QR Code ID Card';
+  const statusText = document.getElementById('absen-scan-status-text');
+  if(statusText) statusText.textContent = '📷 Posisikan QR Code di dalam kotak';
+  const faceHint = document.getElementById('absen-face-status');
+  if(faceHint) faceHint.style.display = 'none';
+
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     showAlert('Browser tidak mendukung akses kamera. Gunakan HTTPS dan browser modern.'); resetAbsenFlow(); return;
   }
@@ -11657,10 +11794,11 @@ async function startAbsenFlow() {
   try { cameras = await Html5Qrcode.getCameras(); } catch(e) { showAlert('Gagal akses kamera: ' + getErrorMessage(e)); resetAbsenFlow(); return; }
   if(!cameras || cameras.length === 0) { showAlert('Tidak ada kamera terdeteksi.'); resetAbsenFlow(); return; }
   const sel = $('#absen-qr-cam-select');
+  const camGroup = document.getElementById('absen-qr-cam-group');
   const backIdx = cameras.findIndex(c => /back|rear|environment/i.test(c.label||''));
   const defIdx = backIdx >= 0 ? backIdx : 0;
   sel.innerHTML = cameras.map((c,i) => { let l = c.label||`Kamera ${i+1}`; if(/back|rear|environment/i.test(l)) l+=' (Belakang)'; else if(/front|user|face/i.test(l)) l+=' (Depan)'; return `<option value="${i}" ${i===defIdx?'selected':''}>${escapeHtml(l)}</option>`; }).join('');
-  $('#absen-qr-cam-group').classList.toggle('hidden', cameras.length <= 1);
+  if(camGroup) camGroup.style.display = cameras.length > 1 ? 'block' : 'none';
   await startAbsenQrCamera(cameras[defIdx].id, cameras);
   sel.onchange = () => { const c = cameras[parseInt(sel.value)]; if(c) restartAbsenQr(c.id, cameras); };
 }
@@ -11685,11 +11823,18 @@ async function handleAbsenQrScanned(idCardUnik, cameras) {
   try {
     const res = await apiCallWithToken('lookupUserByIdCardSelf', { idCardUnik: idCardUnikClean });
     if(!res.found) { showAbsenResult(false, 'ID Card tidak valid'); return; }
-    // Catatan: res.user.faceDescriptor sudah TIDAK dikirim server (lihat Fix #2) —
-    // pencocokan wajah sekarang sepenuhnya dihitung di server via verifyFaceLiveByIdUser.
     absenIdUser = res.user.idUser;
-    $('#absen-step-qr').classList.add('hidden');
-    $('#absen-step-face').classList.remove('hidden');
+    // Transisi ke fase scan wajah DALAM kotak yang sama (tidak pindah step)
+    const qrViewfinder = document.getElementById('absen-qr-viewfinder');
+    if(qrViewfinder) qrViewfinder.style.display = 'none';
+    const faceLayer = document.getElementById('absen-face-layer');
+    if(faceLayer) faceLayer.style.display = 'block';
+    const phaseBadge = document.querySelector('#absen-scan-phase-label span');
+    if(phaseBadge) phaseBadge.textContent = 'Scan Wajah';
+    const statusText = document.getElementById('absen-scan-status-text');
+    if(statusText) statusText.textContent = '😊 Posisikan wajah di dalam oval';
+    const faceHint = document.getElementById('absen-face-status');
+    if(faceHint) faceHint.style.display = 'block';
     startAbsenFaceScan();
   } catch(e) { showAbsenResult(false, 'Error: ' + getErrorMessage(e)); }
 }
@@ -11749,11 +11894,13 @@ async function startAbsenFaceScan() {
         .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:0.5}))
         .withFaceLandmarks().withFaceDescriptor().withFaceExpressions();
 
+      const scanStatusText = document.getElementById('absen-scan-status-text');
       if(!det) {
         aPhase='center';
         if(guide) guide.className='face-guide';
         if(statusBox){statusBox.className='liveness-status-box warn';statusBox.textContent='👁 Arahkan wajah ke kamera';}
         if(statusEl) statusEl.textContent='Posisikan wajah di dalam oval...';
+        if(scanStatusText) scanStatusText.textContent='👁 Arahkan wajah ke kamera';
         return;
       }
       const vW=video.videoWidth||640,vH=video.videoHeight||480;
@@ -11816,9 +11963,36 @@ async function startAbsenFaceScan() {
 function showAbsenResult(success, message) {
   $('#absen-step-face').classList.add('hidden'); $('#absen-step-qr').classList.add('hidden');
   $('#absen-step-result').classList.remove('hidden');
-  $('#absen-result-icon').textContent = success ? '✅' : '❌';
-  $('#absen-result-text').textContent = success ? message : ('⚠️ ' + message);
-  $('#absen-result-text').className = success ? 'text-success' : 'text-danger';
+  const iconEl = $('#absen-result-icon');
+  const textEl = $('#absen-result-text');
+  if(success) {
+    // Deteksi jenis absen dari message (format: "Nama - DATANG (HH:mm:ss)")
+    const upperMsg = (message || '').toUpperCase();
+    if(upperMsg.includes('DATANG')) {
+      iconEl.textContent = '🟢';
+      // Ambil nama dan waktu dari format "Nama - DATANG (HH:mm:ss)"
+      const parts = message.split(' - ');
+      const nama = parts[0] || '';
+      const waktuMatch = message.match(/\(([^)]+)\)/);
+      const waktu = waktuMatch ? waktuMatch[1] : '';
+      textEl.innerHTML = `<div style="font-size:1.1rem;font-weight:700;color:#10b981;margin-bottom:4px;">✅ Absen Datang Berhasil</div><div style="font-size:0.95rem;color:var(--text);font-weight:600;">${escapeHtml(nama)}</div>${waktu ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Pukul ${escapeHtml(waktu)}</div>` : ''}`;
+    } else if(upperMsg.includes('PULANG')) {
+      iconEl.textContent = '🔵';
+      const parts = message.split(' - ');
+      const nama = parts[0] || '';
+      const waktuMatch = message.match(/\(([^)]+)\)/);
+      const waktu = waktuMatch ? waktuMatch[1] : '';
+      textEl.innerHTML = `<div style="font-size:1.1rem;font-weight:700;color:#3b82f6;margin-bottom:4px;">✅ Absen Pulang Berhasil</div><div style="font-size:0.95rem;color:var(--text);font-weight:600;">${escapeHtml(nama)}</div>${waktu ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Pukul ${escapeHtml(waktu)}</div>` : ''}`;
+    } else {
+      iconEl.textContent = '✅';
+      textEl.textContent = message;
+    }
+    textEl.className = 'text-success';
+  } else {
+    iconEl.textContent = '❌';
+    textEl.textContent = '⚠️ ' + message;
+    textEl.className = 'text-danger';
+  }
   setTimeout(resetAbsenFlow, 5000);
 }
 
