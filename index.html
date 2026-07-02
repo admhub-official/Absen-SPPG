@@ -5329,6 +5329,18 @@
 
 <!-- ==================== MODAL LOGOUT KONFIRMASI ==================== -->
 
+<!-- Modal Detail Card Generik (CRUD Admin/Akuntan) — dipakai semua menu -->
+      <div id="modal-crud-detail" class="modal-overlay">
+        <div class="modal modal-lg">
+          <div class="modal-header">
+            <div class="modal-title crud-detail-title-text">Detail Data</div>
+            <div class="crud-detail-actions"></div>
+            <button class="modal-close modal-cancel">&times;</button>
+          </div>
+          <div class="modal-body"></div>
+        </div>
+      </div>
+
 <!-- Modal Konfirmasi Hapus Generik (CRUD Admin/Akuntan) -->
       <div id="modal-crud-confirm-delete" class="modal-overlay">
         <div class="modal">
@@ -5761,9 +5773,9 @@
             Geser ke kanan untuk lihat semua kolom
           </div>
           <div class="table-scroll-mobile">
-            <table class="data-table" id="table-karyawan" style="min-width:820px;">
+            <table class="data-table" id="table-karyawan" style="min-width:880px;">
               <thead>
-                <tr><th>Nama</th><th>Role</th><th>Jabatan</th><th>JK</th><th>Email</th><th>Whatsapp</th><th>Mulai Kerja</th><th>SPPG</th><th>Gaji Harian</th><th>Status</th></tr>
+                <tr><th class="crud-check-col"><input type="checkbox" class="crud-master-checkbox" id="karyawan-check-all" onchange="crudToggleSelectAll(this.checked)" title="Pilih semua"></th><th>Nama</th><th>Role</th><th>Jabatan</th><th>JK</th><th>Email</th><th>Whatsapp</th><th>Mulai Kerja</th><th>SPPG</th><th>Gaji Harian</th><th>Status</th></tr>
               </thead>
               <tbody></tbody>
             </table>
@@ -5924,9 +5936,9 @@
             Geser ke kanan untuk lihat semua kolom
           </div>
           <div class="table-scroll-mobile">
-            <table class="data-table" id="table-absensi" style="min-width:760px;">
+            <table class="data-table" id="table-absensi" style="min-width:820px;">
               <thead>
-                <tr><th>Tanggal</th><th>Nama</th><th>Role</th><th>Jabatan</th><th>SPPG</th><th>Jenis</th><th>Waktu</th><th>Skor Wajah</th><th>Status</th></tr>
+                <tr><th class="crud-check-col"><input type="checkbox" class="crud-master-checkbox" id="absensi-check-all" onchange="crudToggleSelectAll(this.checked)" title="Pilih semua"></th><th>Tanggal</th><th>Nama</th><th>Role</th><th>Jabatan</th><th>SPPG</th><th>Jenis</th><th>Waktu</th><th>Skor Wajah</th><th>Status</th></tr>
               </thead>
               <tbody></tbody>
             </table>
@@ -9573,13 +9585,14 @@ function renderUserGrid(users) {
     renderGridEmptyState(container, ICONS.manajemen, 'Belum ada user terdaftar', 'User baru akan muncul di sini setelah registrasi karyawan berhasil.');
     return;
   }
+  crudResetSelection('users', users);
   container.innerHTML = users.map(u => `
-    <div class="user-card" onclick="showUserDetail('${u.ID_User}')">
+    <div class="user-card" data-crud-id="${escapeHtml(u.ID_User)}" onclick="crudOpenDetail('users', '${escapeHtml(u.ID_User)}')">
       <img src="${u.URL_Foto_Profil ? escapeHtml(encodeURI(u.URL_Foto_Profil)) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" class="user-card-img" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'">
       <div class="user-card-body">
         <div class="user-card-name">${escapeHtml(u.Nama_Lengkap)}</div>
         <div class="user-card-role">${escapeHtml(u.Jabatan_Divisi)} &bull; ${escapeHtml(u.SPPG)}</div>
-        <div class="flex flex-between items-center" style="margin-top:0.5rem;">
+        <div class="flex flex-between items-center" style="margin-top:0.5rem; gap:0.4rem; flex-wrap:wrap;">
           <span class="badge ${isActive(u.Status_Aktif)?'badge-green':'badge-red'}" id="status-badge-${u.ID_User}">${isActive(u.Status_Aktif)?'Aktif':'Nonaktif'}</span>
           <button class="btn btn-sm btn-outline js-toggle-user-status" data-id-user="${escapeHtml(u.ID_User)}" data-currently-active="${isActive(u.Status_Aktif)}" data-nama-lengkap="${escapeHtml(u.Nama_Lengkap)}">
             ${isActive(u.Status_Aktif) ? 'Nonaktifkan' : 'Aktifkan'}
@@ -9738,8 +9751,13 @@ async function initDataKaryawan() {
 
 function renderDataKaryawanView(data) {
   const tbody = $('#table-karyawan tbody');
+  // Engine CRUD generik untuk menu 'users' butuh field asli (ID_User, Nama_Lengkap, dst),
+  // sedangkan data di halaman ini memakai field camelCase (idUser, namaLengkap, dst).
+  // Karena itu detail/edit/hapus tetap memuat ulang data asli via getAllUsers saat
+  // sebuah baris/card diklik (crudOpenDetailUserFromKaryawan), bukan dari `data` di sini.
+  window._karyawanListForClickMap = data || [];
   if(!data || data.length === 0) {
-    renderTableEmptyState(tbody, 8, ICONS.karyawan, 'Belum ada data karyawan', 'Karyawan akan muncul di sini setelah registrasi berhasil.');
+    renderTableEmptyState(tbody, 9, ICONS.karyawan, 'Belum ada data karyawan', 'Karyawan akan muncul di sini setelah registrasi berhasil.');
     return;
   }
 
@@ -9754,7 +9772,7 @@ function renderDataKaryawanView(data) {
       wrapper.parentNode.insertBefore(cardContainer, wrapper);
     }
     cardContainer.innerHTML = data.map(k => `
-      <div class="mobile-data-card">
+      <div class="mobile-data-card" data-crud-id="${escapeHtml(k.idUser)}" onclick="crudOpenDetailUserFromKaryawan('${escapeHtml(k.idUser)}')">
         <div class="mobile-data-card-top">
           <div>
             <div class="mobile-data-card-title">${escapeHtml(k.namaLengkap)}</div>
@@ -9793,7 +9811,8 @@ function renderDataKaryawanView(data) {
   if(cardContainer) cardContainer.style.display = 'none';
 
   tbody.innerHTML = data.map(k => `
-    <tr>
+    <tr class="crud-clickable-row" data-crud-id="${escapeHtml(k.idUser)}">
+      <td class="crud-check-col" onclick="event.stopPropagation();"><input type="checkbox" class="crud-row-checkbox" data-id="${escapeHtml(k.idUser)}" onchange="crudToggleSelect('${escapeHtml(k.idUser)}', this.checked)"></td>
       <td data-label="Nama">${escapeHtml(k.namaLengkap)}</td>
       <td data-label="Role"><span class="badge badge-blue">${escapeHtml(k.role||'')}</span></td>
       <td data-label="Jabatan">${escapeHtml(k.jabatanDivisi)}</td>
@@ -9806,6 +9825,13 @@ function renderDataKaryawanView(data) {
       <td data-label="Status"><span class="badge ${k.statusAktif ? 'badge-green' : 'badge-red'}">${k.statusAktif ? 'Aktif' : 'Nonaktif'}</span></td>
     </tr>
   `).join('');
+  tbody.querySelectorAll('tr.crud-clickable-row').forEach(tr => {
+    tr.addEventListener('click', () => crudOpenDetailUserFromKaryawan(tr.getAttribute('data-crud-id')));
+  });
+  // Batch-select checkbox di tabel ini memakai menu 'users' juga (data karyawan = tabel Users).
+  CrudState.currentMenu = 'users';
+  CrudState.selectedIds.clear();
+  crudUpdateBatchFab();
 }
 
 // ==================== PAYROLL ====================
@@ -10329,8 +10355,9 @@ async function initAbsensi() {
 
 function renderAbsensiTable(data) {
   const tbody = $('#table-absensi tbody');
+  crudResetSelection('absensi', data || []);
   if(!data || data.length === 0) {
-    renderTableEmptyState(tbody, 8, ICONS.absensi, 'Belum ada data absensi', 'Coba ubah filter tanggal/SPPG/Jabatan, atau tunggu karyawan melakukan absen.');
+    renderTableEmptyState(tbody, 9, ICONS.absensi, 'Belum ada data absensi', 'Coba ubah filter tanggal/SPPG/Jabatan, atau tunggu karyawan melakukan absen.');
     return;
   }
 
@@ -10351,7 +10378,8 @@ function renderAbsensiTable(data) {
       const skorColor = skorNum === null ? 'var(--text)' : (skorNum >= 60 ? 'var(--success)' : 'var(--danger)');
       const waktuStr = a.Waktu_Timestamp ? new Date(a.Waktu_Timestamp).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
       return `
-        <div class="mobile-data-card">
+        <div class="mobile-data-card" data-crud-id="${escapeHtml(a.ID_Absen)}">
+          <div class="mobile-data-card-select-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
           <div class="mobile-data-card-top">
             <div>
               <div class="mobile-data-card-title">${escapeHtml(a.namaLengkap)}</div>
@@ -10381,6 +10409,7 @@ function renderAbsensiTable(data) {
       `;
     }).join('');
     cardContainer.style.display = '';
+    crudBindMobileCardEvents('absensi');
     return;
   }
 
@@ -10391,7 +10420,8 @@ function renderAbsensiTable(data) {
   if(cardContainer) cardContainer.style.display = 'none';
 
   tbody.innerHTML = data.map(a => `
-    <tr>
+    <tr class="crud-clickable-row" data-crud-id="${escapeHtml(a.ID_Absen)}">
+      <td class="crud-check-col" onclick="event.stopPropagation();"><input type="checkbox" class="crud-row-checkbox" data-id="${escapeHtml(a.ID_Absen)}" onchange="crudToggleSelect('${escapeHtml(a.ID_Absen)}', this.checked)"></td>
       <td>${formatDate(a.Tanggal)}</td>
       <td>${escapeHtml(a.namaLengkap)}</td>
       <td><span class="badge badge-blue">${escapeHtml(a.role||'')}</span></td>
@@ -10403,6 +10433,9 @@ function renderAbsensiTable(data) {
       <td><span class="badge ${a.Status_Validasi==='VALID'?'badge-green':'badge-red'}">${a.Status_Validasi}</span></td>
     </tr>
   `).join('');
+  tbody.querySelectorAll('tr.crud-clickable-row').forEach(tr => {
+    tr.addEventListener('click', () => crudOpenDetail('absensi', tr.getAttribute('data-crud-id')));
+  });
 }
 
 async function filterAbsensi() {
@@ -11980,6 +12013,519 @@ document.addEventListener('click', e => {
   if(e.target.matches('#btn-filter-audit')) filterAuditLog();
   if(e.target.matches('#btn-filter-myabs')) initMyAbsensi();
 });
+
+// ============================================================================
+// ==================== CRUD ADMIN/AKUNTAN — ENGINE GENERIK ==================
+// ============================================================================
+// Satu engine dipakai untuk SEMUA menu data (users, absensi, payroll,
+// slip_gaji, pengaduan, device, master_sppg, master_jabatan).
+// Konfigurasi per menu ada di CRUD_UI_CONFIG di bawah ini.
+
+// Field yang boleh Edit hanya muncul jika role user saat ini termasuk
+// dalam `editableBy`. Field yang ditampilkan (view) selalu mengikuti `fields`.
+const CRUD_UI_CONFIG = {
+  users: {
+    menu: 'users',
+    pk: 'ID_User',
+    title: 'Detail Karyawan',
+    editableBy: ['ADMIN', 'AKUNTAN'],
+    deletableBy: ['ADMIN', 'AKUNTAN'],
+    fields: [
+      { key: 'Nama_Lengkap', label: 'Nama Lengkap', type: 'text', editable: true },
+      { key: 'Email', label: 'Email', type: 'text', editable: true },
+      { key: 'No_Whatsapp', label: 'No. Whatsapp', type: 'text', editable: true },
+      { key: 'Jabatan_Divisi', label: 'Jabatan/Divisi', type: 'text', editable: true },
+      { key: 'SPPG', label: 'SPPG', type: 'text', editable: true },
+      { key: 'Gaji_Harian', label: 'Gaji Harian', type: 'number', editable: true },
+      { key: 'Role', label: 'Role', type: 'select', editable: true, editableBy: ['ADMIN'], options: ['USER', 'ADMIN', 'AKUNTAN'] },
+      { key: 'Status_Aktif', label: 'Status Aktif', type: 'select', editable: true, options: [{v:'TRUE',l:'Aktif'},{v:'FALSE',l:'Nonaktif'}], isBool: true },
+      { key: 'ID_Card_Unik', label: 'ID Card', type: 'text', editable: false },
+    ],
+    summary: (row) => ({ title: row.Nama_Lengkap, subtitle: (row.Jabatan_Divisi||'-') + ' · ' + (row.SPPG||'-') })
+  },
+  absensi: {
+    menu: 'absensi',
+    pk: 'ID_Absen',
+    title: 'Detail Absensi',
+    editableBy: ['ADMIN', 'AKUNTAN'],
+    deletableBy: ['ADMIN', 'AKUNTAN'],
+    fields: [
+      { key: 'namaLengkap', label: 'Nama Karyawan', type: 'text', editable: false },
+      { key: 'Tanggal', label: 'Tanggal', type: 'date', editable: true },
+      { key: 'Jenis_Absen', label: 'Jenis Absen', type: 'select', editable: true, options: ['DATANG', 'PULANG'] },
+      { key: 'Waktu_Timestamp', label: 'Waktu', type: 'text', editable: false },
+      { key: 'Status_Validasi', label: 'Status Validasi', type: 'select', editable: true, options: ['VALID', 'INVALID'] },
+      { key: 'Skor_Kecocokan_Wajah', label: 'Skor Kecocokan Wajah', type: 'number', editable: false },
+      { key: 'sppg', label: 'SPPG', type: 'text', editable: false },
+    ],
+    summary: (row) => ({ title: row.namaLengkap || row.ID_User, subtitle: (row.Jenis_Absen||'-') + ' · ' + formatDate(row.Tanggal) })
+  },
+  payroll: {
+    menu: 'payroll',
+    pk: 'ID_Payroll',
+    title: 'Detail Batch Payroll',
+    editableBy: [],           // payroll batch tidak diedit langsung (turunannya slip_gaji)
+    deletableBy: ['ADMIN'],   // hanya ADMIN yang boleh hapus batch payroll
+    fields: [
+      { key: 'Periode_Mulai', label: 'Periode Mulai', type: 'date', editable: false },
+      { key: 'Periode_Akhir', label: 'Periode Akhir', type: 'date', editable: false },
+      { key: '_diprosesOlehNama', label: 'Diproses Oleh', type: 'text', editable: false },
+      { key: '_diprosesOlehEmail', label: 'Email Pemroses', type: 'text', editable: false },
+      { key: 'Jumlah_Karyawan', label: 'Jumlah Karyawan', type: 'number', editable: false },
+      { key: 'Waktu_Proses', label: 'Waktu Proses', type: 'text', editable: false },
+    ],
+    summary: (row) => ({ title: 'Payroll ' + formatDate(row.Periode_Mulai) + ' - ' + formatDate(row.Periode_Akhir), subtitle: (row.Jumlah_Karyawan||0) + ' karyawan · oleh ' + (row._diprosesOlehNama||'-') })
+  },
+  slip_gaji: {
+    menu: 'slip_gaji',
+    pk: 'ID_Slip',
+    title: 'Detail Slip Gaji',
+    editableBy: ['ADMIN', 'AKUNTAN'],
+    deletableBy: ['ADMIN', 'AKUNTAN'],
+    fields: [
+      { key: '_namaKaryawan', label: 'Nama Karyawan', type: 'text', editable: false },
+      { key: 'Jumlah_Hari_Kerja', label: 'Jumlah Hari Kerja', type: 'number', editable: true },
+      { key: 'Gaji_Harian', label: 'Gaji Harian', type: 'number', editable: true },
+      { key: 'Subtotal_Gaji', label: 'Subtotal Gaji', type: 'number', editable: true },
+      { key: 'Lembur_Nominal', label: 'Lembur', type: 'number', editable: true },
+      { key: 'Bonus', label: 'Bonus', type: 'number', editable: true },
+      { key: 'Potongan', label: 'Potongan', type: 'number', editable: true },
+      { key: 'Keterangan_Potongan', label: 'Keterangan Potongan', type: 'text', editable: true },
+      { key: 'Total_Gaji_Diterima', label: 'Total Diterima', type: 'number', editable: true },
+    ],
+    summary: (row) => ({ title: row._namaKaryawan || row.ID_User, subtitle: formatRupiah(row.Total_Gaji_Diterima) })
+  },
+  pengaduan: {
+    menu: 'pengaduan',
+    pk: 'ID_Pengaduan',
+    title: 'Detail Pengaduan',
+    editableBy: ['ADMIN', 'AKUNTAN'],
+    deletableBy: ['ADMIN', 'AKUNTAN'],
+    fields: [
+      { key: 'Subjek', label: 'Subjek', type: 'text', editable: true },
+      { key: 'Isi_Pengaduan', label: 'Isi Pengaduan', type: 'textarea', editable: true },
+      { key: 'Status', label: 'Status', type: 'select', editable: true, options: ['BARU', 'DIPROSES', 'SELESAI'] },
+      { key: 'Tanggapan_Admin', label: 'Tanggapan Admin', type: 'textarea', editable: true },
+    ],
+    summary: (row) => ({ title: row.Subjek || row.Judul || 'Pengaduan', subtitle: row.Status || '-' })
+  },
+  device: {
+    menu: 'device',
+    pk: 'ID_Device',
+    title: 'Detail Perangkat Absen',
+    editableBy: ['ADMIN'],
+    deletableBy: ['ADMIN'],
+    fields: [
+      { key: 'Nama_Device', label: 'Nama Device', type: 'text', editable: true },
+      { key: 'Username', label: 'Username', type: 'text', editable: false },
+      { key: 'Lokasi_SPPG', label: 'Lokasi SPPG', type: 'text', editable: true },
+      { key: 'Status_Aktif', label: 'Status Aktif', type: 'select', editable: true, options: [{v:'TRUE',l:'Aktif'},{v:'FALSE',l:'Nonaktif'}], isBool: true },
+    ],
+    summary: (row) => ({ title: row.Nama_Device || row.ID_Device, subtitle: row.Lokasi_SPPG || row.SPPG || '-' })
+  },
+  master_sppg: {
+    menu: 'master_sppg',
+    pk: '_rowIndex',
+    title: 'Detail Master SPPG',
+    editableBy: ['ADMIN'],
+    deletableBy: ['ADMIN'],
+    fields: [
+      { key: 'Nama_SPPG', label: 'Nama SPPG', type: 'text', editable: true },
+      { key: 'Alamat', label: 'Alamat', type: 'textarea', editable: true },
+      { key: 'Latitude', label: 'Latitude', type: 'text', editable: true },
+      { key: 'Longitude', label: 'Longitude', type: 'text', editable: true },
+    ],
+    summary: (row) => ({ title: row.Nama_SPPG || '-', subtitle: row.Alamat || '' })
+  },
+  master_jabatan: {
+    menu: 'master_jabatan',
+    pk: '_rowIndex',
+    title: 'Detail Master Jabatan',
+    editableBy: ['ADMIN'],
+    deletableBy: ['ADMIN'],
+    fields: [
+      { key: 'Nama_Jabatan', label: 'Nama Jabatan', type: 'text', editable: true },
+    ],
+    summary: (row) => ({ title: row.Nama_Jabatan || '-', subtitle: '' })
+  }
+};
+
+// ==================== STATE SELEKSI (BATCH DELETE) — per menu aktif ====================
+const CrudState = {
+  currentMenu: null,      // menu yang sedang tampil (mis. 'absensi')
+  currentData: [],        // data array yang sedang dirender di halaman aktif
+  selectedIds: new Set(), // ID_* yang sedang dicentang/dipilih
+  mobileSelectionMode: false,
+  detailRow: null,        // row yang sedang dibuka di modal detail
+  detailEditing: false,   // true jika modal detail sedang dalam mode edit
+  pendingDeleteIds: null  // dipakai modal konfirmasi hapus (satu atau banyak)
+};
+
+function _crudRole() {
+  return (AppState.user && AppState.user.role) || null;
+}
+
+function _crudCanEdit(cfg) {
+  const role = _crudRole();
+  return role && cfg.editableBy.indexOf(role) !== -1;
+}
+
+function _crudCanDelete(cfg) {
+  const role = _crudRole();
+  return role && cfg.deletableBy.indexOf(role) !== -1;
+}
+
+// Reset seleksi setiap kali pindah menu/halaman agar tidak nyasar ke menu lain.
+function crudResetSelection(menu, data) {
+  CrudState.currentMenu = menu;
+  CrudState.currentData = data || [];
+  CrudState.selectedIds.clear();
+  CrudState.mobileSelectionMode = false;
+  crudUpdateBatchFab();
+  document.querySelectorAll('.mobile-data-card.crud-selection-mode').forEach(c => c.classList.remove('crud-selection-mode'));
+}
+
+// ==================== FLOATING ACTION BAR (BATCH DELETE) ====================
+function crudUpdateBatchFab() {
+  const fab = document.getElementById('crud-batch-fab');
+  const label = document.getElementById('crud-batch-fab-label');
+  if (!fab || !label) return;
+  const count = CrudState.selectedIds.size;
+  if (count > 0) {
+    label.textContent = count + ' item dipilih';
+    fab.classList.add('show');
+  } else {
+    fab.classList.remove('show');
+  }
+}
+
+function crudToggleSelect(id, checked) {
+  if (checked) CrudState.selectedIds.add(id);
+  else CrudState.selectedIds.delete(id);
+  crudUpdateBatchFab();
+}
+
+function crudToggleSelectAll(checked) {
+  const cfg = CRUD_UI_CONFIG[CrudState.currentMenu];
+  if (!cfg) return;
+  CrudState.selectedIds.clear();
+  if (checked) {
+    CrudState.currentData.forEach(row => CrudState.selectedIds.add(String(row[cfg.pk])));
+  }
+  // Sinkronkan seluruh checkbox baris yang sedang tampil di layar.
+  document.querySelectorAll('.crud-row-checkbox').forEach(cb => { cb.checked = checked; });
+  crudUpdateBatchFab();
+}
+
+// ==================== MOBILE: LONG-PRESS UNTUK MASUK SELECTION MODE ====================
+let _crudLongPressTimer = null;
+function crudBindLongPress(cardEl, id) {
+  const start = () => {
+    _crudLongPressTimer = setTimeout(() => {
+      CrudState.mobileSelectionMode = true;
+      document.querySelectorAll('.mobile-data-card').forEach(c => c.classList.add('crud-selection-mode'));
+      crudToggleCardSelected(cardEl, id);
+    }, 500);
+  };
+  const cancel = () => { if (_crudLongPressTimer) { clearTimeout(_crudLongPressTimer); _crudLongPressTimer = null; } };
+  cardEl.addEventListener('touchstart', start, { passive: true });
+  cardEl.addEventListener('touchend', cancel);
+  cardEl.addEventListener('touchmove', cancel);
+  cardEl.addEventListener('mousedown', start);
+  cardEl.addEventListener('mouseup', cancel);
+  cardEl.addEventListener('mouseleave', cancel);
+}
+
+function crudToggleCardSelected(cardEl, id) {
+  const nowSelected = !cardEl.classList.contains('crud-card-selected');
+  cardEl.classList.toggle('crud-card-selected', nowSelected);
+  crudToggleSelect(id, nowSelected);
+}
+
+// Dipanggil saat klik card mobile: jika sedang selection mode -> toggle pilih,
+// kalau tidak -> buka detail card seperti biasa.
+function crudHandleMobileCardClick(cardEl, id, menu) {
+  if (CrudState.mobileSelectionMode) {
+    crudToggleCardSelected(cardEl, id);
+    return;
+  }
+  crudOpenDetail(menu, id);
+}
+
+// ==================== MODAL DETAIL CARD: BUKA, VIEW, EDIT ====================
+function crudOpenDetail(menu, id) {
+  const cfg = CRUD_UI_CONFIG[menu];
+  if (!cfg) return;
+  const row = CrudState.currentData.find(r => String(r[cfg.pk]) === String(id));
+  if (!row) { showAlert('Data tidak ditemukan di halaman ini. Coba muat ulang data.', 'warning'); return; }
+
+  CrudState.detailRow = row;
+  CrudState.detailEditing = false;
+
+  crudRenderDetailModal(menu, row, false);
+
+  const overlay = document.getElementById('modal-crud-detail');
+  if (overlay) overlay.classList.add('show');
+}
+
+function crudRenderDetailModal(menu, row, editing) {
+  const cfg = CRUD_UI_CONFIG[menu];
+  const modal = document.getElementById('modal-crud-detail');
+  if (!modal) return;
+
+  const titleEl = modal.querySelector('.crud-detail-title-text');
+  if (titleEl) titleEl.textContent = cfg.title;
+
+  const canEdit = _crudCanEdit(cfg);
+  const canDelete = _crudCanDelete(cfg);
+  const role = _crudRole();
+
+  // ==== Header actions: Edit / Hapus / (saat editing: Simpan / Batal) ====
+  const actionsEl = modal.querySelector('.crud-detail-actions');
+  if (actionsEl) {
+    if (editing) {
+      actionsEl.innerHTML = `
+        <button class="btn btn-primary" id="crud-detail-btn-save">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
+          Simpan
+        </button>
+        <button class="btn btn-outline" id="crud-detail-btn-cancel-edit">Batal</button>
+      `;
+      safeOnLocal(actionsEl, '#crud-detail-btn-save', 'click', crudSaveEdit);
+      safeOnLocal(actionsEl, '#crud-detail-btn-cancel-edit', 'click', () => crudRenderDetailModal(menu, row, false));
+    } else {
+      let html = '';
+      if (canEdit) {
+        html += `<button class="btn btn-primary" id="crud-detail-btn-edit">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit
+        </button>`;
+      }
+      if (canDelete) {
+        html += `<button class="btn btn-danger" id="crud-detail-btn-delete">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Hapus
+        </button>`;
+      }
+      actionsEl.innerHTML = html;
+      safeOnLocal(actionsEl, '#crud-detail-btn-edit', 'click', () => { CrudState.detailEditing = true; crudRenderDetailModal(menu, row, true); });
+      safeOnLocal(actionsEl, '#crud-detail-btn-delete', 'click', () => crudConfirmDelete(menu, [String(row[cfg.pk])], cfg.summary(row).title));
+    }
+  }
+
+  // ==== Body: field view atau field edit form ====
+  const bodyEl = modal.querySelector('.modal-body');
+  if (bodyEl) {
+    bodyEl.innerHTML = cfg.fields.map(f => {
+      const value = row[f.key];
+      if (!editing || !f.editable || (f.editableBy && f.editableBy.indexOf(role) === -1)) {
+        // Tampilan read-only
+        let displayVal = value;
+        if (f.type === 'date') displayVal = formatDate(value);
+        else if (f.type === 'number' && f.key.match(/Gaji|Total|Subtotal|Lembur|Bonus|Potongan/)) displayVal = formatRupiah(value);
+        else if (f.isBool) displayVal = isActive(value) ? 'Aktif' : 'Nonaktif';
+        return `<div class="crud-field-view">
+          <div class="crud-field-view-label">${escapeHtml(f.label)}</div>
+          <div class="crud-field-view-value">${escapeHtml(String(displayVal ?? '-') || '-')}</div>
+        </div>`;
+      }
+      // Tampilan form edit
+      const inputId = 'crud-edit-' + f.key;
+      if (f.type === 'select') {
+        const opts = f.options.map(o => {
+          const optVal = typeof o === 'object' ? o.v : o;
+          const optLabel = typeof o === 'object' ? o.l : o;
+          const isSelected = f.isBool ? (isActive(value) === (optVal === 'TRUE')) : (String(value) === String(optVal));
+          return `<option value="${escapeHtml(optVal)}" ${isSelected ? 'selected' : ''}>${escapeHtml(optLabel)}</option>`;
+        }).join('');
+        return `<div class="form-group"><label class="form-label">${escapeHtml(f.label)}</label>
+          <select class="form-select" id="${inputId}">${opts}</select></div>`;
+      }
+      if (f.type === 'textarea') {
+        return `<div class="form-group"><label class="form-label">${escapeHtml(f.label)}</label>
+          <textarea class="form-input" id="${inputId}" rows="3">${escapeHtml(value || '')}</textarea></div>`;
+      }
+      const inputType = f.type === 'number' ? 'number' : (f.type === 'date' ? 'date' : 'text');
+      const inputVal = f.type === 'date' && value ? Utilities_formatDateForInput(value) : (value ?? '');
+      return `<div class="form-group"><label class="form-label">${escapeHtml(f.label)}</label>
+        <input class="form-input" type="${inputType}" id="${inputId}" value="${escapeHtml(String(inputVal))}"></div>`;
+    }).join('');
+  }
+}
+
+// Helper kecil: attach listener ke child element tanpa duplikat listener lama
+// (dipakai khusus di dalam modal detail yang isinya sering di-render ulang).
+function safeOnLocal(container, selector, event, handler) {
+  const el = container.querySelector(selector);
+  if (el) el.addEventListener(event, handler);
+}
+
+// Format tanggal ke yyyy-MM-dd untuk value <input type="date">
+function Utilities_formatDateForInput(d) {
+  try {
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return '';
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  } catch(e) { return ''; }
+}
+
+async function crudSaveEdit() {
+  const menu = CrudState.currentMenu;
+  const cfg = CRUD_UI_CONFIG[menu];
+  const row = CrudState.detailRow;
+  if (!cfg || !row) return;
+
+  const role = _crudRole();
+  const payload = {};
+  cfg.fields.forEach(f => {
+    if (!f.editable) return;
+    if (f.editableBy && f.editableBy.indexOf(role) === -1) return;
+    const el = document.getElementById('crud-edit-' + f.key);
+    if (!el) return;
+    let val = el.value;
+    if (f.type === 'number') val = parseFloat(val) || 0;
+    if (f.isBool) val = (val === 'TRUE');
+    payload[f.key] = val;
+  });
+
+  try {
+    await apiCallWithToken('updateData', { menu: menu, id: row[cfg.pk], data: payload });
+    showAlert('Data berhasil diperbarui', 'success');
+    document.getElementById('modal-crud-detail')?.classList.remove('show');
+    crudRefreshCurrentPage();
+  } catch(e) {
+    showAlert('Gagal memperbarui data: ' + getErrorMessage(e), 'danger');
+  }
+}
+
+// ==================== DELETE SATUAN & BATCH (pakai modal konfirmasi yang sama) ====================
+function crudConfirmDelete(menu, ids, labelForConfirm) {
+  CrudState.pendingDeleteIds = { menu: menu, ids: ids };
+  const textEl = document.getElementById('crud-confirm-delete-text');
+  if (textEl) {
+    if (ids.length === 1) {
+      textEl.innerHTML = `Apakah Anda yakin ingin menghapus <strong>${escapeHtml(labelForConfirm || 'data ini')}</strong>? Tindakan ini tidak dapat dibatalkan.`;
+    } else {
+      textEl.innerHTML = `Apakah Anda yakin ingin menghapus <strong>${ids.length} data terpilih</strong>? Tindakan ini tidak dapat dibatalkan.`;
+    }
+  }
+  document.getElementById('modal-crud-confirm-delete')?.classList.add('show');
+}
+
+async function crudExecuteConfirmedDelete() {
+  const pending = CrudState.pendingDeleteIds;
+  if (!pending) return;
+  const { menu, ids } = pending;
+
+  try {
+    if (ids.length === 1) {
+      await apiCallWithToken('deleteData', { menu: menu, id: ids[0] });
+      showAlert('Data berhasil dihapus', 'success');
+    } else {
+      const res = await apiCallWithToken('deleteMultipleData', { menu: menu, ids: ids });
+      if (res.jumlahGagal > 0) {
+        showAlert(`${res.jumlahBerhasil} data berhasil dihapus, ${res.jumlahGagal} gagal.`, 'warning');
+      } else {
+        showAlert(`${res.jumlahBerhasil} data berhasil dihapus`, 'success');
+      }
+    }
+    document.getElementById('modal-crud-confirm-delete')?.classList.remove('show');
+    document.getElementById('modal-crud-detail')?.classList.remove('show');
+    CrudState.selectedIds.clear();
+    crudUpdateBatchFab();
+    crudRefreshCurrentPage();
+  } catch(e) {
+    showAlert('Gagal menghapus data: ' + getErrorMessage(e), 'danger');
+  } finally {
+    CrudState.pendingDeleteIds = null;
+  }
+}
+
+// Bind klik & long-press ke semua mobile-data-card yang baru dirender untuk menu tertentu.
+// Dipanggil setelah innerHTML card list di-render ulang.
+function crudBindMobileCardEvents(menu) {
+  document.querySelectorAll('.mobile-data-card[data-crud-id]').forEach(card => {
+    const id = card.getAttribute('data-crud-id');
+    // Hindari double-binding jika elemen lama sempat dipakai ulang (aman karena
+    // innerHTML selalu dibuat baru oleh render, tapi ini jaga-jaga).
+    if (card._crudBound) return;
+    card._crudBound = true;
+    crudBindLongPress(card, id);
+    card.addEventListener('click', () => crudHandleMobileCardClick(card, id, menu));
+  });
+}
+
+// Jembatan khusus halaman "Data Karyawan": data list di halaman itu memakai
+// field camelCase (idUser, namaLengkap, dst) yang berbeda dari CRUD_UI_CONFIG.users
+// (field asli ID_User, Nama_Lengkap, dst). Saat diklik, ambil ulang data user asli
+// dari getAllUsers supaya detail/edit/hapus tetap konsisten dengan menu 'users'.
+async function crudOpenDetailUserFromKaryawan(idUser) {
+  try {
+    const res = await apiCallWithToken('getAllUsers', {});
+    CrudState.currentMenu = 'users';
+    CrudState.currentData = res.users || [];
+    crudOpenDetail('users', idUser);
+  } catch(e) {
+    showAlert('Gagal memuat detail karyawan: ' + getErrorMessage(e), 'danger');
+  }
+}
+
+// Panggil ulang fungsi init halaman yang sedang aktif, supaya state ter-refresh
+// tanpa reload browser. Dipetakan dari nama menu ke fungsi init masing-masing.
+const CRUD_MENU_REFRESH_FN = {
+
+// Panggil ulang fungsi init halaman yang sedang aktif, supaya state ter-refresh
+// tanpa reload browser. Dipetakan dari nama menu ke fungsi init masing-masing.
+const CRUD_MENU_REFRESH_FN = {
+  users: () => { if (typeof initManajemenUser === 'function') initManajemenUser(); if (typeof initDataKaryawan === 'function') initDataKaryawan(); },
+  absensi: () => { if (typeof initAbsensi === 'function') initAbsensi(); },
+  payroll: () => { if (typeof initManajemenPayroll === 'function') initManajemenPayroll(); },
+  slip_gaji: () => { if (typeof initManajemenSlipGaji === 'function') initManajemenSlipGaji(); },
+  pengaduan: () => { if (typeof initInboxPengaduan === 'function') initInboxPengaduan(); },
+  device: () => { if (typeof initManajemenDevice === 'function') initManajemenDevice(); },
+  master_sppg: () => { if (typeof initManajemenMasterData === 'function') initManajemenMasterData(); },
+  master_jabatan: () => { if (typeof initManajemenMasterData === 'function') initManajemenMasterData(); },
+};
+
+function crudRefreshCurrentPage() {
+  const fn = CRUD_MENU_REFRESH_FN[CrudState.currentMenu];
+  if (fn) fn();
+}
+
+// ==================== BIND EVENT GLOBAL (FAB, modal konfirmasi) — dipanggil sekali saat DOMContentLoaded ====================
+function crudBindGlobalEvents() {
+  safeOn('#btn-crud-confirm-delete-yes', 'click', crudExecuteConfirmedDelete);
+  safeOn('#crud-batch-fab-delete-btn', 'click', () => {
+    const menu = CrudState.currentMenu;
+    const ids = Array.from(CrudState.selectedIds);
+    if (ids.length === 0) return;
+    crudConfirmDelete(menu, ids, null);
+  });
+  safeOn('#crud-batch-fab-cancel-btn', 'click', () => {
+    CrudState.selectedIds.clear();
+    CrudState.mobileSelectionMode = false;
+    document.querySelectorAll('.crud-row-checkbox, .crud-master-checkbox').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.mobile-data-card').forEach(c => { c.classList.remove('crud-card-selected'); c.classList.remove('crud-selection-mode'); });
+    crudUpdateBatchFab();
+  });
+}
+document.addEventListener('DOMContentLoaded', crudBindGlobalEvents);
+
+// ==================== SAFEОН (hoisted helper) ====================
+// Didefinisikan ulang sebagai function declaration agar tidak TDZ
+// ketika dipanggil di DOMContentLoaded sebelum deklarasi const/let
+function safeOn(selector, event, handler) {
+  const el = document.querySelector(selector);
+  if (el) {
+    el.addEventListener(event, handler);
+  } else {
+    console.warn('[INIT] Elemen tidak ditemukan, skip listener:', selector);
+  }
+}
+</script>
 
 // ==================== SAFEОН (hoisted helper) ====================
 // Didefinisikan ulang sebagai function declaration agar tidak TDZ
