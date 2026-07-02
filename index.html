@@ -4925,12 +4925,25 @@
     .mobile-data-card-select-icon svg { display: none; width: 14px; height: 14px; }
 
     /* --- Floating Action Bar: "Hapus Data Terpilih (X item)" --- */
-    .crud-batch-fab {
-      display: none !important;
-    }
-    .crud-batch-fab.show {
-      display: none !important;
-    }
+    /* --- Floating Action Bar: "Hapus Data Terpilih (X item)" --- */
+.crud-batch-fab {
+display: none;
+position: fixed;
+bottom: 24px;
+right: 24px;
+z-index: 1050;
+background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+color: white;
+padding: 0.75rem 1.25rem;
+border-radius: 999px;
+box-shadow: var(--shadow-xl);
+align-items: center;
+gap: 0.75rem;
+transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.crud-batch-fab.show {
+display: flex !important;
+}
     .crud-batch-fab-label {
       font-size: 0.8125rem;
       font-weight: 600;
