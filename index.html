@@ -6432,7 +6432,7 @@ const PWA_ICON_180 = 'https://lh3.googleusercontent.com/d/1FLInXFlendmnziCYZiPY6
 // ==================== PWA: MANIFEST & SERVICE WORKER ====================
 // PENTING: Naikkan nilai ini setiap kali deploy versi baru (boleh tanggal/angka apa saja, asal berubah).
 // Ini memaksa SW & Cache lama di HP otomatis terhapus + reload sekali tanpa user perlu clear cache manual.
-const APP_VERSION = '2026-06-30-02';
+const APP_VERSION = '2026-06-30-04';
 
 (function setupPWA() {
   // Ikon resmi Absensi (embedded base64 WebP, tidak bergantung koneksi eksternal)
@@ -7328,17 +7328,6 @@ function navigateTo(page) {
   if(fabEl) fabEl.classList.remove('show');
   document.querySelectorAll('.mobile-data-card.crud-selection-mode, .mobile-data-card.crud-card-selected')
     .forEach(c => { c.classList.remove('crud-selection-mode'); c.classList.remove('crud-card-selected'); });
-
-  // Tampilkan/sembunyikan layout sesuai status halaman (auth vs app)
-
-  // Reset state seleksi batch-delete CRUD setiap pindah halaman.
-  // Untuk halaman yang memang punya fitur seleksi (absensi, data-karyawan,
-  // manajemen-user), state ini akan diisi ulang secara benar oleh fungsi
-  // render masing-masing (crudResetSelection) segera setelah ini.
-  CrudState.selectedIds.clear();
-  CrudState.mobileSelectionMode = false;
-  const fabEl = document.getElementById('crud-batch-fab');
-  if(fabEl) fabEl.classList.remove('show');
 
   // Tampilkan/sembunyikan layout sesuai status halaman (auth vs app)
   const isAuthPage = (page === 'login' || page === 'register');
