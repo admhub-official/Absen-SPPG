@@ -11306,6 +11306,8 @@ async function recordAbsensi(idUser, faceDescriptorScan) {
     const res = await apiCallWithToken('recordAbsensi', { idUser, faceDescriptorScan });
     if(res.success) {
       showDeviceResult(true, `${res.nama} - ${res.message} (${res.waktu})`);
+    } else if(res.alreadyAbsen) {
+      showDeviceResult(true, res.message || 'Anda sudah melengkapi absensi hari ini.');
     } else {
       showDeviceResult(false, res.message || 'Absensi tidak berhasil. Wajah tidak terverifikasi (skor di bawah ' + FACE_MATCH_THRESHOLD + '%). Silakan coba lagi.');
     }
@@ -11631,7 +11633,9 @@ async function startAbsenSelfFaceScan() {
               done=true;clearInterval(interval);stopVideo();
               try {
                 const res2=await queueAbsenSelf('recordAbsensiSelf',{idUser:absenIdUser,faceDescriptorScan:Array.from(det.descriptor),lat:absenLat,lng:absenLng});
-                if(res2.success === false){
+                if(res2.alreadyAbsen) {
+                  showAbsenSelfResult(true, res2.message || 'Anda sudah melengkapi absensi hari ini.');
+                } else if(res2.success === false){
                   showAbsenSelfResult(false, res2.message || 'Absen tidak berhasil.');
                 } else {
                   showAbsenSelfResult(true,`${res2.nama} - ${res2.message} (${res2.waktu})`);
@@ -11937,7 +11941,9 @@ async function startAbsenFaceScan() {
               done=true;clearInterval(interval);stopVideo();
               try {
                 const res2=await queueAbsenSelf('recordAbsensiSelf',{idUser:absenIdUser,faceDescriptorScan:Array.from(det.descriptor),lat:absenLat,lng:absenLng});
-                if(res2.success === false){
+                if(res2.alreadyAbsen) {
+                  showAbsenResult(true, res2.message || 'Anda sudah melengkapi absensi hari ini.');
+                } else if(res2.success === false){
                   showAbsenResult(false, res2.message || 'Absen tidak berhasil.');
                 } else {
                   showAbsenResult(true,`${res2.nama} - ${res2.message} (${res2.waktu})`);
