@@ -7319,6 +7319,18 @@ function navigateTo(page) {
   AppState.currentPage = page;
   localStorage.setItem('absensi_last_page', page);
 
+  // Reset state seleksi batch-delete CRUD setiap pindah halaman, agar floating
+  // bar "X item dipilih" tidak nyangkut tampil di halaman lain (mis. Dashboard)
+  // setelah sebelumnya aktif di halaman Absensi/Data Karyawan/Manajemen User.
+  CrudState.selectedIds.clear();
+  CrudState.mobileSelectionMode = false;
+  const fabEl = document.getElementById('crud-batch-fab');
+  if(fabEl) fabEl.classList.remove('show');
+  document.querySelectorAll('.mobile-data-card.crud-selection-mode, .mobile-data-card.crud-card-selected')
+    .forEach(c => { c.classList.remove('crud-selection-mode'); c.classList.remove('crud-card-selected'); });
+
+  // Tampilkan/sembunyikan layout sesuai status halaman (auth vs app)
+
   // Reset state seleksi batch-delete CRUD setiap pindah halaman.
   // Untuk halaman yang memang punya fitur seleksi (absensi, data-karyawan,
   // manajemen-user), state ini akan diisi ulang secara benar oleh fungsi
