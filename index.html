@@ -522,11 +522,12 @@ border-radius: 0 3px 3px 0;
       padding: 0 4px;
       border: 2px solid white;
       box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
+      animation: badgePulse 2s ease-in-out infinite;
     }
 
     @keyframes badgePulse {
       0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.06); }
+      50% { transform: scale(1.1); }
     }
 
     /* ==================== PAGE TRANSITIONS ==================== */
@@ -4550,6 +4551,20 @@ transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       color: #94a3b8;
       font-weight: 500;
     }
+
+    /* Logo bernapas pelan agar layar awal tidak terasa "membeku" */
+    .session-loading-logo-icon {
+      animation: sessionLogoBreathe 2.4s ease-in-out infinite;
+    }
+
+    @keyframes sessionLogoBreathe {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
+      50% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(59,130,246,0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .session-loading-logo-icon { animation: none; }
+    }
     
     /* ==================== ABSEN PAGE MODERN UI ==================== */
     .absen-page-wrapper {
@@ -4579,6 +4594,7 @@ transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
       top: -100px;
       right: -100px;
+      animation: absenBlobFloat 8s ease-in-out infinite;
     }
     
     .absen-bg-blob-2 {
@@ -4587,6 +4603,13 @@ transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       background: radial-gradient(circle, rgba(147,197,253,0.1) 0%, transparent 70%);
       bottom: -80px;
       left: -80px;
+      animation: absenBlobFloat 10s ease-in-out infinite reverse;
+    }
+    
+    @keyframes absenBlobFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(10px, -15px) scale(1.05); }
+      66% { transform: translate(-10px, 10px) scale(0.95); }
     }
     
     /* Main Card */
@@ -7208,6 +7231,7 @@ const AppState = {
   device: JSON.parse(localStorage.getItem('absensi_device') || 'null'),
   currentPage: 'login',
   sessionCheckInterval: null,
+  faceApiLoaded: false,
   modelsLoaded: false,
   currentFaceDescriptor: null,
   signaturePad: null,
@@ -7499,20 +7523,29 @@ function prefetchCommonData() {
   if (!AppState.token || !AppState.user) return;
   const role = AppState.user.role;
 
-  // Dashboard selalu di-prefetch (halaman pertama setelah login)
+  // Dashboard selalu di-prefetch
   apiCall('getDashboardData', { token: AppState.token }, { silent: true }).catch(() => {});
 
-  // Data sesuai role: hanya yang benar-benar sering dibuka setelah login
+  // Data profil
+  apiCall('getProfilLengkap', { token: AppState.token }, { silent: true }).catch(() => {});
+
+  // Data sesuai role
   if (role === 'ADMIN' || role === 'AKUNTAN') {
     apiCall('getDataKaryawan', { token: AppState.token }, { silent: true }).catch(() => {});
+    apiCall('getKaryawanForPayroll', { token: AppState.token }, { silent: true }).catch(() => {});
+    // Absensi hari ini
+    const today = new Date().toISOString().split('T')[0];
+    apiCall('getAbsensiData', { token: AppState.token, filters: { tanggal: today } }, { silent: true }).catch(() => {});
   }
 
-  // Sisanya (getProfilLengkap, getKaryawanForPayroll, getAbsensiData,
-  // getMyPayroll, getMyAbsensi, getMasterData) TIDAK di-prefetch lagi —
-  // masing-masing sudah punya cache TTL sendiri dan akan otomatis dimuat
-  // hanya ketika halaman terkait benar-benar dibuka user. Ini mengurangi
-  // 6-7 request paralel yang sebelumnya selalu jalan setiap login,
-  // padahal user belum tentu membuka semua halaman itu di sesi yang sama.
+  // Payroll & absensi milik sendiri
+  apiCall('getMyPayroll', { token: AppState.token }, { silent: true }).catch(() => {});
+  const now = new Date();
+  const bulan = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  apiCall('getMyAbsensi', { token: AppState.token, filterBulan: bulan }, { silent: true }).catch(() => {});
+
+  // Master data (jarang berubah, cache 5 menit)
+  apiCall('getMasterData', {}, { silent: true }).catch(() => {});
 }
 
 // ==================== AUTH ====================
@@ -7534,9 +7567,9 @@ async function doLogin() {
       startSessionCheck();
       // Terapkan UI user dengan error handling
       try { applyUserUI(); } catch(e) { console.warn('[LOGIN] applyUserUI error:', e); }
-      // Model face-api sengaja TIDAK di-preload di sini agar login lebih ringan;
-      // model akan dimuat otomatis saat user pertama kali membuka kamera scan wajah
-      // (lihat startFaceScan/startAbsenFaceScan/dll, yang sudah handle loading sendiri).
+      // Preload model face-api di background agar saat user membuka kamera/scan
+      // pertama kali tidak perlu menunggu 1-3 detik loading model
+      loadFaceApiModels().catch(() => {});
       // Navigasi dengan timeout untuk memastikan state sudah siap
       setTimeout(() => {
         if(res.user.role === 'DEVICE ABSEN') {
@@ -7556,7 +7589,7 @@ async function doLogin() {
       localStorage.removeItem('absensi_user');
       startSessionCheck();
       try { applyUserUI(); } catch(e) { console.warn('[LOGIN] applyUserUI error:', e); }
-      // Device absen memang selalu butuh scan wajah, jadi preload di sini tetap relevan
+      // Preload model face-api di background untuk device absen (kios)
       loadFaceApiModels().catch(() => {});
       setTimeout(() => navigateTo('device-absen'), 100);
     }
@@ -7613,7 +7646,7 @@ function startSessionCheck() {
         navigateTo('login');
       }
     }
-  }, 90000);
+  }, 30000);
 }
 
 // ==================== ROUTER ====================
@@ -7779,9 +7812,8 @@ document.addEventListener('DOMContentLoaded', () => {
         navigateTo(allowed ? lastPage : 'dashboard');
         // Prefetch data di background setelah halaman pertama muncul
         setTimeout(() => prefetchCommonData(), 800);
-        // Model face-api TIDAK di-preload di sini lagi — akan dimuat otomatis
-        // saat user pertama kali buka kamera scan wajah (hemat bandwidth/memory
-        // untuk role yang jarang/tidak pernah scan wajah sendiri, mis. AKUNTAN).
+        // Preload model face-api di background agar buka kamera/scan pertama kali lebih cepat
+        loadFaceApiModels().catch(() => {});
       }
     }).catch(() => {
       clearSession();
@@ -8499,43 +8531,124 @@ async function startRegWajahScan() {
   if (btnStart) btnStart.classList.add('hidden');
 
   const statusBox = document.getElementById('reg-wajah-status-box');
-  if (statusBox) { statusBox.style.display = 'block'; statusBox.textContent = 'Menyiapkan kamera...'; statusBox.className = 'reg-wajah-status-box'; }
+  if (statusBox) { statusBox.style.display = 'block'; statusBox.textContent = 'Menyiapkan kamera...'; }
 
-  RegState.wajahScanActive = true;
+  const camLoadOverlay = showCameraLoadingOverlay('reg-wajah-video');
+  const video = document.getElementById('reg-wajah-video');
+  if (!video) { hideCameraLoadingOverlay(camLoadOverlay); return; }
 
-  await runFaceLivenessScan({
-    videoId: 'reg-wajah-video',
-    guideId: 'reg-wajah-face-guide',
-    statusBoxSelector: false,
-    scanStepsId: 'reg-wajah-scan-steps',
-    hintBoxId: 'reg-wajah-hint-box',
-    maxAttempts: 300,
-    onSuccess: (descriptor) => {
-      RegState.wajahScanActive = false;
-      AppState._captureFaceInterval = null;
-      RegState.faceDescriptor = descriptor;
-      if (statusBox) { statusBox.style.display = 'block'; statusBox.className = 'reg-wajah-status-box success'; statusBox.textContent = '✅ Liveness OK — Data wajah berhasil direkam!'; }
-      const resultEl = document.getElementById('reg-wajah-result');
-      if (resultEl) resultEl.classList.remove('hidden');
-      const btnUlang2 = document.getElementById('btn-reg-ulang-wajah');
-      if (btnUlang2) btnUlang2.classList.remove('hidden');
-      saveRegDraftMedia();
-    },
-    onTimeout: () => {
-      RegState.wajahScanActive = false;
-      AppState._captureFaceInterval = null;
-      if (statusBox) { statusBox.style.display = 'block'; statusBox.className = 'reg-wajah-status-box warning'; statusBox.textContent = 'Waktu habis. Klik Scan Ulang untuk mencoba lagi.'; }
-      const btnUlang = document.getElementById('btn-reg-ulang-wajah');
-      if (btnUlang) btnUlang.classList.remove('hidden');
-    },
-    onError: (e) => {
-      RegState.wajahScanActive = false;
-      resetRegWajahUI();
-      const btnStart3 = document.getElementById('btn-reg-start-wajah');
-      if (btnStart3) btnStart3.classList.remove('hidden');
-      if (AppState.modelsLoaded) showAlert('Gagal memulai scan wajah: ' + getErrorMessage(e), 'danger');
+  // Jalankan loadModel & getUserMedia SECARA PARALEL (bukan berurutan) agar lebih cepat
+  const modelPromise = AppState.modelsLoaded ? Promise.resolve() : loadFaceApiModels(camLoadOverlay);
+  const streamPromise = navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width:{ideal:640}, height:{ideal:480} } });
+
+  let stream;
+  try {
+    const results = await Promise.all([modelPromise, streamPromise]);
+    stream = results[1];
+  } catch(e) {
+    hideCameraLoadingOverlay(camLoadOverlay);
+    resetRegWajahUI();
+    const btnStart2 = document.getElementById('btn-reg-start-wajah');
+    if (btnStart2) btnStart2.classList.remove('hidden');
+    if(!AppState.modelsLoaded) return; // gagal load model, hentikan
+    // Jika model sudah OK tapi kamera gagal, tampilkan pesan kamera
+    showAlert('Gagal akses kamera: ' + getErrorMessage(e), 'danger');
+    return;
+  }
+
+  try {
+    AppState.videoStream = stream;
+    video.srcObject = stream;
+    video.style.transform = 'scaleX(-1)';
+    video.play();
+    hideCameraLoadingOverlay(camLoadOverlay);
+    RegState.wajahScanActive = true;
+
+    if (statusBox) { statusBox.style.display = 'block'; statusBox.textContent = 'Posisikan wajah di dalam oval...'; }
+    updateScanSteps('reg-wajah-scan-steps', 'reg-wajah-hint-box', 'detect', 'Posisikan wajah di dalam oval');
+
+    const guide = document.getElementById('reg-wajah-face-guide');
+    let rPhase = 'center', attempts = 0, done = false;
+
+    function isFaceCenteredReg(det, vW, vH) {
+      const b = det.detection.box, cx = b.x + b.width/2, cy = b.y + b.height/2;
+      return Math.abs(cx - vW/2) < vW*0.28 && Math.abs(cy - vH/2) < vH*0.28 && b.width > vW*0.16 && b.width < vW*0.90;
     }
-  });
+
+    RegState.wajahInterval = setInterval(async () => {
+      if (done || !RegState.wajahScanActive) return;
+      attempts++;
+      if (attempts > 300) {
+        done = true;
+        clearInterval(RegState.wajahInterval);
+        RegState.wajahInterval = null;
+        AppState._captureFaceInterval = null;
+        stopVideo();
+        if (statusBox) { statusBox.className = 'reg-wajah-status-box warning'; statusBox.textContent = 'Waktu habis. Klik Scan Ulang untuk mencoba lagi.'; }
+        const btnUlang = document.getElementById('btn-reg-ulang-wajah');
+        if (btnUlang) btnUlang.classList.remove('hidden');
+        return;
+      }
+
+      const det = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
+        .withFaceLandmarks().withFaceDescriptor().withFaceExpressions();
+
+      if (!det) {
+        rPhase = 'center';
+        if (guide) guide.className = 'face-guide';
+        if (statusBox) { statusBox.className = 'reg-wajah-status-box warning'; statusBox.textContent = '👁 Arahkan wajah ke kamera'; }
+        updateScanSteps('reg-wajah-scan-steps', 'reg-wajah-hint-box', 'detect', '👁 Arahkan wajah ke kamera');
+        return;
+      }
+
+      const vW = video.videoWidth || 640, vH = video.videoHeight || 480;
+      const centered = isFaceCenteredReg(det, vW, vH);
+      const smileScore = det.expressions ? det.expressions.happy : 0;
+
+      if (!centered && rPhase === 'center') {
+        if (guide) guide.className = 'face-guide liveness-warn';
+        if (statusBox) { statusBox.className = 'reg-wajah-status-box warning'; statusBox.textContent = '↔ Posisikan wajah di tengah oval'; }
+        updateScanSteps('reg-wajah-scan-steps', 'reg-wajah-hint-box', 'center', '↔ Posisikan wajah di tengah oval');
+        return;
+      }
+
+      switch (rPhase) {
+        case 'center':
+          if (guide) guide.className = 'face-guide liveness-warn';
+          if (statusBox) { statusBox.className = 'reg-wajah-status-box warning'; statusBox.textContent = '🙂 Sempurna! Sekarang tersenyum sedikit'; }
+          updateScanSteps('reg-wajah-scan-steps', 'reg-wajah-hint-box', 'smile', '🙂 Sempurna! Sekarang tersenyum sedikit');
+          if (smileScore >= SMILE_THRESHOLD) rPhase = 'done';
+          break;
+        case 'done':
+          done = true;
+          clearInterval(RegState.wajahInterval);
+          RegState.wajahInterval = null;
+          AppState._captureFaceInterval = null;
+          RegState.wajahScanActive = false;
+          stopVideo();
+          if (guide) guide.className = 'face-guide liveness-ok';
+          RegState.faceDescriptor = Array.from(det.descriptor);
+          updateScanSteps('reg-wajah-scan-steps', 'reg-wajah-hint-box', 'matched', '✅ Data wajah berhasil direkam!');
+          if (statusBox) { statusBox.className = 'reg-wajah-status-box success'; statusBox.textContent = '✅ Liveness OK — Data wajah berhasil direkam!'; }
+          const resultEl = document.getElementById('reg-wajah-result');
+          if (resultEl) resultEl.classList.remove('hidden');
+          const btnUlang2 = document.getElementById('btn-reg-ulang-wajah');
+          if (btnUlang2) btnUlang2.classList.remove('hidden');
+          saveRegDraftMedia();
+          break;
+      }
+    }, 500);
+
+    AppState._captureFaceInterval = RegState.wajahInterval;
+  } catch(e) {
+    hideCameraLoadingOverlay(camLoadOverlay);
+    stopVideo();
+    showAlert('Gagal memulai scan wajah: ' + getErrorMessage(e), 'danger');
+    resetRegWajahUI();
+    const btnStart3 = document.getElementById('btn-reg-start-wajah');
+    if (btnStart3) btnStart3.classList.remove('hidden');
+  }
 }
 
 // ==================== CAMERA LOADING OVERLAY HELPERS ====================
@@ -9736,21 +9849,104 @@ function showUpdateWajahModal() {
 }
 
 async function startWajahCapture(videoId, canvasId, statusId) {
-  await runFaceLivenessScan({
-    videoId: videoId,
-    statusBoxSelector: true,
-    statusElId: statusId,
-    maxAttempts: 300,
-    onSuccess: (descriptor) => {
-      AppState.currentFaceDescriptor = descriptor;
-      const video = document.getElementById(videoId);
-      const camContainer = video ? video.closest('.camera-container') : null;
-      const statusBox = camContainer ? camContainer.querySelector('.liveness-status-box') : null;
-      if(statusBox) setTimeout(() => { statusBox.textContent = ''; }, 1500);
-    },
-    onTimeout: () => {},
-    onError: (e) => showAlert('Gagal akses kamera: ' + getErrorMessage(e))
-  });
+  const camLoadOverlay = showCameraLoadingOverlay(videoId);
+  const video = $(`#${videoId}`);
+  if(!video) { hideCameraLoadingOverlay(camLoadOverlay); return; }
+
+  // Jalankan loadModel & getUserMedia SECARA PARALEL agar lebih cepat
+  const modelPromise = AppState.modelsLoaded ? Promise.resolve() : loadFaceApiModels(camLoadOverlay);
+  const streamPromise = navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width:{ideal:640}, height:{ideal:480} } });
+
+  let stream;
+  try {
+    const results = await Promise.all([modelPromise, streamPromise]);
+    stream = results[1];
+  } catch(e) {
+    hideCameraLoadingOverlay(camLoadOverlay);
+    if(AppState.modelsLoaded) showAlert('Gagal akses kamera: ' + getErrorMessage(e));
+    return;
+  }
+
+  try {
+    AppState.videoStream = stream;
+    video.srcObject = stream;
+    video.style.transform = 'scaleX(-1)';
+    video.play();
+    hideCameraLoadingOverlay(camLoadOverlay);
+
+    const camContainer = video.closest('.camera-container');
+    let statusBox = camContainer ? camContainer.querySelector('.liveness-status-box') : null;
+    if(camContainer && !statusBox) {
+      statusBox = document.createElement('div');
+      statusBox.className = 'liveness-status-box';
+      camContainer.appendChild(statusBox);
+    }
+    const guide = camContainer ? camContainer.querySelector('.face-guide') : null;
+    const statusEl = $(`#${statusId}`);
+
+    function isFaceCenteredW(det,vW,vH) {
+      const b=det.detection.box,cx=b.x+b.width/2,cy=b.y+b.height/2;
+      return Math.abs(cx-vW/2)<vW*0.25&&Math.abs(cy-vH/2)<vH*0.25&&b.width>vW*0.18&&b.width<vW*0.88;
+    }
+
+    let wPhase='center', captured=false, attempts=0;
+
+    const interval = setInterval(async () => {
+      attempts++;
+      if(attempts > 300) {
+        clearInterval(interval); stopVideo();
+        if(guide) guide.className='face-guide';
+        if(statusBox) statusBox.textContent='';
+        if(statusEl) { statusEl.textContent='Waktu habis. Coba lagi.'; statusEl.className='text-danger'; }
+        return;
+      }
+      const det = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({inputSize:416, scoreThreshold:0.5}))
+        .withFaceLandmarks().withFaceDescriptor().withFaceExpressions();
+
+      if(!det) {
+        wPhase='center';
+        if(guide) guide.className='face-guide';
+        if(statusBox) { statusBox.className='liveness-status-box warn'; statusBox.textContent='👁 Arahkan wajah ke kamera'; }
+        if(statusEl) statusEl.textContent='Menunggu wajah terdeteksi...';
+        return;
+      }
+      const vW=video.videoWidth||640, vH=video.videoHeight||480;
+      const centered=isFaceCenteredW(det,vW,vH);
+      const smileScore = det.expressions ? det.expressions.happy : 0;
+
+      if(!centered && wPhase==='center') {
+        if(guide) guide.className='face-guide liveness-warn';
+        if(statusBox) { statusBox.className='liveness-status-box warn'; statusBox.textContent='↔ Posisikan wajah di tengah'; }
+        if(statusEl) statusEl.textContent='Posisikan wajah di tengah...';
+        return;
+      }
+
+      switch(wPhase) {
+        case 'center':
+          if(guide) guide.className='face-guide liveness-warn';
+          if(statusBox) { statusBox.className='liveness-status-box warn'; statusBox.textContent='🙂 Lihat kamera dan tersenyum'; }
+          if(statusEl) statusEl.textContent='Silakan lihat kamera dan tersenyum';
+          if(smileScore >= SMILE_THRESHOLD) wPhase='done';
+          break;
+        case 'done':
+          if(!captured) {
+            captured=true;
+            if(guide) guide.className='face-guide liveness-ok';
+            if(statusBox) { statusBox.className='liveness-status-box ok'; statusBox.textContent='✅ Liveness OK!'; }
+            AppState.currentFaceDescriptor=Array.from(det.descriptor);
+            clearInterval(interval); stopVideo();
+            if(statusBox) setTimeout(()=>{ statusBox.textContent=''; },1500);
+            if(statusEl) { statusEl.textContent='✅ Wajah berhasil diverifikasi!'; statusEl.className='text-success'; }
+          }
+          break;
+      }
+    }, 500);
+  } catch(e) {
+    hideCameraLoadingOverlay(camLoadOverlay);
+    stopVideo();
+    showAlert('Gagal memulai scan wajah: ' + getErrorMessage(e));
+  }
 }
 
 async function saveUpdateWajah() {
@@ -9935,15 +10131,18 @@ function renderDataKaryawanView(data) {
     return;
   }
 
-  CrudState.currentMenu = 'users';
-  CrudState.selectedIds.clear();
-
-  renderResponsiveTable({
-    tbodySelector: '#table-karyawan tbody',
-    cardContainerId: 'karyawan-card-list',
-    data: data,
-    mobileCardTemplate: (k) => `
-      <div class="mobile-data-card" data-crud-id="${escapeHtml(k.idUser)}">
+  // ===== MOBILE: render sebagai card list =====
+  if(isMobileView()) {
+    const wrapper = tbody.closest('.table-scroll-mobile');
+    if(wrapper) wrapper.style.display = 'none';
+    let cardContainer = document.getElementById('karyawan-card-list');
+    if(!cardContainer) {
+      cardContainer = document.createElement('div');
+      cardContainer.id = 'karyawan-card-list';
+      wrapper.parentNode.insertBefore(cardContainer, wrapper);
+    }
+    cardContainer.innerHTML = data.map(k => `
+      <div class="mobile-data-card" data-crud-id="${escapeHtml(k.idUser)}" onclick="crudOpenDetailUserFromKaryawan('${escapeHtml(k.idUser)}')">
         <div class="mobile-data-card-top">
           <div>
             <div class="mobile-data-card-title">${escapeHtml(k.namaLengkap)}</div>
@@ -9970,25 +10169,41 @@ function renderDataKaryawanView(data) {
           </div>
         </div>
       </div>
-    `,
-    desktopRowTemplate: (k) => `
-      <tr class="crud-clickable-row" data-crud-id="${escapeHtml(k.idUser)}">
-        <td class="crud-check-col" onclick="event.stopPropagation();"><input type="checkbox" class="crud-row-checkbox" data-id="${escapeHtml(k.idUser)}" onchange="crudToggleSelect('${escapeHtml(k.idUser)}', this.checked)"></td>
-        <td data-label="Nama">${escapeHtml(k.namaLengkap)}</td>
-        <td data-label="Role"><span class="badge badge-blue">${escapeHtml(k.role||'')}</span></td>
-        <td data-label="Jabatan">${escapeHtml(k.jabatanDivisi)}</td>
-        <td data-label="JK">${escapeHtml(k.jenisKelamin)}</td>
-        <td data-label="Email">${escapeHtml(k.email)}</td>
-        <td data-label="Whatsapp">${escapeHtml(k.noWhatsapp)}</td>
-        <td data-label="Mulai Kerja">${formatDate(k.tanggalMulaiKerja)}</td>
-        <td data-label="SPPG">${escapeHtml(k.sppg)}</td>
-        <td data-label="Gaji Harian">${formatRupiah(k.gajiHarian)}</td>
-        <td data-label="Status"><span class="badge ${k.statusAktif ? 'badge-green' : 'badge-red'}">${k.statusAktif ? 'Aktif' : 'Nonaktif'}</span></td>
-      </tr>
-    `,
-    onRowClick: (id) => crudOpenDetailUserFromKaryawan(id)
-  });
+    `).join('');
+    cardContainer.style.display = '';
+    CrudState.currentMenu = 'users';
+    CrudState.selectedIds.clear();
+    crudUpdateBatchFab();
+    return;
+  }
 
+  // ===== DESKTOP/TABLET: tabel seperti biasa =====
+  const wrapper = tbody.closest('.table-scroll-mobile');
+  if(wrapper) wrapper.style.display = '';
+  const cardContainer = document.getElementById('karyawan-card-list');
+  if(cardContainer) cardContainer.style.display = 'none';
+
+  tbody.innerHTML = data.map(k => `
+    <tr class="crud-clickable-row" data-crud-id="${escapeHtml(k.idUser)}">
+      <td class="crud-check-col" onclick="event.stopPropagation();"><input type="checkbox" class="crud-row-checkbox" data-id="${escapeHtml(k.idUser)}" onchange="crudToggleSelect('${escapeHtml(k.idUser)}', this.checked)"></td>
+      <td data-label="Nama">${escapeHtml(k.namaLengkap)}</td>
+      <td data-label="Role"><span class="badge badge-blue">${escapeHtml(k.role||'')}</span></td>
+      <td data-label="Jabatan">${escapeHtml(k.jabatanDivisi)}</td>
+      <td data-label="JK">${escapeHtml(k.jenisKelamin)}</td>
+      <td data-label="Email">${escapeHtml(k.email)}</td>
+      <td data-label="Whatsapp">${escapeHtml(k.noWhatsapp)}</td>
+      <td data-label="Mulai Kerja">${formatDate(k.tanggalMulaiKerja)}</td>
+      <td data-label="SPPG">${escapeHtml(k.sppg)}</td>
+      <td data-label="Gaji Harian">${formatRupiah(k.gajiHarian)}</td>
+      <td data-label="Status"><span class="badge ${k.statusAktif ? 'badge-green' : 'badge-red'}">${k.statusAktif ? 'Aktif' : 'Nonaktif'}</span></td>
+    </tr>
+  `).join('');
+  tbody.querySelectorAll('tr.crud-clickable-row').forEach(tr => {
+    tr.addEventListener('click', () => crudOpenDetailUserFromKaryawan(tr.getAttribute('data-crud-id')));
+  });
+  // Batch-select checkbox di tabel ini memakai menu 'users' juga (data karyawan = tabel Users).
+  CrudState.currentMenu = 'users';
+  CrudState.selectedIds.clear();
   crudUpdateBatchFab();
 }
 
@@ -10047,11 +10262,17 @@ function _renderPayrollRows(list) {
     return;
   }
 
-  renderResponsiveTable({
-    tbodySelector: '#tbody-payroll',
-    cardContainerId: 'payroll-card-list',
-    data: list,
-    mobileCardTemplate: (k) => {
+  // ===== MOBILE: render sebagai card list dengan checkbox =====
+  if(isMobileView()) {
+    const wrapper = tbody.closest('.table-scroll-mobile');
+    if(wrapper) wrapper.style.display = 'none';
+    let cardContainer = document.getElementById('payroll-card-list');
+    if(!cardContainer) {
+      cardContainer = document.createElement('div');
+      cardContainer.id = 'payroll-card-list';
+      wrapper.parentNode.insertBefore(cardContainer, wrapper);
+    }
+    cardContainer.innerHTML = list.map(k => {
       const checked = selectedPayrollKaryawan.includes(k.idUser) ? 'checked' : '';
       return `
       <div class="mobile-data-card" id="payroll-row-${escapeHtml(k.idUser)}" style="display:flex; align-items:flex-start; gap:0.625rem;">
@@ -10074,23 +10295,32 @@ function _renderPayrollRows(list) {
           </div>
         </div>
       </div>`;
-    },
-    desktopRowTemplate: (k) => {
-      const checked = selectedPayrollKaryawan.includes(k.idUser) ? 'checked' : '';
-      return `<tr id="payroll-row-${k.idUser}">
-        <td data-label="Pilih" style="text-align:center;">
-          <input type="checkbox" class="payroll-check" data-id="${escapeHtml(k.idUser)}" ${checked}
-            onchange="togglePayrollSelect('${escapeHtml(k.idUser)}', this.checked)">
-        </td>
-        <td data-label="Nama" style="font-weight:500;">${escapeHtml(k.namaLengkap)}</td>
-        <td data-label="Role"><span class="badge badge-blue">${escapeHtml(k.role||'USER')}</span></td>
-        <td data-label="Jabatan">${escapeHtml(k.jabatanDivisi||'-')}</td>
-        <td data-label="SPPG">${escapeHtml(k.sppg||'-')}</td>
-        <td data-label="Gaji Harian" style="font-weight:600;">${formatRupiah(k.gajiHarian)}</td>
-      </tr>`;
-    }
-  });
+    }).join('');
+    cardContainer.style.display = '';
+    updatePayrollSelectedCount();
+    return;
+  }
 
+  // ===== DESKTOP/TABLET: tabel seperti biasa =====
+  const wrapper = tbody.closest('.table-scroll-mobile');
+  if(wrapper) wrapper.style.display = '';
+  const cardContainer = document.getElementById('payroll-card-list');
+  if(cardContainer) cardContainer.style.display = 'none';
+
+  tbody.innerHTML = list.map(k => {
+    const checked = selectedPayrollKaryawan.includes(k.idUser) ? 'checked' : '';
+    return `<tr id="payroll-row-${k.idUser}">
+      <td data-label="Pilih" style="text-align:center;">
+        <input type="checkbox" class="payroll-check" data-id="${escapeHtml(k.idUser)}" ${checked}
+          onchange="togglePayrollSelect('${escapeHtml(k.idUser)}', this.checked)">
+      </td>
+      <td data-label="Nama" style="font-weight:500;">${escapeHtml(k.namaLengkap)}</td>
+      <td data-label="Role"><span class="badge badge-blue">${escapeHtml(k.role||'USER')}</span></td>
+      <td data-label="Jabatan">${escapeHtml(k.jabatanDivisi||'-')}</td>
+      <td data-label="SPPG">${escapeHtml(k.sppg||'-')}</td>
+      <td data-label="Gaji Harian" style="font-weight:600;">${formatRupiah(k.gajiHarian)}</td>
+    </tr>`;
+  }).join('');
   updatePayrollSelectedCount();
 }
 
@@ -10380,17 +10610,17 @@ function renderMyPayrollView(data) {
     return;
   }
 
-  function _slipPdfBtn(p) {
-    return p.urlPdf
-      ? `<a href="${escapeHtml(encodeURI(p.urlPdf))}" target="_blank" class="btn btn-sm btn-outline">PDF</a>`
-      : `<button class="btn btn-sm btn-outline" disabled title="PDF sedang di-generate" style="opacity:0.5; cursor:not-allowed;">PDF (proses)</button>`;
-  }
-
-  renderResponsiveTable({
-    tbodySelector: '#table-my-payroll tbody',
-    cardContainerId: 'mypayroll-card-list',
-    data: data,
-    mobileCardTemplate: (p, idx) => `
+  // ===== MOBILE: render sebagai card list =====
+  if(isMobileView()) {
+    const wrapper = tbody.closest('.table-scroll-mobile');
+    if(wrapper) wrapper.style.display = 'none';
+    let cardContainer = document.getElementById('mypayroll-card-list');
+    if(!cardContainer) {
+      cardContainer = document.createElement('div');
+      cardContainer.id = 'mypayroll-card-list';
+      wrapper.parentNode.insertBefore(cardContainer, wrapper);
+    }
+    cardContainer.innerHTML = data.map((p, idx) => `
       <div class="mobile-data-card">
         <div class="mobile-data-card-top">
           <div>
@@ -10400,27 +10630,42 @@ function renderMyPayrollView(data) {
           <span class="badge badge-green">${formatRupiah(p.totalGaji)}</span>
         </div>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; padding-top:0.625rem; border-top:1px dashed var(--border);">
-<button class="btn btn-sm btn-primary" onclick="showSlipDetail(${data.indexOf(p)})">${ICONS.image} Lihat Slip</button>
-${_slipPdfBtn(p)}
+<button class="btn btn-sm btn-primary" onclick="showSlipDetail(${idx})">${ICONS.image} Lihat Slip</button>
+${p.urlPdf
+? `<a href="${escapeHtml(encodeURI(p.urlPdf))}" target="_blank" class="btn btn-sm btn-outline">PDF</a>`
+: `<button class="btn btn-sm btn-outline" disabled title="PDF sedang di-generate" style="opacity:0.5; cursor:not-allowed;">PDF (proses)</button>`
+}
 </div>
       </div>
-    `,
-    desktopRowTemplate: (p) => `
-      <tr>
-        <td>${formatDate(p.periodeMulai)}</td>
-        <td>${formatDate(p.periodeAkhir)}</td>
-        <td style="text-align:center;">${p.jumlahHariKerja}</td>
-        <td>${formatRupiah(p.gajiHarian||0)}</td>
-        <td style="font-weight:600;">${formatRupiah(p.totalGaji)}</td>
-        <td>
-          <div class="flex gap-1 flex-wrap">
-<button class="btn btn-sm btn-primary" onclick="showSlipDetail(${data.indexOf(p)})">${ICONS.image} Lihat Slip</button>
-${_slipPdfBtn(p)}
+    `).join('');
+    cardContainer.style.display = '';
+    return;
+  }
+
+  // ===== DESKTOP/TABLET: tabel seperti biasa =====
+  const wrapper = tbody.closest('.table-scroll-mobile');
+  if(wrapper) wrapper.style.display = '';
+  const cardContainer = document.getElementById('mypayroll-card-list');
+  if(cardContainer) cardContainer.style.display = 'none';
+
+  tbody.innerHTML = data.map((p, idx) => `
+    <tr>
+      <td>${formatDate(p.periodeMulai)}</td>
+      <td>${formatDate(p.periodeAkhir)}</td>
+      <td style="text-align:center;">${p.jumlahHariKerja}</td>
+      <td>${formatRupiah(p.gajiHarian||0)}</td>
+      <td style="font-weight:600;">${formatRupiah(p.totalGaji)}</td>
+      <td>
+        <div class="flex gap-1 flex-wrap">
+<button class="btn btn-sm btn-primary" onclick="showSlipDetail(${idx})">${ICONS.image} Lihat Slip</button>
+${p.urlPdf
+? `<a href="${escapeHtml(encodeURI(p.urlPdf))}" target="_blank" class="btn btn-sm btn-outline">PDF</a>`
+: `<button class="btn btn-sm btn-outline" disabled title="PDF sedang di-generate" style="opacity:0.5; cursor:not-allowed;">PDF (proses)</button>`
+}
 </div>
-        </td>
-      </tr>
-    `
-  });
+      </td>
+    </tr>
+  `).join('');
 }
 
 function showSlipDetail(idx) {
@@ -10503,23 +10748,25 @@ function renderAbsensiTable(data) {
     return;
   }
 
-  function _absensiSkor(a) {
-    // FIX: Skor_Kecocokan_Wajah dari server SUDAH berskala 0-100 (lihat
-    // hitungSkorKecocokanWajah() di Code.gs), jangan dikali 100 lagi di sini
-    // — sebelumnya bug ini membuat skor 85.3% tampil sebagai 8530.0%.
-    return (a.Skor_Kecocokan_Wajah !== null && a.Skor_Kecocokan_Wajah !== undefined && a.Skor_Kecocokan_Wajah !== '')
-      ? parseFloat(a.Skor_Kecocokan_Wajah)
-      : null;
-  }
-
-  renderResponsiveTable({
-    tbodySelector: '#table-absensi tbody',
-    cardContainerId: 'absensi-card-list',
-    data: data,
-    mobileCardTemplate: (a) => {
+  // ===== MOBILE: render sebagai card list, bukan tabel horizontal-scroll =====
+  if(isMobileView()) {
+    const wrapper = tbody.closest('.table-scroll-mobile');
+    if(wrapper) wrapper.style.display = 'none';
+    let cardContainer = document.getElementById('absensi-card-list');
+    if(!cardContainer) {
+      cardContainer = document.createElement('div');
+      cardContainer.id = 'absensi-card-list';
+      wrapper.parentNode.insertBefore(cardContainer, wrapper);
+    }
+    cardContainer.innerHTML = data.map(a => {
       const jenisColor = a.Jenis_Absen === 'DATANG' ? '#059669' : '#d97706';
       const statusValid = a.Status_Validasi === 'VALID';
-      const skorNum = _absensiSkor(a);
+      // FIX: Skor_Kecocokan_Wajah dari server SUDAH berskala 0-100 (lihat
+      // hitungSkorKecocokanWajah() di Code.gs), jangan dikali 100 lagi di sini
+      // — sebelumnya bug ini membuat skor 85.3% tampil sebagai 8530.0%.
+      const skorNum = (a.Skor_Kecocokan_Wajah !== null && a.Skor_Kecocokan_Wajah !== undefined && a.Skor_Kecocokan_Wajah !== '')
+        ? parseFloat(a.Skor_Kecocokan_Wajah)
+        : null;
       const skorColor = skorNum === null ? 'var(--text)' : (skorNum >= 60 ? 'var(--success)' : 'var(--danger)');
       const waktuStr = a.Waktu_Timestamp ? new Date(a.Waktu_Timestamp).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
       return `
@@ -10559,33 +10806,42 @@ ${escapeHtml(a.jabatanDivisi||'-')}
 </div>
         </div>
       `;
-    },
-    desktopRowTemplate: (a) => {
-      const skorNumDesktop = _absensiSkor(a);
-      const skorTextDesktop = skorNumDesktop !== null ? skorNumDesktop.toFixed(1) + '%' : '-';
-      return `
-      <tr class="crud-clickable-row" data-crud-id="${escapeHtml(a.ID_Absen)}">
-        <td class="crud-check-col" onclick="event.stopPropagation();"><input type="checkbox" class="crud-row-checkbox" data-id="${escapeHtml(a.ID_Absen)}" onchange="crudToggleSelect('${escapeHtml(a.ID_Absen)}', this.checked)"></td>
-        <td>${formatDate(a.Tanggal)}</td>
-        <td>${escapeHtml(a.namaLengkap)}</td>
-        <td><span class="badge badge-blue">${escapeHtml(a.role||'')}</span></td>
-        <td>${escapeHtml(a.jabatanDivisi)}</td>
-        <td>${escapeHtml(a.sppg)}</td>
-        <td><span class="badge ${a.Jenis_Absen==='DATANG'?'badge-green':'badge-orange'}">${a.Jenis_Absen}</span></td>
-        <td>${a.Waktu_Timestamp ? new Date(a.Waktu_Timestamp).toLocaleTimeString('id-ID') : '-'}</td>
-        <td style="text-align:center;">${skorTextDesktop}</td>
-        <td><span class="badge ${a.Status_Validasi==='VALID'?'badge-green':'badge-red'}">${a.Status_Validasi}</span></td>
-      </tr>
-    `;
-    },
-    afterRenderMobile: () => crudBindMobileCardEvents('absensi'),
-    onRowClick: (id, elMobile, elDesktopTr) => {
-      // Mobile sudah ditangani sepenuhnya oleh crudBindMobileCardEvents (long-press,
-      // selection mode, dsb) lewat afterRenderMobile — jangan pasang klik ganda di sini.
-      if (elDesktopTr) {
-        elDesktopTr.addEventListener('click', () => crudOpenDetail('absensi', id));
-      }
-    }
+    }).join('');
+    cardContainer.style.display = '';
+    crudBindMobileCardEvents('absensi');
+    return;
+  }
+
+  // ===== DESKTOP/TABLET: tabel seperti biasa =====
+  const wrapper = tbody.closest('.table-scroll-mobile');
+  if(wrapper) wrapper.style.display = '';
+  const cardContainer = document.getElementById('absensi-card-list');
+  if(cardContainer) cardContainer.style.display = 'none';
+
+  tbody.innerHTML = data.map(a => {
+    // FIX: Skor_Kecocokan_Wajah dari server SUDAH berskala 0-100, jangan
+    // dikali 100 lagi (bug lama membuat skor 85.3% tampil sebagai 8530.0%).
+    const skorNumDesktop = (a.Skor_Kecocokan_Wajah !== null && a.Skor_Kecocokan_Wajah !== undefined && a.Skor_Kecocokan_Wajah !== '')
+      ? parseFloat(a.Skor_Kecocokan_Wajah)
+      : null;
+    const skorTextDesktop = skorNumDesktop !== null ? skorNumDesktop.toFixed(1) + '%' : '-';
+    return `
+    <tr class="crud-clickable-row" data-crud-id="${escapeHtml(a.ID_Absen)}">
+      <td class="crud-check-col" onclick="event.stopPropagation();"><input type="checkbox" class="crud-row-checkbox" data-id="${escapeHtml(a.ID_Absen)}" onchange="crudToggleSelect('${escapeHtml(a.ID_Absen)}', this.checked)"></td>
+      <td>${formatDate(a.Tanggal)}</td>
+      <td>${escapeHtml(a.namaLengkap)}</td>
+      <td><span class="badge badge-blue">${escapeHtml(a.role||'')}</span></td>
+      <td>${escapeHtml(a.jabatanDivisi)}</td>
+      <td>${escapeHtml(a.sppg)}</td>
+      <td><span class="badge ${a.Jenis_Absen==='DATANG'?'badge-green':'badge-orange'}">${a.Jenis_Absen}</span></td>
+      <td>${a.Waktu_Timestamp ? new Date(a.Waktu_Timestamp).toLocaleTimeString('id-ID') : '-'}</td>
+      <td style="text-align:center;">${skorTextDesktop}</td>
+      <td><span class="badge ${a.Status_Validasi==='VALID'?'badge-green':'badge-red'}">${a.Status_Validasi}</span></td>
+    </tr>
+  `;
+  }).join('');
+  tbody.querySelectorAll('tr.crud-clickable-row').forEach(tr => {
+    tr.addEventListener('click', () => crudOpenDetail('absensi', tr.getAttribute('data-crud-id')));
   });
 }
 
@@ -10805,52 +11061,14 @@ async function handleQrScanned(idCardUnik) {
 const SMILE_THRESHOLD = 0.70;
 const FACE_MATCH_THRESHOLD = 60;
 
-// ==================== GENERIC FACE LIVENESS SCAN ENGINE ====================
-// Menggantikan 5 fungsi duplikat (startRegWajahScan, startWajahCapture,
-// startFaceScan, startAbsenSelfFaceScan, startAbsenFaceScan) yang punya
-// alur identik: buka kamera -> load model -> deteksi -> cek posisi tengah
-// -> cek senyum -> ambil descriptor. Perbedaan tiap pemanggil hanya di ID
-// elemen dan apa yang dilakukan setelah wajah berhasil di-capture.
-//
-// opts:
-//   videoId          : id elemen <video>
-//   guideId          : id elemen .face-guide (opsional, boleh null jika guide
-//                       ada di dalam .camera-container terdekat video)
-//   statusBoxSelector : true = pakai/buat .liveness-status-box di dalam
-//                       .camera-container (dipakai device/update-wajah/absen),
-//                       false = tidak pakai overlay status-box terpisah
-//   statusElId        : id elemen teks status di luar kamera (opsional)
-//   scanStepsId       : id container step indicator (opsional, dipakai reg & absen-self)
-//   hintBoxId         : id elemen hint box (dipasangkan dengan scanStepsId)
-//   verifyIdUser      : jika diisi, tiap frame fase 'done' akan memverifikasi
-//                       skor ke server (dipakai device/absen). Jika kosong,
-//                       fase 'done' langsung capture descriptor lokal (dipakai
-//                       registrasi & update wajah).
-//   maxAttempts       : batas percobaan sebelum timeout (default 240)
-//   maxAttemptsForceAccept : untuk mode verifyIdUser, jika skor belum lolos
-//                       tapi attempts sudah lewat angka ini, tetap lanjut proses
-//                       (perilaku asli startFaceScan/startAbsenFaceScan)
-//   onSuccess(descriptorArray, lastSkor) : dipanggil sekali saat wajah berhasil
-//                       (mode lokal: begitu senyum terdeteksi; mode verifyIdUser:
-//                       begitu skor lolos atau attempts habis)
-//   onTimeout()       : dipanggil jika attempts > maxAttempts sebelum wajah pernah cocok
-//   onError(err)      : dipanggil jika gagal akses kamera/model
-//
-// Mengembalikan: tidak ada return value (async, efek samping via callback)
-async function runFaceLivenessScan(opts) {
-  const {
-    videoId, guideId, statusBoxSelector, statusElId,
-    scanStepsId, hintBoxId,
-    verifyIdUser, maxAttempts = 240, maxAttemptsForceAccept = 160,
-    onSuccess, onTimeout, onError
-  } = opts;
-
-  const camLoadOverlay = showCameraLoadingOverlay(videoId);
-  const video = document.getElementById(videoId);
+async function startFaceScan() {
+  const camLoadOverlay = showCameraLoadingOverlay('device-face-video');
+  const video = $('#device-face-video');
   if(!video) { hideCameraLoadingOverlay(camLoadOverlay); return; }
 
+  // Jalankan loadModel & getUserMedia SECARA PARALEL agar lebih cepat
   const modelPromise = AppState.modelsLoaded ? Promise.resolve() : loadFaceApiModels(camLoadOverlay);
-  const streamPromise = navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode || 'user', width:{ideal:640}, height:{ideal:480} } });
+  const streamPromise = navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width:{ideal:640}, height:{ideal:480} } });
 
   let stream;
   try {
@@ -10858,7 +11076,7 @@ async function runFaceLivenessScan(opts) {
     stream = results[1];
   } catch(e) {
     hideCameraLoadingOverlay(camLoadOverlay);
-    if(AppState.modelsLoaded && onError) onError(e);
+    if(AppState.modelsLoaded) showDeviceResult(false, 'Gagal akses kamera: ' + getErrorMessage(e));
     return;
   }
 
@@ -10870,139 +11088,87 @@ async function runFaceLivenessScan(opts) {
     hideCameraLoadingOverlay(camLoadOverlay);
 
     const camContainer = video.closest('.camera-container');
-    let statusBox = null;
-    if(statusBoxSelector && camContainer) {
-      statusBox = camContainer.querySelector('.liveness-status-box');
-      if(!statusBox) {
-        statusBox = document.createElement('div');
-        statusBox.className = 'liveness-status-box';
-        camContainer.appendChild(statusBox);
-      }
+    let statusBox = camContainer ? camContainer.querySelector('.liveness-status-box') : null;
+    if(camContainer && !statusBox) {
+      statusBox = document.createElement('div');
+      statusBox.className = 'liveness-status-box';
+      camContainer.appendChild(statusBox);
     }
-    const guide = guideId ? document.getElementById(guideId) : (camContainer ? camContainer.querySelector('.face-guide') : null);
-    const statusEl = statusElId ? document.getElementById(statusElId) : null;
+    const guide = camContainer ? camContainer.querySelector('.face-guide') : null;
+    const statusEl = $('#device-face-status');
 
-    function isFaceCentered(det, vW, vH) {
-      const b = det.detection.box, cx = b.x + b.width/2, cy = b.y + b.height/2;
-      return Math.abs(cx - vW/2) < vW*0.28 && Math.abs(cy - vH/2) < vH*0.28 && b.width > vW*0.16 && b.width < vW*0.90;
+    function isFaceCenteredD(det,vW,vH){
+      const b=det.detection.box,cx=b.x+b.width/2,cy=b.y+b.height/2;
+      return Math.abs(cx-vW/2)<vW*0.28&&Math.abs(cy-vH/2)<vH*0.28&&b.width>vW*0.16&&b.width<vW*0.90;
     }
 
-    let phase = 'center', attempts = 0, done = false;
-    if(scanStepsId) updateScanSteps(scanStepsId, hintBoxId, 'detect', 'Posisikan wajah di dalam oval');
+    let dPhase='center', attempts=0, done=false;
 
     const interval = setInterval(async () => {
       if(done) return;
       attempts++;
-      if(attempts > maxAttempts) {
-        done = true; clearInterval(interval); stopVideo();
-        if(guide) guide.className = 'face-guide';
-        if(statusBox) statusBox.textContent = '';
-        if(statusEl) { statusEl.textContent = 'Waktu habis. Coba lagi.'; statusEl.className = 'text-danger'; }
-        if(scanStepsId) updateScanSteps(scanStepsId, hintBoxId, 'center', 'Waktu habis. Klik untuk mencoba lagi.');
-        if(onTimeout) onTimeout();
+      if(attempts > 240) {
+        done=true; clearInterval(interval); stopVideo();
+        showDeviceResult(false, 'Waktu habis. Wajah tidak terverifikasi. Silakan coba lagi.');
         return;
       }
-
       const det = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:0.5}))
         .withFaceLandmarks().withFaceDescriptor().withFaceExpressions();
 
       if(!det) {
-        phase = 'center';
-        if(guide) guide.className = 'face-guide';
-        if(statusBox) { statusBox.className = 'liveness-status-box warn'; statusBox.textContent = '👁 Arahkan wajah ke kamera'; }
-        if(statusEl) statusEl.textContent = 'Menunggu wajah terdeteksi...';
-        if(scanStepsId) updateScanSteps(scanStepsId, hintBoxId, 'detect', '👁 Arahkan wajah ke kamera');
+        dPhase='center';
+        if(guide) guide.className='face-guide';
+        if(statusBox){statusBox.className='liveness-status-box warn';statusBox.textContent='👁 Arahkan wajah ke kamera';}
+        if(statusEl) statusEl.textContent='Posisikan wajah di dalam oval...';
         return;
       }
-
-      const vW = video.videoWidth || 640, vH = video.videoHeight || 480;
-      const centered = isFaceCentered(det, vW, vH);
+      const vW=video.videoWidth||640,vH=video.videoHeight||480;
+      const centered=isFaceCenteredD(det,vW,vH);
       const smileScore = det.expressions ? det.expressions.happy : 0;
 
-      if(!centered && phase === 'center') {
-        if(guide) guide.className = 'face-guide liveness-warn';
-        if(statusBox) { statusBox.className = 'liveness-status-box warn'; statusBox.textContent = '↔ Posisikan wajah di tengah'; }
-        if(statusEl) statusEl.textContent = 'Posisikan wajah di tengah oval...';
-        if(scanStepsId) updateScanSteps(scanStepsId, hintBoxId, 'center', '↔ Posisikan wajah di tengah oval');
+      if(!centered && dPhase==='center'){
+        if(guide) guide.className='face-guide liveness-warn';
+        if(statusBox){statusBox.className='liveness-status-box warn';statusBox.textContent='↔ Posisikan wajah di tengah';}
+        if(statusEl) statusEl.textContent='Posisikan wajah di tengah oval...';
         return;
       }
 
-      if(phase === 'center') {
-        if(guide) guide.className = 'face-guide liveness-warn';
-        if(statusBox) { statusBox.className = 'liveness-status-box warn'; statusBox.textContent = '🙂 Lihat kamera dan tersenyum'; }
-        if(statusEl) statusEl.textContent = 'Silakan lihat kamera dan tersenyum';
-        if(scanStepsId) updateScanSteps(scanStepsId, hintBoxId, 'smile', '🙂 Sempurna! Sekarang tersenyum sedikit');
-        if(smileScore >= SMILE_THRESHOLD) phase = 'done';
-        return;
-      }
-
-      // phase === 'done'
-      if(!verifyIdUser) {
-        // Mode lokal: langsung capture, tidak perlu cek server (registrasi & update wajah)
-        done = true; clearInterval(interval); stopVideo();
-        if(guide) guide.className = 'face-guide liveness-ok';
-        if(statusBox) { statusBox.className = 'liveness-status-box ok'; statusBox.textContent = '✅ Liveness OK!'; }
-        if(statusEl) { statusEl.textContent = '✅ Wajah berhasil diverifikasi!'; statusEl.className = 'text-success'; }
-        if(scanStepsId) updateScanSteps(scanStepsId, hintBoxId, 'matched', '✅ Data wajah berhasil direkam!');
-        if(onSuccess) onSuccess(Array.from(det.descriptor), null);
-        return;
-      }
-
-      // Mode verifikasi server (device absen, absen mandiri, absen via QR)
-      if(guide) guide.className = 'face-guide liveness-ok';
-      if(statusBox) { statusBox.className = 'liveness-status-box ok'; statusBox.textContent = '✅ Liveness OK — Mencocokkan...'; }
-      let skor = 0;
-      try {
-        const skorRes = await apiCallWithToken('verifyFaceLiveByIdUser', { idUser: verifyIdUser, faceDescriptorScan: Array.from(det.descriptor) }, { silent: true });
-        skor = skorRes.skor || 0;
-      } catch(eSkor) {
-        // Gagal cek skor live — biarkan attempts terus berjalan, jangan hentikan scan
-      }
-      if(statusEl) statusEl.textContent = `Skor kecocokan: ${skor.toFixed(1)}%`;
-      if(scanStepsId) {
-        const skorWarna = skor >= FACE_MATCH_THRESHOLD ? '#34d399' : skor >= FACE_MATCH_THRESHOLD * 0.75 ? '#fbbf24' : '#f87171';
-        const hintEl = hintBoxId ? document.getElementById(hintBoxId) : null;
-        if(hintEl) {
-          const barFill = Math.min(100, Math.round(skor));
-          hintEl.innerHTML = `
-            <div style="margin-bottom:4px;">Kecocokan wajah: <strong style="color:${skorWarna};">${skor.toFixed(1)}%</strong> <span style="color:var(--text-muted); font-size:0.75em;">(min. ${FACE_MATCH_THRESHOLD}%)</span></div>
-            <div style="background:rgba(0,0,0,0.08); height:6px; border-radius:3px; overflow:hidden;">
-              <div style="height:100%; width:${barFill}%; background:${skorWarna}; border-radius:3px; transition:width 0.3s ease;"></div>
-            </div>`;
-        }
-      }
-      if(skor > FACE_MATCH_THRESHOLD) {
-        done = true; clearInterval(interval); stopVideo();
-        if(onSuccess) onSuccess(Array.from(det.descriptor), skor);
-      } else if(attempts > maxAttemptsForceAccept) {
-        done = true; clearInterval(interval); stopVideo();
-        if(onSuccess) onSuccess(Array.from(det.descriptor), skor);
+      switch(dPhase){
+        case 'center':
+          if(guide) guide.className='face-guide liveness-warn';
+          if(statusBox){statusBox.className='liveness-status-box warn';statusBox.textContent='🙂 Lihat kamera dan tersenyum';}
+          if(statusEl) statusEl.textContent='Silakan lihat kamera dan tersenyum';
+          if(smileScore >= SMILE_THRESHOLD) dPhase='done';
+          break;
+        case 'done':
+          if(guide) guide.className='face-guide liveness-ok';
+          if(statusBox){statusBox.className='liveness-status-box ok';statusBox.textContent='✅ Liveness OK — Mencocokkan...';}
+          if(deviceIdUser){
+            let skor = 0;
+            try {
+              const skorRes = await apiCallWithToken('verifyFaceLiveByIdUser', { idUser: deviceIdUser, faceDescriptorScan: Array.from(det.descriptor) }, { silent: true });
+              skor = skorRes.skor || 0;
+            } catch(eSkor) {
+              // Gagal cek skor live — biarkan attempts terus berjalan, jangan hentikan scan
+            }
+            if(statusEl) statusEl.textContent=`Skor kecocokan: ${skor.toFixed(1)}%`;
+            if(skor>FACE_MATCH_THRESHOLD){
+              done=true;clearInterval(interval);stopVideo();
+              await recordAbsensi(deviceIdUser,Array.from(det.descriptor));
+            } else if(attempts>160){
+              done=true;clearInterval(interval);stopVideo();
+              await recordAbsensi(deviceIdUser,Array.from(det.descriptor));
+            }
+          }
+          break;
       }
     }, 500);
   } catch(e) {
     hideCameraLoadingOverlay(camLoadOverlay);
     stopVideo();
-    if(onError) onError(e);
+    showDeviceResult(false, 'Gagal memulai scan wajah: ' + getErrorMessage(e));
   }
-}
-
-async function startFaceScan() {
-  await runFaceLivenessScan({
-    videoId: 'device-face-video',
-    statusBoxSelector: true,
-    statusElId: 'device-face-status',
-    verifyIdUser: deviceIdUser,
-    maxAttempts: 240,
-    maxAttemptsForceAccept: 160,
-    onSuccess: async (descriptor) => {
-      await recordAbsensi(deviceIdUser, descriptor);
-    },
-    onTimeout: () => {
-      showDeviceResult(false, 'Waktu habis. Wajah tidak terverifikasi. Silakan coba lagi.');
-    },
-    onError: (e) => showDeviceResult(false, 'Gagal akses kamera: ' + getErrorMessage(e))
-  });
 }
 
 async function recordAbsensi(idUser, faceDescriptorScan) {
@@ -11103,27 +11269,16 @@ function initAbsenManual() {
   updateAbsenClock();
   if(window._absenClockInterval) clearInterval(window._absenClockInterval);
   window._absenClockInterval = setInterval(updateAbsenClock, 1000);
-
-  // Helper: pasang ulang listener dengan aman (buang listener lama via cloneNode)
-  // agar initAbsenManual() tidak menumpuk event listener setiap kali halaman
-  // ini dikunjungi ulang (elemen tombol bersifat statis, tidak di-render ulang).
-  function bindOnce(id, handler) {
-    const el = $('#' + id);
-    if (!el) return;
-    const clone = el.cloneNode(true);
-    el.parentNode.replaceChild(clone, el);
-    clone.addEventListener('click', handler);
-    return clone;
-  }
-
-  bindOnce('btn-absen-manual', startAbsenFlow);
-  bindOnce('btn-absen-self', startAbsenSelfFlow);
-  bindOnce('btn-absen-qr-cancel', resetAbsenFlow);
-  bindOnce('btn-absen-face-cancel', resetAbsenFlow);
-  bindOnce('btn-absen-self-cancel', resetAbsenFlow);
-  bindOnce('btn-absen-result-ok', resetAbsenFlow);
-  bindOnce('btn-switch-cam-absen', () => switchCameraFacing('absen-face-video'));
-  bindOnce('btn-switch-cam-self', () => switchCameraFacing('absen-self-video'));
+  $('#btn-absen-manual').addEventListener('click', startAbsenFlow);
+  $('#btn-absen-self').addEventListener('click', startAbsenSelfFlow);
+  $('#btn-absen-qr-cancel').addEventListener('click', resetAbsenFlow);
+  $('#btn-absen-face-cancel').addEventListener('click', resetAbsenFlow);
+  $('#btn-absen-self-cancel').addEventListener('click', resetAbsenFlow);
+  $('#btn-absen-result-ok').addEventListener('click', resetAbsenFlow);
+  const swA = $('#btn-switch-cam-absen');
+  if(swA) swA.addEventListener('click', () => switchCameraFacing('absen-face-video'));
+  const swS = $('#btn-switch-cam-self');
+  if(swS) swS.addEventListener('click', () => switchCameraFacing('absen-self-video'));
 }
 
 function resetAbsenFlow() {
@@ -11228,9 +11383,141 @@ function updateScanSteps(containerId, hintBoxId, stepKey, hintText) {
   });
 }
 
-function _buildPesanGagalAbsenSelf(skor) {
-  const skorPct = skor.toFixed(1);
-  return `
+async function startAbsenSelfFaceScan() {
+  const camLoadOverlay = showCameraLoadingOverlay('absen-self-video');
+  const video = $('#absen-self-video');
+  if(!video) { hideCameraLoadingOverlay(camLoadOverlay); return; }
+
+  // Jalankan loadModel & getUserMedia SECARA PARALEL agar lebih cepat
+  const modelPromise = AppState.modelsLoaded ? Promise.resolve() : loadFaceApiModels(camLoadOverlay);
+  const streamPromise = navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode, width:{ideal:640}, height:{ideal:480} } });
+
+  let stream;
+  try {
+    const results = await Promise.all([modelPromise, streamPromise]);
+    stream = results[1];
+  } catch(e) {
+    hideCameraLoadingOverlay(camLoadOverlay);
+    if(AppState.modelsLoaded) showAbsenSelfResult(false, 'Gagal akses kamera: ' + getErrorMessage(e));
+    return;
+  }
+
+  try {
+    AppState.videoStream = stream;
+    video.srcObject = stream;
+    video.style.transform = 'scaleX(-1)';
+    video.play();
+    hideCameraLoadingOverlay(camLoadOverlay);
+
+    const camContainer = video.closest('.camera-container');
+    let statusBox = camContainer ? camContainer.querySelector('.liveness-status-box') : null;
+    if(camContainer && !statusBox) {
+      statusBox = document.createElement('div');
+      statusBox.className = 'liveness-status-box';
+      camContainer.appendChild(statusBox);
+    }
+    const guide = camContainer ? camContainer.querySelector('.face-guide') : null;
+    const statusEl = $('#absen-self-status');
+
+    function isFaceCenteredS(det,vW,vH){
+      const b=det.detection.box,cx=b.x+b.width/2,cy=b.y+b.height/2;
+      return Math.abs(cx-vW/2)<vW*0.28&&Math.abs(cy-vH/2)<vH*0.28&&b.width>vW*0.16&&b.width<vW*0.90;
+    }
+
+    let sPhase='center', attempts=0, done=false;
+
+    updateScanSteps('absen-self-scan-steps', 'absen-self-hint-box', 'detect', 'Posisikan wajah di dalam oval');
+
+    const interval = setInterval(async () => {
+      if(done) return;
+      attempts++;
+      if(attempts > 240) {
+        done=true; clearInterval(interval); stopVideo();
+        showAbsenSelfResult(false, 'Waktu habis. Silakan coba lagi.');
+        return;
+      }
+      const det = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:0.5}))
+        .withFaceLandmarks().withFaceDescriptor().withFaceExpressions();
+
+      if(!det) {
+        sPhase='center';
+        if(guide) guide.className='face-guide';
+        if(statusBox){statusBox.className='liveness-status-box warn';statusBox.textContent='👁 Arahkan wajah ke kamera';}
+        if(statusEl) statusEl.textContent='Posisikan wajah di dalam oval...';
+        updateScanSteps('absen-self-scan-steps', 'absen-self-hint-box', 'detect', '👁 Arahkan wajah ke kamera');
+        return;
+      }
+      const vW=video.videoWidth||640,vH=video.videoHeight||480;
+      const centered=isFaceCenteredS(det,vW,vH);
+      const smileScore = det.expressions ? det.expressions.happy : 0;
+
+      if(!centered && sPhase==='center'){
+        if(guide) guide.className='face-guide liveness-warn';
+        if(statusBox){statusBox.className='liveness-status-box warn';statusBox.textContent='↔ Posisikan wajah di tengah';}
+        if(statusEl) statusEl.textContent='Posisikan wajah di tengah oval...';
+        updateScanSteps('absen-self-scan-steps', 'absen-self-hint-box', 'center', '↔ Posisikan wajah di tengah oval');
+        return;
+      }
+
+      switch(sPhase){
+        case 'center':
+          if(guide) guide.className='face-guide liveness-warn';
+          if(statusBox){statusBox.className='liveness-status-box warn';statusBox.textContent='🙂 Lihat kamera dan tersenyum';}
+          if(statusEl) statusEl.textContent='Silakan lihat kamera dan tersenyum';
+          updateScanSteps('absen-self-scan-steps', 'absen-self-hint-box', 'smile', '🙂 Sempurna! Sekarang tersenyum sedikit');
+          if(smileScore >= SMILE_THRESHOLD) sPhase='done';
+          break;
+        case 'done':
+          if(guide) guide.className='face-guide liveness-ok';
+          updateScanSteps('absen-self-scan-steps', 'absen-self-hint-box', 'matched', '✅ Liveness OK — Mencocokkan wajah...');
+          if(absenIdUser){
+            let skor = 0;
+            try {
+              const skorRes = await apiCallWithToken('verifyFaceLiveByIdUser', { idUser: absenIdUser, faceDescriptorScan: Array.from(det.descriptor) }, { silent: true });
+              skor = skorRes.skor || 0;
+            } catch(eSkor) {
+              // Gagal cek skor live (mis. koneksi lambat) — biarkan attempts terus berjalan
+            }
+            const skorPct = skor.toFixed(1);
+            const skorWarna = skor >= FACE_MATCH_THRESHOLD ? '#34d399'
+              : skor >= FACE_MATCH_THRESHOLD * 0.75 ? '#fbbf24'
+              : '#f87171';
+            if(statusBox){
+              statusBox.className = 'liveness-status-box' + (skor >= FACE_MATCH_THRESHOLD ? ' ok' : '');
+              statusBox.textContent = `Mencocokkan wajah... ${skorPct}%`;
+            }
+            if(statusEl) statusEl.textContent = `Skor kecocokan: ${skorPct}% (min. ${FACE_MATCH_THRESHOLD}%)`;
+            const hintEl = document.getElementById('absen-self-hint-box');
+            if(hintEl) {
+              const barFill = Math.min(100, Math.round(skor));
+              hintEl.innerHTML = `
+                <div style="margin-bottom:4px;">Kecocokan wajah: <strong style="color:${skorWarna};">${skorPct}%</strong> <span style="color:var(--text-muted); font-size:0.75em;">(min. ${FACE_MATCH_THRESHOLD}%)</span></div>
+                <div style="background:rgba(0,0,0,0.08); height:6px; border-radius:3px; overflow:hidden;">
+                  <div style="height:100%; width:${barFill}%; background:${skorWarna}; border-radius:3px; transition:width 0.3s ease;"></div>
+                </div>
+              `;
+            }
+            if(skor > FACE_MATCH_THRESHOLD){
+              done=true;clearInterval(interval);stopVideo();
+              try {
+                const res2=await queueAbsenSelf('recordAbsensiSelf',{idUser:absenIdUser,faceDescriptorScan:Array.from(det.descriptor),lat:absenLat,lng:absenLng});
+                if(res2.alreadyAbsen) {
+                  showAbsenSelfResult(true, res2.message || 'Anda sudah melengkapi absensi hari ini.');
+                } else if(res2.success === false){
+                  showAbsenSelfResult(false, res2.message || 'Absen tidak berhasil.');
+                } else {
+                  showAbsenSelfResult(true,`${res2.nama} - ${res2.message} (${res2.waktu})`);
+                }
+              } catch(eAbsen) {
+                showAbsenSelfResult(false, getErrorMessage(eAbsen));
+              }
+            } else if(attempts > 160){
+              done=true;clearInterval(interval);stopVideo();
+              // C6 FIX: Pesan error dibuat ACTIONABLE — user tahu persis apa yang harus dilakukan.
+// Bukan hanya menampilkan angka skor mentah, tapi memberi checklist perbaikan
+// + tombol langsung ke halaman Profil untuk update data wajah.
+const pesanGagalHtml = `
 <div style="text-align:left; font-size:0.875rem; line-height:1.55;">
 <div style="font-weight:700; color:var(--danger); margin-bottom:0.5rem;">
 ⚠️ Wajah belum terverifikasi (skor: ${skorPct}%, dibutuhkan min. ${FACE_MATCH_THRESHOLD}%)
@@ -11250,42 +11537,17 @@ ${skor < 30 ? `
 ` : ''}
 </div>
 `;
-}
-
-async function startAbsenSelfFaceScan() {
-  await runFaceLivenessScan({
-    videoId: 'absen-self-video',
-    statusBoxSelector: true,
-    statusElId: 'absen-self-status',
-    scanStepsId: 'absen-self-scan-steps',
-    hintBoxId: 'absen-self-hint-box',
-    verifyIdUser: absenIdUser,
-    maxAttempts: 240,
-    maxAttemptsForceAccept: 160,
-    onSuccess: async (descriptor, skor) => {
-      if(skor !== null && skor <= FACE_MATCH_THRESHOLD) {
-        // attempts sudah habis tapi skor belum lolos (forceAccept path)
-        showAbsenSelfResult(false, _buildPesanGagalAbsenSelf(skor), skor, true);
-        return;
+showAbsenSelfResult(false, pesanGagalHtml, skor, true);
+            }
+          }
+          break;
       }
-      try {
-        const res2 = await queueAbsenSelf('recordAbsensiSelf', { idUser: absenIdUser, faceDescriptorScan: descriptor, lat: absenLat, lng: absenLng });
-        if(res2.alreadyAbsen) {
-          showAbsenSelfResult(true, res2.message || 'Anda sudah melengkapi absensi hari ini.');
-        } else if(res2.success === false) {
-          showAbsenSelfResult(false, res2.message || 'Absen tidak berhasil.');
-        } else {
-          showAbsenSelfResult(true, `${res2.nama} - ${res2.message} (${res2.waktu})`);
-        }
-      } catch(eAbsen) {
-        showAbsenSelfResult(false, getErrorMessage(eAbsen));
-      }
-    },
-    onTimeout: () => {
-      showAbsenSelfResult(false, 'Waktu habis. Silakan coba lagi.');
-    },
-    onError: (e) => showAbsenSelfResult(false, 'Gagal memulai scan wajah: ' + getErrorMessage(e))
-  });
+    }, 500);
+  } catch(e) {
+    hideCameraLoadingOverlay(camLoadOverlay);
+    stopVideo();
+    showAbsenSelfResult(false, 'Gagal memulai scan wajah: ' + getErrorMessage(e));
+  }
 }
 
 function showAbsenSelfResult(success, message, skorTerakhir, messageIsHtml) {
@@ -11451,36 +11713,126 @@ async function handleAbsenQrScanned(idCardUnik, cameras) {
 }
 
 async function startAbsenFaceScan() {
-  await runFaceLivenessScan({
-    videoId: 'absen-face-video',
-    statusBoxSelector: true,
-    statusElId: 'absen-face-status',
-    verifyIdUser: absenIdUser,
-    maxAttempts: 240,
-    maxAttemptsForceAccept: 160,
-    onSuccess: async (descriptor, skor) => {
-      if(skor !== null && skor <= FACE_MATCH_THRESHOLD) {
-        showAbsenResult(false, 'Wajah tidak cocok. Silakan coba lagi.');
+  const camLoadOverlay = showCameraLoadingOverlay('absen-face-video');
+  const video = $('#absen-face-video');
+  if(!video) { hideCameraLoadingOverlay(camLoadOverlay); return; }
+
+  // Jalankan loadModel & getUserMedia SECARA PARALEL agar lebih cepat
+  const modelPromise = AppState.modelsLoaded ? Promise.resolve() : loadFaceApiModels(camLoadOverlay);
+  const streamPromise = navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width:{ideal:640}, height:{ideal:480} } });
+
+  let stream;
+  try {
+    const results = await Promise.all([modelPromise, streamPromise]);
+    stream = results[1];
+  } catch(e) {
+    hideCameraLoadingOverlay(camLoadOverlay);
+    if(AppState.modelsLoaded) showAbsenResult(false, 'Gagal akses kamera: ' + getErrorMessage(e));
+    return;
+  }
+
+  try {
+    AppState.videoStream = stream;
+    video.srcObject = stream;
+    video.style.transform = 'scaleX(-1)';
+    video.play();
+    hideCameraLoadingOverlay(camLoadOverlay);
+
+    const camContainer = video.closest('.camera-container');
+    let statusBox = camContainer ? camContainer.querySelector('.liveness-status-box') : null;
+    if(camContainer && !statusBox) {
+      statusBox = document.createElement('div');
+      statusBox.className = 'liveness-status-box';
+      camContainer.appendChild(statusBox);
+    }
+    const guide = camContainer ? camContainer.querySelector('.face-guide') : null;
+    const statusEl = $('#absen-face-status');
+
+    function isFaceCenteredA(det,vW,vH){
+      const b=det.detection.box,cx=b.x+b.width/2,cy=b.y+b.height/2;
+      return Math.abs(cx-vW/2)<vW*0.28&&Math.abs(cy-vH/2)<vH*0.28&&b.width>vW*0.16&&b.width<vW*0.90;
+    }
+
+    let aPhase='center', attempts=0, done=false;
+
+    const interval = setInterval(async () => {
+      if(done) return;
+      attempts++;
+      if(attempts > 240) {
+        done=true; clearInterval(interval); stopVideo();
+        showAbsenResult(false, 'Waktu habis. Silakan coba lagi.');
         return;
       }
-      try {
-        const res2 = await queueAbsenSelf('recordAbsensiSelf', { idUser: absenIdUser, faceDescriptorScan: descriptor, lat: absenLat, lng: absenLng });
-        if(res2.alreadyAbsen) {
-          showAbsenResult(true, res2.message || 'Anda sudah melengkapi absensi hari ini.');
-        } else if(res2.success === false) {
-          showAbsenResult(false, res2.message || 'Absen tidak berhasil.');
-        } else {
-          showAbsenResult(true, `${res2.nama} - ${res2.message} (${res2.waktu})`);
-        }
-      } catch(eAbsen) {
-        showAbsenResult(false, getErrorMessage(eAbsen));
+      const det = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:0.5}))
+        .withFaceLandmarks().withFaceDescriptor().withFaceExpressions();
+
+      const scanStatusText = document.getElementById('absen-scan-status-text');
+      if(!det) {
+        aPhase='center';
+        if(guide) guide.className='face-guide';
+        if(statusBox){statusBox.className='liveness-status-box warn';statusBox.textContent='👁 Arahkan wajah ke kamera';}
+        if(statusEl) statusEl.textContent='Posisikan wajah di dalam oval...';
+        if(scanStatusText) scanStatusText.textContent='👁 Arahkan wajah ke kamera';
+        return;
       }
-    },
-    onTimeout: () => {
-      showAbsenResult(false, 'Waktu habis. Silakan coba lagi.');
-    },
-    onError: (e) => showAbsenResult(false, 'Gagal akses kamera: ' + getErrorMessage(e))
-  });
+      const vW=video.videoWidth||640,vH=video.videoHeight||480;
+      const centered=isFaceCenteredA(det,vW,vH);
+      const smileScore = det.expressions ? det.expressions.happy : 0;
+
+      if(!centered && aPhase==='center'){
+        if(guide) guide.className='face-guide liveness-warn';
+        if(statusBox){statusBox.className='liveness-status-box warn';statusBox.textContent='↔ Posisikan wajah di tengah';}
+        if(statusEl) statusEl.textContent='Posisikan wajah di tengah oval...';
+        return;
+      }
+
+      switch(aPhase){
+        case 'center':
+          if(guide) guide.className='face-guide liveness-warn';
+          if(statusBox){statusBox.className='liveness-status-box warn';statusBox.textContent='🙂 Lihat kamera dan tersenyum';}
+          if(statusEl) statusEl.textContent='Silakan lihat kamera dan tersenyum';
+          if(smileScore >= SMILE_THRESHOLD) aPhase='done';
+          break;
+        case 'done':
+          if(guide) guide.className='face-guide liveness-ok';
+          if(statusBox){statusBox.className='liveness-status-box ok';statusBox.textContent='✅ Liveness OK — Mencocokkan...';}
+          if(absenIdUser){
+            let skor = 0;
+            try {
+              const skorRes = await apiCallWithToken('verifyFaceLiveByIdUser', { idUser: absenIdUser, faceDescriptorScan: Array.from(det.descriptor) }, { silent: true });
+              skor = skorRes.skor || 0;
+            } catch(eSkor) {
+              // Gagal cek skor live (mis. koneksi lambat) — biarkan attempts terus jalan, jangan hentikan scan
+            }
+            if(statusEl) statusEl.textContent=`Skor kecocokan: ${skor.toFixed(1)}%`;
+            if(skor>FACE_MATCH_THRESHOLD){
+              done=true;clearInterval(interval);stopVideo();
+              try {
+                const res2=await queueAbsenSelf('recordAbsensiSelf',{idUser:absenIdUser,faceDescriptorScan:Array.from(det.descriptor),lat:absenLat,lng:absenLng});
+                if(res2.alreadyAbsen) {
+                  showAbsenResult(true, res2.message || 'Anda sudah melengkapi absensi hari ini.');
+                } else if(res2.success === false){
+                  showAbsenResult(false, res2.message || 'Absen tidak berhasil.');
+                } else {
+                  showAbsenResult(true,`${res2.nama} - ${res2.message} (${res2.waktu})`);
+                }
+              } catch(eAbsen) {
+                showAbsenResult(false, getErrorMessage(eAbsen));
+              }
+            } else if(attempts>160){
+              done=true;clearInterval(interval);stopVideo();
+              showAbsenResult(false,'Wajah tidak cocok. Silakan coba lagi.');
+            }
+          }
+          break;
+      }
+    }, 500);
+  } catch(e) {
+    hideCameraLoadingOverlay(camLoadOverlay);
+    stopVideo();
+    showAbsenResult(false, 'Gagal memulai scan wajah: ' + getErrorMessage(e));
+  }
 }
 
 function showAbsenResult(success, message) {
@@ -11596,11 +11948,17 @@ function renderAuditLog(logs) {
     return;
   }
 
-  renderResponsiveTable({
-    tbodySelector: '#table-audit tbody',
-    cardContainerId: 'audit-card-list',
-    data: logs,
-    mobileCardTemplate: (l) => {
+  // ===== MOBILE: render sebagai card list =====
+  if(isMobileView()) {
+    const wrapper = tbody.closest('.table-scroll-mobile');
+    if(wrapper) wrapper.style.display = 'none';
+    let cardContainer = document.getElementById('audit-card-list');
+    if(!cardContainer) {
+      cardContainer = document.createElement('div');
+      cardContainer.id = 'audit-card-list';
+      wrapper.parentNode.insertBefore(cardContainer, wrapper);
+    }
+    cardContainer.innerHTML = logs.map(l => {
       // Fallback berlapis: pakai _pelakuNama hasil enrich jika ada, kalau
       // tidak (mis. data lama / SYSTEM) turun ke ID_User_Pelaku mentah.
       const pelakuDisplay = l._pelakuNama || l.ID_User_Pelaku || '-';
@@ -11619,20 +11977,29 @@ function renderAuditLog(logs) {
         </div>
       </div>
     `;
-    },
-    desktopRowTemplate: (l) => {
-      const pelakuDisplay = l._pelakuNama || l.ID_User_Pelaku || '-';
-      const pelakuEmail = l._pelakuEmail ? `<div style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(l._pelakuEmail)}</div>` : '';
-      return `
-      <tr>
-        <td data-label="Waktu">${formatDateTime(l.Waktu)}</td>
-        <td data-label="Pelaku">${escapeHtml(pelakuDisplay)}${pelakuEmail}</td>
-        <td data-label="Jenis"><span class="badge badge-blue">${escapeHtml(l.Jenis_Aktivitas)}</span></td>
-        <td data-label="Detail">${escapeHtml(formatAuditDetail(l.Detail))}</td>
-      </tr>
-    `;
-    }
-  });
+    }).join('');
+    cardContainer.style.display = '';
+    return;
+  }
+
+  // ===== DESKTOP/TABLET: tabel seperti biasa =====
+  const wrapper = tbody.closest('.table-scroll-mobile');
+  if(wrapper) wrapper.style.display = '';
+  const cardContainer = document.getElementById('audit-card-list');
+  if(cardContainer) cardContainer.style.display = 'none';
+
+  tbody.innerHTML = logs.map(l => {
+    const pelakuDisplay = l._pelakuNama || l.ID_User_Pelaku || '-';
+    const pelakuEmail = l._pelakuEmail ? `<div style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(l._pelakuEmail)}</div>` : '';
+    return `
+    <tr>
+      <td data-label="Waktu">${formatDateTime(l.Waktu)}</td>
+      <td data-label="Pelaku">${escapeHtml(pelakuDisplay)}${pelakuEmail}</td>
+      <td data-label="Jenis"><span class="badge badge-blue">${escapeHtml(l.Jenis_Aktivitas)}</span></td>
+      <td data-label="Detail">${escapeHtml(formatAuditDetail(l.Detail))}</td>
+    </tr>
+  `;
+  }).join('');
 }
 
 async function filterAuditLog() {
@@ -11706,11 +12073,17 @@ function renderMyAbsensiPage(res) {
 
   const dayNames = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 
-  renderResponsiveTable({
-    tbodySelector: '#table-my-absensi tbody',
-    cardContainerId: 'myabsensi-card-list',
-    data: res.rows,
-    mobileCardTemplate: (r) => {
+  // ===== MOBILE: render sebagai card list =====
+  if(isMobileView()) {
+    const wrapper = tbody.closest('.table-scroll-mobile');
+    if(wrapper) wrapper.style.display = 'none';
+    let cardContainer = document.getElementById('myabsensi-card-list');
+    if(!cardContainer) {
+      cardContainer = document.createElement('div');
+      cardContainer.id = 'myabsensi-card-list';
+      wrapper.parentNode.insertBefore(cardContainer, wrapper);
+    }
+    cardContainer.innerHTML = res.rows.map(r => {
       const d = new Date(r.tanggal);
       const isSunday = d.getDay() === 0;
       const isSaturday = d.getDay() === 6;
@@ -11738,26 +12111,35 @@ function renderMyAbsensiPage(res) {
           </div>
         </div>
       `;
-    },
-    desktopRowTemplate: (r) => {
-      const d = new Date(r.tanggal);
-      const isSunday = d.getDay() === 0;
-      const isSaturday = d.getDay() === 6;
-      const rowStyle = isSunday ? 'background:#fff1f2;' : isSaturday ? 'background:#fffbeb;' : '';
-      const statusBadge = r.lengkap
-        ? '<span class="badge badge-green">Lengkap</span>'
-        : r.datang
-          ? '<span class="badge badge-orange">Belum Pulang</span>'
-          : '<span class="badge badge-red">Tidak Hadir</span>';
-      return `<tr style="${rowStyle}">
-        <td data-label="Tanggal" style="font-weight:500;">${escapeHtml(r.tanggal)}</td>
-        <td data-label="Hari">${dayNames[d.getDay()]}</td>
-        <td data-label="Datang">${r.datang ? `<span style="color:var(--success); font-weight:600;">${escapeHtml(r.datang)}</span>` : '<span class="text-muted">—</span>'}</td>
-        <td data-label="Pulang">${r.pulang ? `<span style="color:var(--primary); font-weight:600;">${escapeHtml(r.pulang)}</span>` : '<span class="text-muted">—</span>'}</td>
-        <td data-label="Status">${statusBadge}</td>
-      </tr>`;
-    }
-  });
+    }).join('');
+    cardContainer.style.display = '';
+    return;
+  }
+
+  // ===== DESKTOP/TABLET: tabel seperti biasa =====
+  const wrapper = tbody.closest('.table-scroll-mobile');
+  if(wrapper) wrapper.style.display = '';
+  const cardContainer = document.getElementById('myabsensi-card-list');
+  if(cardContainer) cardContainer.style.display = 'none';
+
+  tbody.innerHTML = res.rows.map(r => {
+    const d = new Date(r.tanggal);
+    const isSunday = d.getDay() === 0;
+    const isSaturday = d.getDay() === 6;
+    const rowStyle = isSunday ? 'background:#fff1f2;' : isSaturday ? 'background:#fffbeb;' : '';
+    const statusBadge = r.lengkap
+      ? '<span class="badge badge-green">Lengkap</span>'
+      : r.datang
+        ? '<span class="badge badge-orange">Belum Pulang</span>'
+        : '<span class="badge badge-red">Tidak Hadir</span>';
+    return `<tr style="${rowStyle}">
+      <td data-label="Tanggal" style="font-weight:500;">${escapeHtml(r.tanggal)}</td>
+      <td data-label="Hari">${dayNames[d.getDay()]}</td>
+      <td data-label="Datang">${r.datang ? `<span style="color:var(--success); font-weight:600;">${escapeHtml(r.datang)}</span>` : '<span class="text-muted">—</span>'}</td>
+      <td data-label="Pulang">${r.pulang ? `<span style="color:var(--primary); font-weight:600;">${escapeHtml(r.pulang)}</span>` : '<span class="text-muted">—</span>'}</td>
+      <td data-label="Status">${statusBadge}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ==================== PENGADUAN ====================
@@ -12727,14 +13109,15 @@ async function crudOpenDetailUserFromKaryawan(idUser) {
 
 // Panggil ulang fungsi init halaman yang sedang aktif, supaya state ter-refresh
 // tanpa reload browser. Dipetakan dari nama menu ke fungsi init masing-masing.
-// Catatan: menu 'payroll', 'slip_gaji', 'device', 'master_sppg', 'master_jabatan'
-// sengaja tidak didaftarkan di sini — halaman "Manajemen Data" untuk menu-menu
-// tersebut belum dikembangkan di frontend (tidak ada page/init function-nya),
-// walau backend (CRUD_UI_CONFIG, API) sudah mendukung.
 const CRUD_MENU_REFRESH_FN = {
   users: () => { if (typeof initManajemenUser === 'function') initManajemenUser(); if (typeof initDataKaryawan === 'function') initDataKaryawan(); },
   absensi: () => { if (typeof initAbsensi === 'function') initAbsensi(); },
+  payroll: () => { if (typeof initManajemenPayroll === 'function') initManajemenPayroll(); },
+  slip_gaji: () => { if (typeof initManajemenSlipGaji === 'function') initManajemenSlipGaji(); },
   pengaduan: () => { if (typeof initInboxPengaduan === 'function') initInboxPengaduan(); },
+  device: () => { if (typeof initManajemenDevice === 'function') initManajemenDevice(); },
+  master_sppg: () => { if (typeof initManajemenMasterData === 'function') initManajemenMasterData(); },
+  master_jabatan: () => { if (typeof initManajemenMasterData === 'function') initManajemenMasterData(); },
 };
 
 function crudRefreshCurrentPage() {
