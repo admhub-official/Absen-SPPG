@@ -6793,6 +6793,7 @@ Filter
   </div><!-- /main-content -->
 </div><!-- /app-layout -->
 
+<script src="./supabase-config.js"></script>
 <script>
 
 // ==================== ICON ABSENSI (dari Google Drive) ====================
@@ -7255,7 +7256,8 @@ let cropState = {
 };
 
 // ==================== API WRAPPER ====================
-const SCRIPT_URL = 'https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';// ==================== INISIALISASI CACHE (harus sebelum apiCall) ====================
+const SCRIPT_URL = (window.ABSEN_SUPABASE_CONFIG && window.ABSEN_SUPABASE_CONFIG.functionUrl) || 'https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';
+// ==================== INISIALISASI CACHE (harus sebelum apiCall) ====================
 let _apiCache = {};
 // Dengan persist ke localStorage, saat halaman dibuka ulang kita bisa
 // langsung render data lama (stale-while-revalidate) sebelum fetch baru
@@ -8139,7 +8141,8 @@ async function initRegister() {
   rebind('btn-reg-next-2', regGoToStep3);
   rebind('btn-reg-skip-foto', () => { RegState.fotoBase64 = null; saveRegDraftMedia(); regGoToStep3(); });
   rebind('btn-reg-back-2', () => { stopRegWajahScan(); setRegStep(2); });
-  rebind('btn-reg-skip-wajah', () => { RegState.faceDescriptor = null; saveRegDraftMedia(); stopRegWajahScan(); });
+  rebind('btn-reg-skip-wajah', () => { RegState.faceDescriptor = null; saveRegDraftMedia(); stopRegWajahScan(); doRegister(); });
+  rebind('btn-register', doRegister);
   rebind('btn-reg-start-wajah', startRegWajahScan);
   rebind('btn-reg-ulang-wajah', () => { RegState.faceDescriptor = null; resetRegWajahUI(); startRegWajahScan(); });
   rebind('btn-reg-foto-kamera', openRegFotoKamera);
