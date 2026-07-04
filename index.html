@@ -7395,23 +7395,32 @@ function apiCall(funcName, data, opts) {
       headers,
       body: JSON.stringify({ function: funcName, data: data })
     })
-    .then(res => res.json())
-    .then(json => {
+    .then(async res => {
+      const text = await res.text();
+      let json;
+      try {
+        json = text ? JSON.parse(text) : {};
+      } catch (err) {
+        if(!silent) showLoading(false);
+        return reject(`Server tidak mengembalikan JSON valid: ${text}`);
+      }
       if(!silent) showLoading(false);
+      if (!res.ok) {
+        const errorMessage = json.error || json.message || `HTTP ${res.status}`;
+        return reject(errorMessage);
+      }
       if (json.success) {
-        // Jangan cache response dari operasi login/logout/checkSession
         if (cacheKey && funcName !== 'login' && funcName !== 'checkSession' && funcName !== 'logout') {
           _apiCache[cacheKey] = { data: json.result, ts: Date.now() };
           _persistApiCacheToStorage();
         }
-        // Invalidasi cache terkait jika ini adalah operasi mutasi
         const toInvalidate = _MUTATION_INVALIDATE[funcName];
         if (toInvalidate) {
           toInvalidate.forEach(fn => invalidateCache(fn));
         }
         resolve(json.result);
       } else {
-        reject(json.error || 'Terjadi kesalahan pada server');
+        reject(json.error || json.message || 'Terjadi kesalahan pada server');
       }
     })
     .catch(err => {
@@ -7422,6 +7431,9 @@ function apiCall(funcName, data, opts) {
 }
 
 function apiCallWithToken(funcName, extraData, opts) {
+  if (!AppState.token && !opts?.allowAnonymous) {
+    return Promise.reject('Token tidak tersedia');
+  }
   const data = { token: AppState.token, ...extraData };
   return apiCall(funcName, data, opts);
 }
