@@ -6793,7 +6793,6 @@ Filter
   </div><!-- /main-content -->
 </div><!-- /app-layout -->
 
-<script src="./supabase-config.js"></script>
 <script>
 
 // ==================== ICON ABSENSI (dari Google Drive) ====================
@@ -7256,9 +7255,7 @@ let cropState = {
 };
 
 // ==================== API WRAPPER ====================
-const SCRIPT_URL = (window.ABSEN_SUPABASE_CONFIG && window.ABSEN_SUPABASE_CONFIG.functionUrl) || 'https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6d3dwbmJic21qc2J6emNlY3lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwOTMwOTAsImV4cCI6MjA5ODY2OTA5MH0.xZo9tNJc6M7hNL4EMmmGab1hdq11c6N6GwH98Re3vX8';
-// ==================== INISIALISASI CACHE (harus sebelum apiCall) ====================
+const SCRIPT_URL = 'https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';// ==================== INISIALISASI CACHE (harus sebelum apiCall) ====================
 let _apiCache = {};
 // Dengan persist ke localStorage, saat halaman dibuka ulang kita bisa
 // langsung render data lama (stale-while-revalidate) sebelum fetch baru
@@ -7387,10 +7384,7 @@ function apiCall(funcName, data, opts) {
     if(!silent) showLoading(true);
     fetch(SCRIPT_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ function: funcName, data: data })
     })
     .then(res => res.json())
