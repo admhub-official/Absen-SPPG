@@ -7255,8 +7255,7 @@ let cropState = {
 };
 
 // ==================== API WRAPPER ====================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz10Ne_U1i2q2xZCj_UAGlpC6Z_DQzYHPH1KT_Dq_kG1H7e1813nnLIHhqCuzs1g03d/exec';
-
+const SCRIPT_URL = 'https://<szwwpnbbsmjsbzzcecyj>.supabase.co/functions/v1/api';
 // ==================== INISIALISASI CACHE (harus sebelum apiCall) ====================
 let _apiCache = {};
 // Dengan persist ke localStorage, saat halaman dibuka ulang kita bisa
@@ -7386,7 +7385,7 @@ function apiCall(funcName, data, opts) {
     if(!silent) showLoading(true);
     fetch(SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ function: funcName, data: data })
     })
     .then(res => res.json())
