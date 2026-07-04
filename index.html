@@ -10006,7 +10006,7 @@ function renderUserGrid(users) {
   }
   crudResetSelection('users', users);
   container.innerHTML = users.map(u => `
-    <div class="user-card" data-crud-id="${escapeHtml(u.ID_User)}" onclick="crudOpenDetail('users', '${escapeHtml(u.ID_User)}')">
+    <div class="user-card" data-crud-id="${escapeHtml(u.ID_User)}" onclick="crudOpenDetail('users', ${JSON.stringify(u.ID_User)})">
       <img src="${u.URL_Foto_Profil ? escapeHtml(encodeURI(u.URL_Foto_Profil)) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" class="user-card-img" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'">
       <div class="user-card-body">
         <div class="user-card-name">${escapeHtml(u.Nama_Lengkap)}</div>
@@ -10140,7 +10140,7 @@ function renderDataKaryawanView(data) {
       wrapper.parentNode.insertBefore(cardContainer, wrapper);
     }
     cardContainer.innerHTML = data.map(k => `
-      <div class="mobile-data-card" data-crud-id="${escapeHtml(k.idUser)}" onclick="crudOpenDetailUserFromKaryawan('${escapeHtml(k.idUser)}')">
+      <div class="mobile-data-card" data-crud-id="${escapeHtml(k.idUser)}" onclick="crudOpenDetailUserFromKaryawan(${JSON.stringify(k.idUser)})">
         <div class="mobile-data-card-top">
           <div>
             <div class="mobile-data-card-title">${escapeHtml(k.namaLengkap)}</div>
@@ -10183,7 +10183,7 @@ function renderDataKaryawanView(data) {
 
   tbody.innerHTML = data.map(k => `
     <tr class="crud-clickable-row" data-crud-id="${escapeHtml(k.idUser)}">
-      <td class="crud-check-col" onclick="event.stopPropagation();"><input type="checkbox" class="crud-row-checkbox" data-id="${escapeHtml(k.idUser)}" onchange="crudToggleSelect('${escapeHtml(k.idUser)}', this.checked)"></td>
+      <td class="crud-check-col" onclick="event.stopPropagation();"><input type="checkbox" class="crud-row-checkbox" data-id="${escapeHtml(k.idUser)}" onchange="crudToggleSelect(${JSON.stringify(k.idUser)}, this.checked)"></td>
       <td data-label="Nama">${escapeHtml(k.namaLengkap)}</td>
       <td data-label="Role"><span class="badge badge-blue">${escapeHtml(k.role||'')}</span></td>
       <td data-label="Jabatan">${escapeHtml(k.jabatanDivisi)}</td>
@@ -10276,7 +10276,7 @@ function _renderPayrollRows(list) {
       <div class="mobile-data-card" id="payroll-row-${escapeHtml(k.idUser)}" style="display:flex; align-items:flex-start; gap:0.625rem;">
         <input type="checkbox" class="payroll-check" data-id="${escapeHtml(k.idUser)}" ${checked}
           style="margin-top:0.2rem; width:18px; height:18px; accent-color:var(--primary); flex-shrink:0;"
-          onchange="togglePayrollSelect('${escapeHtml(k.idUser)}', this.checked)">
+          onchange="togglePayrollSelect(${JSON.stringify(k.idUser)}, this.checked)">
         <div style="flex:1; min-width:0;">
           <div class="mobile-data-card-top">
             <div>
@@ -10310,7 +10310,7 @@ function _renderPayrollRows(list) {
     return `<tr id="payroll-row-${k.idUser}">
       <td data-label="Pilih" style="text-align:center;">
         <input type="checkbox" class="payroll-check" data-id="${escapeHtml(k.idUser)}" ${checked}
-          onchange="togglePayrollSelect('${escapeHtml(k.idUser)}', this.checked)">
+          onchange="togglePayrollSelect(${JSON.stringify(k.idUser)}, this.checked)">
       </td>
       <td data-label="Nama" style="font-weight:500;">${escapeHtml(k.namaLengkap)}</td>
       <td data-label="Role"><span class="badge badge-blue">${escapeHtml(k.role||'USER')}</span></td>
@@ -10499,17 +10499,17 @@ async function _renderPayrollKaryawanInputs() {
           <div class="form-group">
             <label class="form-label">Bonus (Rp)</label>
             <input class="form-input payroll-bonus" data-id="${escapeHtml(id)}" type="number" min="0" value="0"
-              oninput="updatePayrollEstimasi('${escapeHtml(id)}')">
+              oninput="updatePayrollEstimasi(${JSON.stringify(id)})">
           </div>
           <div class="form-group">
             <label class="form-label">Lembur (Rp)</label>
             <input class="form-input payroll-lembur" data-id="${escapeHtml(id)}" type="number" min="0" value="0"
-              oninput="updatePayrollEstimasi('${escapeHtml(id)}')">
+              oninput="updatePayrollEstimasi(${JSON.stringify(id)})">
           </div>
           <div class="form-group">
             <label class="form-label">Potongan (Rp)</label>
             <input class="form-input payroll-potongan" data-id="${escapeHtml(id)}" type="number" min="0" value="0"
-              oninput="updatePayrollEstimasi('${escapeHtml(id)}')">
+              oninput="updatePayrollEstimasi(${JSON.stringify(id)})">
           </div>
         </div>
         <div class="form-group" style="margin-bottom:0;">
@@ -10825,7 +10825,7 @@ ${escapeHtml(a.jabatanDivisi||'-')}
     const skorTextDesktop = skorNumDesktop !== null ? skorNumDesktop.toFixed(1) + '%' : '-';
     return `
     <tr class="crud-clickable-row" data-crud-id="${escapeHtml(a.ID_Absen)}">
-      <td class="crud-check-col" onclick="event.stopPropagation();"><input type="checkbox" class="crud-row-checkbox" data-id="${escapeHtml(a.ID_Absen)}" onchange="crudToggleSelect('${escapeHtml(a.ID_Absen)}', this.checked)"></td>
+      <td class="crud-check-col" onclick="event.stopPropagation();"><input type="checkbox" class="crud-row-checkbox" data-id="${escapeHtml(a.ID_Absen)}" onchange="crudToggleSelect(${JSON.stringify(a.ID_Absen)}, this.checked)"></td>
       <td>${formatDate(a.Tanggal)}</td>
       <td>${escapeHtml(a.namaLengkap)}</td>
       <td><span class="badge badge-blue">${escapeHtml(a.role||'')}</span></td>
@@ -12427,8 +12427,8 @@ function _renderInboxList(list) {
       : '👤 ' + escapeHtml(p.User_Pengirim || '-');
 
     return `
-      <div class="pengaduan-item ${isBelum ? 'belum-dibaca' : ''}"
-           onclick="showDetailPengaduan('${escapeHtml(p.ID_Pengaduan)}')">
+          <div class="pengaduan-item ${isBelum ? 'belum-dibaca' : ''}"
+            onclick="showDetailPengaduan(${JSON.stringify(p.ID_Pengaduan)})">
         <div class="pengaduan-item-top">
           <div class="pengaduan-item-title">
             ${unreadDot}
