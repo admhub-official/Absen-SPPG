@@ -6793,6 +6793,7 @@ Filter
   </div><!-- /main-content -->
 </div><!-- /app-layout -->
 
+<script src="./supabase-config.js"></script>
 <script>
 
 // ==================== ICON ABSENSI (dari Google Drive) ====================
@@ -7255,7 +7256,8 @@ let cropState = {
 };
 
 // ==================== API WRAPPER ====================
-const SCRIPT_URL = 'https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';// ==================== INISIALISASI CACHE (harus sebelum apiCall) ====================
+const SCRIPT_URL = (window.ABSEN_SUPABASE_CONFIG && window.ABSEN_SUPABASE_CONFIG.functionUrl) || 'https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';
+// ==================== INISIALISASI CACHE (harus sebelum apiCall) ====================
 let _apiCache = {};
 // Dengan persist ke localStorage, saat halaman dibuka ulang kita bisa
 // langsung render data lama (stale-while-revalidate) sebelum fetch baru
