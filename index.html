@@ -4305,195 +4305,6 @@ max-width: 480px;
       flex: 1;
     }
 
-    /* ==================== REGISTRASI: STEP WAJAH & FOTO ==================== */
-    .reg-step-bar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0;
-      margin-bottom: 1.5rem;
-    }
-
-    .reg-step-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.3rem;
-      position: relative;
-    }
-
-    .reg-step-circle {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--border);
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8rem;
-      font-weight: 700;
-      transition: var(--transition);
-      border: 2px solid transparent;
-      flex-shrink: 0;
-    }
-
-    .reg-step-item.active .reg-step-circle {
-      background: var(--primary);
-      color: white;
-      border-color: #bfdbfe;
-      box-shadow: 0 0 0 4px rgba(59,130,246,0.15);
-    }
-
-    .reg-step-item.done .reg-step-circle {
-      background: var(--success);
-      color: white;
-    }
-
-    .reg-step-label {
-      font-size: 0.6rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      white-space: nowrap;
-    }
-
-    .reg-step-item.active .reg-step-label { color: var(--primary); }
-    .reg-step-item.done .reg-step-label { color: var(--success); }
-
-    .reg-step-line {
-      width: 36px;
-      height: 2px;
-      background: var(--border);
-      margin-bottom: 16px;
-      transition: var(--transition);
-      flex-shrink: 0;
-    }
-
-    .reg-step-line.done { background: var(--success); }
-    /* ==================== REGISTRATION PROGRESS — MOBILE ONLY (C3 FIX) ==================== */
-.reg-progress-mobile {
-display: none;
-flex-direction: column;
-gap: 0.5rem;
-margin-bottom: 1.25rem;
-padding: 0.75rem 0.875rem;
-background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-border: 1px solid #bfdbfe;
-border-radius: var(--radius-lg);
-}
-.reg-progress-mobile-text {
-display: flex;
-justify-content: space-between;
-align-items: center;
-font-size: 0.8125rem;
-color: var(--text);
-}
-.reg-progress-mobile-step {
-color: var(--text-secondary);
-}
-.reg-progress-mobile-step strong {
-color: var(--primary-dark);
-font-size: 1rem;
-font-weight: 800;
-}
-.reg-progress-mobile-label {
-font-weight: 700;
-color: var(--primary-dark);
-}
-.reg-progress-mobile-bar {
-height: 6px;
-background: rgba(59,130,246,0.15);
-border-radius: 999px;
-overflow: hidden;
-}
-.reg-progress-mobile-fill {
-height: 100%;
-background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
-border-radius: 999px;
-transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-@media (max-width: 639px) {
-.reg-progress-mobile { display: flex; }
-.reg-step-bar { display: none; }
-}
-@media (min-width: 640px) {
-.reg-progress-mobile { display: none !important; }
-}
-
-    /* Panel tiap step */
-    .reg-panel { display: none; }
-    .reg-panel.active { display: block; }
-
-    /* Preview foto saat registrasi */
-    .reg-foto-preview-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-    }
-
-    .reg-foto-circle {
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      border: 3px dashed var(--border);
-      background: var(--bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      transition: border-color 0.2s;
-      flex-shrink: 0;
-    }
-
-    .reg-foto-circle.has-foto {
-      border-color: var(--primary);
-      border-style: solid;
-    }
-
-    .reg-foto-circle img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .reg-foto-circle .placeholder-icon {
-      color: var(--text-muted);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.75rem;
-      font-weight: 500;
-    }
-
-    /* Wajah scan area saat registrasi */
-    .reg-wajah-status-box {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 0.75rem 1rem;
-      font-size: 0.8125rem;
-      color: var(--text-secondary);
-      text-align: center;
-      margin-top: 0.75rem;
-      font-weight: 500;
-      transition: var(--transition);
-    }
-
-    .reg-wajah-status-box.success {
-      background: var(--success-light);
-      border-color: #6ee7b7;
-      color: #065f46;
-    }
-
-    .reg-wajah-status-box.warning {
-      background: var(--warning-light);
-      border-color: #fcd34d;
       color: #92400e;
     }
 
@@ -5458,8 +5269,8 @@ display: flex !important;
       </div>
       <div id="login-form-section">
         <div class="form-group">
-          <label class="form-label">Username</label>
-          <input type="text" id="login-username" class="form-input" placeholder="Masukkan username">
+          <label class="form-label">Email</label>
+          <input type="email" id="login-email" class="form-input" placeholder="Masukkan email">
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
@@ -5498,203 +5309,25 @@ display: flex !important;
 
   <!-- PAGE: REGISTER -->
   <div id="page-register" class="page auth-page hidden">
-    <div class="auth-card" style="max-width:640px; max-height:96vh; overflow-y:auto;">
+    <div class="auth-card" style="max-width:540px;">
       <div class="auth-logo">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-        Registrasi Karyawan
+        Registrasi Akun
       </div>
-
-      <!-- Progress mobile (hanya tampil di layar kecil, menggantikan step bar) -->
-      <div class="reg-progress-mobile" id="reg-progress-mobile">
-        <div class="reg-progress-mobile-text">
-          <span class="reg-progress-mobile-step">Step <strong id="reg-progress-step-num">1</strong> dari 3</span>
-          <span class="reg-progress-mobile-label" id="reg-progress-step-label">Data Diri</span>
-          </div>
-          <div class="reg-progress-mobile-bar">
-            <div class="reg-progress-mobile-fill" id="reg-progress-mobile-fill" style="width:33.33%"></div>
-            </div>
-            </div>
-            <!-- Step bar desktop (tetap seperti semula) -->
-            <div class="reg-step-bar" id="reg-step-bar">
-              <div class="reg-step-item active" data-step="1">
-                <div class="reg-step-circle">1</div>
-                <div class="reg-step-label">Data Diri</div>
-                </div>
-                <div class="reg-step-line" id="reg-step-line-1"></div>
-                <div class="reg-step-item" data-step="2">
-                  <div class="reg-step-circle">2</div>
-                  <div class="reg-step-label">Foto Profil</div>
-                  </div>
-                  <div class="reg-step-line" id="reg-step-line-2"></div>
-                  <div class="reg-step-item" data-step="3">
-                    <div class="reg-step-circle">3</div>
-                    <div class="reg-step-label">Data Wajah</div>
-                    </div>
-                    </div>
-
-      <!-- STEP 1: Data diri -->
-      <div class="reg-panel active" id="reg-panel-1">
-        <div class="form-row form-row-2">
-          <div class="form-group"><label class="form-label">Nama Lengkap *</label><input type="text" id="reg-nama" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Username *</label><input type="text" id="reg-username" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Password *</label><input type="password" id="reg-password" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Konfirmasi Password *</label><input type="password" id="reg-confirm-password" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Tempat Lahir</label><input type="text" id="reg-tempat-lahir" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Tanggal Lahir</label><input type="date" id="reg-tanggal-lahir" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Jenis Kelamin</label>
-            <div class="flex gap-2">
-              <label class="checkbox-row"><input type="radio" name="reg-jk" value="L"> Laki-laki</label>
-              <label class="checkbox-row"><input type="radio" name="reg-jk" value="P"> Perempuan</label>
-            </div>
-          </div>
-          <div class="form-group"><label class="form-label">Email</label><input type="email" id="reg-email" class="form-input"></div>
-          <div class="form-group"><label class="form-label">No. Whatsapp</label><input type="text" id="reg-whatsapp" class="form-input"></div>
-          <div class="form-group"><label class="form-label">SPPG</label>
-            <select id="reg-sppg" class="form-select"><option value="">Pilih SPPG</option></select>
-          </div>
-          <div class="form-group hidden" id="reg-sppg-lainnya-group"><label class="form-label">SPPG Lainnya</label><input type="text" id="reg-sppg-lainnya" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Tanggal Mulai Kerja</label><input type="date" id="reg-tanggal-mulai" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Jabatan/Divisi</label><select id="reg-jabatan" class="form-select"><option value="">Pilih Jabatan</option></select></div>
-          <div class="form-group hidden" id="reg-jabatan-lainnya-group"><label class="form-label">Jabatan/Divisi Lainnya</label><input type="text" id="reg-jabatan-lainnya" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Gaji Harian (Rp)</label><input type="number" id="reg-gaji" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Nama Bank</label><input type="text" id="reg-bank" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Atas Nama Rekening</label><input type="text" id="reg-rekening" class="form-input" placeholder="1234567890 a.n. Nama"></div>
-        </div>
-        <div class="checkbox-row mb-3">
-          <input type="checkbox" id="reg-setuju">
-          <label for="reg-setuju">Saya menyetujui kebijakan penggunaan data pribadi</label>
-        </div>
-        <button id="btn-reg-next-1" class="btn btn-primary btn-block btn-lg">
-          Lanjut: Foto Profil
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <div class="auth-footer"><a id="btn-to-login">← Sudah punya akun? Login</a></div>
+      <div class="form-group"><label class="form-label">Nama Lengkap *</label><input type="text" id="reg-nama" class="form-input" placeholder="Nama lengkap"></div>
+      <div class="form-group"><label class="form-label">Username *</label><input type="text" id="reg-username" class="form-input" placeholder="Username untuk login"></div>
+      <div class="form-group"><label class="form-label">Email *</label><input type="email" id="reg-email" class="form-input" placeholder="Email aktif"></div>
+      <div class="form-group"><label class="form-label">Konfirmasi Email *</label><input type="email" id="reg-confirm-email" class="form-input" placeholder="Konfirmasi email"></div>
+      <div class="form-group"><label class="form-label">Password *</label><input type="password" id="reg-password" class="form-input" placeholder="Password"></div>
+      <div class="form-group"><label class="form-label">Konfirmasi Password *</label><input type="password" id="reg-confirm-password" class="form-input" placeholder="Konfirmasi password"></div>
+      <div class="checkbox-row mb-3">
+        <input type="checkbox" id="reg-setuju">
+        <label for="reg-setuju">Saya menyetujui kebijakan penggunaan data pribadi</label>
       </div>
-
-      <!-- STEP 2: Foto Profil -->
-      <div class="reg-panel" id="reg-panel-2">
-        <div style="text-align:center; margin-bottom:1.25rem;">
-          <div style="font-size:1rem; font-weight:700; color:var(--text);">Upload Foto Profil</div>
-          <div style="font-size:0.8125rem; color:var(--text-secondary); margin-top:0.25rem;">Foto akan dipakai sebagai tampilan profil Anda di sistem</div>
-        </div>
-
-        <div class="reg-foto-preview-wrap">
-          <div class="reg-foto-circle" id="reg-foto-circle">
-            <div class="placeholder-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <span>Belum ada foto</span>
-            </div>
-          </div>
-          <div id="reg-foto-status" style="font-size:0.8125rem; color:var(--text-muted);">Pilih salah satu metode di bawah</div>
-        </div>
-
-        <div class="grid grid-2" style="gap:0.75rem; margin-bottom:1rem;">
-          <button class="btn btn-secondary" id="btn-reg-foto-kamera">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            Ambil dari Kamera
-          </button>
-          <button class="btn btn-outline" id="btn-reg-foto-galeri">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            Pilih dari Galeri
-          </button>
-        </div>
-        <input type="file" id="reg-foto-file" accept="image/*" class="hidden">
-
-        <!-- Area kamera live untuk ambil foto -->
-        <div id="reg-foto-kamera-wrap" class="hidden" style="margin-bottom:1rem;">
-          <div class="camera-container" style="max-width:100%;">
-            <video id="reg-foto-video" style="width:100%; border-radius:var(--radius-lg);" autoplay playsinline muted></video>
-          </div>
-          <button class="btn btn-primary btn-block" id="btn-reg-capture-foto" style="margin-top:0.75rem;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
-            Ambil Foto
-          </button>
-          <button class="btn btn-outline btn-block" id="btn-reg-foto-kamera-cancel" style="margin-top:0.5rem;">Batal</button>
-        </div>
-
-        <div class="flex gap-2" style="margin-top:0.5rem;">
-          <button class="btn btn-outline" id="btn-reg-back-1" style="flex:1;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            Kembali
-          </button>
-          <button id="btn-reg-next-2" class="btn btn-primary" style="flex:2;">
-            Lanjut: Data Wajah
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </div>
-        <div style="text-align:center; margin-top:0.75rem;">
-          <a id="btn-reg-skip-foto" style="font-size:0.8125rem; color:var(--text-muted); cursor:pointer; text-decoration:underline;">Lewati, isi foto nanti</a>
-        </div>
-      </div>
-
-      <!-- STEP 3: Data Wajah -->
-      <div class="reg-panel" id="reg-panel-3">
-        <div style="text-align:center; margin-bottom:1.25rem;">
-          <div style="font-size:1rem; font-weight:700; color:var(--text);">Daftarkan Data Wajah</div>
-          <div style="font-size:0.8125rem; color:var(--text-secondary); margin-top:0.25rem;">Data wajah dipakai untuk verifikasi saat absensi. Tersenyum sedikit saat kamera aktif.</div>
-        </div>
-
-        <div class="camera-container" id="reg-wajah-cam-container">
-          <video id="reg-wajah-video" style="width:100%; border-radius:var(--radius-lg);" autoplay playsinline muted></video>
-          <div class="face-guide" id="reg-wajah-face-guide"></div>
-        </div>
-
-        <div class="scan-steps" id="reg-wajah-scan-steps" style="margin-top:0.875rem;">
-          <div class="scan-step" data-step="detect">
-            <div class="scan-step-circle">1</div>
-            <div class="scan-step-label">Deteksi</div>
-          </div>
-          <div class="scan-step-connector" data-connector="1"></div>
-          <div class="scan-step" data-step="center">
-            <div class="scan-step-circle">2</div>
-            <div class="scan-step-label">Posisi</div>
-          </div>
-          <div class="scan-step-connector" data-connector="2"></div>
-          <div class="scan-step" data-step="smile">
-            <div class="scan-step-circle">3</div>
-            <div class="scan-step-label">Senyum</div>
-          </div>
-        </div>
-
-        <div class="scan-hint-box" id="reg-wajah-hint-box" style="margin-top:0.75rem;">Klik tombol di bawah untuk mulai scan wajah</div>
-
-        <div class="reg-wajah-status-box" id="reg-wajah-status-box" style="margin-top:0.5rem; display:none;"></div>
-
-        <div id="reg-wajah-result" class="hidden" style="text-align:center; padding:1rem 0;">
-          <div style="font-size:2.5rem; margin-bottom:0.5rem;">✅</div>
-          <div style="font-weight:700; color:var(--success);">Data wajah berhasil direkam!</div>
-          <div style="font-size:0.8125rem; color:var(--text-muted); margin-top:0.25rem;">Klik "Daftar Sekarang" untuk menyelesaikan registrasi</div>
-        </div>
-
-        <div id="reg-wajah-actions" style="margin-top:1rem;">
-          <button class="btn btn-secondary btn-block" id="btn-reg-start-wajah">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Mulai Scan Wajah
-          </button>
-          <button class="btn btn-outline btn-block hidden" id="btn-reg-ulang-wajah" style="margin-top:0.5rem;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.41"/></svg>
-            Scan Ulang
-          </button>
-        </div>
-
-        <div class="flex gap-2" style="margin-top:0.875rem;">
-          <button class="btn btn-outline" id="btn-reg-back-2" style="flex:1;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            Kembali
-          </button>
-          <button id="btn-register" class="btn btn-primary" style="flex:2;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Daftar Sekarang
-          </button>
-        </div>
-        <div style="text-align:center; margin-top:0.625rem;">
-          <a id="btn-reg-skip-wajah" style="font-size:0.8125rem; color:var(--text-muted); cursor:pointer; text-decoration:underline;">Lewati, daftar wajah nanti via Profil</a>
-        </div>
-      </div>
-
+      <button id="btn-register" class="btn btn-primary btn-block btn-lg">Daftar Sekarang</button>
+      <div class="auth-footer"><a id="btn-to-login">← Sudah punya akun? Login</a></div>
     </div>
   </div>
-</div>
 
 <!-- ==================== MODAL LOGOUT KONFIRMASI ==================== -->
 
@@ -7568,13 +7201,13 @@ function prefetchCommonData() {
 
 // ==================== AUTH ====================
 async function doLogin() {
-  const username = $('#login-username').value.trim();
+  const email = $('#login-email').value.trim();
   const password = $('#login-password').value;
-  if(!username || !password) { showAlert('Username dan password wajib diisi'); return; }
+  if(!email || !password) { showAlert('Email dan password wajib diisi'); return; }
   const btnLogin = $('#btn-login');
   setButtonLoading(btnLogin, true, 'Memproses...');
   try {
-    const res = await apiCall('login', { username, password });
+    const res = await apiCall('login', { email, username: email, password });
     if(res.user) {
       AppState.token = res.token;
       AppState.user = res.user;
@@ -7980,6 +7613,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   safeOn('#btn-login', 'click', doLogin);
   safeOn('#login-password', 'keypress', e => { if(e.key==='Enter') doLogin(); });
+  safeOn('#login-email', 'keypress', e => { if(e.key==='Enter') doLogin(); });
   safeOn('#btn-to-register', 'click', () => navigateTo('register'));
   safeOn('#btn-to-login', 'click', () => navigateTo('login'));
   safeOn('#btn-forgot', 'click', showForgotPassword);
@@ -8094,115 +7728,33 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==================== REGISTER ====================
 
 // State registrasi multi-step
-const RegState = {
-  currentStep: 1,
-  fotoBase64: null,
-  fotoOriginalBase64: null,
-  faceDescriptor: null,
-  wajahScanActive: false,
-  wajahInterval: null
-};
-
 async function initRegister() {
   console.log('[REGISTER] initRegister() dipanggil');
-  stopRegWajahScan();
   stopVideo();
 
-  // Reset ke step 1
-  RegState.currentStep = 1;
-  RegState.fotoBase64 = null;
-  RegState.fotoOriginalBase64 = null;
-  RegState.faceDescriptor = null;
-  RegState.wajahScanActive = false;
-
-  setRegStep(1);
-  resetRegFotoUI();
-  resetRegWajahUI();
-
-  // Pulihkan draft yang tersimpan (jika ada), lalu pasang autosave
-  restoreRegDraft();
-  attachRegAutosave();
-  if (RegState.fotoBase64) {
-    const circle = document.getElementById('reg-foto-circle');
-    const status = document.getElementById('reg-foto-status');
-    if (circle) { circle.innerHTML = `<img src="${RegState.fotoBase64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; circle.classList.add('has-foto'); }
-    if (status) status.textContent = 'Foto tersimpan dari draft sebelumnya';
-  }
-
-  // Pasang listener step
-  const btnNext1 = document.getElementById('btn-reg-next-1');
-  const btnBack1 = document.getElementById('btn-reg-back-1');
-  const btnNext2 = document.getElementById('btn-reg-next-2');
-  const btnSkipFoto = document.getElementById('btn-reg-skip-foto');
-  const btnBack2 = document.getElementById('btn-reg-back-2');
-  const btnSkipWajah = document.getElementById('btn-reg-skip-wajah');
-  const btnStartWajah = document.getElementById('btn-reg-start-wajah');
-  const btnUlangWajah = document.getElementById('btn-reg-ulang-wajah');
-  const btnRegFotoKamera = document.getElementById('btn-reg-foto-kamera');
-  const btnRegFotoGaleri = document.getElementById('btn-reg-foto-galeri');
-  const btnRegCaptureFoto = document.getElementById('btn-reg-capture-foto');
-  const btnRegFotoKameraCancel = document.getElementById('btn-reg-foto-kamera-cancel');
-  const regFotoFile = document.getElementById('reg-foto-file');
-
-  // Bersihkan listener lama (clone node)
-  function rebind(id, handler) {
+  // Reset form fields for the simplified register flow.
+  ['reg-nama', 'reg-username', 'reg-email', 'reg-confirm-email', 'reg-password', 'reg-confirm-password'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    const clone = el.cloneNode(true);
-    el.parentNode.replaceChild(clone, el);
-    clone.addEventListener('click', handler);
-    return clone;
+    if (el.type === 'checkbox') el.checked = false;
+    else el.value = '';
+  });
+  const setujuEl = document.getElementById('reg-setuju');
+  if (setujuEl) setujuEl.checked = false;
+
+  restoreRegDraft();
+  attachRegAutosave();
+
+  const btnReg = document.getElementById('btn-register');
+  if (btnReg) {
+    const clone = btnReg.cloneNode(true);
+    btnReg.parentNode.replaceChild(clone, btnReg);
+    clone.addEventListener('click', doRegister);
   }
 
-  rebind('btn-reg-next-1', regValidateStep1);
-  rebind('btn-reg-back-1', () => setRegStep(1));
-  rebind('btn-reg-next-2', regGoToStep3);
-  rebind('btn-reg-skip-foto', () => { RegState.fotoBase64 = null; saveRegDraftMedia(); regGoToStep3(); });
-  rebind('btn-reg-back-2', () => { stopRegWajahScan(); setRegStep(2); });
-  rebind('btn-reg-skip-wajah', () => { RegState.faceDescriptor = null; saveRegDraftMedia(); stopRegWajahScan(); doRegister(); });
-  rebind('btn-register', doRegister);
-  rebind('btn-reg-start-wajah', startRegWajahScan);
-  rebind('btn-reg-ulang-wajah', () => { RegState.faceDescriptor = null; resetRegWajahUI(); startRegWajahScan(); });
-  rebind('btn-reg-foto-kamera', openRegFotoKamera);
-  rebind('btn-reg-foto-galeri', () => document.getElementById('reg-foto-file')?.click());
-  rebind('btn-reg-capture-foto', captureRegFoto);
-  rebind('btn-reg-foto-kamera-cancel', closeRegFotoKamera);
-
-  const fileInput = document.getElementById('reg-foto-file');
-  if (fileInput) {
-    const newFile = fileInput.cloneNode(true);
-    fileInput.parentNode.replaceChild(newFile, fileInput);
-    newFile.addEventListener('change', handleRegFotoFile);
-  }
-
-  // Muat data master (SPPG & Jabatan)
-  try {
-    const masters = await apiCall('getMasterData', {});
-    const sppgSel = document.getElementById('reg-sppg');
-    if (sppgSel) {
-      sppgSel.innerHTML = '<option value="">Pilih SPPG</option>' +
-        masters.sppg.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('') +
-        '<option value="LAINNYA">Lainnya</option>';
-    }
-    const jabSel = document.getElementById('reg-jabatan');
-    if (jabSel) {
-      jabSel.innerHTML = '<option value="">Pilih Jabatan</option>' +
-        masters.jabatan.map(j => `<option value="${escapeHtml(j)}">${escapeHtml(j)}</option>`).join('') +
-        '<option value="LAINNYA">Lainnya</option>';
-    }
-
-    // Re-attach SPPG/jabatan change listener setelah clone
-    const sppgSelNew = document.getElementById('reg-sppg');
-    const jabSelNew = document.getElementById('reg-jabatan');
-    if (sppgSelNew) sppgSelNew.addEventListener('change', e => {
-      document.getElementById('reg-sppg-lainnya-group').classList.toggle('hidden', e.target.value !== 'LAINNYA');
-    });
-    if (jabSelNew) jabSelNew.addEventListener('change', e => {
-      document.getElementById('reg-jabatan-lainnya-group').classList.toggle('hidden', e.target.value !== 'LAINNYA');
-    });
-  } catch (e) {
-    console.error('[REGISTER] Gagal memuat master data:', e);
-    showAlert('Gagal memuat data SPPG/Jabatan: ' + e + '. Coba refresh halaman.', 'warning');
+  const btnLoginLink = document.getElementById('btn-to-login');
+  if (btnLoginLink) {
+    btnLoginLink.addEventListener('click', () => navigateTo('login'));
   }
 }
 
@@ -8212,22 +7764,16 @@ const REG_DRAFT_KEY = 'absensi_reg_draft';
 // Field yang di-autosave. Password TIDAK disimpan demi keamanan —
 // user akan diminta mengetik ulang password saat draft dipulihkan.
 const REG_DRAFT_FIELDS = [
-  'reg-username', 'reg-nama', 'reg-tempat-lahir', 'reg-tanggal-lahir',
-  'reg-email', 'reg-whatsapp', 'reg-sppg', 'reg-sppg-lainnya',
-  'reg-tanggal-mulai', 'reg-jabatan', 'reg-jabatan-lainnya',
-  'reg-gaji', 'reg-bank', 'reg-rekening'
+  'reg-username', 'reg-nama', 'reg-email', 'reg-confirm-email'
 ];
 
 // Simpan draft HANYA field teks (dipanggil setiap ketikan/oninput).
-// Foto & face descriptor SENGAJA tidak ikut ditulis di sini karena bisa
-// berukuran ratusan KB — menulis ulang setiap ketikan huruf akan lag dan
-// berisiko QuotaExceededError. Media disimpan terpisah via saveRegDraftMedia().
 function saveRegDraft() {
   try {
     const raw = localStorage.getItem(REG_DRAFT_KEY);
     const existing = raw ? JSON.parse(raw) : {};
 
-    const draft = { ...existing, step: RegState.currentStep, fields: {} };
+    const draft = { ...existing, fields: {} };
     REG_DRAFT_FIELDS.forEach(id => {
       const el = document.getElementById(id);
       if (el) draft.fields[id] = el.value;
@@ -8246,17 +7792,14 @@ function saveRegDraft() {
   }
 }
 
-// Simpan draft KHUSUS foto profil & face descriptor. Dipanggil hanya saat
-// foto selesai di-crop atau scan wajah berhasil (bukan setiap ketikan),
-// supaya localStorage tidak ditulis ulang berat berulang kali.
 function saveRegDraftMedia() {
   try {
     const raw = localStorage.getItem(REG_DRAFT_KEY);
-    const existing = raw ? JSON.parse(raw) : { fields: {}, step: RegState.currentStep };
+    const existing = raw ? JSON.parse(raw) : { fields: {} };
 
-    existing.fotoBase64 = RegState.fotoBase64 || null;
-    existing.fotoOriginalBase64 = RegState.fotoOriginalBase64 || null;
-    existing.faceDescriptor = RegState.faceDescriptor || null;
+    existing.fotoBase64 = null;
+    existing.fotoOriginalBase64 = null;
+    existing.faceDescriptor = null;
     existing.savedAt = Date.now();
     localStorage.setItem(REG_DRAFT_KEY, JSON.stringify(existing));
   } catch (e) {
@@ -8281,12 +7824,10 @@ function clearRegDraft() {
   localStorage.removeItem(REG_DRAFT_KEY);
 }
 
-// Pulihkan draft ke form. Dipanggil sekali saat initRegister().
 function restoreRegDraft() {
   const draft = loadRegDraft();
   if (!draft) return;
 
-  // Draft lebih lama dari 24 jam dianggap kedaluwarsa, tidak dipulihkan.
   if (Date.now() - (draft.savedAt || 0) > 24 * 60 * 60 * 1000) {
     clearRegDraft();
     return;
@@ -8303,16 +7844,11 @@ function restoreRegDraft() {
   const setujuEl = document.getElementById('reg-setuju');
   if (setujuEl) setujuEl.checked = !!draft.setuju;
 
-  RegState.fotoBase64 = draft.fotoBase64 || null;
-  RegState.fotoOriginalBase64 = draft.fotoOriginalBase64 || null;
-  RegState.faceDescriptor = draft.faceDescriptor || null;
-
   if (draft.fields && (draft.fields['reg-username'] || draft.fields['reg-nama'])) {
     showAlert('Draft registrasi sebelumnya dipulihkan. Silakan isi ulang password.', 'info');
   }
 }
 
-// Pasang autosave pada semua field yang relevan (dipanggil sekali saat initRegister()).
 function attachRegAutosave() {
   REG_DRAFT_FIELDS.forEach(id => {
     const el = document.getElementById(id);
@@ -8332,341 +7868,6 @@ function attachRegAutosave() {
   if (setujuEl && !setujuEl._autosaveBound) {
     setujuEl.addEventListener('change', saveRegDraft);
     setujuEl._autosaveBound = true;
-  }
-}
-
-function setRegStep(step) {
-RegState.currentStep = step;
-// Label per step (untuk progress mobile)
-const STEP_LABELS = { 1: 'Data Diri', 2: 'Foto Profil', 3: 'Data Wajah' };
-// Update panel
-[1, 2, 3].forEach(s => {
-const panel = document.getElementById('reg-panel-' + s);
-if (panel) panel.classList.toggle('active', s === step);
-});
-// Update step bar (desktop)
-[1, 2, 3].forEach(s => {
-const item = document.querySelector(`.reg-step-item[data-step="${s}"]`);
-if (!item) return;
-item.classList.remove('active', 'done');
-if (s < step) item.classList.add('done');
-else if (s === step) item.classList.add('active');
-});
-const line1 = document.getElementById('reg-step-line-1');
-const line2 = document.getElementById('reg-step-line-2');
-if (line1) line1.classList.toggle('done', step > 1);
-if (line2) line2.classList.toggle('done', step > 2);
-// C3 FIX: sync progress bar mobile
-const stepNumEl = document.getElementById('reg-progress-step-num');
-const stepLabelEl = document.getElementById('reg-progress-step-label');
-const fillEl = document.getElementById('reg-progress-mobile-fill');
-if (stepNumEl) stepNumEl.textContent = step;
-if (stepLabelEl) stepLabelEl.textContent = STEP_LABELS[step] || '';
-if (fillEl) fillEl.style.width = ((step / 3) * 100).toFixed(2) + '%';
-}
-
-function regValidateStep1() {
-  const username = document.getElementById('reg-username')?.value.trim();
-  const password = document.getElementById('reg-password')?.value;
-  const confirmPassword = document.getElementById('reg-confirm-password')?.value;
-  const namaLengkap = document.getElementById('reg-nama')?.value.trim();
-  const setuju = document.getElementById('reg-setuju')?.checked;
-
-  if (!namaLengkap || !username || !password) {
-    showAlert('Nama Lengkap, Username, dan Password wajib diisi', 'warning'); return;
-  }
-  if (password !== confirmPassword) {
-    showAlert('Password dan konfirmasi tidak cocok', 'warning'); return;
-  }
-  if (!setuju) {
-    showAlert('Anda harus menyetujui kebijakan data', 'warning'); return;
-  }
-  setRegStep(2);
-}
-
-function regGoToStep3() {
-  setRegStep(3);
-  // Hentikan kamera foto jika masih aktif
-  const wrap = document.getElementById('reg-foto-kamera-wrap');
-  if (wrap && !wrap.classList.contains('hidden')) closeRegFotoKamera();
-}
-
-// ===== STEP 2: FOTO PROFIL =====
-function resetRegFotoUI() {
-  const circle = document.getElementById('reg-foto-circle');
-  const status = document.getElementById('reg-foto-status');
-  if (circle) {
-    circle.innerHTML = `
-      <div class="placeholder-icon">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span>Belum ada foto</span>
-      </div>`;
-    circle.classList.remove('has-foto');
-  }
-  if (status) {
-    status.textContent = 'Pilih salah satu metode di bawah';
-    status.style.color = '';
-    status.style.fontWeight = '';
-  }
-  // Hapus tombol edit foto lama jika ada
-  const btnEdit = document.getElementById('btn-reg-edit-foto');
-  if (btnEdit) btnEdit.remove();
-  // Sembunyikan area kamera
-  const wrap = document.getElementById('reg-foto-kamera-wrap');
-  if (wrap) wrap.classList.add('hidden');
-}
-
-async function openRegFotoKamera() {
-  const wrap = document.getElementById('reg-foto-kamera-wrap');
-  const video = document.getElementById('reg-foto-video');
-  if (!wrap || !video) return;
-  wrap.classList.remove('hidden');
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-    AppState.videoStream = stream;
-    video.srcObject = stream;
-    video.style.transform = 'scaleX(-1)';
-    video.play();
-    const status = document.getElementById('reg-foto-status');
-    if (status) status.textContent = 'Posisikan wajah lalu klik Ambil Foto';
-  } catch(e) {
-    showAlert('Gagal mengakses kamera: ' + e.message, 'danger');
-    wrap.classList.add('hidden');
-  }
-}
-
-function closeRegFotoKamera() {
-  const wrap = document.getElementById('reg-foto-kamera-wrap');
-  if (wrap) wrap.classList.add('hidden');
-  stopVideo();
-}
-
-function captureRegFoto() {
-  const video = document.getElementById('reg-foto-video');
-  if (!video || !video.srcObject) return;
-
-  // Mirror canvas agar hasil capture sesuai tampilan (video sudah scaleX(-1))
-  const canvas = document.createElement('canvas');
-  const vW = video.videoWidth || 640;
-  const vH = video.videoHeight || 480;
-  canvas.width = vW;
-  canvas.height = vH;
-  const ctx = canvas.getContext('2d');
-  // Flip horizontal supaya hasil capture = cermin = wajah natural
-  ctx.translate(vW, 0);
-  ctx.scale(-1, 1);
-  ctx.drawImage(video, 0, 0, vW, vH);
-
-  const raw = canvas.toDataURL('image/jpeg', 0.95);
-  stopVideo();
-  closeRegFotoKamera();
-  // Langsung buka crop modal dengan foto yang baru diambil
-  openRegCropFoto(raw);
-}
-
-async function handleRegFotoFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  // Reset value agar file yang sama bisa dipilih ulang
-  e.target.value = '';
-  try {
-    showLoading(true);
-    const resized = await fileToResizedBase64(file, 1200);
-    showLoading(false);
-    openRegCropFoto(resized);
-  } catch(err) {
-    showLoading(false);
-    showAlert('Gagal memproses gambar: ' + err, 'danger');
-  }
-}
-
-function openRegCropFoto(imageSrc) {
-  RegState.fotoOriginalBase64 = imageSrc;
-  openCropModal(imageSrc, (croppedBase64) => {
-    RegState.fotoBase64 = croppedBase64;
-    RegState.fotoOriginalBase64 = imageSrc;
-    _updateRegFotoPreview(croppedBase64);
-  });
-}
-
-function _updateRegFotoPreview(croppedBase64) {
-  const circle = document.getElementById('reg-foto-circle');
-  if (circle) {
-    circle.innerHTML = `<img src="${croppedBase64}" alt="Foto Profil" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;">`;
-    circle.classList.add('has-foto');
-  }
-  const status = document.getElementById('reg-foto-status');
-  if (status) {
-    status.textContent = '✅ Foto siap digunakan';
-    status.style.color = 'var(--success)';
-    status.style.fontWeight = '600';
-  }
-  saveRegDraftMedia();
-  // Tampilkan tombol "Edit Foto" jika belum ada
-  let btnEdit = document.getElementById('btn-reg-edit-foto');
-  if (!btnEdit) {
-    btnEdit = document.createElement('button');
-    btnEdit.id = 'btn-reg-edit-foto';
-    btnEdit.className = 'btn btn-sm btn-outline';
-    btnEdit.style.marginTop = '0.5rem';
-    btnEdit.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit / Crop Ulang`;
-    btnEdit.addEventListener('click', () => {
-      if (RegState.fotoOriginalBase64) {
-        openRegCropFoto(RegState.fotoOriginalBase64);
-      }
-    });
-    const wrap = document.querySelector('.reg-foto-preview-wrap');
-    if (wrap) wrap.appendChild(btnEdit);
-  }
-}
-
-// ===== STEP 3: DATA WAJAH =====
-function resetRegWajahUI() {
-  updateScanSteps('reg-wajah-scan-steps', 'reg-wajah-hint-box', 'detect', 'Klik tombol di bawah untuk mulai scan wajah');
-  const guide = document.getElementById('reg-wajah-face-guide');
-  if (guide) guide.className = 'face-guide';
-  const result = document.getElementById('reg-wajah-result');
-  if (result) result.classList.add('hidden');
-  const statusBox = document.getElementById('reg-wajah-status-box');
-  if (statusBox) { statusBox.style.display = 'none'; statusBox.textContent = ''; statusBox.className = 'reg-wajah-status-box'; }
-  const btnStart = document.getElementById('btn-reg-start-wajah');
-  const btnUlang = document.getElementById('btn-reg-ulang-wajah');
-  if (btnStart) btnStart.classList.remove('hidden');
-  if (btnUlang) btnUlang.classList.add('hidden');
-}
-
-function stopRegWajahScan() {
-  if (RegState.wajahInterval) {
-    clearInterval(RegState.wajahInterval);
-    RegState.wajahInterval = null;
-    AppState._captureFaceInterval = null;
-  }
-  RegState.wajahScanActive = false;
-  stopVideo();
-}
-
-async function startRegWajahScan() {
-  const btnStart = document.getElementById('btn-reg-start-wajah');
-  if (btnStart) btnStart.classList.add('hidden');
-
-  const statusBox = document.getElementById('reg-wajah-status-box');
-  if (statusBox) { statusBox.style.display = 'block'; statusBox.textContent = 'Menyiapkan kamera...'; }
-
-  const camLoadOverlay = showCameraLoadingOverlay('reg-wajah-video');
-  const video = document.getElementById('reg-wajah-video');
-  if (!video) { hideCameraLoadingOverlay(camLoadOverlay); return; }
-
-  // Jalankan loadModel & getUserMedia SECARA PARALEL (bukan berurutan) agar lebih cepat
-  const modelPromise = AppState.modelsLoaded ? Promise.resolve() : loadFaceApiModels(camLoadOverlay);
-  const streamPromise = navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width:{ideal:640}, height:{ideal:480} } });
-
-  let stream;
-  try {
-    const results = await Promise.all([modelPromise, streamPromise]);
-    stream = results[1];
-  } catch(e) {
-    hideCameraLoadingOverlay(camLoadOverlay);
-    resetRegWajahUI();
-    const btnStart2 = document.getElementById('btn-reg-start-wajah');
-    if (btnStart2) btnStart2.classList.remove('hidden');
-    if(!AppState.modelsLoaded) return; // gagal load model, hentikan
-    // Jika model sudah OK tapi kamera gagal, tampilkan pesan kamera
-    showAlert('Gagal akses kamera: ' + getErrorMessage(e), 'danger');
-    return;
-  }
-
-  try {
-    AppState.videoStream = stream;
-    video.srcObject = stream;
-    video.style.transform = 'scaleX(-1)';
-    video.play();
-    hideCameraLoadingOverlay(camLoadOverlay);
-    RegState.wajahScanActive = true;
-
-    if (statusBox) { statusBox.style.display = 'block'; statusBox.textContent = 'Posisikan wajah di dalam oval...'; }
-    updateScanSteps('reg-wajah-scan-steps', 'reg-wajah-hint-box', 'detect', 'Posisikan wajah di dalam oval');
-
-    const guide = document.getElementById('reg-wajah-face-guide');
-    let rPhase = 'center', attempts = 0, done = false;
-
-    function isFaceCenteredReg(det, vW, vH) {
-      const b = det.detection.box, cx = b.x + b.width/2, cy = b.y + b.height/2;
-      return Math.abs(cx - vW/2) < vW*0.28 && Math.abs(cy - vH/2) < vH*0.28 && b.width > vW*0.16 && b.width < vW*0.90;
-    }
-
-    RegState.wajahInterval = setInterval(async () => {
-      if (done || !RegState.wajahScanActive) return;
-      attempts++;
-      if (attempts > 300) {
-        done = true;
-        clearInterval(RegState.wajahInterval);
-        RegState.wajahInterval = null;
-        AppState._captureFaceInterval = null;
-        stopVideo();
-        if (statusBox) { statusBox.className = 'reg-wajah-status-box warning'; statusBox.textContent = 'Waktu habis. Klik Scan Ulang untuk mencoba lagi.'; }
-        const btnUlang = document.getElementById('btn-reg-ulang-wajah');
-        if (btnUlang) btnUlang.classList.remove('hidden');
-        return;
-      }
-
-      const det = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
-        .withFaceLandmarks().withFaceDescriptor().withFaceExpressions();
-
-      if (!det) {
-        rPhase = 'center';
-        if (guide) guide.className = 'face-guide';
-        if (statusBox) { statusBox.className = 'reg-wajah-status-box warning'; statusBox.textContent = '👁 Arahkan wajah ke kamera'; }
-        updateScanSteps('reg-wajah-scan-steps', 'reg-wajah-hint-box', 'detect', '👁 Arahkan wajah ke kamera');
-        return;
-      }
-
-      const vW = video.videoWidth || 640, vH = video.videoHeight || 480;
-      const centered = isFaceCenteredReg(det, vW, vH);
-      const smileScore = det.expressions ? det.expressions.happy : 0;
-
-      if (!centered && rPhase === 'center') {
-        if (guide) guide.className = 'face-guide liveness-warn';
-        if (statusBox) { statusBox.className = 'reg-wajah-status-box warning'; statusBox.textContent = '↔ Posisikan wajah di tengah oval'; }
-        updateScanSteps('reg-wajah-scan-steps', 'reg-wajah-hint-box', 'center', '↔ Posisikan wajah di tengah oval');
-        return;
-      }
-
-      switch (rPhase) {
-        case 'center':
-          if (guide) guide.className = 'face-guide liveness-warn';
-          if (statusBox) { statusBox.className = 'reg-wajah-status-box warning'; statusBox.textContent = '🙂 Sempurna! Sekarang tersenyum sedikit'; }
-          updateScanSteps('reg-wajah-scan-steps', 'reg-wajah-hint-box', 'smile', '🙂 Sempurna! Sekarang tersenyum sedikit');
-          if (smileScore >= SMILE_THRESHOLD) rPhase = 'done';
-          break;
-        case 'done':
-          done = true;
-          clearInterval(RegState.wajahInterval);
-          RegState.wajahInterval = null;
-          AppState._captureFaceInterval = null;
-          RegState.wajahScanActive = false;
-          stopVideo();
-          if (guide) guide.className = 'face-guide liveness-ok';
-          RegState.faceDescriptor = Array.from(det.descriptor);
-          updateScanSteps('reg-wajah-scan-steps', 'reg-wajah-hint-box', 'matched', '✅ Data wajah berhasil direkam!');
-          if (statusBox) { statusBox.className = 'reg-wajah-status-box success'; statusBox.textContent = '✅ Liveness OK — Data wajah berhasil direkam!'; }
-          const resultEl = document.getElementById('reg-wajah-result');
-          if (resultEl) resultEl.classList.remove('hidden');
-          const btnUlang2 = document.getElementById('btn-reg-ulang-wajah');
-          if (btnUlang2) btnUlang2.classList.remove('hidden');
-          saveRegDraftMedia();
-          break;
-      }
-    }, 500);
-
-    AppState._captureFaceInterval = RegState.wajahInterval;
-  } catch(e) {
-    hideCameraLoadingOverlay(camLoadOverlay);
-    stopVideo();
-    showAlert('Gagal memulai scan wajah: ' + getErrorMessage(e), 'danger');
-    resetRegWajahUI();
-    const btnStart3 = document.getElementById('btn-reg-start-wajah');
-    if (btnStart3) btnStart3.classList.remove('hidden');
   }
 }
 
@@ -8963,34 +8164,23 @@ async function saveUpdateFotoProfil() {
 }
 
 async function doRegister() {
-  stopRegWajahScan();
+  const email = document.getElementById('reg-email')?.value.trim();
+  const confirmEmail = document.getElementById('reg-confirm-email')?.value.trim();
+  const usernameValue = document.getElementById('reg-username')?.value.trim();
   const data = {
-    username: document.getElementById('reg-username')?.value.trim(),
+    username: usernameValue || (email ? email.split('@')[0] : ''),
+    email: email,
     password: document.getElementById('reg-password')?.value,
     confirmPassword: document.getElementById('reg-confirm-password')?.value,
     namaLengkap: document.getElementById('reg-nama')?.value.trim(),
-    tempatLahir: document.getElementById('reg-tempat-lahir')?.value.trim(),
-    tanggalLahir: document.getElementById('reg-tanggal-lahir')?.value,
-    jenisKelamin: document.querySelector('input[name="reg-jk"]:checked')?.value || '',
-    email: document.getElementById('reg-email')?.value.trim(),
-    noWhatsapp: document.getElementById('reg-whatsapp')?.value.trim(),
-    sppg: document.getElementById('reg-sppg')?.value,
-    sppgLainnya: document.getElementById('reg-sppg-lainnya')?.value.trim(),
-    tanggalMulaiKerja: document.getElementById('reg-tanggal-mulai')?.value,
-    jabatanDivisi: document.getElementById('reg-jabatan')?.value,
-    jabatanLainnya: document.getElementById('reg-jabatan-lainnya')?.value.trim(),
-    gajiHarian: parseFloat(document.getElementById('reg-gaji')?.value) || 0,
-    namaBank: document.getElementById('reg-bank')?.value.trim(),
-    atasNamaRekening: document.getElementById('reg-rekening')?.value.trim(),
-    setujuKebijakan: document.getElementById('reg-setuju')?.checked,
-    // Data dari step 2 & 3
-    fotoProfilBase64: RegState.fotoBase64 || null,
-    fotoProfilOriginalBase64: RegState.fotoOriginalBase64 || null,
-    faceDescriptor: RegState.faceDescriptor || null
+    setujuKebijakan: document.getElementById('reg-setuju')?.checked
   };
 
-  if (!data.username || !data.password || !data.namaLengkap) {
-    showAlert('Username, Password, dan Nama Lengkap wajib diisi', 'warning'); return;
+  if (!data.email || !data.password || !data.namaLengkap || !data.username) {
+    showAlert('Nama Lengkap, Username, Email, dan Password wajib diisi', 'warning'); return;
+  }
+  if (data.email !== confirmEmail) {
+    showAlert('Email dan konfirmasi email tidak cocok', 'warning'); return;
   }
   if (data.password !== data.confirmPassword) {
     showAlert('Password dan konfirmasi tidak cocok', 'warning'); return;
