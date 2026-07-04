@@ -7843,7 +7843,7 @@ document.addEventListener('DOMContentLoaded', () => {
     navigateTo('login');
   }
 
-  $('#menu-btn').addEventListener('click', () => {
+  safeOn('#menu-btn', 'click', () => {
     const isDesktop = window.innerWidth >= 1024;
     if(isDesktop) {
       const sidebar = $('#sidebar');
@@ -7888,9 +7888,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  $('#sidebar-overlay').addEventListener('click', () => {
-    $('#sidebar').classList.remove('open');
-    $('#sidebar-overlay').classList.remove('show');
+  safeOn('#sidebar-overlay', 'click', () => {
+    const sb = document.getElementById('sidebar'); if(sb) sb.classList.remove('open');
+    const so = document.getElementById('sidebar-overlay'); if(so) so.classList.remove('show');
   });
 
   $$('.nav-item').forEach(item => {
@@ -7978,22 +7978,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  $('#btn-login').addEventListener('click', doLogin);
-  $('#login-password').addEventListener('keypress', e => { if(e.key==='Enter') doLogin(); });
-  $('#btn-to-register').addEventListener('click', () => navigateTo('register'));
-  $('#btn-to-login').addEventListener('click', () => navigateTo('login'));
-  $('#btn-forgot').addEventListener('click', showForgotPassword);
+  safeOn('#btn-login', 'click', doLogin);
+  safeOn('#login-password', 'keypress', e => { if(e.key==='Enter') doLogin(); });
+  safeOn('#btn-to-register', 'click', () => navigateTo('register'));
+  safeOn('#btn-to-login', 'click', () => navigateTo('login'));
+  safeOn('#btn-forgot', 'click', showForgotPassword);
   const btnBackLogin = document.getElementById('btn-back-login');
   if(btnBackLogin) btnBackLogin.addEventListener('click', () => {
     $('#forgot-password-section').classList.add('hidden');
     $('#reset-password-section').classList.add('hidden');
     $('#login-form-section').classList.remove('hidden');
   });
-  $('#btn-reset-password').addEventListener('click', doResetPassword);
-  $('#btn-request-reset').addEventListener('click', doRequestReset);
-  $('#btn-logout-dropdown').addEventListener('click', () => {
-    $('#profile-dropdown-menu').classList.remove('show');
-    $('#profile-trigger').classList.remove('open');
+  safeOn('#btn-reset-password', 'click', doResetPassword);
+  safeOn('#btn-request-reset', 'click', doRequestReset);
+  safeOn('#btn-logout-dropdown', 'click', () => {
+    const pdm = document.getElementById('profile-dropdown-menu'); if(pdm) pdm.classList.remove('show');
+    const ptr = document.getElementById('profile-trigger'); if(ptr) ptr.classList.remove('open');
     doLogout();
   });
 
@@ -8005,10 +8005,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   if (btnLogoutYes) btnLogoutYes.addEventListener('click', doLogoutConfirmed);
 
-  $('#profile-trigger').addEventListener('click', (e) => {
+  safeOn('#profile-trigger', 'click', (e) => {
     e.stopPropagation();
-    $('#profile-dropdown-menu').classList.toggle('show');
-    $('#profile-trigger').classList.toggle('open');
+    const pdm = document.getElementById('profile-dropdown-menu'); if(pdm) pdm.classList.toggle('show');
+    const ptr = document.getElementById('profile-trigger'); if(ptr) ptr.classList.toggle('open');
   });
 
   $$('#profile-dropdown-menu .profile-dropdown-item[data-page]').forEach(item => {
@@ -8057,12 +8057,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  $('#reg-sppg').addEventListener('change', e => {
-    $('#reg-sppg-lainnya-group').classList.toggle('hidden', e.target.value !== 'LAINNYA');
+  safeOn('#reg-sppg', 'change', e => {
+    const g = document.getElementById('reg-sppg-lainnya-group'); if(g) g.classList.toggle('hidden', e.target.value !== 'LAINNYA');
   });
 
-  $('#reg-jabatan').addEventListener('change', e => {
-    $('#reg-jabatan-lainnya-group').classList.toggle('hidden', e.target.value !== 'LAINNYA');
+  safeOn('#reg-jabatan', 'change', e => {
+    const g = document.getElementById('reg-jabatan-lainnya-group'); if(g) g.classList.toggle('hidden', e.target.value !== 'LAINNYA');
   });
 
   safeOn('#btn-update-foto-profil', 'click', showUpdateFotoModal);
@@ -8076,8 +8076,8 @@ document.addEventListener('DOMContentLoaded', () => {
   safeOn('#btn-save-foto-profil', 'click', saveUpdateFotoProfil);
 
   // Crop listeners
-  $('#btn-apply-crop').addEventListener('click', applyCrop);
-  const cropStage = $('#crop-stage');
+  safeOn('#btn-apply-crop', 'click', applyCrop);
+  const cropStage = document.getElementById('crop-stage');
   if(cropStage) {
     cropStage.addEventListener('mousedown', startCropDrag);
     cropStage.addEventListener('touchstart', startCropDrag, {passive: false});
@@ -8086,9 +8086,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('mouseup', endCropDrag);
     window.addEventListener('touchend', endCropDrag);
   }
-  $('#crop-zoom').addEventListener('input', updateCrop);
-  $('#crop-pan-x').addEventListener('input', updateCrop);
-  $('#crop-pan-y').addEventListener('input', updateCrop);
+  safeOn('#crop-zoom', 'input', updateCrop);
+  safeOn('#crop-pan-x', 'input', updateCrop);
+  safeOn('#crop-pan-y', 'input', updateCrop);
 });
 
 // ==================== REGISTER ====================
@@ -11288,15 +11288,21 @@ function initAbsenManual() {
   updateAbsenClock();
   if(window._absenClockInterval) clearInterval(window._absenClockInterval);
   window._absenClockInterval = setInterval(updateAbsenClock, 1000);
-  $('#btn-absen-manual').addEventListener('click', startAbsenFlow);
-  $('#btn-absen-self').addEventListener('click', startAbsenSelfFlow);
-  $('#btn-absen-qr-cancel').addEventListener('click', resetAbsenFlow);
-  $('#btn-absen-face-cancel').addEventListener('click', resetAbsenFlow);
-  $('#btn-absen-self-cancel').addEventListener('click', resetAbsenFlow);
-  $('#btn-absen-result-ok').addEventListener('click', resetAbsenFlow);
-  const swA = $('#btn-switch-cam-absen');
+  const btnManual = document.getElementById('btn-absen-manual');
+  if (btnManual) btnManual.addEventListener('click', startAbsenFlow);
+  const btnSelf = document.getElementById('btn-absen-self');
+  if (btnSelf) btnSelf.addEventListener('click', startAbsenSelfFlow);
+  const btnQrCancel = document.getElementById('btn-absen-qr-cancel');
+  if (btnQrCancel) btnQrCancel.addEventListener('click', resetAbsenFlow);
+  const btnFaceCancel = document.getElementById('btn-absen-face-cancel');
+  if (btnFaceCancel) btnFaceCancel.addEventListener('click', resetAbsenFlow);
+  const btnSelfCancel = document.getElementById('btn-absen-self-cancel');
+  if (btnSelfCancel) btnSelfCancel.addEventListener('click', resetAbsenFlow);
+  const btnResultOk = document.getElementById('btn-absen-result-ok');
+  if (btnResultOk) btnResultOk.addEventListener('click', resetAbsenFlow);
+  const swA = document.getElementById('btn-switch-cam-absen');
   if(swA) swA.addEventListener('click', () => switchCameraFacing('absen-face-video'));
-  const swS = $('#btn-switch-cam-self');
+  const swS = document.getElementById('btn-switch-cam-self');
   if(swS) swS.addEventListener('click', () => switchCameraFacing('absen-self-video'));
 }
 
