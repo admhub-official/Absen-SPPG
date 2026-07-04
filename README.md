@@ -10,4 +10,5 @@ Aplikasi absensi multi-user yang terhubung ke Supabase Edge Function.
 ## Catatan
 
 - Semua pemanggilan API frontend diarahkan melalui [index.html](index.html) menggunakan konfigurasi dari [supabase-config.js](supabase-config.js).
+- Jika fungsi Supabase membutuhkan `Authorization` header, tambahkan `apiKey` pada `supabase-config.js`.
 - Jika ingin berpindah project Supabase, cukup ubah nilai di [supabase-config.js](supabase-config.js).

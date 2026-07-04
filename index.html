@@ -7257,6 +7257,8 @@ let cropState = {
 
 // ==================== API WRAPPER ====================
 const SCRIPT_URL = (window.ABSEN_SUPABASE_CONFIG && window.ABSEN_SUPABASE_CONFIG.functionUrl) || 'https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';
+const SUPABASE_API_KEY = (window.ABSEN_SUPABASE_CONFIG && window.ABSEN_SUPABASE_CONFIG.apiKey) || null;
+const SUPABASE_AUTH_HEADER = (window.ABSEN_SUPABASE_CONFIG && window.ABSEN_SUPABASE_CONFIG.authHeader) || 'Authorization';
 // ==================== INISIALISASI CACHE (harus sebelum apiCall) ====================
 let _apiCache = {};
 // Dengan persist ke localStorage, saat halaman dibuka ulang kita bisa
@@ -7384,9 +7386,13 @@ function apiCall(funcName, data, opts) {
   }
   return new Promise((resolve, reject) => {
     if(!silent) showLoading(true);
+    const headers = { 'Content-Type': 'application/json' };
+    if (SUPABASE_API_KEY) {
+      headers[SUPABASE_AUTH_HEADER] = `Bearer ${SUPABASE_API_KEY}`;
+    }
     fetch(SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ function: funcName, data: data })
     })
     .then(res => res.json())
