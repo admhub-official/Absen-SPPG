@@ -1,7 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/wrangler.json",
   "name": "absen-sppg",
-  "main": "index.html",
-  "pages_build_output_dir": ".",
-  "account_id": "db182533a82e75511668d177f85cc6ff"
+  "pages_build_output_dir": "."
 }
