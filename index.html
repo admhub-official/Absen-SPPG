@@ -7301,6 +7301,25 @@ function startSessionCheck() {
   }, 30000);
 }
 
+// Handle redirect dari Supabase email konfirmasi
+(function handleSupabaseEmailConfirm() {
+  const hash = window.location.hash;
+  if (!hash) return;
+  const params = new URLSearchParams(hash.substring(1));
+  const type = params.get('type');
+  if (type === 'signup') {
+    // Bersihkan hash dari URL
+    history.replaceState(null, '', window.location.pathname);
+    // Tampilkan alert sukses setelah halaman siap
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        showAlert('✅ Email berhasil dikonfirmasi! Silakan login.', 'success');
+        navigateTo('login');
+      }, 300);
+    });
+  }
+})();
+  
 // ==================== ROUTER ====================
 const Routes = {
   'login': { el: 'page-login', auth: false, roles: null },
