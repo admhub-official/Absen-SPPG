@@ -5327,6 +5327,9 @@ display: flex !important;
         <div class="auth-footer">
           <a id="btn-forgot">Lupa Password?</a> &nbsp;|&nbsp; <a id="btn-to-register">Daftar Akun</a>
         </div>
+        <div class="auth-footer" style="margin-top:0.5rem;">
+          <a id="btn-resend-confirmation">Belum terima email konfirmasi? Kirim ulang</a>
+        </div>
       </div>
 
       <!-- Forgot Password -->
@@ -5347,6 +5350,23 @@ display: flex !important;
         <div class="form-group"><label class="form-label">Password Baru</label><input type="password" id="fp-new-password" class="form-input"></div>
         <div class="form-group"><label class="form-label">Konfirmasi Password Baru</label><input type="password" id="fp-confirm-password" class="form-input"></div>
         <button id="btn-reset-password" class="btn btn-primary btn-block">Update Password</button>
+      </div>
+    </div>
+  </div>
+
+<!-- Modal Kirim Ulang Email Konfirmasi -->
+  <div id="modal-resend-confirmation" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Kirim Ulang Email Konfirmasi</div>
+        <button class="modal-close modal-cancel">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom:1rem; font-size:0.875rem; color:#64748b;">Masukkan email yang Anda gunakan saat registrasi.</p>
+        <div class="form-group"><label class="form-label">Email</label><input type="email" id="resend-confirmation-email" class="form-input" placeholder="Email terdaftar"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-submit-resend-confirmation" class="btn btn-primary btn-block">Kirim Ulang</button>
       </div>
     </div>
   </div>
@@ -7300,6 +7320,22 @@ function doLogout() {
   showLogoutConfirmModal();
 }
 
+async function doResendConfirmation() {
+  const email = document.getElementById('resend-confirmation-email')?.value.trim();
+  if (!email) { showAlert('Email wajib diisi', 'warning'); return; }
+  const btn = document.getElementById('btn-submit-resend-confirmation');
+  setButtonLoading(btn, true, 'Mengirim...');
+  try {
+    const res = await apiCall('resendConfirmationEmail', { email });
+    showAlert(res.message || 'Email konfirmasi berhasil dikirim ulang.', 'success');
+    document.getElementById('modal-resend-confirmation')?.classList.remove('show');
+  } catch (e) {
+    showAlert(e);
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
+  
 async function doLogoutConfirmed() {
   const modal = document.getElementById('modal-logout-confirm');
   if (modal) modal.classList.remove('show');
@@ -7760,6 +7796,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+safeOn('#btn-resend-confirmation', 'click', () => {
+    const emailEl = document.getElementById('resend-confirmation-email');
+    if (emailEl) emailEl.value = document.getElementById('login-email')?.value.trim() || '';
+    const m = document.getElementById('modal-resend-confirmation');
+    if (m) m.classList.add('show');
+  });
+  safeOn('#btn-submit-resend-confirmation', 'click', doResendConfirmation);
+  
   safeOn('#reg-sppg', 'change', e => {
     const g = document.getElementById('reg-sppg-lainnya-group'); if(g) g.classList.toggle('hidden', e.target.value !== 'LAINNYA');
   });
