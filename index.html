@@ -2279,12 +2279,21 @@ font-variant-numeric: tabular-nums;
     }
 
     /* ==================== AUTH PAGES ==================== */
+#auth-layout {
+      display: contents;
+    }
+
+    #auth-layout.hidden {
+      display: none !important;
+    }
+
     .auth-page { 
-      min-height: 100vh; 
+      min-height: 100vh;
+      min-height: 100dvh;
       display: flex; 
       align-items: center; 
       justify-content: center; 
-      padding: 1rem; 
+      padding: max(1rem, env(safe-area-inset-top, 1rem)) 1rem max(1rem, env(safe-area-inset-bottom, 1rem));
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
       position: relative;
       overflow: hidden;
@@ -2324,6 +2333,9 @@ font-variant-numeric: tabular-nums;
       position: relative;
       z-index: 1;
       border: 1px solid rgba(255,255,255,0.1);
+      max-height: calc(100dvh - 2rem);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .auth-logo { 
@@ -2358,6 +2370,38 @@ font-variant-numeric: tabular-nums;
     }
 
     .auth-footer a:hover { color: var(--primary-dark); text-decoration: underline; }
+
+    /* ===== AUTH: Layar sangat kecil (iPhone SE, 375px) ===== */
+    @media (max-width: 390px) {
+      .auth-card {
+        padding: 1.5rem 1.25rem;
+        border-radius: 1rem;
+      }
+      .auth-logo {
+        font-size: 1.125rem;
+        margin-bottom: 1.25rem;
+      }
+      .auth-page {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+      }
+    }
+
+    /* ===== AUTH: Landscape mobile — card jangan penuh tinggi layar ===== */
+    @media (max-height: 600px) and (orientation: landscape) {
+      .auth-page {
+        align-items: flex-start;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+      }
+      .auth-card {
+        max-height: calc(100dvh - 2rem);
+        padding: 1.25rem 1.5rem;
+      }
+      .auth-logo {
+        margin-bottom: 1rem;
+      }
+    }
 
     .badge { 
       display: inline-flex; 
@@ -5258,7 +5302,7 @@ display: flex !important;
 <div id="alert-box"></div>
 
 <!-- ==================== AUTH LAYOUT ==================== -->
-<div id="auth-layout">
+<div id="auth-layout" class="hidden">
 
   <!-- PAGE: LOGIN -->
   <div id="page-login" class="page auth-page">
@@ -5269,8 +5313,8 @@ display: flex !important;
       </div>
       <div id="login-form-section">
         <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" id="login-email" class="form-input" placeholder="Masukkan email">
+          <label class="form-label">Username</label>
+          <input type="text" id="login-email" class="form-input" placeholder="Masukkan username">
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
@@ -7203,7 +7247,7 @@ function prefetchCommonData() {
 async function doLogin() {
   const email = $('#login-email').value.trim();
   const password = $('#login-password').value;
-  if(!email || !password) { showAlert('Email dan password wajib diisi'); return; }
+ if(!email || !password) { showAlert('Username dan password wajib diisi'); return; }
   const btnLogin = $('#btn-login');
   setButtonLoading(btnLogin, true, 'Memproses...');
   try {
@@ -7385,8 +7429,13 @@ function navigateTo(page) {
 
   // Tampilkan/sembunyikan layout sesuai status halaman (auth vs app)
   const isAuthPage = (page === 'login' || page === 'register');
-  $('#auth-layout').classList.toggle('hidden', !isAuthPage);
-  $('#app-layout').classList.toggle('hidden', isAuthPage);
+  const authLayout = document.getElementById('auth-layout');
+  const appLayout = document.getElementById('app-layout');
+  if (authLayout) authLayout.classList.toggle('hidden', !isAuthPage);
+  if (appLayout) appLayout.classList.toggle('hidden', isAuthPage);
+  // Sembunyikan header saat di halaman auth agar tidak ada flash putih
+  const header = document.getElementById('header');
+  if (header) header.style.display = isAuthPage ? 'none' : '';
 
   // Sembunyikan semua page, lalu tampilkan hanya page tujuan
   $$('.page').forEach(p => p.classList.add('hidden'));
@@ -8216,10 +8265,6 @@ async function doRegister() {
     clearRegDraft();
     showAlert('Registrasi berhasil! Silakan login.', 'success');
     setTimeout(() => navigateTo('login'), 2000);
-    } else {
-      showAlert('Registrasi berhasil! Silakan login.', 'success');
-      setTimeout(() => navigateTo('login'), 2000);
-    }
   } catch(e) {
     showAlert(e);
   } finally {
@@ -8404,7 +8449,8 @@ async function doRequestReset() {
     const res = await apiCall('requestResetPassword', { username, email, idCardUnik: idCard });
     $('#reset-password-section').classList.remove('hidden');
     $('#forgot-password-section').classList.add('hidden');
-showAlert('Verifikasi berhasil. Hubungi Admin untuk mendapatkan kode reset password Anda.', 'success');  } catch(e) { showAlert(e); }
+    showAlert('Verifikasi berhasil. Hubungi Admin untuk mendapatkan kode reset password Anda.', 'success');
+  } catch(e) { showAlert(e); }
 }
 
 async function doResetPassword() {
@@ -8412,7 +8458,7 @@ async function doResetPassword() {
   const token = $('#reset-token').value.trim();
   const newPass = $('#fp-new-password').value;
   const confirmPass = $('#fp-confirm-password').value;
-    if(!token) { showAlert('Masukkan kode reset dari Admin'); return; }
+   if(!token) { showAlert('Masukkan kode reset dari Admin'); return; }
   if(!newPass || newPass !== confirmPass) { showAlert('Password tidak cocok'); return; }
   try {
     await apiCall('resetPassword', { username, token, newPassword: newPass });
