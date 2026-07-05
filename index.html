@@ -5298,38 +5298,12 @@ display: flex !important;
       <!-- Reset Password -->
       <div id="reset-password-section" class="hidden">
         <h3 style="margin-bottom:1.25rem; font-size:1.25rem; font-weight:700;">Reset Password</h3>
-        <p style="margin-bottom:1rem; font-size:0.875rem; color:#64748b;">Kode reset telah dikirim ke email Anda. Cek Inbox/Spam, lalu masukkan kodenya di bawah ini.</p>
-        <div class="form-group"><label class="form-label">Kode Reset (dari Email)</label><input type="text" id="reset-token" class="form-input" placeholder="Tempel kode dari email di sini"></div>
+        <p style="margin-bottom:1rem; font-size:0.875rem; color:#64748b;">Verifikasi berhasil. Masukkan kode reset yang diberikan oleh Admin, lalu buat password baru Anda.</p>
+        <div class="form-group"><label class="form-label">Kode Reset</label><input type="text" id="reset-token" class="form-input" placeholder="Masukkan kode reset dari Admin"></div>
         <div class="form-group"><label class="form-label">Password Baru</label><input type="password" id="fp-new-password" class="form-input"></div>
         <div class="form-group"><label class="form-label">Konfirmasi Password Baru</label><input type="password" id="fp-confirm-password" class="form-input"></div>
         <button id="btn-reset-password" class="btn btn-primary btn-block">Update Password</button>
       </div>
-    </div>
-  </div>
-
-<!-- PAGE: EMAIL SENT (setelah register) -->
-  <div id="page-email-sent" class="page auth-page hidden">
-    <div class="auth-card">
-      <div class="auth-logo" style="flex-direction:column; gap:0.5rem;">
-        <div style="width:64px;height:64px;background:#dbeafe;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        </div>
-        <span style="font-size:1.1rem;font-weight:700;color:#0f172a;">Cek Email Anda</span>
-      </div>
-      <p style="text-align:center;color:#475569;font-size:0.9rem;line-height:1.6;margin-bottom:1rem;">
-        Link konfirmasi telah dikirim ke:<br>
-        <strong id="email-sent-address" style="color:#2563eb;word-break:break-all;"></strong>
-      </p>
-      <p style="text-align:center;color:#64748b;font-size:0.8125rem;line-height:1.6;margin-bottom:1.5rem;">
-        Klik link di email tersebut untuk mengaktifkan akun.<br>
-        Cek folder <strong>Inbox</strong> atau <strong>Spam</strong>.
-      </p>
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:0.75rem;padding:1rem;margin-bottom:1.25rem;font-size:0.8125rem;color:#166534;text-align:center;">
-        ✅ Setelah email dikonfirmasi, Anda bisa login
-      </div>
-      <button class="btn btn-outline btn-block" onclick="navigateTo('login')" style="border:1px solid var(--border);background:var(--surface);color:var(--text);">
-        ← Kembali ke Login
-      </button>
     </div>
   </div>
   
@@ -7272,11 +7246,7 @@ async function doLogin() {
     }
   } catch(e) {
     const msg = typeof e === 'string' ? e : (e?.message || String(e));
-    if (msg === 'EMAIL_BELUM_DIKONFIRMASI') {
-      showAlert('Email Anda belum dikonfirmasi. Cek inbox/spam untuk link konfirmasi, lalu coba login kembali.', 'warning');
-    } else {
-      showAlert(e);
-    }
+    showAlert(e);
   } finally {
     setButtonLoading(btnLogin, false);
   }
@@ -7335,7 +7305,6 @@ function startSessionCheck() {
 const Routes = {
   'login': { el: 'page-login', auth: false, roles: null },
   'register': { el: 'page-register', auth: false, roles: null },
-  'email-sent': { el: 'page-email-sent', auth: false, roles: null },
   'dashboard': { el: 'page-dashboard', auth: true, roles: ['ADMIN','AKUNTAN','USER'] },
   'profil': { el: 'page-profil', auth: true, roles: ['ADMIN','AKUNTAN','USER'] },
   'manajemen-user': { el: 'page-manajemen-user', auth: true, roles: ['ADMIN'] },
@@ -8226,18 +8195,8 @@ async function doRegister() {
   try {
     const res = await apiCall('registerUser', data);
     clearRegDraft();
-    if (res.requireEmailVerification) {
-      // Tampilkan halaman "cek email konfirmasi"
-      const emailSentEl = document.getElementById('page-email-sent');
-      const emailDisplay = document.getElementById('email-sent-address');
-      if (emailDisplay) emailDisplay.textContent = data.email;
-      if (emailSentEl) {
-        document.getElementById('page-register')?.classList.add('hidden');
-        emailSentEl.classList.remove('hidden');
-      } else {
-        showAlert('Registrasi berhasil! Cek email Anda untuk konfirmasi akun sebelum login.', 'success');
-        setTimeout(() => navigateTo('login'), 3000);
-      }
+    showAlert('Registrasi berhasil! Silakan login.', 'success');
+    setTimeout(() => navigateTo('login'), 2000);
     } else {
       showAlert('Registrasi berhasil! Silakan login.', 'success');
       setTimeout(() => navigateTo('login'), 2000);
@@ -8426,8 +8385,7 @@ async function doRequestReset() {
     const res = await apiCall('requestResetPassword', { username, email, idCardUnik: idCard });
     $('#reset-password-section').classList.remove('hidden');
     $('#forgot-password-section').classList.add('hidden');
-    showAlert('Verifikasi berhasil. Kode reset telah dikirim ke email Anda.', 'success');
-  } catch(e) { showAlert(e); }
+showAlert('Verifikasi berhasil. Hubungi Admin untuk mendapatkan kode reset password Anda.', 'success');  } catch(e) { showAlert(e); }
 }
 
 async function doResetPassword() {
@@ -8435,7 +8393,7 @@ async function doResetPassword() {
   const token = $('#reset-token').value.trim();
   const newPass = $('#fp-new-password').value;
   const confirmPass = $('#fp-confirm-password').value;
-  if(!token) { showAlert('Masukkan kode reset yang dikirim ke email Anda'); return; }
+    if(!token) { showAlert('Masukkan kode reset dari Admin'); return; }
   if(!newPass || newPass !== confirmPass) { showAlert('Password tidak cocok'); return; }
   try {
     await apiCall('resetPassword', { username, token, newPassword: newPass });
