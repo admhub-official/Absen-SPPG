@@ -8263,8 +8263,8 @@ async function doRegister() {
   try {
     const res = await apiCall('registerUser', data);
     clearRegDraft();
-    showAlert('Registrasi berhasil! Silakan login.', 'success');
-    setTimeout(() => navigateTo('login'), 2000);
+    showAlert('Registrasi berhasil! Silakan cek email Anda (termasuk folder spam) dan klik link konfirmasi sebelum login.', 'success');
+    setTimeout(() => navigateTo('login'), 3000);
   } catch(e) {
     showAlert(e);
   } finally {
