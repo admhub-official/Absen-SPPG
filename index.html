@@ -5313,8 +5313,8 @@ display: flex !important;
       </div>
       <div id="login-form-section">
         <div class="form-group">
-          <label class="form-label">Username</label>
-          <input type="text" id="login-email" class="form-input" placeholder="Masukkan username">
+          <label class="form-label">Email</label>
+          <input type="email" id="login-email" class="form-input" placeholder="Masukkan email">
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
@@ -5328,7 +5328,7 @@ display: flex !important;
           <a id="btn-forgot">Lupa Password?</a> &nbsp;|&nbsp; <a id="btn-to-register">Daftar Akun</a>
         </div>
         <div class="auth-footer" style="margin-top:0.5rem;">
-          <a id="btn-resend-confirmation">Belum terima email konfirmasi? Kirim ulang</a>
+          <a id="btn-resend-confirmation">Belum terima kode verifikasi? Kirim ulang</a>
         </div>
       </div>
 
@@ -5354,11 +5354,11 @@ display: flex !important;
     </div>
   </div>
 
-<!-- Modal Kirim Ulang Email Konfirmasi -->
+<!-- Modal Kirim Ulang Kode Verifikasi -->
   <div id="modal-resend-confirmation" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title">Kirim Ulang Email Konfirmasi</div>
+        <div class="modal-title">Kirim Ulang Kode Verifikasi</div>
         <button class="modal-close modal-cancel">&times;</button>
       </div>
       <div class="modal-body">
@@ -5392,6 +5392,33 @@ display: flex !important;
       <div class="auth-footer"><a id="btn-to-login">← Sudah punya akun? Login</a></div>
     </div>
   </div>
+
+  <!-- PAGE: VERIFIKASI OTP -->
+  <div id="page-verify-otp" class="page auth-page hidden">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Verifikasi Email
+      </div>
+      <p style="margin-bottom:1.25rem; font-size:0.875rem; color:#64748b; text-align:center;">
+        Kami telah mengirim kode verifikasi 6 digit ke <strong id="verify-otp-email-display">-</strong>.
+        Masukkan kode tersebut di bawah ini.
+      </p>
+      <div class="form-group">
+        <label class="form-label">Kode Verifikasi</label>
+        <input type="text" id="verify-otp-code" class="form-input" placeholder="000000" maxlength="6" inputmode="numeric" style="letter-spacing:8px; font-size:1.5rem; text-align:center; font-weight:700;">
+      </div>
+      <button id="btn-verify-otp" class="btn btn-primary btn-block btn-lg">Verifikasi</button>
+      <div class="auth-footer" style="margin-top:0.75rem;">
+        <a id="btn-resend-otp-from-verify">Belum terima kode? Kirim ulang</a>
+      </div>
+      <div class="auth-footer" style="margin-top:0.5rem;">
+        <a id="btn-back-login-from-verify">← Kembali ke Login</a>
+      </div>
+    </div>
+  </div>
+
+<!-- ==================== MODAL LOGOUT KONFIRMASI ==================== -->
 
 <!-- ==================== MODAL LOGOUT KONFIRMASI ==================== -->
 
@@ -7380,30 +7407,12 @@ function startSessionCheck() {
     }
   }, 30000);
 }
-
-// Handle redirect dari Supabase email konfirmasi
-(function handleSupabaseEmailConfirm() {
-  const hash = window.location.hash;
-  if (!hash) return;
-  const params = new URLSearchParams(hash.substring(1));
-  const type = params.get('type');
-  if (type === 'signup') {
-    // Bersihkan hash dari URL
-    history.replaceState(null, '', window.location.pathname);
-    // Tampilkan alert sukses setelah halaman siap
-    window.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        showAlert('✅ Email berhasil dikonfirmasi! Silakan login.', 'success');
-        navigateTo('login');
-      }, 300);
-    });
-  }
-})();
   
 // ==================== ROUTER ====================
 const Routes = {
   'login': { el: 'page-login', auth: false, roles: null },
   'register': { el: 'page-register', auth: false, roles: null },
+  'verify-otp': { el: 'page-verify-otp', auth: false, roles: null },
   'dashboard': { el: 'page-dashboard', auth: true, roles: ['ADMIN','AKUNTAN','USER'] },
   'profil': { el: 'page-profil', auth: true, roles: ['ADMIN','AKUNTAN','USER'] },
   'manajemen-user': { el: 'page-manajemen-user', auth: true, roles: ['ADMIN'] },
@@ -7464,7 +7473,7 @@ function navigateTo(page) {
   CrudState.currentData = [];
 
   // Tampilkan/sembunyikan layout sesuai status halaman (auth vs app)
-  const isAuthPage = (page === 'login' || page === 'register');
+  const isAuthPage = (page === 'login' || page === 'register' || page === 'verify-otp');
   const authLayout = document.getElementById('auth-layout');
   const appLayout = document.getElementById('app-layout');
   if (authLayout) authLayout.classList.toggle('hidden', !isAuthPage);
@@ -7721,6 +7730,9 @@ document.addEventListener('DOMContentLoaded', () => {
   safeOn('#login-email', 'keypress', e => { if(e.key==='Enter') doLogin(); });
   safeOn('#btn-to-register', 'click', () => navigateTo('register'));
   safeOn('#btn-to-login', 'click', () => navigateTo('login'));
+  safeOn('#btn-verify-otp', 'click', doVerifyOtp);
+  safeOn('#btn-resend-otp-from-verify', 'click', doResendOtpFromVerify);
+  safeOn('#btn-back-login-from-verify', 'click', () => navigateTo('login'));
   safeOn('#btn-forgot', 'click', showForgotPassword);
   const btnBackLogin = document.getElementById('btn-back-login');
   if(btnBackLogin) btnBackLogin.addEventListener('click', () => {
@@ -8302,17 +8314,51 @@ async function doRegister() {
     showAlert('Anda harus menyetujui kebijakan data', 'warning'); return;
   }
 
-  const btnReg = document.getElementById('btn-register');
+ const btnReg = document.getElementById('btn-register');
   setButtonLoading(btnReg, true, 'Mendaftarkan...');
   try {
     const res = await apiCall('registerUser', data);
     clearRegDraft();
-    showAlert('Registrasi berhasil! Silakan cek email Anda (termasuk folder spam) dan klik link konfirmasi sebelum login.', 'success');
-    setTimeout(() => navigateTo('login'), 3000);
+    AppState.pendingVerifyEmail = data.email;
+    showAlert('Registrasi berhasil! Kode verifikasi telah dikirim ke email Anda.', 'success');
+    const emailDisplay = document.getElementById('verify-otp-email-display');
+    if (emailDisplay) emailDisplay.textContent = data.email;
+    setTimeout(() => navigateTo('verify-otp'), 1200);
   } catch(e) {
     showAlert(e);
   } finally {
     setButtonLoading(btnReg, false);
+  }
+}
+
+async function doVerifyOtp() {
+  const email = AppState.pendingVerifyEmail || document.getElementById('verify-otp-email-display')?.textContent || '';
+  const kodeOtp = document.getElementById('verify-otp-code')?.value.trim();
+  if (!email || email === '-') { showAlert('Email tidak ditemukan. Silakan daftar ulang atau login.', 'warning'); return; }
+  if (!kodeOtp || kodeOtp.length !== 6) { showAlert('Masukkan kode verifikasi 6 digit', 'warning'); return; }
+
+  const btn = document.getElementById('btn-verify-otp');
+  setButtonLoading(btn, true, 'Memverifikasi...');
+  try {
+    await apiCall('verifyRegistrationOtp', { email, kodeOtp });
+    showAlert('✅ Email berhasil diverifikasi! Silakan login.', 'success');
+    AppState.pendingVerifyEmail = null;
+    setTimeout(() => navigateTo('login'), 1200);
+  } catch(e) {
+    showAlert(e);
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
+
+async function doResendOtpFromVerify() {
+  const email = AppState.pendingVerifyEmail || document.getElementById('verify-otp-email-display')?.textContent || '';
+  if (!email || email === '-') { showAlert('Email tidak ditemukan.', 'warning'); return; }
+  try {
+    const res = await apiCall('resendConfirmationEmail', { email });
+    showAlert(res.message || 'Kode verifikasi berhasil dikirim ulang.', 'success');
+  } catch(e) {
+    showAlert(e);
   }
 }
 
