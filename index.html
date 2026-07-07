@@ -1173,22 +1173,52 @@ async function loadAdminAbsen(){
   const tbody = $('#absen-table-body');
   if(!tbody) return;
   try {
-    const r = await apiCall('adminGetAllAbsen', {token: AppState.token});
-    AdminState.allAbsen = Array.isArray(r) ? r : (r?.data || []);
+    const r = await apiCall('getAbsensiData', {token: AppState.token});
+    const raw = Array.isArray(r) ? r : (r?.absensi || []);
+    AdminState.allAbsen = groupAbsenByUserTanggal(raw);
     filterAndRenderAbsen();
   } catch(e) {
     if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="table-empty">Gagal memuat data: ${e.message}</td></tr>`;
   }
 }
 
+function groupAbsenByUserTanggal(raw){
+  const byKey = {};
+  raw.forEach(a => {
+    const tglKey = a.Tanggal ? String(a.Tanggal).split('T')[0] : '';
+    const key = a.ID_User + '|' + tglKey;
+    if(!byKey[key]){
+      byKey[key] = {
+        ID_User: a.ID_User,
+        namaLengkap: a.namaLengkap || '-',
+        sppg: a.sppg || '-',
+        Tanggal: a.Tanggal,
+        jamMasuk: null,
+        jamPulang: null,
+        statusMasuk: null,
+        statusPulang: null,
+      };
+    }
+    const waktu = a.Waktu_Timestamp ? new Date(a.Waktu_Timestamp).toTimeString().split(' ')[0] : null;
+    if(a.Jenis_Absen === 'DATANG'){
+      byKey[key].jamMasuk = waktu;
+      byKey[key].statusMasuk = a.Status_Validasi;
+    }
+    if(a.Jenis_Absen === 'PULANG'){
+      byKey[key].jamPulang = waktu;
+      byKey[key].statusPulang = a.Status_Validasi;
+    }
+  });
+  return Object.values(byKey).sort((x,y) => (y.Tanggal||'').localeCompare(x.Tanggal||''));
+}
+
 function filterAndRenderAbsen(){
   const q = ($('#absen-search')?.value||'').toLowerCase();
   AdminState.filteredAbsen = AdminState.allAbsen.filter(row => {
     if(!q) return true;
-    const nama = (row.Nama_Lengkap||row.nama_lengkap||'').toLowerCase();
-    const sppg = (row.SPPG||row.sppg||'').toLowerCase();
-    const status = (row.Status||row.status||'').toLowerCase();
-    return nama.includes(q) || sppg.includes(q) || status.includes(q);
+    const nama = (row.namaLengkap||'').toLowerCase();
+    const sppg = (row.sppg||'').toLowerCase();
+    return nama.includes(q) || sppg.includes(q);
   });
   AdminState.absenPage = 1;
   renderAbsenTable();
@@ -1212,24 +1242,22 @@ function renderAbsenTable(){
   }
 
   tbody.innerHTML = rows.map(row => {
-    const nama = row.Nama_Lengkap||row.nama_lengkap||'-';
-    const sppg = row.SPPG||row.sppg||'-';
-    const tgl = row.Tanggal||row.tanggal ? formatTanggal(row.Tanggal||row.tanggal) : '-';
-    const masuk = row.Jam_Masuk||row.jam_masuk||'-';
-    const keluar = row.Jam_Keluar||row.jam_keluar||'-';
-    const status = row.Status||row.status||'-';
-    const ket = row.Keterangan||row.keterangan||'-';
-    const statusBadge = status.toLowerCase().includes('hadir') ? 'badge-success' :
-                        status.toLowerCase().includes('izin') ? 'badge-warning' :
-                        status.toLowerCase().includes('alpha') ? 'badge-danger' : 'badge-gray';
+    const nama = row.namaLengkap||'-';
+    const sppg = row.sppg||'-';
+    const tgl = row.Tanggal ? formatTanggal(row.Tanggal) : '-';
+    const masuk = row.jamMasuk||'-';
+    const keluar = row.jamPulang||'-';
+    const lengkap = row.jamMasuk && row.jamPulang;
+    const statusText = lengkap ? 'Lengkap' : (row.jamMasuk ? 'Belum Pulang' : 'Belum Datang');
+    const statusBadge = lengkap ? 'badge-success' : (row.jamMasuk ? 'badge-warning' : 'badge-danger');
     return `<tr>
       <td><div style="font-weight:600">${nama}</div></td>
       <td>${sppg}</td>
       <td>${tgl}</td>
       <td>${masuk}</td>
       <td>${keluar}</td>
-      <td><span class="badge ${statusBadge}">${status}</span></td>
-      <td style="color:var(--text-secondary)">${ket}</td>
+      <td><span class="badge ${statusBadge}">${statusText}</span></td>
+      <td style="color:var(--text-secondary)">-</td>
     </tr>`;
   }).join('');
 
@@ -1247,8 +1275,8 @@ async function loadAdminUsers(){
   if(!container) return;
   container.innerHTML = `<div class="table-loading" style="grid-column:1/-1"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Memuat data...</div>`;
   try {
-    const r = await apiCall('adminGetAllUsers', {token: AppState.token});
-    AdminState.allUsers = Array.isArray(r) ? r : (r?.data || []);
+    const r = await apiCall('getAllUsers', {token: AppState.token});
+    AdminState.allUsers = Array.isArray(r) ? r : (r?.users || []);
     filterAndRenderUsers();
   } catch(e) {
     container.innerHTML = `<div class="table-empty" style="grid-column:1/-1">Gagal memuat data: ${e.message}</div>`;
@@ -1341,7 +1369,7 @@ function openAdminUpdateUserModal(){
   const u = AdminState.selectedUser;
   if(!u) return;
   hideInlineAlert('admin-update-user-alert');
-  $('#admin-update-user-id').value = u.id || u.ID || '';
+  $('#admin-update-user-id').value = u.ID_User || '';
   $('#auu-nama').value = u.Nama_Lengkap||u.nama_lengkap||'';
   $('#auu-wa').value = u.No_Whatsapp||u.no_whatsapp||'';
   $('#auu-tempat-lahir').value = u.Tempat_Lahir||u.tempat_lahir||'';
@@ -1379,7 +1407,7 @@ async function handleSaveAdminUpdateUser(){
   const b = $('#btn-save-admin-update-user'), o = b.innerHTML;
   b.disabled = true; b.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Menyimpan...';
   try {
-    const r = await apiCall('adminUpdateUser', {token: AppState.token, userId, updates});
+const r = await apiCall('updateData', {token: AppState.token, menu: 'users', id: userId, data: updates});
     if(r && r.success){
       showAlert('Data user berhasil diperbarui','success');
       // Update local state
@@ -1408,11 +1436,11 @@ function openAdminDeleteUserModal(){
 async function handleConfirmDeleteUser(){
   const u = AdminState.selectedUser;
   if(!u) return;
-  const userId = u.id || u.ID;
+  const userId = u.ID_User;
   const b = $('#btn-confirm-admin-delete-user'), o = b.innerHTML;
   b.disabled = true; b.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px"></div>';
   try {
-    const r = await apiCall('adminDeleteUser', {token: AppState.token, userId});
+    const r = await apiCall('deleteData', {token: AppState.token, menu: 'users', id: userId});
     if(r && r.success){
       showAlert('User berhasil dihapus','success');
       $('#modal-admin-delete-user').classList.remove('active');
@@ -1435,8 +1463,8 @@ async function loadAdminLog(){
   if(!container) return;
   container.innerHTML = `<div class="table-loading"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Memuat log...</div>`;
   try {
-    const r = await apiCall('adminGetAllLog', {token: AppState.token});
-    AdminState.allLogs = Array.isArray(r) ? r : (r?.data || []);
+    const r = await apiCall('getAuditLogEnriched', {token: AppState.token});
+    AdminState.allLogs = Array.isArray(r) ? r : (r?.logs || []);
     filterAndRenderLog();
   } catch(e) {
     container.innerHTML = `<div class="table-empty">Gagal memuat log: ${e.message}</div>`;
