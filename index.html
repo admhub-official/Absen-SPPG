@@ -7577,12 +7577,18 @@ function navigateTo(page) {
 }
 
 // ==================== INIT APP ====================
-function hideSessionLoading() {
+// JARING PENGAMAN: kalau dalam 8 detik halaman masih blank (session-loading
+// masih tampil karena ada proses yang hang di belakang layar), paksa tampilkan
+// halaman login agar user tidak terjebak layar putih/blank selamanya.
+setTimeout(() => {
   const sl = document.getElementById('session-loading');
-  if(!sl) return;
-  sl.classList.add('hide');
-  setTimeout(() => { sl.style.display = 'none'; }, 350);
-}
+  if (sl && !sl.classList.contains('hide')) {
+    console.warn('[WATCHDOG] Proses init terlalu lama (>8s), paksa tampilkan halaman login.');
+    hideSessionLoading();
+    clearSession();
+    navigateTo('login');
+  }
+}, 8000);
 
 document.addEventListener('DOMContentLoaded', () => {
   if(AppState.token) {
