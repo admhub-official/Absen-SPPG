@@ -171,6 +171,97 @@
     .btn-secondary{background:var(--surface);color:var(--text);border:1.5px solid var(--border)}
     .btn-secondary:hover{background:var(--bg)}
 
+  /* ===== ADMIN STYLES ===== */
+    /* Nav item badge */
+    .nav-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--danger);color:#fff;font-size:0.625rem;font-weight:700;border-radius:999px;min-width:16px;height:16px;padding:0 4px;margin-left:auto}
+
+    /* Data table */
+    .admin-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;margin-bottom:1.5rem}
+    .admin-card-header{padding:1.1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+    .admin-card-title{font-size:0.9375rem;font-weight:700;display:flex;align-items:center;gap:0.5rem}
+    .admin-card-title svg{color:var(--primary)}
+    .admin-search{position:relative;flex:1;min-width:180px;max-width:320px}
+    .admin-search input{width:100%;padding:0.55rem 0.875rem 0.55rem 2.25rem;font-size:0.875rem;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text)}
+    .admin-search input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-ring)}
+    .admin-search svg{position:absolute;left:0.65rem;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none}
+    .data-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .data-table{width:100%;border-collapse:collapse;font-size:0.875rem}
+    .data-table th{padding:0.75rem 1rem;text-align:left;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap}
+    .data-table td{padding:0.85rem 1rem;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text)}
+    .data-table tr:last-child td{border-bottom:none}
+    .data-table tr:hover td{background:var(--bg)}
+    .data-table tbody tr{cursor:default}
+    .badge{display:inline-flex;align-items:center;padding:0.2rem 0.6rem;border-radius:999px;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em}
+    .badge-success{background:#d1fae5;color:#065f46}
+    .badge-danger{background:#fee2e2;color:#991b1b}
+    .badge-warning{background:#fef3c7;color:#92400e}
+    .badge-info{background:#dbeafe;color:#1e40af}
+    .badge-gray{background:var(--bg);color:var(--text-muted)}
+    .table-empty{text-align:center;padding:3rem 1rem;color:var(--text-muted);font-size:0.875rem}
+    .table-loading{text-align:center;padding:2.5rem 1rem;color:var(--text-muted);font-size:0.875rem;display:flex;align-items:center;justify-content:center;gap:0.5rem}
+
+    /* Realtime indicator */
+    .realtime-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;animation:pulse-dot 1.8s ease-in-out infinite}
+    @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(0.7)}}
+    .realtime-label{display:flex;align-items:center;gap:0.4rem;font-size:0.75rem;color:var(--success);font-weight:600}
+
+    /* User cards grid */
+    .users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1.25rem;padding:1.5rem}
+    .user-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem 1rem 1.25rem;display:flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer;transition:box-shadow .2s,border-color .2s,transform .15s}
+    .user-card:hover{box-shadow:var(--shadow-lg);border-color:var(--primary);transform:translateY(-2px)}
+    .user-avatar-wrap{width:72px;height:72px;border-radius:50%;overflow:hidden;border:3px solid var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.12);margin-bottom:0.875rem;background:#e0e7ff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;color:var(--primary);flex-shrink:0}
+    .user-avatar-wrap img{width:100%;height:100%;object-fit:cover}
+    .user-card-name{font-size:0.9rem;font-weight:700;margin-bottom:0.25rem;line-height:1.3;word-break:break-word}
+    .user-card-sppg{font-size:0.75rem;color:var(--primary);font-weight:600;margin-bottom:0.2rem}
+    .user-card-jabatan{font-size:0.75rem;color:var(--text-muted)}
+
+    /* Log aktivitas */
+    .log-list{display:flex;flex-direction:column}
+    .log-item{display:flex;align-items:flex-start;gap:1rem;padding:1rem 1.5rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+    .log-item:last-child{border-bottom:none}
+    .log-item:hover{background:var(--bg)}
+    .log-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem}
+    .log-icon-login{background:#dbeafe;color:#1e40af}
+    .log-icon-absen{background:#d1fae5;color:#065f46}
+    .log-icon-update{background:#fef3c7;color:#92400e}
+    .log-icon-delete{background:#fee2e2;color:#991b1b}
+    .log-icon-other{background:#f1f5f9;color:#475569}
+    .log-body{flex:1;min-width:0}
+    .log-user{font-size:0.875rem;font-weight:700;color:var(--text)}
+    .log-email{font-size:0.75rem;color:var(--text-muted)}
+    .log-action{font-size:0.875rem;color:var(--text-secondary);margin-top:0.2rem}
+    .log-time{font-size:0.75rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0;margin-top:2px}
+
+    /* Detail user view */
+    #view-admin-user-detail .back-btn{display:inline-flex;align-items:center;gap:0.5rem;font-size:0.875rem;font-weight:600;color:var(--primary);cursor:pointer;padding:0.4rem 0;margin-bottom:1.25rem;background:none;border:none}
+    #view-admin-user-detail .back-btn:hover{text-decoration:underline}
+    .action-bar{display:flex;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap}
+
+    /* Modal admin */
+    .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9000;display:none;align-items:center;justify-content:center;padding:1rem}
+    .modal-overlay.active{display:flex}
+
+    /* Pagination */
+    .pagination{display:flex;align-items:center;justify-content:space-between;padding:0.85rem 1.25rem;border-top:1px solid var(--border);font-size:0.8125rem;gap:0.75rem;flex-wrap:wrap}
+    .pagination-info{color:var(--text-muted)}
+    .pagination-btns{display:flex;gap:0.4rem}
+    .pagination-btn{padding:0.35rem 0.75rem;border-radius:var(--radius);border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:0.8125rem;cursor:pointer;font-weight:500;transition:background .15s,border-color .15s}
+    .pagination-btn:hover:not(:disabled){background:var(--bg);border-color:var(--primary);color:var(--primary)}
+    .pagination-btn:disabled{opacity:0.45;cursor:not-allowed}
+    .pagination-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+    @media(max-width:767px){
+      .users-grid{grid-template-columns:repeat(2,1fr);gap:0.875rem;padding:1rem}
+      .admin-card-header{gap:0.75rem}
+      .admin-search{max-width:none;width:100%}
+      .log-item{padding:0.875rem 1rem}
+      .data-table th,.data-table td{padding:0.65rem 0.75rem}
+      .action-bar{gap:0.5rem}
+    }
+    @media(min-width:768px) and (max-width:1023px){
+      .users-grid{grid-template-columns:repeat(3,1fr)}
+    }
+
     /* ===== MODAL EDIT PROFIL ===== */
     #modal-edit-profil{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9000;display:none;align-items:center;justify-content:center;padding:1rem}
     #modal-edit-profil.active{display:flex}
@@ -357,6 +448,20 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
         <span>Profil</span>
       </button>
+      <!-- ADMIN ONLY NAV -->
+      <div class="app-nav-item admin-only-nav" style="padding:0.5rem 0.9rem 0.25rem;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:rgba(255,255,255,.3);cursor:default;display:none">Admin</div>
+      <button class="app-nav-item admin-only-nav" data-view="admin-absen" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Data Absen</span>
+      </button>
+      <button class="app-nav-item admin-only-nav" data-view="admin-users" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>
+        <span>Data Users</span>
+      </button>
+      <button class="app-nav-item admin-only-nav" data-view="admin-log" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>Log Aktivitas</span>
+      </button>
     </nav>
     <div class="app-sidebar-footer">
       <button class="app-nav-item" id="btn-logout">
@@ -447,6 +552,185 @@
             <div><div class="info-item-label">Atas Nama Rekening</div><div class="info-item-value" id="p-rekening">-</div></div>
           </div>
         </div>
+        <!-- ===== VIEW: ADMIN DASHBOARD ===== -->
+      <div id="view-admin-dashboard" class="app-view hidden">
+        <div class="page-header">
+          <div class="page-title">Dashboard Admin</div>
+          <div class="page-subtitle">Panel kontrol sistem absensi</div>
+        </div>
+        <div class="welcome-card">
+          <div class="welcome-card-icon">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <h2 id="admin-dashboard-greeting">Selamat datang, Admin!</h2>
+          <p>Gunakan menu di samping (atau di bawah pada mobile) untuk mengelola data absensi, pengguna, dan log aktivitas sistem.</p>
+        </div>
+      </div>
+
+      <!-- ===== VIEW: ADMIN DATA ABSEN ===== -->
+      <div id="view-admin-absen" class="app-view hidden">
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">
+          <div>
+            <div class="page-title">Data Absensi</div>
+            <div class="page-subtitle">Seluruh data absensi dari semua pengguna</div>
+          </div>
+          <div class="realtime-label" id="absen-realtime-label">
+            <span class="realtime-dot"></span> Realtime aktif
+          </div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div class="admin-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Semua Absensi
+            </div>
+            <div class="admin-search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="absen-search" placeholder="Cari nama / SPPG / status...">
+            </div>
+          </div>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Pengguna</th>
+                  <th>SPPG</th>
+                  <th>Tanggal</th>
+                  <th>Masuk</th>
+                  <th>Keluar</th>
+                  <th>Status</th>
+                  <th>Keterangan</th>
+                </tr>
+              </thead>
+              <tbody id="absen-table-body">
+                <tr><td colspan="7" class="table-loading"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Memuat data...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" id="absen-pagination" style="display:none">
+            <span class="pagination-info" id="absen-pagination-info"></span>
+            <div class="pagination-btns">
+              <button class="pagination-btn" id="absen-prev-btn">← Prev</button>
+              <button class="pagination-btn" id="absen-next-btn">Next →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== VIEW: ADMIN DATA USERS ===== -->
+      <div id="view-admin-users" class="app-view hidden">
+        <div class="page-header">
+          <div class="page-title">Data Users</div>
+          <div class="page-subtitle">Semua pengguna terdaftar di sistem</div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div class="admin-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>
+              Daftar Pengguna
+            </div>
+            <div class="admin-search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="users-search" placeholder="Cari nama / SPPG / jabatan...">
+            </div>
+          </div>
+          <div id="users-grid-container" class="users-grid">
+            <div class="table-loading" style="grid-column:1/-1"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Memuat data...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== VIEW: ADMIN USER DETAIL ===== -->
+      <div id="view-admin-user-detail" class="app-view hidden">
+        <button class="back-btn" id="btn-back-from-user-detail">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Kembali ke Data Users
+        </button>
+        <div class="page-header" style="margin-bottom:1rem">
+          <div class="page-title" id="user-detail-title">Detail User</div>
+        </div>
+        <div class="action-bar">
+          <button class="btn btn-primary" id="btn-admin-update-user">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Update Data
+          </button>
+          <button class="btn" id="btn-admin-delete-user" style="background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            Hapus User
+          </button>
+        </div>
+        <div class="profile-card">
+          <div class="profile-banner">
+            <div class="profile-avatar-wrap">
+              <div class="profile-avatar" id="ud-avatar">-</div>
+            </div>
+          </div>
+          <div class="profile-body">
+            <div class="profile-name" id="ud-nama">-</div>
+            <span class="profile-role" id="ud-role">-</span>
+            <div class="profile-idcard" id="ud-idcard">-</div>
+          </div>
+        </div>
+        <div class="info-section">
+          <div class="info-section-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>Data Pribadi</div>
+          <div class="info-grid">
+            <div><div class="info-item-label">Nama Lengkap</div><div class="info-item-value" id="ud-p-nama">-</div></div>
+            <div><div class="info-item-label">Username</div><div class="info-item-value" id="ud-p-username">-</div></div>
+            <div><div class="info-item-label">Email</div><div class="info-item-value" id="ud-p-email">-</div></div>
+            <div><div class="info-item-label">No. WhatsApp</div><div class="info-item-value" id="ud-p-wa">-</div></div>
+            <div><div class="info-item-label">Tempat Lahir</div><div class="info-item-value" id="ud-p-tempat-lahir">-</div></div>
+            <div><div class="info-item-label">Tanggal Lahir</div><div class="info-item-value" id="ud-p-tanggal-lahir">-</div></div>
+            <div><div class="info-item-label">Jenis Kelamin</div><div class="info-item-value" id="ud-p-jk">-</div></div>
+          </div>
+        </div>
+        <div class="info-section">
+          <div class="info-section-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Data Kepegawaian</div>
+          <div class="info-grid">
+            <div><div class="info-item-label">SPPG</div><div class="info-item-value" id="ud-p-sppg">-</div></div>
+            <div><div class="info-item-label">Jabatan / Divisi</div><div class="info-item-value" id="ud-p-jabatan">-</div></div>
+            <div><div class="info-item-label">Tanggal Mulai Kerja</div><div class="info-item-value" id="ud-p-mulai-kerja">-</div></div>
+            <div><div class="info-item-label">Gaji Harian</div><div class="info-item-value" id="ud-p-gaji">-</div></div>
+            <div><div class="info-item-label">Status Akun</div><div class="info-item-value" id="ud-p-status">-</div></div>
+          </div>
+        </div>
+        <div class="info-section">
+          <div class="info-section-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Data Rekening Bank</div>
+          <div class="info-grid">
+            <div><div class="info-item-label">Nama Bank</div><div class="info-item-value" id="ud-p-bank">-</div></div>
+            <div><div class="info-item-label">Atas Nama Rekening</div><div class="info-item-value" id="ud-p-rekening">-</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== VIEW: ADMIN LOG AKTIVITAS ===== -->
+      <div id="view-admin-log" class="app-view hidden">
+        <div class="page-header">
+          <div class="page-title">Log Aktivitas</div>
+          <div class="page-subtitle">Riwayat aktivitas seluruh pengguna sistem</div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div class="admin-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Semua Log
+            </div>
+            <div class="admin-search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="log-search" placeholder="Cari nama / email / aktivitas...">
+            </div>
+          </div>
+          <div class="log-list" id="log-list-container">
+            <div class="table-loading"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Memuat log...</div>
+          </div>
+          <div class="pagination" id="log-pagination" style="display:none">
+            <span class="pagination-info" id="log-pagination-info"></span>
+            <div class="pagination-btns">
+              <button class="pagination-btn" id="log-prev-btn">← Prev</button>
+              <button class="pagination-btn" id="log-next-btn">Next →</button>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
 
@@ -459,7 +743,88 @@
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
         Profil
       </button>
+      <button class="app-bottomnav-item admin-only-nav" data-view="admin-absen" style="display:none">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Absen
+      </button>
+      <button class="app-bottomnav-item admin-only-nav" data-view="admin-users" style="display:none">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>
+        Users
+      </button>
+      <button class="app-bottomnav-item admin-only-nav" data-view="admin-log" style="display:none">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Log
+      </button>
     </nav>
+  </div>
+</div>
+
+<!-- ===== MODAL UPDATE USER (ADMIN) ===== -->
+<div class="modal-overlay" id="modal-admin-update-user">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Update Data User</h3>
+      <button class="modal-close" id="btn-close-admin-update-user">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="admin-update-user-alert" class="inline-alert"></div>
+      <input type="hidden" id="admin-update-user-id">
+      <div class="modal-grid">
+        <div class="form-group"><label class="form-label">Nama Lengkap</label><input type="text" id="auu-nama" class="form-input"></div>
+        <div class="form-group"><label class="form-label">No. WhatsApp</label><input type="text" id="auu-wa" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Tempat Lahir</label><input type="text" id="auu-tempat-lahir" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Tanggal Lahir</label><input type="date" id="auu-tanggal-lahir" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Jenis Kelamin</label>
+          <select id="auu-jk" class="form-input">
+            <option value="">Pilih</option>
+            <option value="Laki-laki">Laki-laki</option>
+            <option value="Perempuan">Perempuan</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">SPPG</label><input type="text" id="auu-sppg" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Jabatan / Divisi</label><input type="text" id="auu-jabatan" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Tanggal Mulai Kerja</label><input type="date" id="auu-mulai-kerja" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Gaji Harian</label><input type="number" id="auu-gaji" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Nama Bank</label><input type="text" id="auu-bank" class="form-input"></div>
+        <div class="form-group" style="grid-column:1/-1"><label class="form-label">Atas Nama Rekening</label><input type="text" id="auu-rekening" class="form-input"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-admin-update-user">Batal</button>
+      <button class="btn btn-primary" id="btn-save-admin-update-user">Simpan Perubahan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL KONFIRMASI HAPUS USER ===== -->
+<div class="modal-overlay" id="modal-admin-delete-user">
+  <div class="modal-card" style="max-width:400px">
+    <div class="modal-header">
+      <h3>Hapus User</h3>
+      <button class="modal-close" id="btn-close-admin-delete-user">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-secondary);font-size:0.9rem;line-height:1.6">Apakah Anda yakin ingin menghapus user <strong id="delete-user-name-confirm"></strong>? Tindakan ini tidak dapat dibatalkan.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-admin-delete-user">Batal</button>
+      <button class="btn" id="btn-confirm-admin-delete-user" style="background:var(--danger);color:#fff">Ya, Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL LOG DETAIL ===== -->
+<div class="modal-overlay" id="modal-log-detail">
+  <div class="modal-card" style="max-width:500px">
+    <div class="modal-header">
+      <h3>Detail Log Aktivitas</h3>
+      <button class="modal-close" id="btn-close-log-detail">✕</button>
+    </div>
+    <div class="modal-body" id="log-detail-body">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-close-log-detail-footer">Tutup</button>
+    </div>
   </div>
 </div>
 
@@ -503,8 +868,24 @@ const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppS
 function formatTanggal(v){if(!v)return'-';const d=new Date(v);if(isNaN(d))return'-';return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});}
 function formatRupiah(v){if(v===undefined||v===null||v==='')return'-';const n=Number(v);if(isNaN(n))return'-';return'Rp '+n.toLocaleString('id-ID');}
 function setInfo(id,val,formatter){const el=document.getElementById(id);if(!el)return;const v=formatter?formatter(val):val;el.textContent=(v===undefined||v===null||v==='')?'-':v;el.classList.toggle('empty',!v||v==='-');}
-function showApp(){$('#auth-layout').classList.add('hidden'),$('#auth-layout').classList.remove('active'),$('#app-layout').classList.add('active');renderProfilFromUser();switchView('dashboard');}
-function showAuth(){$('#app-layout').classList.remove('active'),$('#auth-layout').classList.remove('hidden');}
+function showApp(){
+  $('#auth-layout').classList.add('hidden');
+  $('#auth-layout').classList.remove('active');
+  $('#app-layout').classList.add('active');
+  renderProfilFromUser();
+  if(isAdmin()){
+    showAdminNav();
+    const u = AppState.user;
+    const nama = u?.namaLengkap||u?.Nama_Lengkap||u?.nama||'Admin';
+    switchView('admin-dashboard');
+    setTimeout(()=>{
+      const greeting = $('#admin-dashboard-greeting');
+      if(greeting) greeting.textContent = `Selamat datang, ${nama.split(' ')[0]}!`;
+    }, 50);
+  } else {
+    switchView('dashboard');
+  }
+}function showAuth(){$('#app-layout').classList.remove('active'),$('#auth-layout').classList.remove('hidden');}
 function switchView(v){AppState.currentView=v;$$('.app-view').forEach(e=>e.classList.add('hidden'));const t=document.getElementById(`view-${v}`);if(t)t.classList.remove('hidden');$$('.app-nav-item[data-view],.app-bottomnav-item[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));}
 function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;$('#profil-avatar').textContent=nama?nama.trim().charAt(0).toUpperCase():'?';$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);}
 async function loadProfilLengkap(){try{const r=await apiCall('getProfilLengkap',{token:AppState.token});if(r&&r.user){AppState.user=r.user;localStorage.setItem('auth_user',JSON.stringify(r.user));renderProfilFromUser();}}catch(e){console.error(e);}}
@@ -725,6 +1106,447 @@ async function handleUpdatePassword(){
   }
 }
 
+/* ===================================================================
+   ADMIN MODULE
+   =================================================================== */
+const AdminState = {
+  allAbsen: [],
+  filteredAbsen: [],
+  absenPage: 1,
+  absenPageSize: 20,
+  allUsers: [],
+  filteredUsers: [],
+  selectedUser: null,
+  allLogs: [],
+  filteredLogs: [],
+  logPage: 1,
+  logPageSize: 25,
+  realtimeChannel: null,
+};
+
+function isAdmin(){
+  const u = AppState.user;
+  if(!u) return false;
+  const r = (u.role||u.Role||'').toLowerCase();
+  return r === 'admin' || r === 'superadmin';
+}
+
+function showAdminNav(){
+  document.querySelectorAll('.admin-only-nav').forEach(el => el.style.display = '');
+}
+
+/* ---- Realtime Supabase channel untuk Data Absen ---- */
+function startAbsenRealtime(){
+  if(AdminState.realtimeChannel) return; // sudah berjalan
+  const sbUrl = SUPABASE_URL;
+  const sbKey = SUPABASE_KEY;
+  // Supabase Realtime via REST WebSocket
+  const wsUrl = sbUrl.replace('https://','wss://') + '/realtime/v1/websocket?apikey=' + sbKey + '&vsn=1.0.0';
+  try {
+    const ws = new WebSocket(wsUrl);
+    AdminState.realtimeChannel = ws;
+    ws.onopen = () => {
+      ws.send(JSON.stringify({topic:'realtime:public:Data_Absen',event:'phx_join',payload:{config:{postgres_changes:[{event:'*',schema:'public',table:'Data_Absen'}]}},ref:'1'}));
+    };
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if(msg.event === 'postgres_changes' || (msg.payload && msg.payload.data)) {
+          loadAdminAbsen();
+        }
+      } catch(e){}
+    };
+    ws.onerror = () => { AdminState.realtimeChannel = null; };
+    ws.onclose = () => { AdminState.realtimeChannel = null; };
+  } catch(e){ AdminState.realtimeChannel = null; }
+}
+
+function stopAbsenRealtime(){
+  if(AdminState.realtimeChannel){
+    try { AdminState.realtimeChannel.close(); } catch(e){}
+    AdminState.realtimeChannel = null;
+  }
+}
+
+/* ---- Load Data Absen ---- */
+async function loadAdminAbsen(){
+  const tbody = $('#absen-table-body');
+  if(!tbody) return;
+  try {
+    const r = await apiCall('adminGetAllAbsen', {token: AppState.token});
+    AdminState.allAbsen = Array.isArray(r) ? r : (r?.data || []);
+    filterAndRenderAbsen();
+  } catch(e) {
+    if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="table-empty">Gagal memuat data: ${e.message}</td></tr>`;
+  }
+}
+
+function filterAndRenderAbsen(){
+  const q = ($('#absen-search')?.value||'').toLowerCase();
+  AdminState.filteredAbsen = AdminState.allAbsen.filter(row => {
+    if(!q) return true;
+    const nama = (row.Nama_Lengkap||row.nama_lengkap||'').toLowerCase();
+    const sppg = (row.SPPG||row.sppg||'').toLowerCase();
+    const status = (row.Status||row.status||'').toLowerCase();
+    return nama.includes(q) || sppg.includes(q) || status.includes(q);
+  });
+  AdminState.absenPage = 1;
+  renderAbsenTable();
+}
+
+function renderAbsenTable(){
+  const tbody = $('#absen-table-body');
+  const pg = $('#absen-pagination');
+  if(!tbody) return;
+  const total = AdminState.filteredAbsen.length;
+  const ps = AdminState.absenPageSize;
+  const page = AdminState.absenPage;
+  const totalPages = Math.max(1, Math.ceil(total / ps));
+  const start = (page-1)*ps;
+  const rows = AdminState.filteredAbsen.slice(start, start+ps);
+
+  if(rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="7" class="table-empty">Tidak ada data absensi</td></tr>`;
+    if(pg) pg.style.display = 'none';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(row => {
+    const nama = row.Nama_Lengkap||row.nama_lengkap||'-';
+    const sppg = row.SPPG||row.sppg||'-';
+    const tgl = row.Tanggal||row.tanggal ? formatTanggal(row.Tanggal||row.tanggal) : '-';
+    const masuk = row.Jam_Masuk||row.jam_masuk||'-';
+    const keluar = row.Jam_Keluar||row.jam_keluar||'-';
+    const status = row.Status||row.status||'-';
+    const ket = row.Keterangan||row.keterangan||'-';
+    const statusBadge = status.toLowerCase().includes('hadir') ? 'badge-success' :
+                        status.toLowerCase().includes('izin') ? 'badge-warning' :
+                        status.toLowerCase().includes('alpha') ? 'badge-danger' : 'badge-gray';
+    return `<tr>
+      <td><div style="font-weight:600">${nama}</div></td>
+      <td>${sppg}</td>
+      <td>${tgl}</td>
+      <td>${masuk}</td>
+      <td>${keluar}</td>
+      <td><span class="badge ${statusBadge}">${status}</span></td>
+      <td style="color:var(--text-secondary)">${ket}</td>
+    </tr>`;
+  }).join('');
+
+  if(pg){
+    pg.style.display = 'flex';
+    $('#absen-pagination-info').textContent = `${start+1}–${Math.min(start+ps,total)} dari ${total} data`;
+    $('#absen-prev-btn').disabled = page <= 1;
+    $('#absen-next-btn').disabled = page >= totalPages;
+  }
+}
+
+/* ---- Load Data Users ---- */
+async function loadAdminUsers(){
+  const container = $('#users-grid-container');
+  if(!container) return;
+  container.innerHTML = `<div class="table-loading" style="grid-column:1/-1"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Memuat data...</div>`;
+  try {
+    const r = await apiCall('adminGetAllUsers', {token: AppState.token});
+    AdminState.allUsers = Array.isArray(r) ? r : (r?.data || []);
+    filterAndRenderUsers();
+  } catch(e) {
+    container.innerHTML = `<div class="table-empty" style="grid-column:1/-1">Gagal memuat data: ${e.message}</div>`;
+  }
+}
+
+function filterAndRenderUsers(){
+  const q = ($('#users-search')?.value||'').toLowerCase();
+  AdminState.filteredUsers = AdminState.allUsers.filter(u => {
+    if(!q) return true;
+    const nama = (u.Nama_Lengkap||u.nama_lengkap||'').toLowerCase();
+    const sppg = (u.SPPG||u.sppg||'').toLowerCase();
+    const jabatan = (u.Jabatan_Divisi||u.jabatan_divisi||'').toLowerCase();
+    return nama.includes(q) || sppg.includes(q) || jabatan.includes(q);
+  });
+  renderUsersGrid();
+}
+
+function renderUsersGrid(){
+  const container = $('#users-grid-container');
+  if(!container) return;
+  const users = AdminState.filteredUsers;
+  if(users.length === 0){
+    container.innerHTML = `<div class="table-empty" style="grid-column:1/-1">Tidak ada pengguna ditemukan</div>`;
+    return;
+  }
+  container.innerHTML = users.map((u,i) => {
+    const nama = u.Nama_Lengkap||u.nama_lengkap||'-';
+    const sppg = u.SPPG||u.sppg||'-';
+    const jabatan = u.Jabatan_Divisi||u.jabatan_divisi||'-';
+    const foto = u.URL_Foto_Profil||u.url_foto_profil||'';
+    const inisial = nama.trim().charAt(0).toUpperCase();
+    const avatarHtml = foto
+      ? `<img src="${foto}" alt="${nama}" onerror="this.parentElement.innerHTML='${inisial}'">`
+      : inisial;
+    return `<div class="user-card" data-user-index="${i}" onclick="openUserDetail(${i})">
+      <div class="user-avatar-wrap">${avatarHtml}</div>
+      <div class="user-card-name">${nama}</div>
+      <div class="user-card-sppg">${sppg}</div>
+      <div class="user-card-jabatan">${jabatan}</div>
+    </div>`;
+  }).join('');
+}
+
+function openUserDetail(index){
+  const u = AdminState.filteredUsers[index];
+  if(!u) return;
+  AdminState.selectedUser = u;
+  const nama = u.Nama_Lengkap||u.nama_lengkap||'-';
+  const foto = u.URL_Foto_Profil||u.url_foto_profil||'';
+  const inisial = nama.trim().charAt(0).toUpperCase();
+
+  $('#user-detail-title').textContent = nama;
+  const avatarEl = $('#ud-avatar');
+  if(foto){
+    avatarEl.innerHTML = '';
+    avatarEl.style.background = 'transparent';
+    avatarEl.style.border = 'none';
+    const img = document.createElement('img');
+    img.src = foto;
+    img.style.cssText = 'width:88px;height:88px;border-radius:50%;border:4px solid var(--surface);object-fit:cover';
+    img.onerror = () => { avatarEl.textContent = inisial; };
+    avatarEl.appendChild(img);
+  } else {
+    avatarEl.textContent = inisial;
+  }
+  $('#ud-nama').textContent = nama;
+  $('#ud-role').textContent = u.Role||u.role||'USER';
+  $('#ud-idcard').textContent = (u.ID_Card_Unik||u.id_card_unik) ? `ID Card: ${u.ID_Card_Unik||u.id_card_unik}` : '-';
+
+  setInfo('ud-p-nama', nama);
+  setInfo('ud-p-username', u.Username||u.username);
+  setInfo('ud-p-email', u.Email||u.email);
+  setInfo('ud-p-wa', u.No_Whatsapp||u.no_whatsapp);
+  setInfo('ud-p-tempat-lahir', u.Tempat_Lahir||u.tempat_lahir);
+  setInfo('ud-p-tanggal-lahir', u.Tanggal_Lahir||u.tanggal_lahir, formatTanggal);
+  setInfo('ud-p-jk', u.Jenis_Kelamin||u.jenis_kelamin);
+  setInfo('ud-p-sppg', u.SPPG||u.sppg);
+  setInfo('ud-p-jabatan', u.Jabatan_Divisi||u.jabatan_divisi);
+  setInfo('ud-p-mulai-kerja', u.Tanggal_Mulai_Kerja||u.tanggal_mulai_kerja, formatTanggal);
+  setInfo('ud-p-gaji', u.Gaji_Harian||u.gaji_harian, formatRupiah);
+  setInfo('ud-p-status', u.Status_Akun||u.status_akun||'Aktif');
+  setInfo('ud-p-bank', u.Nama_Bank||u.nama_bank);
+  setInfo('ud-p-rekening', u.Atas_Nama_Rekening||u.atas_nama_rekening);
+
+  switchView('admin-user-detail');
+}
+
+function openAdminUpdateUserModal(){
+  const u = AdminState.selectedUser;
+  if(!u) return;
+  hideInlineAlert('admin-update-user-alert');
+  $('#admin-update-user-id').value = u.id || u.ID || '';
+  $('#auu-nama').value = u.Nama_Lengkap||u.nama_lengkap||'';
+  $('#auu-wa').value = u.No_Whatsapp||u.no_whatsapp||'';
+  $('#auu-tempat-lahir').value = u.Tempat_Lahir||u.tempat_lahir||'';
+  const tgl = u.Tanggal_Lahir||u.tanggal_lahir;
+  $('#auu-tanggal-lahir').value = tgl ? String(tgl).split('T')[0] : '';
+  $('#auu-jk').value = u.Jenis_Kelamin||u.jenis_kelamin||'';
+  $('#auu-sppg').value = u.SPPG||u.sppg||'';
+  $('#auu-jabatan').value = u.Jabatan_Divisi||u.jabatan_divisi||'';
+  const mk = u.Tanggal_Mulai_Kerja||u.tanggal_mulai_kerja;
+  $('#auu-mulai-kerja').value = mk ? String(mk).split('T')[0] : '';
+  $('#auu-gaji').value = u.Gaji_Harian||u.gaji_harian||'';
+  $('#auu-bank').value = u.Nama_Bank||u.nama_bank||'';
+  $('#auu-rekening').value = u.Atas_Nama_Rekening||u.atas_nama_rekening||'';
+  $('#modal-admin-update-user').classList.add('active');
+}
+
+async function handleSaveAdminUpdateUser(){
+  hideInlineAlert('admin-update-user-alert');
+  const userId = $('#admin-update-user-id').value;
+  if(!userId){ showInlineAlert('admin-update-user-alert','ID user tidak ditemukan'); return; }
+  const updates = {
+    Nama_Lengkap: $('#auu-nama').value.trim(),
+    No_Whatsapp: $('#auu-wa').value.trim(),
+    Tempat_Lahir: $('#auu-tempat-lahir').value.trim(),
+    Tanggal_Lahir: $('#auu-tanggal-lahir').value || null,
+    Jenis_Kelamin: $('#auu-jk').value,
+    SPPG: $('#auu-sppg').value.trim(),
+    Jabatan_Divisi: $('#auu-jabatan').value.trim(),
+    Tanggal_Mulai_Kerja: $('#auu-mulai-kerja').value || null,
+    Gaji_Harian: $('#auu-gaji').value ? Number($('#auu-gaji').value) : null,
+    Nama_Bank: $('#auu-bank').value.trim(),
+    Atas_Nama_Rekening: $('#auu-rekening').value.trim(),
+  };
+  if(!updates.Nama_Lengkap){ showInlineAlert('admin-update-user-alert','Nama lengkap tidak boleh kosong','warning'); return; }
+  const b = $('#btn-save-admin-update-user'), o = b.innerHTML;
+  b.disabled = true; b.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Menyimpan...';
+  try {
+    const r = await apiCall('adminUpdateUser', {token: AppState.token, userId, updates});
+    if(r && r.success){
+      showAlert('Data user berhasil diperbarui','success');
+      // Update local state
+      Object.assign(AdminState.selectedUser, updates);
+      openUserDetail(AdminState.filteredUsers.indexOf(AdminState.selectedUser));
+      $('#modal-admin-update-user').classList.remove('active');
+      loadAdminUsers();
+    } else {
+      showInlineAlert('admin-update-user-alert', r?.message||'Gagal memperbarui data');
+    }
+  } catch(e) {
+    showInlineAlert('admin-update-user-alert', e.message||'Terjadi kesalahan');
+  } finally {
+    b.disabled = false; b.innerHTML = o;
+  }
+}
+
+function openAdminDeleteUserModal(){
+  const u = AdminState.selectedUser;
+  if(!u) return;
+  const nama = u.Nama_Lengkap||u.nama_lengkap||'user ini';
+  $('#delete-user-name-confirm').textContent = nama;
+  $('#modal-admin-delete-user').classList.add('active');
+}
+
+async function handleConfirmDeleteUser(){
+  const u = AdminState.selectedUser;
+  if(!u) return;
+  const userId = u.id || u.ID;
+  const b = $('#btn-confirm-admin-delete-user'), o = b.innerHTML;
+  b.disabled = true; b.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px"></div>';
+  try {
+    const r = await apiCall('adminDeleteUser', {token: AppState.token, userId});
+    if(r && r.success){
+      showAlert('User berhasil dihapus','success');
+      $('#modal-admin-delete-user').classList.remove('active');
+      AdminState.selectedUser = null;
+      switchView('admin-users');
+      loadAdminUsers();
+    } else {
+      showAlert(r?.message||'Gagal menghapus user','error');
+    }
+  } catch(e) {
+    showAlert(e.message||'Terjadi kesalahan','error');
+  } finally {
+    b.disabled = false; b.innerHTML = o;
+  }
+}
+
+/* ---- Load Log Aktivitas ---- */
+async function loadAdminLog(){
+  const container = $('#log-list-container');
+  if(!container) return;
+  container.innerHTML = `<div class="table-loading"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Memuat log...</div>`;
+  try {
+    const r = await apiCall('adminGetAllLog', {token: AppState.token});
+    AdminState.allLogs = Array.isArray(r) ? r : (r?.data || []);
+    filterAndRenderLog();
+  } catch(e) {
+    container.innerHTML = `<div class="table-empty">Gagal memuat log: ${e.message}</div>`;
+  }
+}
+
+function filterAndRenderLog(){
+  const q = ($('#log-search')?.value||'').toLowerCase();
+  AdminState.filteredLogs = AdminState.allLogs.filter(log => {
+    if(!q) return true;
+    const nama = (log.Nama_Lengkap||log.nama_lengkap||'').toLowerCase();
+    const email = (log.Email||log.email||'').toLowerCase();
+    const aktivitas = (log.Aktivitas||log.aktivitas||log.Action||log.action||'').toLowerCase();
+    return nama.includes(q) || email.includes(q) || aktivitas.includes(q);
+  });
+  AdminState.logPage = 1;
+  renderLogList();
+}
+
+function getLogIcon(aktivitas){
+  const a = (aktivitas||'').toLowerCase();
+  if(a.includes('login') || a.includes('masuk')) return {cls:'log-icon-login', icon:'🔐'};
+  if(a.includes('absen') || a.includes('hadir')) return {cls:'log-icon-absen', icon:'📋'};
+  if(a.includes('update') || a.includes('edit') || a.includes('ubah')) return {cls:'log-icon-update', icon:'✏️'};
+  if(a.includes('hapus') || a.includes('delete')) return {cls:'log-icon-delete', icon:'🗑️'};
+  return {cls:'log-icon-other', icon:'📌'};
+}
+
+function formatWaktu(v){
+  if(!v) return '-';
+  const d = new Date(v);
+  if(isNaN(d)) return v;
+  return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) + ' ' +
+         d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+}
+
+function renderLogList(){
+  const container = $('#log-list-container');
+  const pg = $('#log-pagination');
+  if(!container) return;
+  const total = AdminState.filteredLogs.length;
+  const ps = AdminState.logPageSize;
+  const page = AdminState.logPage;
+  const start = (page-1)*ps;
+  const rows = AdminState.filteredLogs.slice(start, start+ps);
+
+  if(rows.length === 0){
+    container.innerHTML = `<div class="table-empty">Tidak ada log ditemukan</div>`;
+    if(pg) pg.style.display = 'none';
+    return;
+  }
+
+  container.innerHTML = rows.map((log, idx) => {
+    const nama = log.Nama_Lengkap||log.nama_lengkap||'Unknown';
+    const email = log.Email||log.email||'-';
+    const aktivitas = log.Aktivitas||log.aktivitas||log.Action||log.action||'-';
+    const waktu = formatWaktu(log.Waktu||log.waktu||log.created_at||log.CreatedAt);
+    const {cls, icon} = getLogIcon(aktivitas);
+    return `<div class="log-item" onclick="openLogDetail(${start+idx})">
+      <div class="log-icon ${cls}">${icon}</div>
+      <div class="log-body">
+        <div class="log-user">${nama}</div>
+        <div class="log-email">${email}</div>
+        <div class="log-action">${aktivitas}</div>
+      </div>
+      <div class="log-time">${waktu}</div>
+    </div>`;
+  }).join('');
+
+  if(pg){
+    pg.style.display = 'flex';
+    const totalPages = Math.max(1, Math.ceil(total/ps));
+    $('#log-pagination-info').textContent = `${start+1}–${Math.min(start+ps,total)} dari ${total} log`;
+    $('#log-prev-btn').disabled = page <= 1;
+    $('#log-next-btn').disabled = page >= totalPages;
+  }
+}
+
+function openLogDetail(index){
+  const log = AdminState.filteredLogs[index];
+  if(!log) return;
+  const nama = log.Nama_Lengkap||log.nama_lengkap||'Unknown';
+  const email = log.Email||log.email||'-';
+  const aktivitas = log.Aktivitas||log.aktivitas||log.Action||log.action||'-';
+  const waktu = formatWaktu(log.Waktu||log.waktu||log.created_at||log.CreatedAt);
+  const ipAddr = log.IP||log.ip||log.IP_Address||'-';
+  const detail = log.Detail||log.detail||log.Keterangan||log.keterangan||'-';
+  const {cls, icon} = getLogIcon(aktivitas);
+
+  $('#log-detail-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+      <div class="log-icon ${cls}" style="width:52px;height:52px;font-size:1.375rem;flex-shrink:0">${icon}</div>
+      <div>
+        <div style="font-size:1.0625rem;font-weight:800">${nama}</div>
+        <div style="font-size:0.8125rem;color:var(--text-muted)">${email}</div>
+      </div>
+    </div>
+    <div class="info-grid" style="gap:1rem">
+      <div><div class="info-item-label">Aktivitas</div><div class="info-item-value" style="font-weight:600;color:var(--text)">${aktivitas}</div></div>
+      <div><div class="info-item-label">Waktu</div><div class="info-item-value">${waktu}</div></div>
+      <div><div class="info-item-label">IP Address</div><div class="info-item-value">${ipAddr}</div></div>
+      <div><div class="info-item-label">Detail</div><div class="info-item-value">${detail}</div></div>
+    </div>
+  `;
+  $('#modal-log-detail').classList.add('active');
+}
+
+/* ---- switchView override untuk admin views ---- */
+const _originalSwitchView = window.switchView;
+
 /* ===== EDIT PROFIL ===== */
 function openEditProfil(){
   const u=AppState.user;if(!u)return;
@@ -804,10 +1626,40 @@ async function initApp(){
 
   window.location.hash.slice(1)==='register'&&navigateTo('register');
 
-  $$('.app-nav-item[data-view],.app-bottomnav-item[data-view]').forEach(e=>e.addEventListener('click',()=>switchView(e.dataset.view)));
+  $$('.app-nav-item[data-view],.app-bottomnav-item[data-view]').forEach(e=>e.addEventListener('click',()=>{
+    const v = e.dataset.view;
+    switchView(v);
+    if(v==='admin-absen'){ loadAdminAbsen(); startAbsenRealtime(); }
+    else { stopAbsenRealtime(); }
+    if(v==='admin-users') loadAdminUsers();
+    if(v==='admin-log') loadAdminLog();
+  }));
   $('#btn-logout').addEventListener('click',handleLogout);
   $('#btn-logout-mobile').addEventListener('click',handleLogout);
 
+  // Admin: update user modal
+  $('#btn-admin-update-user')?.addEventListener('click', openAdminUpdateUserModal);
+  $('#btn-admin-delete-user')?.addEventListener('click', openAdminDeleteUserModal);
+  $('#btn-close-admin-update-user')?.addEventListener('click',()=>$('#modal-admin-update-user').classList.remove('active'));
+  $('#btn-cancel-admin-update-user')?.addEventListener('click',()=>$('#modal-admin-update-user').classList.remove('active'));
+  $('#btn-save-admin-update-user')?.addEventListener('click', handleSaveAdminUpdateUser);
+  $('#btn-close-admin-delete-user')?.addEventListener('click',()=>$('#modal-admin-delete-user').classList.remove('active'));
+  $('#btn-cancel-admin-delete-user')?.addEventListener('click',()=>$('#modal-admin-delete-user').classList.remove('active'));
+  $('#btn-confirm-admin-delete-user')?.addEventListener('click', handleConfirmDeleteUser);
+  $('#btn-back-from-user-detail')?.addEventListener('click',()=>switchView('admin-users'));
+  $('#btn-close-log-detail')?.addEventListener('click',()=>$('#modal-log-detail').classList.remove('active'));
+  $('#btn-close-log-detail-footer')?.addEventListener('click',()=>$('#modal-log-detail').classList.remove('active'));
+
+  // Admin: search input listeners
+  $('#absen-search')?.addEventListener('input', filterAndRenderAbsen);
+  $('#users-search')?.addEventListener('input', filterAndRenderUsers);
+  $('#log-search')?.addEventListener('input', filterAndRenderLog);
+
+  // Admin: pagination
+  $('#absen-prev-btn')?.addEventListener('click',()=>{ AdminState.absenPage--; renderAbsenTable(); });
+  $('#absen-next-btn')?.addEventListener('click',()=>{ AdminState.absenPage++; renderAbsenTable(); });
+  $('#log-prev-btn')?.addEventListener('click',()=>{ AdminState.logPage--; renderLogList(); });
+  $('#log-next-btn')?.addEventListener('click',()=>{ AdminState.logPage++; renderLogList(); });
   $('#btn-open-edit-profil').addEventListener('click',openEditProfil);
   $('#btn-close-edit-profil').addEventListener('click',closeEditProfil);
   $('#btn-cancel-edit-profil').addEventListener('click',closeEditProfil);
