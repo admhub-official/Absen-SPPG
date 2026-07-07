@@ -7532,25 +7532,39 @@ function navigateTo(page) {
   $('#page-title').textContent = titles[page] || '';
   $('#sidebar').classList.remove('open');
   $('#sidebar-overlay').classList.remove('show');
-  if(page === 'dashboard') initDashboard();
-  if(page === 'profil') initProfil();
-  if(page === 'manajemen-user') initManajemenUser();
-  if(page === 'data-karyawan') initDataKaryawan();
-  if(page === 'payroll') initPayroll();
-  if(page === 'my-payroll') initMyPayroll();
-  if(page === 'absensi') initAbsensi();
+  // FIX: bungkus semua pemanggilan init-page dengan try/catch.
+  // Sebelumnya, jika salah satu fungsi init throw error (mis. elemen DOM null
+  // atau data API tidak sesuai ekspektasi), seluruh eksekusi navigateTo()
+  // berhenti tanpa pesan jelas -> menyebabkan layar putih kosong setelah login.
+  const safeInit = (fn, label) => {
+    try {
+      const result = fn();
+      if (result && typeof result.catch === 'function') {
+        result.catch(e => console.error(`[NAV] Error saat init halaman "${label}":`, e));
+      }
+    } catch (e) {
+      console.error(`[NAV] Error saat init halaman "${label}":`, e);
+    }
+  };
+  if(page === 'dashboard') safeInit(initDashboard, 'dashboard');
+  if(page === 'profil') safeInit(initProfil, 'profil');
+  if(page === 'manajemen-user') safeInit(initManajemenUser, 'manajemen-user');
+  if(page === 'data-karyawan') safeInit(initDataKaryawan, 'data-karyawan');
+  if(page === 'payroll') safeInit(initPayroll, 'payroll');
+  if(page === 'my-payroll') safeInit(initMyPayroll, 'my-payroll');
+  if(page === 'absensi') safeInit(initAbsensi, 'absensi');
    if(page === 'device-absen') {
-    initDeviceAbsen();
+    safeInit(initDeviceAbsen, 'device-absen');
   } else if(window._clockInterval) {
     clearInterval(window._clockInterval);
     window._clockInterval = null;
   }
-  if(page === 'my-absensi') initMyAbsensi();
-  if(page === 'audit-log') initAuditLog();
-  if(page === 'pengaduan') initPengaduan();
-  if(page === 'inbox-pengaduan') initInboxPengaduan();
-  if(page === 'absen-manual') initAbsenManual();
-  if(page === 'register') initRegister();
+  if(page === 'my-absensi') safeInit(initMyAbsensi, 'my-absensi');
+  if(page === 'audit-log') safeInit(initAuditLog, 'audit-log');
+  if(page === 'pengaduan') safeInit(initPengaduan, 'pengaduan');
+  if(page === 'inbox-pengaduan') safeInit(initInboxPengaduan, 'inbox-pengaduan');
+  if(page === 'absen-manual') safeInit(initAbsenManual, 'absen-manual');
+  if(page === 'register') safeInit(initRegister, 'register');
 }
 
 // ==================== INIT APP ====================
@@ -8569,11 +8583,16 @@ async function initDashboard() {
   const cacheKey = _cacheKey('getDashboardData', { token: AppState.token });
   const cached = _apiCache[cacheKey];
   if (cached && cached.data) {
-    // Render data lama secara instan
-    if(cached.data.role === 'ADMIN' || cached.data.role === 'AKUNTAN') {
-      renderDashboardAdmin(cached.data);
-    } else {
-      renderDashboardUser(cached.data);
+    // FIX: bungkus render cache lama dengan try/catch juga, karena render
+    // bisa throw jika bentuk data cache tidak sesuai ekspektasi terbaru.
+    try {
+      if(cached.data.role === 'ADMIN' || cached.data.role === 'AKUNTAN') {
+        renderDashboardAdmin(cached.data);
+      } else {
+        renderDashboardUser(cached.data);
+      }
+    } catch(e) {
+      console.error('[DASHBOARD] Gagal render data cache:', e);
     }
   }
   try {
@@ -8585,14 +8604,18 @@ async function initDashboard() {
       renderDashboardUser(data);
     }
   } catch(e) {
+    console.error('[DASHBOARD] Gagal render data terbaru:', e);
     if (!cached) showAlert(e); // hanya tampilkan error jika tidak ada data lama
   }
 }
 
 function renderDashboardAdmin(data) {
   const container = $('#dashboard-admin');
+  // FIX: guard null agar tidak throw TypeError jika elemen belum/tidak ada di DOM
+  if(!container) { console.warn('[DASHBOARD] #dashboard-admin tidak ditemukan'); return; }
   container.classList.remove('hidden');
-  $('#dashboard-user').classList.add('hidden');
+  const dashUserEl = $('#dashboard-user');
+  if(dashUserEl) dashUserEl.classList.add('hidden');
 
   const namaUser = (AppState.user && AppState.user.nama) || (AppState.user && AppState.user.role) || 'Admin';
   const todayLong = new Date().toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
@@ -8732,8 +8755,11 @@ return `
 
 function renderDashboardUser(data) {
   const container = $('#dashboard-user');
+  // FIX: guard null agar tidak throw TypeError jika elemen belum/tidak ada di DOM
+  if(!container) { console.warn('[DASHBOARD] #dashboard-user tidak ditemukan'); return; }
   container.classList.remove('hidden');
-  $('#dashboard-admin').classList.add('hidden');
+  const dashAdminEl = $('#dashboard-admin');
+  if(dashAdminEl) dashAdminEl.classList.add('hidden');
 
   // Notifikasi selamat datang jika foto profil belum diisi
   const welcomeKey = 'welcomed_' + (AppState.user && AppState.user.idUser);
