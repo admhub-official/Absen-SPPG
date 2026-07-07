@@ -153,6 +153,36 @@
       .info-grid{grid-template-columns:1fr}
     }
 
+    /* ===== OTP & AUTH TAMBAHAN ===== */
+    .otp-input-row{display:flex;gap:0.5rem;justify-content:center;margin-bottom:1.25rem}
+    .otp-input-row input{width:44px;height:52px;text-align:center;font-size:1.375rem;font-weight:700;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)}
+    .otp-input-row input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-ring)}
+    .resend-row{text-align:center;font-size:0.8125rem;color:var(--text-secondary);margin-top:0.75rem}
+    .resend-row a{color:var(--primary);font-weight:600;cursor:pointer;text-decoration:none}
+    .resend-row a:hover{text-decoration:underline}
+    .resend-row a.disabled{color:var(--text-muted);cursor:not-allowed;pointer-events:none}
+    .field-error{color:var(--danger);font-size:0.8125rem;margin-top:0.4rem;display:none}
+    .field-error.show{display:block}
+    .inline-alert{display:none;align-items:flex-start;gap:0.6rem;padding:0.75rem 0.9rem;border-radius:var(--radius);font-size:0.8125rem;line-height:1.5;margin-bottom:1.125rem;border-left:4px solid var(--danger);background:#fef2f2;color:#991b1b}
+    .inline-alert.show{display:flex}
+    .inline-alert.warning{border-left-color:var(--warning);background:#fffbeb;color:#92400e}
+    .btn-reset-link{display:none;width:100%;margin-top:0.75rem}
+    .btn-reset-link.show{display:inline-flex}
+    .btn-secondary{background:var(--surface);color:var(--text);border:1.5px solid var(--border)}
+    .btn-secondary:hover{background:var(--bg)}
+
+    /* ===== MODAL EDIT PROFIL ===== */
+    #modal-edit-profil{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9000;display:none;align-items:center;justify-content:center;padding:1rem}
+    #modal-edit-profil.active{display:flex}
+    .modal-card{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+    .modal-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
+    .modal-header h3{font-size:1.125rem;font-weight:800}
+    .modal-close{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1.25rem;line-height:1;padding:0.25rem}
+    .modal-body{padding:1.5rem}
+    .modal-footer{padding:1.1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.75rem;justify-content:flex-end;position:sticky;bottom:0;background:var(--surface)}
+    .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 1rem}
+    @media(max-width:640px){.modal-grid{grid-template-columns:1fr}}
+
   </style>
 </head>
 <body>
@@ -175,9 +205,11 @@
         <div class="auth-logo-mobile"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
         <div class="auth-card-title">Selamat datang kembali</div>
         <div class="auth-card-subtitle">Masuk untuk melanjutkan ke dashboard Anda</div>
+        <div id="login-alert" class="inline-alert"></div>
         <div class="form-group"><label class="form-label">Email</label><input type="email" id="login-email" class="form-input" placeholder="nama@perusahaan.com"></div>
         <div class="form-group"><label class="form-label">Password</label><input type="password" id="login-password" class="form-input" placeholder="Masukkan password"></div>
         <button id="btn-login" class="btn btn-primary btn-block btn-lg"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Login</button>
+        <button id="btn-goto-forgot" class="btn btn-secondary btn-block btn-reset-link">Reset Password</button>
         <div class="auth-footer"><a id="btn-to-register">Belum punya akun? Daftar</a></div>
       </div>
     </div>
@@ -207,6 +239,104 @@
         <div class="checkbox-row"><input type="checkbox" id="reg-setuju"><label for="reg-setuju">Saya menyetujui kebijakan penggunaan data pribadi</label></div>
         <button id="btn-register" class="btn btn-primary btn-block btn-lg">Daftar Sekarang</button>
         <div class="auth-footer"><a id="btn-to-login">← Sudah punya akun? Login</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-verify-register" class="page auth-page hidden">
+    <div class="auth-brand-panel">
+      <div class="auth-brand-mark"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+      <div class="auth-brand-headline">Cek email Anda.</div>
+      <div class="auth-brand-sub">Kami sudah mengirim kode verifikasi 6 digit ke email yang Anda daftarkan.</div>
+    </div>
+    <div class="auth-form-panel">
+      <div class="auth-card">
+        <div class="auth-logo-mobile"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+        <div class="auth-card-title">Masukkan Kode Verifikasi</div>
+        <div class="auth-card-subtitle">Kode 6 digit dikirim ke <strong id="verify-register-email">-</strong></div>
+        <div id="verify-register-alert" class="inline-alert"></div>
+        <div class="otp-input-row" id="verify-register-otp-row">
+          <input type="text" maxlength="1" inputmode="numeric">
+          <input type="text" maxlength="1" inputmode="numeric">
+          <input type="text" maxlength="1" inputmode="numeric">
+          <input type="text" maxlength="1" inputmode="numeric">
+          <input type="text" maxlength="1" inputmode="numeric">
+          <input type="text" maxlength="1" inputmode="numeric">
+        </div>
+        <button id="btn-verify-register" class="btn btn-primary btn-block btn-lg">Verifikasi</button>
+        <div class="resend-row">
+          Tidak menerima kode? <a id="btn-resend-register">Kirim ulang email</a>
+          <span id="resend-register-countdown"></span>
+        </div>
+        <div class="auth-footer"><a id="btn-verify-register-to-login">← Kembali ke Login</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-forgot-password" class="page auth-page hidden">
+    <div class="auth-brand-panel">
+      <div class="auth-brand-mark"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+      <div class="auth-brand-headline">Lupa password?</div>
+      <div class="auth-brand-sub">Masukkan email akun Anda, kami akan mengirimkan kode reset password.</div>
+    </div>
+    <div class="auth-form-panel">
+      <div class="auth-card">
+        <div class="auth-logo-mobile"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+        <div class="auth-card-title">Reset Password</div>
+        <div class="auth-card-subtitle">Masukkan email akun Anda untuk menerima kode reset</div>
+        <div id="forgot-password-alert" class="inline-alert"></div>
+        <div class="form-group"><label class="form-label">Email</label><input type="email" id="forgot-email" class="form-input" placeholder="nama@perusahaan.com"></div>
+        <button id="btn-forgot-password" class="btn btn-primary btn-block btn-lg">Kirim Kode Reset</button>
+        <div class="auth-footer"><a id="btn-forgot-to-login">← Kembali ke Login</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-verify-reset" class="page auth-page hidden">
+    <div class="auth-brand-panel">
+      <div class="auth-brand-mark"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+      <div class="auth-brand-headline">Cek email Anda.</div>
+      <div class="auth-brand-sub">Masukkan kode reset password yang kami kirim ke email Anda.</div>
+    </div>
+    <div class="auth-form-panel">
+      <div class="auth-card">
+        <div class="auth-logo-mobile"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+        <div class="auth-card-title">Masukkan Kode Verifikasi</div>
+        <div class="auth-card-subtitle">Kode 6 digit dikirim ke <strong id="verify-reset-email">-</strong></div>
+        <div id="verify-reset-alert" class="inline-alert"></div>
+        <div class="otp-input-row" id="verify-reset-otp-row">
+          <input type="text" maxlength="1" inputmode="numeric">
+          <input type="text" maxlength="1" inputmode="numeric">
+          <input type="text" maxlength="1" inputmode="numeric">
+          <input type="text" maxlength="1" inputmode="numeric">
+          <input type="text" maxlength="1" inputmode="numeric">
+          <input type="text" maxlength="1" inputmode="numeric">
+        </div>
+        <button id="btn-verify-reset" class="btn btn-primary btn-block btn-lg">Verifikasi</button>
+        <div class="resend-row">
+          Tidak menerima kode? <a id="btn-resend-reset">Kirim ulang email</a>
+          <span id="resend-reset-countdown"></span>
+        </div>
+        <div class="auth-footer"><a id="btn-verify-reset-to-login">← Kembali ke Login</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-new-password" class="page auth-page hidden">
+    <div class="auth-brand-panel">
+      <div class="auth-brand-mark"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+      <div class="auth-brand-headline">Buat password baru.</div>
+      <div class="auth-brand-sub">Pastikan password baru Anda kuat dan mudah diingat.</div>
+    </div>
+    <div class="auth-form-panel">
+      <div class="auth-card">
+        <div class="auth-logo-mobile"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+        <div class="auth-card-title">Password Baru</div>
+        <div class="auth-card-subtitle">Masukkan password baru Anda</div>
+        <div id="new-password-alert" class="inline-alert"></div>
+        <div class="form-group"><label class="form-label">Password Baru *</label><input type="password" id="new-password" class="form-input" placeholder="Password baru"></div>
+        <div class="form-group"><label class="form-label">Konfirmasi Password Baru *</label><input type="password" id="new-password-confirm" class="form-input" placeholder="Konfirmasi password baru"></div>
+        <button id="btn-update-password" class="btn btn-primary btn-block btn-lg">Update Password</button>
       </div>
     </div>
   </div>
@@ -274,6 +404,7 @@
             <div class="profile-name" id="profil-nama">-</div>
             <span class="profile-role" id="profil-role">-</span>
             <div class="profile-idcard" id="profil-idcard">-</div>
+            <button class="btn btn-primary" id="btn-open-edit-profil" style="margin-top:1rem">Update Profil</button>
           </div>
         </div>
 
@@ -331,10 +462,44 @@
     </nav>
   </div>
 </div>
+
+<div id="modal-edit-profil">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Update Profil</h3>
+      <button class="modal-close" id="btn-close-edit-profil">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="edit-profil-alert" class="inline-alert"></div>
+      <div class="modal-grid">
+        <div class="form-group"><label class="form-label">Nama Lengkap</label><input type="text" id="edit-nama" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Username</label><input type="text" id="edit-username" class="form-input" disabled></div>
+        <div class="form-group"><label class="form-label">Tempat Lahir</label><input type="text" id="edit-tempat-lahir" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Tanggal Lahir</label><input type="date" id="edit-tanggal-lahir" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Jenis Kelamin</label>
+          <select id="edit-jk" class="form-input">
+            <option value="">Pilih</option>
+            <option value="Laki-laki">Laki-laki</option>
+            <option value="Perempuan">Perempuan</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Email</label><input type="email" id="edit-email" class="form-input"></div>
+        <div class="form-group"><label class="form-label">No. WhatsApp</label><input type="text" id="edit-wa" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Nama Bank</label><input type="text" id="edit-bank" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Atas Nama Rekening</label><input type="text" id="edit-rekening" class="form-input"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-edit-profil">Batal</button>
+      <button class="btn btn-primary" id="btn-save-edit-profil">Simpan Perubahan</button>
+    </div>
+  </div>
+</div>
 <script>
 let SUPABASE_URL='',SUPABASE_KEY='';
 const CONFIG_ENDPOINT='https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';
-const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppState={token:null,user:null,currentPage:'login',currentView:'dashboard'};
+const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppState={token:null,user:null,currentPage:'login',currentView:'dashboard',pendingRegisterEmail:'',pendingResetEmail:'',pendingResetToken:'',resendTimerRegister:null,resendTimerReset:null};
+
 function formatTanggal(v){if(!v)return'-';const d=new Date(v);if(isNaN(d))return'-';return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});}
 function formatRupiah(v){if(v===undefined||v===null||v==='')return'-';const n=Number(v);if(isNaN(n))return'-';return'Rp '+n.toLocaleString('id-ID');}
 function setInfo(id,val,formatter){const el=document.getElementById(id);if(!el)return;const v=formatter?formatter(val):val;el.textContent=(v===undefined||v===null||v==='')?'-':v;el.classList.toggle('empty',!v||v==='-');}
@@ -343,16 +508,318 @@ function showAuth(){$('#app-layout').classList.remove('active'),$('#auth-layout'
 function switchView(v){AppState.currentView=v;$$('.app-view').forEach(e=>e.classList.add('hidden'));const t=document.getElementById(`view-${v}`);if(t)t.classList.remove('hidden');$$('.app-nav-item[data-view],.app-bottomnav-item[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));}
 function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;$('#profil-avatar').textContent=nama?nama.trim().charAt(0).toUpperCase():'?';$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);}
 async function loadProfilLengkap(){try{const r=await apiCall('getProfilLengkap',{token:AppState.token});if(r&&r.user){AppState.user=r.user;localStorage.setItem('auth_user',JSON.stringify(r.user));renderProfilFromUser();}}catch(e){console.error(e);}}
-function handleLogout(){localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user'),AppState.token=null,AppState.user=null;showAuth();navigateTo('login');}function navigateTo(p){AppState.currentPage=p;$$('.auth-page').forEach(e=>e.classList.add('hidden'));const t=$(`#page-${p}`);if(t)t.classList.remove('hidden');history.pushState({p},'',`#${p}`);}
+function handleLogout(){localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user'),AppState.token=null,AppState.user=null;showAuth();navigateTo('login');}
+function navigateTo(p){AppState.currentPage=p;$$('.auth-page').forEach(e=>e.classList.add('hidden'));const t=$(`#page-${p}`);if(t)t.classList.remove('hidden');history.pushState({p},'',`#${p}`);}
 function showAlert(m,t='info'){const i={success:'✓',error:'✕',warning:'⚠',info:'ℹ'},a=document.createElement('div');a.className=`alert ${t}`,a.innerHTML=`<span>${i[t]||i.info}</span><div style="flex:1">${m}</div><button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer">✕</button>`,$('#alert-box').appendChild(a),setTimeout(()=>{a.style.opacity='0';setTimeout(()=>a.remove(),300)},5000);}
+function showInlineAlert(id,msg,type='error'){const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='inline-alert show'+(type==='warning'?' warning':'');}
+function hideInlineAlert(id){const el=document.getElementById(id);if(!el)return;el.className='inline-alert';el.textContent='';}
 async function loadPublicConfig(){const r=await fetch(CONFIG_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({function:'getPublicConfig',data:{}})});const d=await r.json();if(!d.success||!d.result?.url)throw new Error('Gagal memuat konfigurasi server');SUPABASE_URL=d.result.url;SUPABASE_KEY=d.result.anonKey;}
 async function apiCall(f,p={}){try{const r=await fetch(SUPABASE_URL+'/functions/v1/Absen',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({function:f,data:p})});const d=await r.json();if(!d.success)throw new Error(d.error||'Terjadi kesalahan pada server');return d.result;}catch(e){console.error(e);throw e;}}
-async function handleLogin(){const e=$('#login-email').value.trim(),p=$('#login-password').value;if(!e||!p){showAlert('Mohon isi email dan password','warning');return;}const b=$('#btn-login'),o=b.innerHTML;b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Memproses...';try{const r=await apiCall('login',{email:e,username:e,password:p});if(r&&r.token){AppState.token=r.token,AppState.user=r,localStorage.setItem('auth_token',r.token),localStorage.setItem('auth_user',JSON.stringify(r)),showAlert('Login berhasil!','success'),showApp(),loadProfilLengkap();}else{showAlert(r?.message||'Login gagal','error');}}catch(err){showAlert('Terjadi kesalahan','error');}finally{b.disabled=false,b.innerHTML=o;}}
-async function handleRegister(){const n=$('#reg-nama').value.trim(),u=$('#reg-username').value.trim(),e=$('#reg-email').value.trim(),ce=$('#reg-confirm-email').value.trim(),p=$('#reg-password').value,cp=$('#reg-confirm-password').value,s=$('#reg-setuju').checked;if(!n||!u||!e||!p){showAlert('Semua field wajib diisi','warning');return;}if(e!==ce){showAlert('Email konfirmasi tidak cocok','error');return;}if(p!==cp){showAlert('Password konfirmasi tidak cocok','error');return;}if(p.length<6){showAlert('Password minimal 6 karakter','warning');return;}if(!s){showAlert('Anda harus menyetujui kebijakan','warning');return;}const b=$('#btn-register'),o=b.innerHTML;b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Mendaftar...';try{
-const r=await apiCall('registerUser',{namaLengkap:n,username:u,email:e,password:p,role:'user'});
-if(r&&r.success){showAlert('Registrasi berhasil! Silakan login.','success');setTimeout(()=>navigateTo('login'),1500);}else{showAlert(r?.message||'Registrasi gagal','error');}}catch(err){showAlert('Terjadi kesalahan','error');}finally{b.disabled=false,b.innerHTML=o;}}
+
+/* ===== OTP INPUT HELPERS ===== */
+function setupOtpRow(rowId){const row=document.getElementById(rowId);if(!row)return;const inputs=[...row.querySelectorAll('input')];inputs.forEach((inp,idx)=>{inp.addEventListener('input',()=>{inp.value=inp.value.replace(/[^0-9]/g,'').slice(0,1);if(inp.value&&idx<inputs.length-1)inputs[idx+1].focus();});inp.addEventListener('keydown',ev=>{if(ev.key==='Backspace'&&!inp.value&&idx>0)inputs[idx-1].focus();});inp.addEventListener('paste',ev=>{ev.preventDefault();const txt=(ev.clipboardData||window.clipboardData).getData('text').replace(/[^0-9]/g,'').slice(0,inputs.length);txt.split('').forEach((ch,i)=>{if(inputs[i])inputs[i].value=ch;});const last=Math.min(txt.length,inputs.length)-1;if(last>=0)inputs[last].focus();});});}
+function getOtpValue(rowId){const row=document.getElementById(rowId);if(!row)return'';return[...row.querySelectorAll('input')].map(i=>i.value).join('');}
+function clearOtpRow(rowId){const row=document.getElementById(rowId);if(!row)return;row.querySelectorAll('input').forEach(i=>i.value='');const first=row.querySelector('input');if(first)first.focus();}
+
+/* ===== RESEND COUNTDOWN (registrasi & reset) ===== */
+function startResendCountdown(seconds,linkId,countdownId,timerKey){const link=document.getElementById(linkId),cd=document.getElementById(countdownId);if(!link||!cd)return;if(AppState[timerKey])clearInterval(AppState[timerKey]);let remaining=seconds;link.classList.add('disabled');function tick(){if(remaining<=0){clearInterval(AppState[timerKey]);AppState[timerKey]=null;link.classList.remove('disabled');cd.textContent='';return;}const m=Math.floor(remaining/60),s=remaining%60;cd.textContent=` (${m}:${String(s).padStart(2,'0')})`;remaining--;}
+tick();AppState[timerKey]=setInterval(tick,1000);}
+
+/* ===== LOGIN ===== */
+async function handleLogin(){
+  hideInlineAlert('login-alert');
+  $('#btn-goto-forgot').classList.remove('show');
+  const e=$('#login-email').value.trim(),p=$('#login-password').value;
+  if(!e||!p){showInlineAlert('login-alert','Mohon isi email dan password','warning');return;}
+  const b=$('#btn-login'),o=b.innerHTML;
+  b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Memproses...';
+  try{
+    const r=await apiCall('login',{email:e,username:e,password:p});
+    if(r&&r.token){
+      AppState.token=r.token,AppState.user=r,localStorage.setItem('auth_token',r.token),localStorage.setItem('auth_user',JSON.stringify(r));
+      showAlert('Login berhasil!','success'),showApp(),loadProfilLengkap();
+    }else{
+      showInlineAlert('login-alert',r?.message||'Login gagal');
+    }
+  }catch(err){
+    const raw=err&&err.message?err.message:'Terjadi kesalahan';
+    const parts=raw.split('::');
+    const kode=parts.length>1?parts[0]:'';
+    const pesan=parts.length>1?parts[1]:raw;
+    if(kode==='AKUN_DIBEKUKAN'){
+      showInlineAlert('login-alert',pesan,'warning');
+    }else if(kode==='EMAIL_BELUM_VERIFIKASI'){
+      showInlineAlert('login-alert',pesan,'warning');
+    }else if(kode==='PASSWORD_SALAH_TAMPIL_RESET'){
+      showInlineAlert('login-alert',pesan,'warning');
+      $('#btn-goto-forgot').classList.add('show');
+      $('#forgot-email').value=e;
+    }else if(kode==='PASSWORD_SALAH'){
+      showInlineAlert('login-alert',pesan);
+    }else{
+      showInlineAlert('login-alert',pesan);
+    }
+  }finally{
+    b.disabled=false,b.innerHTML=o;
+  }
+}
+
+/* ===== REGISTRASI ===== */
+async function handleRegister(){
+  const n=$('#reg-nama').value.trim(),u=$('#reg-username').value.trim(),e=$('#reg-email').value.trim(),ce=$('#reg-confirm-email').value.trim(),p=$('#reg-password').value,cp=$('#reg-confirm-password').value,s=$('#reg-setuju').checked;
+  if(!n||!u||!e||!p){showAlert('Semua field wajib diisi','warning');return;}
+  if(e!==ce){showAlert('Email konfirmasi tidak cocok','error');return;}
+  if(p!==cp){showAlert('Password konfirmasi tidak cocok','error');return;}
+  if(p.length<6){showAlert('Password minimal 6 karakter','warning');return;}
+  if(!s){showAlert('Anda harus menyetujui kebijakan','warning');return;}
+  const b=$('#btn-register'),o=b.innerHTML;
+  b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Mendaftar...';
+  try{
+    const r=await apiCall('registerUser',{namaLengkap:n,username:u,email:e,password:p,role:'user'});
+    if(r&&r.success){
+      AppState.pendingRegisterEmail=e;
+      $('#verify-register-email').textContent=e;
+      showAlert('Registrasi berhasil! Silakan cek email untuk kode verifikasi.','success');
+      navigateTo('verify-register');
+      startResendCountdown(120,'btn-resend-register','resend-register-countdown','resendTimerRegister');
+    }else{
+      showAlert(r?.message||'Registrasi gagal','error');
+    }
+  }catch(err){
+    showAlert(err&&err.message?err.message:'Terjadi kesalahan','error');
+  }finally{
+    b.disabled=false,b.innerHTML=o;
+  }
+}
+
+async function handleVerifyRegister(){
+  hideInlineAlert('verify-register-alert');
+  const kode=getOtpValue('verify-register-otp-row');
+  if(kode.length!==6){showInlineAlert('verify-register-alert','Masukkan 6 digit kode verifikasi','warning');return;}
+  const b=$('#btn-verify-register'),o=b.innerHTML;
+  b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Memverifikasi...';
+  try{
+    const r=await apiCall('verifyRegistrationOtp',{email:AppState.pendingRegisterEmail,kodeOtp:kode});
+    if(r&&r.success){
+      showAlert('Email berhasil diverifikasi! Silakan login.','success');
+      if(AppState.resendTimerRegister)clearInterval(AppState.resendTimerRegister);
+      navigateTo('login');
+    }else{
+      showInlineAlert('verify-register-alert',r?.message||'Verifikasi gagal');
+    }
+  }catch(err){
+    showInlineAlert('verify-register-alert',err&&err.message?err.message:'Kode OTP salah');
+    clearOtpRow('verify-register-otp-row');
+  }finally{
+    b.disabled=false,b.innerHTML=o;
+  }
+}
+
+async function handleResendRegister(){
+  if($('#btn-resend-register').classList.contains('disabled'))return;
+  hideInlineAlert('verify-register-alert');
+  try{
+    const r=await apiCall('resendConfirmationEmail',{email:AppState.pendingRegisterEmail});
+    if(r&&r.success){
+      showAlert(r.message||'Kode berhasil dikirim ulang','success');
+      const cooldown=r.cooldownDetik||120;
+      startResendCountdown(cooldown,'btn-resend-register','resend-register-countdown','resendTimerRegister');
+      clearOtpRow('verify-register-otp-row');
+    }
+  }catch(err){
+    const raw=err&&err.message?err.message:'Gagal mengirim ulang kode';
+    const parts=raw.split('::');
+    if(parts[0]==='TUNGGU'){
+      showInlineAlert('verify-register-alert',parts[1],'warning');
+    }else{
+      showInlineAlert('verify-register-alert',raw,'warning');
+    }
+  }
+}
+
+/* ===== LUPA PASSWORD (FORGOT -> VERIFY -> NEW PASSWORD) ===== */
+async function handleForgotPassword(){
+  hideInlineAlert('forgot-password-alert');
+  const e=$('#forgot-email').value.trim();
+  if(!e){showInlineAlert('forgot-password-alert','Mohon isi email','warning');return;}
+  const b=$('#btn-forgot-password'),o=b.innerHTML;
+  b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Mengirim...';
+  try{
+    const r=await apiCall('requestResetPasswordByEmail',{email:e});
+    if(r&&r.success){
+      AppState.pendingResetEmail=e;
+      $('#verify-reset-email').textContent=e;
+      showAlert('Kode reset password telah dikirim ke email Anda.','success');
+      navigateTo('verify-reset');
+      startResendCountdown(120,'btn-resend-reset','resend-reset-countdown','resendTimerReset');
+    }else{
+      showInlineAlert('forgot-password-alert',r?.message||'Gagal mengirim kode reset');
+    }
+  }catch(err){
+    showInlineAlert('forgot-password-alert',err&&err.message?err.message:'Terjadi kesalahan');
+  }finally{
+    b.disabled=false,b.innerHTML=o;
+  }
+}
+
+async function handleVerifyReset(){
+  hideInlineAlert('verify-reset-alert');
+  const kode=getOtpValue('verify-reset-otp-row');
+  if(kode.length!==6){showInlineAlert('verify-reset-alert','Masukkan 6 digit kode verifikasi','warning');return;}
+  const b=$('#btn-verify-reset'),o=b.innerHTML;
+  b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Memverifikasi...';
+  try{
+    const r=await apiCall('verifyResetPasswordOtp',{email:AppState.pendingResetEmail,kodeOtp:kode});
+    if(r&&r.success){
+      AppState.pendingResetToken=r.resetToken;
+      if(AppState.resendTimerReset)clearInterval(AppState.resendTimerReset);
+      navigateTo('new-password');
+    }else{
+      showInlineAlert('verify-reset-alert',r?.message||'Verifikasi gagal');
+    }
+  }catch(err){
+    showInlineAlert('verify-reset-alert',err&&err.message?err.message:'Kode OTP salah');
+    clearOtpRow('verify-reset-otp-row');
+  }finally{
+    b.disabled=false,b.innerHTML=o;
+  }
+}
+
+async function handleResendReset(){
+  if($('#btn-resend-reset').classList.contains('disabled'))return;
+  hideInlineAlert('verify-reset-alert');
+  try{
+    const r=await apiCall('requestResetPasswordByEmail',{email:AppState.pendingResetEmail});
+    if(r&&r.success){
+      showAlert(r.message||'Kode berhasil dikirim ulang','success');
+      startResendCountdown(120,'btn-resend-reset','resend-reset-countdown','resendTimerReset');
+      clearOtpRow('verify-reset-otp-row');
+    }
+  }catch(err){
+    showInlineAlert('verify-reset-alert',err&&err.message?err.message:'Gagal mengirim ulang kode','warning');
+  }
+}
+
+async function handleUpdatePassword(){
+  hideInlineAlert('new-password-alert');
+  const p=$('#new-password').value,cp=$('#new-password-confirm').value;
+  if(!p||!cp){showInlineAlert('new-password-alert','Mohon isi password baru dan konfirmasi','warning');return;}
+  if(p!==cp){showInlineAlert('new-password-alert','Konfirmasi password tidak cocok');return;}
+  if(p.length<6){showInlineAlert('new-password-alert','Password minimal 6 karakter','warning');return;}
+  const b=$('#btn-update-password'),o=b.innerHTML;
+  b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Memperbarui...';
+  try{
+    const r=await apiCall('resetPassword',{email:AppState.pendingResetEmail,token:AppState.pendingResetToken,newPassword:p});
+    if(r&&r.success){
+      showAlert('Password berhasil diubah! Silakan login.','success');
+      $('#new-password').value='',$('#new-password-confirm').value='';
+      AppState.pendingResetEmail='',AppState.pendingResetToken='';
+      navigateTo('login');
+    }else{
+      showInlineAlert('new-password-alert',r?.message||'Gagal update password');
+    }
+  }catch(err){
+    showInlineAlert('new-password-alert',err&&err.message?err.message:'Terjadi kesalahan');
+  }finally{
+    b.disabled=false,b.innerHTML=o;
+  }
+}
+
+/* ===== EDIT PROFIL ===== */
+function openEditProfil(){
+  const u=AppState.user;if(!u)return;
+  hideInlineAlert('edit-profil-alert');
+  $('#edit-nama').value=u.namaLengkap||u.Nama_Lengkap||'';
+  $('#edit-username').value=u.username||u.Username||'';
+  $('#edit-tempat-lahir').value=u.tempatLahir||u.Tempat_Lahir||'';
+  const tgl=u.tanggalLahir||u.Tanggal_Lahir;
+  $('#edit-tanggal-lahir').value=tgl?String(tgl).split('T')[0]:'';
+  $('#edit-jk').value=u.jenisKelamin||u.Jenis_Kelamin||'';
+  $('#edit-email').value=u.email||u.Email||'';
+  $('#edit-wa').value=u.noWhatsapp||u.No_Whatsapp||'';
+  $('#edit-bank').value=u.namaBank||u.Nama_Bank||'';
+  $('#edit-rekening').value=u.atasNamaRekening||u.Atas_Nama_Rekening||'';
+  $('#modal-edit-profil').classList.add('active');
+}
+function closeEditProfil(){$('#modal-edit-profil').classList.remove('active');}
+async function handleSaveEditProfil(){
+  hideInlineAlert('edit-profil-alert');
+  const updates={
+    Nama_Lengkap:$('#edit-nama').value.trim(),
+    Tempat_Lahir:$('#edit-tempat-lahir').value.trim(),
+    Tanggal_Lahir:$('#edit-tanggal-lahir').value||null,
+    Jenis_Kelamin:$('#edit-jk').value,
+    Email:$('#edit-email').value.trim(),
+    No_Whatsapp:$('#edit-wa').value.trim(),
+    Nama_Bank:$('#edit-bank').value.trim(),
+    Atas_Nama_Rekening:$('#edit-rekening').value.trim(),
+  };
+  if(!updates.Nama_Lengkap){showInlineAlert('edit-profil-alert','Nama lengkap tidak boleh kosong','warning');return;}
+  const b=$('#btn-save-edit-profil'),o=b.innerHTML;
+  b.disabled=true,b.innerHTML='<div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Menyimpan...';
+  try{
+    const r=await apiCall('updateProfil',{token:AppState.token,updates});
+    if(r&&r.success){
+      showAlert('Profil berhasil diperbarui','success');
+      await loadProfilLengkap();
+      closeEditProfil();
+    }else{
+      showInlineAlert('edit-profil-alert',r?.message||'Gagal memperbarui profil');
+    }
+  }catch(err){
+    showInlineAlert('edit-profil-alert',err&&err.message?err.message:'Terjadi kesalahan');
+  }finally{
+    b.disabled=false,b.innerHTML=o;
+  }
+}
+
 async function checkSession(){const st=localStorage.getItem('auth_token'),su=localStorage.getItem('auth_user');if(st&&su){try{const r=await apiCall('checkSession',{token:st});if(r&&r.valid){AppState.token=st,AppState.user=JSON.parse(su);return true;}}catch(e){}}localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user');return false;}
-async function initApp(){try{await loadPublicConfig();}catch(e){$('#session-loading').classList.add('hidden');$('#auth-layout').classList.remove('hidden');showAlert('Gagal terhubung ke server. Muat ulang halaman.','error');return;}$('#btn-login').addEventListener('click',handleLogin),$('#btn-to-register').addEventListener('click',()=>navigateTo('register')),$('#btn-register').addEventListener('click',handleRegister),$('#btn-to-login').addEventListener('click',()=>navigateTo('login')),$('#login-email').addEventListener('keypress',ev=>{if(ev.key==='Enter')$('#login-password').focus();}),$('#login-password').addEventListener('keypress',ev=>{if(ev.key==='Enter')handleLogin();}),window.location.hash.slice(1)==='register'&&navigateTo('register');$$('.app-nav-item[data-view],.app-bottomnav-item[data-view]').forEach(e=>e.addEventListener('click',()=>switchView(e.dataset.view))),$('#btn-logout').addEventListener('click',handleLogout),$('#btn-logout-mobile').addEventListener('click',handleLogout);const hs=await checkSession();setTimeout(()=>{$('#session-loading').classList.add('hidden');if(hs){showApp(),loadProfilLengkap();}else{$('#auth-layout').classList.remove('hidden'),navigateTo('login');}},1000);}document.readyState==='loading'?document.addEventListener('DOMContentLoaded',initApp):initApp();
+
+async function initApp(){
+  try{await loadPublicConfig();}catch(e){$('#session-loading').classList.add('hidden');$('#auth-layout').classList.remove('hidden');showAlert('Gagal terhubung ke server. Muat ulang halaman.','error');return;}
+
+  setupOtpRow('verify-register-otp-row');
+  setupOtpRow('verify-reset-otp-row');
+
+  $('#btn-login').addEventListener('click',handleLogin);
+  $('#btn-to-register').addEventListener('click',()=>navigateTo('register'));
+  $('#btn-register').addEventListener('click',handleRegister);
+  $('#btn-to-login').addEventListener('click',()=>navigateTo('login'));
+  $('#login-email').addEventListener('keypress',ev=>{if(ev.key==='Enter')$('#login-password').focus();});
+  $('#login-password').addEventListener('keypress',ev=>{if(ev.key==='Enter')handleLogin();});
+
+  $('#btn-verify-register').addEventListener('click',handleVerifyRegister);
+  $('#btn-resend-register').addEventListener('click',handleResendRegister);
+  $('#btn-verify-register-to-login').addEventListener('click',()=>navigateTo('login'));
+
+  $('#btn-goto-forgot').addEventListener('click',()=>navigateTo('forgot-password'));
+  $('#btn-forgot-password').addEventListener('click',handleForgotPassword);
+  $('#btn-forgot-to-login').addEventListener('click',()=>navigateTo('login'));
+
+  $('#btn-verify-reset').addEventListener('click',handleVerifyReset);
+  $('#btn-resend-reset').addEventListener('click',handleResendReset);
+  $('#btn-verify-reset-to-login').addEventListener('click',()=>navigateTo('login'));
+
+  $('#btn-update-password').addEventListener('click',handleUpdatePassword);
+
+  window.location.hash.slice(1)==='register'&&navigateTo('register');
+
+  $$('.app-nav-item[data-view],.app-bottomnav-item[data-view]').forEach(e=>e.addEventListener('click',()=>switchView(e.dataset.view)));
+  $('#btn-logout').addEventListener('click',handleLogout);
+  $('#btn-logout-mobile').addEventListener('click',handleLogout);
+
+  $('#btn-open-edit-profil').addEventListener('click',openEditProfil);
+  $('#btn-close-edit-profil').addEventListener('click',closeEditProfil);
+  $('#btn-cancel-edit-profil').addEventListener('click',closeEditProfil);
+  $('#btn-save-edit-profil').addEventListener('click',handleSaveEditProfil);
+
+  const hs=await checkSession();
+  setTimeout(()=>{
+    $('#session-loading').classList.add('hidden');
+    if(hs){showApp(),loadProfilLengkap();}else{$('#auth-layout').classList.remove('hidden'),navigateTo('login');}
+  },1000);
+}
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',initApp):initApp();
 </script>
 </body>
 </html>
