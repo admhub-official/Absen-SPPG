@@ -7114,12 +7114,17 @@ function apiCall(funcName, data, opts) {
     if (SUPABASE_API_KEY) {
       headers[SUPABASE_AUTH_HEADER] = `Bearer ${SUPABASE_API_KEY}`;
     }
+    const _timeoutMs = 20000;
+    const _controller = new AbortController();
+    const _timeoutId = setTimeout(() => _controller.abort(), _timeoutMs);
     fetch(SCRIPT_URL, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ function: funcName, data: data })
+      body: JSON.stringify({ function: funcName, data: data }),
+      signal: _controller.signal
     })
     .then(async res => {
+      clearTimeout(_timeoutId);
       const text = await res.text();
       let json;
       try {
@@ -7148,8 +7153,12 @@ function apiCall(funcName, data, opts) {
       }
     })
     .catch(err => {
+      clearTimeout(_timeoutId);
       if(!silent) showLoading(false);
-      reject(err.message || String(err));
+      const msg = err.name === 'AbortError'
+        ? `Request ke server timeout (>${_timeoutMs/1000}s) untuk fungsi "${funcName}"`
+        : (err.message || String(err));
+      reject(msg);
     });
   });
 }
