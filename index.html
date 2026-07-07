@@ -7575,7 +7575,10 @@ function navigateTo(page) {
   if(page === 'absen-manual') safeInit(initAbsenManual, 'absen-manual');
   if(page === 'register') safeInit(initRegister, 'register');
 }
-
+function hideSessionLoading() {
+  const sl = document.getElementById('session-loading');
+  if (sl) sl.classList.add('hide');
+}
 // ==================== INIT APP ====================
 // JARING PENGAMAN: kalau dalam 8 detik halaman masih blank (session-loading
 // masih tampil karena ada proses yang hang di belakang layar), paksa tampilkan
