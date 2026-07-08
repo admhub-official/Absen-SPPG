@@ -136,8 +136,9 @@
     .profile-body{padding:3rem 1.75rem 1.75rem}
     .profile-name{font-size:1.25rem;font-weight:800;letter-spacing:-0.01em}
     .profile-role{display:inline-flex;align-items:center;gap:0.35rem;background:var(--primary-light);color:var(--primary);font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:999px;margin-top:0.5rem}
-    .profile-idcard{font-size:0.8125rem;color:var(--text-muted);margin-top:0.4rem;font-family:ui-monospace,monospace;letter-spacing:0.03em}
-    .face-status-badge{display:inline-flex;align-items:center;gap:0.35rem;font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:999px;margin-top:0.5rem}
+    .profile-action-row{display:flex;gap:0.6rem;justify-content:center;margin-top:0.85rem}
+    .profile-action-row .btn{flex:0 1 auto}
+    .face-status-badge{display:inline-flex;align-items:center;gap:0.35rem;font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:999px;margin-top:0.4rem}
     .face-status-badge.registered{background:#dcfce7;color:#16a34a}
     .face-status-badge.not-registered{background:#fef3c7;color:#b45309}
     #modal-daftar-wajah{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:9500;display:none;align-items:center;justify-content:center;padding:1rem}
@@ -574,11 +575,11 @@
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/></svg>
               <span id="profil-face-status-text">Wajah Belum Terdaftar</span>
             </div>
-            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;justify-content:center;margin-top:1rem">
+            <div class="profile-action-row">
               <button class="btn btn-primary" id="btn-open-edit-profil">Update Profil</button>
               <button class="btn btn-secondary" id="btn-open-daftar-wajah">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.35rem;vertical-align:-2px"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg>
-                <span id="btn-daftar-wajah-label">Daftarkan Wajah</span>
+                <span id="btn-daftar-wajah-label">Perbarui Wajah</span>
               </button>
             </div>
           </div>
