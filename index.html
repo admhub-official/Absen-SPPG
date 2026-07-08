@@ -765,6 +765,16 @@
       </div>
       <!-- ===== VIEW: ADMIN DASHBOARD ===== -->
       <div id="view-admin-dashboard" class="app-view hidden">
+        <div class="welcome-card">
+          <div class="welcome-card-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <div class="welcome-card-body">
+            <h2 id="admin-dashboard-greeting">Selamat datang!</h2>
+            <p>Berikut ringkasan kehadiran dan aktivitas Anda.</p>
+          </div>
+        </div>
+
         <div class="page-header">
           <div class="page-title">Dashboard Admin</div>
           <div class="page-subtitle">Panel kontrol sistem absensi</div>
@@ -1270,7 +1280,10 @@ function showApp(){
 }
 function showAuth(){$('#app-layout').classList.remove('active'),$('#auth-layout').classList.remove('hidden');}
 function switchView(v){AppState.currentView=v;$$('.app-view').forEach(e=>e.classList.add('hidden'));const t=document.getElementById(`view-${v}`);if(t)t.classList.remove('hidden');$$('.app-nav-item[data-view],.app-bottomnav-item[data-view],.sidebar-absen-btn[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));}
-function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';const avatarEl=$('#profil-avatar');if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);const tbAvatar=$('#topbar-avatar');if(tbAvatar){if(fotoUrl){tbAvatar.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{tbAvatar.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}}const tbName=$('#topbar-profile-name');if(tbName)tbName.textContent=nama||'-';
+function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';const avatarEl=$('#profil-avatar');if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);const tbAvatar=$('#topbar-avatar');if(tbAvatar){if(fotoUrl){tbAvatar.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{tbAvatar.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}
+}
+const tbName=$('#topbar-profile-name');if(tbName)tbName.textContent=nama||'-';const adminGreet=$('#admin-dashboard-greeting');if(adminGreet)adminGreet.textContent=`Selamat datang, ${(u.role||u.Role||'').toUpperCase()||'Admin'}!`;
+const adminGreet=$('#admin-dashboard-greeting');if(adminGreet)adminGreet.textContent=`Selamat datang, ${(u.role||u.Role||'').toUpperCase()||'Admin'}!`;
 const tbRole=$('#topbar-profile-role');if(tbRole)tbRole.textContent=u.role||u.Role||'USER';updateFaceStatusBadge();}
 async function loadProfilLengkap(){try{const r=await apiCall('getProfilLengkap',{token:AppState.token});if(r&&r.user){AppState.user=r.user;localStorage.setItem('auth_user',JSON.stringify(r.user));renderProfilFromUser();}}catch(e){console.error(e);}}
 function renderTrendChart(trend7Hari){
