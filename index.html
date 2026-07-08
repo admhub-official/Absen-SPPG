@@ -121,10 +121,71 @@
     .page-title{font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:0.25rem}
     .page-subtitle{font-size:0.9rem;color:var(--text-secondary)}
 
-    .welcome-card{background:linear-gradient(135deg,#312e81,#0f172a);border-radius:var(--radius-lg);padding:clamp(1.75rem,4vw,3rem);color:#fff;text-align:center;box-shadow:var(--shadow-lg)}
-    .welcome-card-icon{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem}
-    .welcome-card h2{font-size:1.375rem;font-weight:800;margin-bottom:0.5rem;letter-spacing:-0.01em}
-    .welcome-card p{color:rgba(255,255,255,.65);font-size:0.9rem;max-width:340px;margin:0 auto}
+    .welcome-card{background:linear-gradient(135deg,#312e81,#0f172a);border-radius:var(--radius-lg);padding:clamp(1.5rem,4vw,2.25rem);color:#fff;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+    .welcome-card-icon{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .welcome-card h2{font-size:1.25rem;font-weight:800;margin-bottom:0.35rem;letter-spacing:-0.01em}
+    .welcome-card p{color:rgba(255,255,255,.65);font-size:0.875rem}
+    .welcome-card-body{flex:1;min-width:200px}
+    .welcome-card-cta{flex-shrink:0}
+
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.1rem;margin-bottom:1.5rem}
+    .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem 1.4rem;box-shadow:var(--shadow);display:flex;align-items:center;gap:1rem}
+    .stat-card-icon{width:46px;height:46px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .stat-card-icon.blue{background:#dbeafe;color:#1e40af}
+    .stat-card-icon.green{background:#d1fae5;color:#065f46}
+    .stat-card-icon.amber{background:#fef3c7;color:#92400e}
+    .stat-card-icon.purple{background:var(--primary-light);color:var(--primary)}
+    .stat-card-value{font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;line-height:1.2}
+    .stat-card-label{font-size:0.8125rem;color:var(--text-muted);font-weight:500;margin-top:0.1rem}
+
+    .dash-section{display:grid;grid-template-columns:1.4fr 1fr;gap:1.25rem;align-items:start}
+    @media(max-width:900px){.dash-section{grid-template-columns:1fr}}
+    .dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:1.5rem}
+    .dash-card-title{font-size:0.9375rem;font-weight:700;margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem}
+    .dash-card-title svg{color:var(--primary)}
+
+    .trend-chart{display:flex;align-items:flex-end;gap:0.6rem;height:140px;padding-top:0.5rem}
+    .trend-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.4rem;height:100%;justify-content:flex-end}
+    .trend-bar-stack{width:100%;max-width:32px;display:flex;flex-direction:column-reverse;gap:2px;border-radius:4px 4px 0 0;overflow:hidden}
+    .trend-bar-datang{background:var(--primary);width:100%;border-radius:3px 3px 0 0;min-height:3px}
+    .trend-bar-pulang{background:#a5b4fc;width:100%;min-height:3px}
+    .trend-bar-label{font-size:0.6875rem;color:var(--text-muted);font-weight:600}
+    .trend-legend{display:flex;gap:1.1rem;margin-top:1rem;justify-content:center;font-size:0.75rem;color:var(--text-secondary)}
+    .trend-legend-item{display:flex;align-items:center;gap:0.4rem}
+    .trend-legend-dot{width:9px;height:9px;border-radius:2px}
+
+    .belum-absen-list{display:flex;flex-direction:column;gap:0.75rem}
+    .belum-absen-item{display:flex;align-items:center;gap:0.75rem}
+    .belum-absen-avatar{width:34px;height:34px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0}
+    .belum-absen-info{flex:1;min-width:0}
+    .belum-absen-name{font-size:0.85rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .belum-absen-detail{font-size:0.75rem;color:var(--text-muted)}
+    .belum-absen-more{font-size:0.8125rem;color:var(--primary);font-weight:600;text-align:center;padding-top:0.4rem;border-top:1px dashed var(--border);margin-top:0.15rem}
+    .belum-absen-empty{text-align:center;color:var(--text-muted);font-size:0.8125rem;padding:1rem 0}
+
+    .riwayat-mini-list{display:flex;flex-direction:column}
+    .riwayat-mini-item{display:flex;align-items:center;gap:0.75rem;padding:0.7rem 0;border-bottom:1px solid var(--border)}
+    .riwayat-mini-item:last-child{border-bottom:none}
+    .riwayat-mini-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .riwayat-mini-icon.datang{background:#d1fae5;color:#065f46}
+    .riwayat-mini-icon.pulang{background:#dbeafe;color:#1e40af}
+    .riwayat-mini-jenis{font-size:0.85rem;font-weight:600}
+    .riwayat-mini-tanggal{font-size:0.75rem;color:var(--text-muted)}
+    .riwayat-mini-waktu{font-size:0.8125rem;color:var(--text-secondary);margin-left:auto;flex-shrink:0}
+
+    .absen-today-card{display:flex;gap:0.75rem}
+    .absen-today-pill{flex:1;padding:0.9rem 1rem;border-radius:var(--radius);text-align:center;border:1.5px solid var(--border)}
+    .absen-today-pill.done{background:#d1fae5;border-color:#a7f3d0}
+    .absen-today-pill.pending{background:var(--bg)}
+    .absen-today-pill-label{font-size:0.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.03em}
+    .absen-today-pill-status{font-size:0.9rem;font-weight:700;margin-top:0.3rem}
+    .absen-today-pill.done .absen-today-pill-status{color:#065f46}
+
+    @media(max-width:640px){
+      .welcome-card{flex-direction:column;text-align:center}
+      .welcome-card-cta{width:100%}
+      .welcome-card-cta .btn{width:100%}
+    }
 
     .profile-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;margin-bottom:1.5rem;border:1px solid var(--border)}
     .profile-banner{background:linear-gradient(135deg,#4f46e5,#312e81);height:100px;position:relative}
@@ -497,8 +558,6 @@
     </button>
     <nav class="app-nav">
       <button class="app-nav-item active" data-view="dashboard">
-    <nav class="app-nav">
-      <button class="app-nav-item active" data-view="dashboard">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
         <span>Dashboard</span>
       </button>
@@ -548,10 +607,75 @@
       <div id="view-dashboard" class="app-view">
         <div class="welcome-card">
           <div class="welcome-card-icon">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
           </div>
-          <h2 id="dashboard-greeting">Selamat datang!</h2>
-          <p>Dashboard sedang dalam pengembangan. Fitur absensi, payroll, dan laporan akan segera hadir di sini.</p>
+          <div class="welcome-card-body">
+            <h2 id="dashboard-greeting">Selamat datang!</h2>
+            <p>Berikut ringkasan kehadiran dan aktivitas Anda.</p>
+          </div>
+          <div class="welcome-card-cta">
+            <button class="btn btn-primary" id="btn-dashboard-absen-cta">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg>
+              Absen Sekarang
+            </button>
+          </div>
+        </div>
+
+        <div class="dash-card" style="margin-bottom:1.5rem">
+          <div class="dash-card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Status Absen Hari Ini
+          </div>
+          <div class="absen-today-card">
+            <div class="absen-today-pill" id="dash-pill-datang">
+              <div class="absen-today-pill-label">Datang</div>
+              <div class="absen-today-pill-status" id="dash-status-datang">Belum Absen</div>
+            </div>
+            <div class="absen-today-pill" id="dash-pill-pulang">
+              <div class="absen-today-pill-label">Pulang</div>
+              <div class="absen-today-pill-status" id="dash-status-pulang">Belum Absen</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-icon blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div>
+              <div class="stat-card-value" id="dash-total-hari-kerja">0</div>
+              <div class="stat-card-label">Hari Kerja Lengkap</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon green">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            </div>
+            <div>
+              <div class="stat-card-value" id="dash-total-gaji">Rp 0</div>
+              <div class="stat-card-label">Total Gaji Diterima</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon amber">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div>
+              <div class="stat-card-value" id="dash-total-slip">0</div>
+              <div class="stat-card-label">Slip Gaji Diterbitkan</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <div class="dash-card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Riwayat Absensi Terakhir
+          </div>
+          <div class="riwayat-mini-list" id="dash-riwayat-list">
+            <div class="belum-absen-empty">Memuat riwayat...</div>
+          </div>
         </div>
       </div>
 
@@ -631,12 +755,67 @@
           <div class="page-title">Dashboard Admin</div>
           <div class="page-subtitle">Panel kontrol sistem absensi</div>
         </div>
-        <div class="welcome-card">
-          <div class="welcome-card-icon">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-icon purple">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>
+            </div>
+            <div>
+              <div class="stat-card-value" id="dash-admin-total-karyawan">0</div>
+              <div class="stat-card-label">Total Karyawan Aktif</div>
+            </div>
           </div>
-          <h2 id="admin-dashboard-greeting">Selamat datang, Admin!</h2>
-          <p>Gunakan menu di samping (atau di bawah pada mobile) untuk mengelola data absensi, pengguna, dan log aktivitas sistem.</p>
+          <div class="stat-card">
+            <div class="stat-card-icon green">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            <div>
+              <div class="stat-card-value" id="dash-admin-datang-hari-ini">0</div>
+              <div class="stat-card-label">Absen Datang Hari Ini</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </div>
+            <div>
+              <div class="stat-card-value" id="dash-admin-pulang-hari-ini">0</div>
+              <div class="stat-card-label">Absen Pulang Hari Ini</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon amber">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            </div>
+            <div>
+              <div class="stat-card-value" id="dash-admin-payroll-bulan-ini">0</div>
+              <div class="stat-card-label">Payroll Diproses Bulan Ini</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-section">
+          <div class="dash-card">
+            <div class="dash-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
+              Tren Kehadiran 7 Hari Terakhir
+            </div>
+            <div class="trend-chart" id="dash-trend-chart"></div>
+            <div class="trend-legend">
+              <div class="trend-legend-item"><span class="trend-legend-dot" style="background:var(--primary)"></span> Datang</div>
+              <div class="trend-legend-item"><span class="trend-legend-dot" style="background:#a5b4fc"></span> Pulang</div>
+            </div>
+          </div>
+          <div class="dash-card">
+            <div class="dash-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Belum Absen Hari Ini
+            </div>
+            <div class="belum-absen-list" id="dash-belum-absen-list">
+              <div class="belum-absen-empty">Memuat data...</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1069,21 +1248,109 @@ function showApp(){
   renderProfilFromUser();
   if(isAdmin()){
     showAdminNav();
-    const u = AppState.user;
-    const nama = u?.namaLengkap||u?.Nama_Lengkap||u?.nama||'Admin';
     switchView('admin-dashboard');
-    setTimeout(()=>{
-      const greeting = $('#admin-dashboard-greeting');
-      if(greeting) greeting.textContent = `Selamat datang, ${nama.split(' ')[0]}!`;
-    }, 50);
   } else {
     switchView('dashboard');
   }
-}function showAuth(){$('#app-layout').classList.remove('active'),$('#auth-layout').classList.remove('hidden');}
+  loadDashboardData();
+}
+function showAuth(){$('#app-layout').classList.remove('active'),$('#auth-layout').classList.remove('hidden');}
 function switchView(v){AppState.currentView=v;$$('.app-view').forEach(e=>e.classList.add('hidden'));const t=document.getElementById(`view-${v}`);if(t)t.classList.remove('hidden');$$('.app-nav-item[data-view],.app-bottomnav-item[data-view],.sidebar-absen-btn[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));}
 function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';const avatarEl=$('#profil-avatar');if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);const tbAvatar=$('#topbar-avatar');if(tbAvatar){if(fotoUrl){tbAvatar.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{tbAvatar.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}}const tbName=$('#topbar-profile-name');if(tbName)tbName.textContent=nama||'-';
 const tbRole=$('#topbar-profile-role');if(tbRole)tbRole.textContent=u.role||u.Role||'USER';updateFaceStatusBadge();}
 async function loadProfilLengkap(){try{const r=await apiCall('getProfilLengkap',{token:AppState.token});if(r&&r.user){AppState.user=r.user;localStorage.setItem('auth_user',JSON.stringify(r.user));renderProfilFromUser();}}catch(e){console.error(e);}}
+function renderTrendChart(trend7Hari){
+  const container=$('#dash-trend-chart');
+  if(!container)return;
+  container.innerHTML='';
+  const maxVal=Math.max(1,...trend7Hari.map(t=>t.datang+t.pulang));
+  trend7Hari.forEach(t=>{
+    const d=new Date(t.tanggal+'T00:00:00');
+    const label=d.toLocaleDateString('id-ID',{weekday:'short'});
+    const hDatang=Math.round((t.datang/maxVal)*100);
+    const hPulang=Math.round((t.pulang/maxVal)*100);
+    const col=document.createElement('div');
+    col.className='trend-bar-col';
+    col.innerHTML=`
+      <div class="trend-bar-stack" style="height:${Math.max(hDatang+hPulang,3)}%">
+        <div class="trend-bar-pulang" style="height:${hPulang?Math.round((hPulang/(hDatang+hPulang||1))*100):0}%"></div>
+        <div class="trend-bar-datang" style="height:${hDatang?Math.round((hDatang/(hDatang+hPulang||1))*100):0}%"></div>
+      </div>
+      <div class="trend-bar-label">${label}</div>
+    `;
+    container.appendChild(col);
+  });
+}
+
+function renderBelumAbsenList(belumAbsen){
+  const container=$('#dash-belum-absen-list');
+  if(!container)return;
+  if(!belumAbsen||belumAbsen.length===0){
+    container.innerHTML='<div class="belum-absen-empty">Semua karyawan sudah absen 🎉</div>';
+    return;
+  }
+  const shown=belumAbsen.slice(0,5);
+  const sisa=belumAbsen.length-shown.length;
+  container.innerHTML=shown.map(u=>{
+    const inisial=(u.nama||'?').trim().charAt(0).toUpperCase();
+    return `<div class="belum-absen-item">
+      <div class="belum-absen-avatar">${inisial}</div>
+      <div class="belum-absen-info">
+        <div class="belum-absen-name">${u.nama||'-'}</div>
+        <div class="belum-absen-detail">${u.jabatan||'-'} • ${u.sppg||'-'}</div>
+      </div>
+    </div>`;
+  }).join('') + (sisa>0?`<div class="belum-absen-more">+${sisa} lainnya belum absen</div>`:'');
+}
+
+function renderRiwayatMini(riwayat){
+  const container=$('#dash-riwayat-list');
+  if(!container)return;
+  if(!riwayat||riwayat.length===0){
+    container.innerHTML='<div class="belum-absen-empty">Belum ada riwayat absensi</div>';
+    return;
+  }
+  container.innerHTML=riwayat.map(r=>{
+    const isDatang=r.jenis==='DATANG';
+    const icon=isDatang
+      ?'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>'
+      :'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
+    return `<div class="riwayat-mini-item">
+      <div class="riwayat-mini-icon ${isDatang?'datang':'pulang'}">${icon}</div>
+      <div>
+        <div class="riwayat-mini-jenis">${isDatang?'Datang':'Pulang'}</div>
+        <div class="riwayat-mini-tanggal">${formatTanggal(r.tanggal)}</div>
+      </div>
+      <div class="riwayat-mini-waktu">${(r.waktu||'-').substring(0,5)}</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadDashboardData(){
+  try{
+    const r=await apiCall('getDashboardData',{token:AppState.token});
+    if(!r)return;
+    if(r.role==='ADMIN'){
+      $('#dash-admin-total-karyawan').textContent=r.totalKaryawan??0;
+      $('#dash-admin-datang-hari-ini').textContent=r.datangHariIni??0;
+      $('#dash-admin-pulang-hari-ini').textContent=r.pulangHariIni??0;
+      $('#dash-admin-payroll-bulan-ini').textContent=r.payrollBulanIni??0;
+      renderTrendChart(r.trend7Hari||[]);
+      renderBelumAbsenList(r.belumAbsen||[]);
+    }else{
+      $('#dash-total-hari-kerja').textContent=r.totalHariKerja??0;
+      $('#dash-total-gaji').textContent=formatRupiah(r.totalGajiDiterima??0);
+      $('#dash-total-slip').textContent=r.totalSlip??0;
+      const pillDatang=$('#dash-pill-datang'),pillPulang=$('#dash-pill-pulang');
+      const statusDatang=$('#dash-status-datang'),statusPulang=$('#dash-status-pulang');
+      if(r.sudahDatang){pillDatang.classList.add('done');statusDatang.textContent='Sudah Absen';}else{pillDatang.classList.remove('done');statusDatang.textContent='Belum Absen';}
+      if(r.sudahPulang){pillPulang.classList.add('done');statusPulang.textContent='Sudah Absen';}else{pillPulang.classList.remove('done');statusPulang.textContent='Belum Absen';}
+      renderRiwayatMini(r.riwayat||[]);
+    }
+  }catch(e){
+    console.error(e);
+  }
+}
 function handleLogout(){localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user'),AppState.token=null,AppState.user=null;showAuth();navigateTo('login');}
 function navigateTo(p){AppState.currentPage=p;$$('.auth-page').forEach(e=>e.classList.add('hidden'));const t=$(`#page-${p}`);if(t)t.classList.remove('hidden');history.pushState({p},'',`#${p}`);}
 function showAlert(m,t='info'){const i={success:'✓',error:'✕',warning:'⚠',info:'ℹ'},a=document.createElement('div');a.className=`alert ${t}`,a.innerHTML=`<span>${i[t]||i.info}</span><div style="flex:1">${m}</div><button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer">✕</button>`,$('#alert-box').appendChild(a),setTimeout(()=>{a.style.opacity='0';setTimeout(()=>a.remove(),300)},5000);}
@@ -1994,7 +2261,7 @@ async function faceRegDetectLoop(){
     $('#facecam-status').textContent='Bagus, tahan senyumnya...';
   }else{
     FaceRegState.smileHoldMs=Math.max(0,FaceRegState.smileHoldMs-dt*2);
-    $('#facecam-status').textContent='Tersenyumlah untuk melanjutkan 🙂';
+    $('#facecam-status').textContent='Tersenyumlah untuk melanjutkan';
   }
   const pct=Math.round((FaceRegState.smileHoldMs/FACE_SMILE_HOLD_TARGET_MS)*100);
   $('#facecam-progress-bar').style.width=pct+'%';
@@ -2089,7 +2356,7 @@ async function absenScanDetectLoop(){
     $('#absen-facecam-status').textContent='Bagus, tahan senyumnya...';
   }else{
     AbsenScanState.smileHoldMs=Math.max(0,AbsenScanState.smileHoldMs-dt*2);
-    $('#absen-facecam-status').textContent='Tersenyumlah untuk absen 🙂';
+    $('#absen-facecam-status').textContent='Tersenyumlah untuk absen';
   }
   const pct=Math.round((AbsenScanState.smileHoldMs/FACE_SMILE_HOLD_TARGET_MS)*100);
   $('#absen-progress-bar').style.width=pct+'%';
@@ -2269,6 +2536,10 @@ async function initApp(){
   $('#btn-logout').addEventListener('click',handleLogout);
   $('#btn-logout-mobile').addEventListener('click',handleLogout);
   $('#btn-topbar-profile')?.addEventListener('click',()=>{ switchView('profil'); stopAbsenRealtime(); });
+  $('#btn-dashboard-absen-cta')?.addEventListener('click',()=>{
+    switchView('absen-scan');
+    openAbsenScan();
+  });
 
   // Admin: update user modal
   $('#btn-admin-update-user')?.addEventListener('click', openAdminUpdateUserModal);
