@@ -823,7 +823,7 @@
           </div>
           <div class="facecam-progress"><div class="facecam-progress-bar" id="absen-progress-bar"></div></div>
           <div class="facecam-status" id="absen-facecam-status">Memuat kamera...</div>
-          <div class="facecam-hint" id="absen-facecam-hint">Posisikan wajah Anda di dalam bingkai, lalu tersenyumlah</div>
+          <div class="facecam-hint" id="absen-facecam-hint">Posisikan wajah Anda di dalam bingkai, lalu tersenyumlah 🙂</div>
         </div>
       </div>
       </div>
@@ -1005,7 +1005,7 @@
       </div>
       <div class="facecam-progress"><div class="facecam-progress-bar" id="facecam-progress-bar"></div></div>
       <div class="facecam-status" id="facecam-status">Memuat kamera...</div>
-      <div class="facecam-hint">Posisikan wajah Anda di dalam bingkai, lalu tersenyumlah</div>
+      <div class="facecam-hint">Posisikan wajah Anda di dalam bingkai, lalu tersenyumlah 🙂</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" id="btn-cancel-daftar-wajah">Batal</button>
@@ -1994,7 +1994,7 @@ async function faceRegDetectLoop(){
     $('#facecam-status').textContent='Bagus, tahan senyumnya...';
   }else{
     FaceRegState.smileHoldMs=Math.max(0,FaceRegState.smileHoldMs-dt*2);
-    $('#facecam-status').textContent='Tersenyumlah untuk melanjutkan';
+    $('#facecam-status').textContent='Tersenyumlah untuk melanjutkan 🙂';
   }
   const pct=Math.round((FaceRegState.smileHoldMs/FACE_SMILE_HOLD_TARGET_MS)*100);
   $('#facecam-progress-bar').style.width=pct+'%';
@@ -2025,7 +2025,7 @@ async function openAbsenScan(){
   const overlay=$('#absen-result-overlay');
   overlay.classList.remove('show','success','error');
   $('#absen-facecam-status').textContent='Memuat kamera...';
-  $('#absen-facecam-hint').textContent='Posisikan wajah Anda di dalam bingkai, lalu tersenyumlah';
+  $('#absen-facecam-hint').textContent='Posisikan wajah Anda di dalam bingkai, lalu tersenyumlah 🙂';
   $('#absen-progress-bar').style.width='0%';
   AbsenScanState.smileHoldMs=0;
   AbsenScanState.lastTs=0;
@@ -2089,7 +2089,7 @@ async function absenScanDetectLoop(){
     $('#absen-facecam-status').textContent='Bagus, tahan senyumnya...';
   }else{
     AbsenScanState.smileHoldMs=Math.max(0,AbsenScanState.smileHoldMs-dt*2);
-    $('#absen-facecam-status').textContent='Tersenyumlah untuk absen';
+    $('#absen-facecam-status').textContent='Tersenyumlah untuk absen 🙂';
   }
   const pct=Math.round((AbsenScanState.smileHoldMs/FACE_SMILE_HOLD_TARGET_MS)*100);
   $('#absen-progress-bar').style.width=pct+'%';
