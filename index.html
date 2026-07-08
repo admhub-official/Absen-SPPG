@@ -270,6 +270,19 @@
     /* ===== MODAL EDIT PROFIL ===== */
     #modal-edit-profil{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9000;display:none;align-items:center;justify-content:center;padding:1rem}
     #modal-edit-profil.active{display:flex}
+    #modal-crop-foto{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:9500;display:none;align-items:center;justify-content:center;padding:1rem}
+    #modal-crop-foto.active{display:flex}
+    .crop-stage{position:relative;width:320px;height:320px;max-width:100%;margin:0 auto;overflow:hidden;border-radius:12px;background:#111;touch-action:none;cursor:grab}
+    .crop-stage:active{cursor:grabbing}
+    .crop-stage canvas{position:absolute;top:0;left:0;width:100%;height:100%}
+    .crop-circle-overlay{position:absolute;inset:0;pointer-events:none;box-shadow:0 0 0 9999px rgba(0,0,0,.5);border-radius:50%;border:2px solid #fff}
+    #modal-crop-foto{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:9500;display:none;align-items:center;justify-content:center;padding:1rem}
+    #modal-crop-foto.active{display:flex}
+    .crop-stage{position:relative;width:320px;height:320px;max-width:100%;margin:0 auto;overflow:hidden;border-radius:12px;background:#111;touch-action:none;cursor:grab}
+    .crop-stage:active{cursor:grabbing}
+    .crop-stage canvas{position:absolute;top:0;left:0;width:100%;height:100%}
+    .crop-circle-overlay{position:absolute;inset:0;pointer-events:none;box-shadow:0 0 0 9999px rgba(0,0,0,.5);border-radius:50%;border:2px solid #fff}
+    #modal-edit-profil.active{display:flex}
     .modal-card{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
     .modal-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
     .modal-header h3{font-size:1.125rem;font-weight:800}
@@ -508,8 +521,6 @@
           <div class="profile-banner">
             <div class="profile-avatar-wrap">
               <div class="profile-avatar" id="profil-avatar">-</div>
-              <div class="profile-avatar-edit-btn" id="btn-upload-foto-profil" title="Ubah foto profil">📷</div>
-              <input type="file" id="input-foto-profil" accept="image/*" style="display:none">
             </div>
           </div>
           <div class="profile-body">
@@ -844,6 +855,11 @@
     </div>
     <div class="modal-body">
       <div id="edit-profil-alert" class="inline-alert"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.75rem;margin-bottom:1.5rem">
+        <div class="profile-avatar" id="edit-profil-avatar" style="width:96px;height:96px;font-size:1.875rem;position:static">-</div>
+        <button type="button" class="btn btn-secondary" id="btn-ubah-foto-profil" style="font-size:0.8125rem;padding:0.5rem 1rem">📷 Ubah Foto Profil</button>
+        <input type="file" id="input-foto-profil" accept="image/*" style="display:none">
+      </div>
       <div class="modal-grid">
         <div class="form-group"><label class="form-label">Nama Lengkap</label><input type="text" id="edit-nama" class="form-input"></div>
         <div class="form-group"><label class="form-label">Username</label><input type="text" id="edit-username" class="form-input" disabled></div>
@@ -868,6 +884,31 @@
     </div>
   </div>
 </div>
+
+<div id="modal-crop-foto">
+  <div class="modal-card" style="max-width:420px">
+    <div class="modal-header">
+      <h3>Atur Foto Profil</h3>
+      <button class="modal-close" id="btn-close-crop-foto">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="crop-stage" id="crop-stage">
+        <canvas id="crop-canvas" width="320" height="320"></canvas>
+        <div class="crop-circle-overlay"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-top:1.25rem">
+        <span style="font-size:1rem">🔍</span>
+        <input type="range" id="crop-zoom" min="100" max="300" value="100" style="flex:1">
+      </div>
+      <p style="text-align:center;color:var(--text-muted);font-size:0.8125rem;margin-top:0.5rem">Geser gambar dan atur zoom untuk memposisikan foto</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-crop-foto">Batal</button>
+      <button class="btn btn-primary" id="btn-save-crop-foto">Simpan Foto</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let SUPABASE_URL='',SUPABASE_KEY='';
 const CONFIG_ENDPOINT='https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';
@@ -897,57 +938,6 @@ function showApp(){
 function switchView(v){AppState.currentView=v;$$('.app-view').forEach(e=>e.classList.add('hidden'));const t=document.getElementById(`view-${v}`);if(t)t.classList.remove('hidden');$$('.app-nav-item[data-view],.app-bottomnav-item[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));}
 function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';const avatarEl=$('#profil-avatar');if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);}
 async function loadProfilLengkap(){try{const r=await apiCall('getProfilLengkap',{token:AppState.token});if(r&&r.user){AppState.user=r.user;localStorage.setItem('auth_user',JSON.stringify(r.user));renderProfilFromUser();}}catch(e){console.error(e);}}
-function resizeImageToBase64(file, maxSize){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Gagal membaca file'));
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onerror = () => reject(new Error('File bukan gambar yang valid'));
-      img.onload = () => {
-        let { width, height } = img;
-        if(width > height){
-          if(width > maxSize){ height = Math.round(height*maxSize/width); width = maxSize; }
-        } else {
-          if(height > maxSize){ width = Math.round(width*maxSize/height); height = maxSize; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-async function handleUploadFotoProfil(file){
-  if(!file) return;
-  if(!file.type.startsWith('image/')){ showAlert('File harus berupa gambar','error'); return; }
-  const btn = $('#btn-upload-foto-profil');
-  const original = btn.innerHTML;
-  btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div>';
-  try {
-    const fotoProfilBase64 = await resizeImageToBase64(file, 400);
-    const r = await apiCall('updateFotoProfil', {token: AppState.token, fotoProfilBase64});
-    if(r && r.success){
-      if(AppState.user){
-        AppState.user.URL_Foto_Profil = r.url;
-        AppState.user.urlFotoProfil = r.url;
-        localStorage.setItem('auth_user', JSON.stringify(AppState.user));
-      }
-      renderProfilFromUser();
-      showAlert('Foto profil berhasil diperbarui','success');
-    } else {
-      showAlert(r?.message || 'Gagal memperbarui foto profil','error');
-    }
-  } catch(e) {
-    showAlert(e.message || 'Gagal memperbarui foto profil','error');
-  } finally {
-    btn.innerHTML = original;
-  }
-}
 function handleLogout(){localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user'),AppState.token=null,AppState.user=null;showAuth();navigateTo('login');}
 function navigateTo(p){AppState.currentPage=p;$$('.auth-page').forEach(e=>e.classList.add('hidden'));const t=$(`#page-${p}`);if(t)t.classList.remove('hidden');history.pushState({p},'',`#${p}`);}
 function showAlert(m,t='info'){const i={success:'✓',error:'✕',warning:'⚠',info:'ℹ'},a=document.createElement('div');a.className=`alert ${t}`,a.innerHTML=`<span>${i[t]||i.info}</span><div style="flex:1">${m}</div><button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer">✕</button>`,$('#alert-box').appendChild(a),setTimeout(()=>{a.style.opacity='0';setTimeout(()=>a.remove(),300)},5000);}
@@ -1641,6 +1631,10 @@ const _originalSwitchView = window.switchView;
 function openEditProfil(){
   const u=AppState.user;if(!u)return;
   hideInlineAlert('edit-profil-alert');
+  const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';
+  const nama0=u.namaLengkap||u.Nama_Lengkap||'';
+  const avatarEl=$('#edit-profil-avatar');
+  if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama0?nama0.trim().charAt(0).toUpperCase():'?';}
   $('#edit-nama').value=u.namaLengkap||u.Nama_Lengkap||'';
   $('#edit-username').value=u.username||u.Username||'';
   $('#edit-tempat-lahir').value=u.tempatLahir||u.Tempat_Lahir||'';
@@ -1751,11 +1745,24 @@ async function initApp(){
   $('#log-prev-btn')?.addEventListener('click',()=>{ AdminState.logPage--; renderLogList(); });
   $('#log-next-btn')?.addEventListener('click',()=>{ AdminState.logPage++; renderLogList(); });
   $('#btn-open-edit-profil').addEventListener('click',openEditProfil);
-  $('#btn-upload-foto-profil').addEventListener('click',()=>$('#input-foto-profil').click());
-  $('#input-foto-profil').addEventListener('change',(e)=>{const f=e.target.files[0];if(f)handleUploadFotoProfil(f);e.target.value='';});
+  $('#btn-ubah-foto-profil').addEventListener('click',()=>{
+    const fotoUrl=AppState.user?.urlFotoProfil||AppState.user?.URL_Foto_Profil||'';
+    if(fotoUrl){ openCropModalFromUrl(fotoUrl); } else { $('#input-foto-profil').click(); }
+  });
+  $('#input-foto-profil').addEventListener('change',(e)=>{const f=e.target.files[0];if(f)openCropModalFromFile(f);e.target.value='';});
   $('#btn-close-edit-profil').addEventListener('click',closeEditProfil);
   $('#btn-cancel-edit-profil').addEventListener('click',closeEditProfil);
   $('#btn-save-edit-profil').addEventListener('click',handleSaveEditProfil);
+  $('#btn-close-crop-foto').addEventListener('click',closeCropModal);
+  $('#btn-cancel-crop-foto').addEventListener('click',closeCropModal);
+  $('#btn-save-crop-foto').addEventListener('click',handleSaveCropFoto);
+  $('#crop-zoom').addEventListener('input',(e)=>{
+    const pct=Number(e.target.value)/100;
+    CropState.scale=CropState.minScale*pct;
+    clampCropOffset();
+    drawCropCanvas();
+  });
+  initCropDragEvents();
 
   const hs=await checkSession();
   setTimeout(()=>{
