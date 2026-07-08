@@ -101,6 +101,9 @@
     .app-nav-item.active{background:var(--primary);color:#fff}
     .app-nav-item svg{flex-shrink:0}
     .app-sidebar-footer{border-top:1px solid rgba(255,255,255,.08);padding-top:1rem;margin-top:0.5rem}
+    .sidebar-absen-btn{display:flex;align-items:center;justify-content:center;gap:0.6rem;width:100%;padding:0.85rem 0.9rem;margin-bottom:1.25rem;border:none;border-radius:var(--radius);background:var(--primary);color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px -3px rgba(79,70,229,.55);transition:background .2s,transform .15s}
+    .sidebar-absen-btn:hover{background:var(--primary-dark);transform:translateY(-1px)}
+    .sidebar-absen-btn.active{background:var(--primary-dark);box-shadow:inset 0 0 0 2px rgba(255,255,255,.3)}
     .app-main{flex:1;min-width:0;display:flex;flex-direction:column}
     .app-topbar{display:flex;align-items:center;justify-content:space-between;padding:0.85rem 1.5rem;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
     .app-topbar-brand{display:none}
@@ -188,9 +191,10 @@
     }
     @media(min-width:768px) and (max-width:1023px){
       .app-sidebar{width:76px;padding:1.5rem 0.6rem}
-      .app-sidebar-brand span,.app-nav-item span{display:none}
+      .app-sidebar-brand span,.app-nav-item span,.sidebar-absen-btn span{display:none}
       .app-sidebar-brand{justify-content:center;padding:0}
       .app-nav-item{justify-content:center;padding:0.75rem}
+      .sidebar-absen-btn{padding:0.75rem}
       .info-grid{grid-template-columns:1fr}
     }
 
@@ -486,14 +490,16 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       <span>Sistem Absensi</span>
     </div>
+    <button class="sidebar-absen-btn" data-view="absen-scan">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>Absen Sekarang</span>
+    </button>
+    <nav class="app-nav">
+      <button class="app-nav-item active" data-view="dashboard">
     <nav class="app-nav">
       <button class="app-nav-item active" data-view="dashboard">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
         <span>Dashboard</span>
-      </button>
-      <button class="app-nav-item" data-view="profil">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
-        <span>Profil</span>
       </button>
       <!-- ADMIN ONLY NAV -->
       <div class="app-nav-item admin-only-nav" style="padding:0.5rem 0.9rem 0.25rem;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:rgba(255,255,255,.3);cursor:default;display:none">Admin</div>
@@ -1073,7 +1079,7 @@ function showApp(){
     switchView('dashboard');
   }
 }function showAuth(){$('#app-layout').classList.remove('active'),$('#auth-layout').classList.remove('hidden');}
-function switchView(v){AppState.currentView=v;$$('.app-view').forEach(e=>e.classList.add('hidden'));const t=document.getElementById(`view-${v}`);if(t)t.classList.remove('hidden');$$('.app-nav-item[data-view],.app-bottomnav-item[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));}
+function switchView(v){AppState.currentView=v;$$('.app-view').forEach(e=>e.classList.add('hidden'));const t=document.getElementById(`view-${v}`);if(t)t.classList.remove('hidden');$$('.app-nav-item[data-view],.app-bottomnav-item[data-view],.sidebar-absen-btn[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));}
 function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';const avatarEl=$('#profil-avatar');if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);const tbAvatar=$('#topbar-avatar');if(tbAvatar){if(fotoUrl){tbAvatar.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{tbAvatar.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}}const tbName=$('#topbar-profile-name');if(tbName)tbName.textContent=nama||'-';
 const tbRole=$('#topbar-profile-role');if(tbRole)tbRole.textContent=u.role||u.Role||'USER';updateFaceStatusBadge();}
 async function loadProfilLengkap(){try{const r=await apiCall('getProfilLengkap',{token:AppState.token});if(r&&r.user){AppState.user=r.user;localStorage.setItem('auth_user',JSON.stringify(r.user));renderProfilFromUser();}}catch(e){console.error(e);}}
@@ -2249,7 +2255,7 @@ async function initApp(){
 
   window.location.hash.slice(1)==='register'&&navigateTo('register');
 
-  $$('.app-nav-item[data-view],.app-bottomnav-item[data-view]').forEach(e=>e.addEventListener('click',()=>{
+  $$('.app-nav-item[data-view],.app-bottomnav-item[data-view],.sidebar-absen-btn[data-view]').forEach(e=>e.addEventListener('click',()=>{
     const v = e.dataset.view;
     if(AppState.currentView==='absen-scan' && v!=='absen-scan') closeAbsenScan();
     switchView(v);
