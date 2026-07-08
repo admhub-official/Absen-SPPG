@@ -25,13 +25,13 @@
     #auth-layout.hidden{display:none}
     .auth-page{width:100%;display:flex;animation:fadeIn 0.4s ease}
     .auth-page.hidden{display:none}
-    .app-view{display:block}
+    .app-view{display:block;animation:fadeIn 0.35s ease}
     .app-view.hidden{display:none}
     @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
     .auth-brand-panel{flex:1.1;background:radial-gradient(circle at 20% 20%,#312e81 0%,#0f172a 55%,#020617 100%);padding:clamp(2rem,4vw,3.5rem);display:flex;flex-direction:column;justify-content:center;color:#fff;position:relative;overflow:hidden}
     .auth-brand-panel::before{content:'';position:absolute;top:-120px;right:-120px;width:320px;height:320px;background:radial-gradient(circle,rgba(99,102,241,.35),transparent 70%);border-radius:50%}
     .auth-brand-mark{display:flex;align-items:center;gap:0.75rem;font-size:1.375rem;font-weight:700;margin-bottom:2.5rem;letter-spacing:-0.01em;position:relative}
-    .auth-brand-mark svg{background:rgba(255,255,255,.08);padding:6px;border-radius:10px;box-sizing:content-box}
+    .auth-brand-mark svg{background:rgba(255,255,255,.08);padding:6px;border-radius:var(--radius);box-sizing:content-box}
     .auth-brand-headline{font-size:clamp(1.5rem,2.4vw,2.25rem);font-weight:800;margin-bottom:1rem;line-height:1.25;letter-spacing:-0.02em;position:relative;max-width:420px}
     .auth-brand-sub{font-size:0.9375rem;color:rgba(255,255,255,0.65);margin-bottom:2.25rem;line-height:1.6;max-width:380px;position:relative}
     .auth-brand-feature{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.875rem;font-size:0.875rem;color:rgba(255,255,255,.9);position:relative}
@@ -94,7 +94,7 @@
     #app-layout.active{display:flex}
     .app-sidebar{width:248px;flex-shrink:0;background:#0f172a;color:#fff;display:flex;flex-direction:column;padding:1.5rem 1rem;position:sticky;top:0;height:100vh}
     .app-sidebar-brand{display:flex;align-items:center;gap:0.65rem;font-size:1.0625rem;font-weight:700;padding:0 0.5rem;margin-bottom:2rem;letter-spacing:-0.01em}
-    .app-sidebar-brand svg{background:var(--primary);padding:6px;border-radius:9px;box-sizing:content-box;flex-shrink:0}
+    .app-sidebar-brand svg{background:var(--primary);padding:6px;border-radius:var(--radius);box-sizing:content-box;flex-shrink:0}
     .app-nav{display:flex;flex-direction:column;gap:0.25rem;flex:1}
     .app-nav-item{display:flex;align-items:center;gap:0.75rem;padding:0.7rem 0.9rem;border-radius:var(--radius);color:rgba(255,255,255,.65);text-decoration:none;font-size:0.9rem;font-weight:500;cursor:pointer;transition:background .2s,color .2s;border:none;background:none;width:100%;text-align:left}
     .app-nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
@@ -202,16 +202,14 @@
     .face-status-badge{display:inline-flex;align-items:center;gap:0.35rem;font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:999px;margin-top:0.4rem}
     .face-status-badge.registered{background:#dcfce7;color:#16a34a}
     .face-status-badge.not-registered{background:#fef3c7;color:#b45309}
-    #modal-daftar-wajah{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:9500;display:none;align-items:center;justify-content:center;padding:1rem}
-    #modal-daftar-wajah.active{display:flex}
-    .facecam-wrap{position:relative;width:100%;max-width:340px;aspect-ratio:1/1;border-radius:16px;overflow:hidden;background:#111;margin:0 auto}
+    .facecam-wrap{position:relative;width:100%;max-width:340px;aspect-ratio:1/1;border-radius:var(--radius-lg);overflow:hidden;background:#111;margin:0 auto}
     .facecam-wrap video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
     .facecam-wrap canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}
     .facecam-status{text-align:center;font-size:0.875rem;font-weight:600;color:var(--text);margin-top:0.85rem;min-height:1.3rem}
     .facecam-hint{text-align:center;font-size:0.8125rem;color:var(--text-muted);margin-top:0.25rem}
     .facecam-progress{width:100%;max-width:340px;height:6px;border-radius:999px;background:var(--border);margin:0.75rem auto 0;overflow:hidden}
     .facecam-progress-bar{height:100%;width:0%;background:var(--primary);transition:width .15s linear}
-    .facecam-page-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.75rem 1.25rem;max-width:420px;margin:0 auto}
+    .facecam-page-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.75rem 1.25rem;max-width:420px;margin:0 auto}
     .facecam-result-overlay{position:absolute;inset:0;background:rgba(15,23,42,.9);display:none;flex-direction:column;align-items:center;justify-content:center;gap:0.5rem;padding:1.5rem;text-align:center}
     .facecam-result-overlay.show{display:flex}
     .facecam-result-overlay.success .facecam-result-icon{color:#4ade80}
@@ -237,7 +235,7 @@
       .app-sidebar{display:none}
       .app-topbar{padding:1rem 1.25rem}
       .app-topbar-brand{display:flex;align-items:center;gap:0.55rem;font-weight:700;font-size:0.9375rem;color:var(--text)}
-      .app-topbar-brand svg{background:var(--primary);padding:5px;border-radius:8px;box-sizing:content-box}
+      .app-topbar-brand svg{background:var(--primary);padding:5px;border-radius:var(--radius);box-sizing:content-box}
       .app-content{padding:1.25rem 1rem 5.5rem}
       .app-bottomnav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:50;padding:0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom))}
       .app-bottomnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.2rem;padding:0.5rem 0;border:none;background:none;color:var(--text-muted);font-size:0.6875rem;font-weight:600;cursor:pointer}
@@ -275,7 +273,7 @@
     .inline-alert.warning{border-left-color:var(--warning);background:#fffbeb;color:#92400e}
     .btn-reset-link{display:none;width:100%;margin-top:0.75rem}
     .btn-reset-link.show{display:inline-flex}
-    .btn-secondary{background:var(--surface);color:var(--text);border:1.5px solid var(--border)}
+    .btn-secondary{background:var(--surface);color:var(--text);border:1.5px solid var(--border);box-shadow:0 1px 2px rgba(15,23,42,.06)}
     .btn-secondary:hover{background:var(--bg)}
 
   /* ===== ADMIN STYLES ===== */
@@ -305,7 +303,21 @@
     .badge-info{background:#dbeafe;color:#1e40af}
     .badge-gray{background:var(--bg);color:var(--text-muted)}
     .table-empty{text-align:center;padding:3rem 1rem;color:var(--text-muted);font-size:0.875rem}
+    .table-empty-icon{width:56px;height:56px;margin:0 auto 0.85rem;color:var(--text-muted);opacity:0.55}
+    .table-empty-title{font-weight:600;color:var(--text-secondary);font-size:0.9rem;margin-bottom:0.25rem}
+    .table-empty-sub{color:var(--text-muted);font-size:0.8125rem}
     .table-loading{text-align:center;padding:2.5rem 1rem;color:var(--text-muted);font-size:0.875rem;display:flex;align-items:center;justify-content:center;gap:0.5rem}
+    @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+    .skel{background:linear-gradient(90deg,var(--border) 25%,#f1f5f9 37%,var(--border) 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite;border-radius:6px}
+    .skel-row{display:flex;align-items:center;gap:1rem;padding:0.9rem 1.25rem;border-bottom:1px solid var(--border)}
+    .skel-row:last-child{border-bottom:none}
+    .skel-avatar{width:34px;height:34px;border-radius:50%;flex-shrink:0}
+    .skel-line{height:12px;flex:1}
+    .skel-line.short{flex:0 0 60px}
+    .skel-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem 1rem 1.25rem;display:flex;flex-direction:column;align-items:center;gap:0.75rem}
+    .skel-card .skel-avatar{width:72px;height:72px}
+    .skel-card .skel-line{width:70%;height:13px}
+    .skel-card .skel-line.short{width:45%;height:11px;flex:none}
 
     /* Realtime indicator */
     .realtime-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;animation:pulse-dot 1.8s ease-in-out infinite}
@@ -370,11 +382,8 @@
     }
 
     /* ===== MODAL EDIT PROFIL ===== */
-    #modal-edit-profil{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9000;display:none;align-items:center;justify-content:center;padding:1rem}
-    #modal-edit-profil.active{display:flex}
-    #modal-crop-foto{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:9500;display:none;align-items:center;justify-content:center;padding:1rem}
-    #modal-crop-foto.active{display:flex}
-    .crop-stage{position:relative;width:320px;height:320px;max-width:100%;margin:0 auto;overflow:hidden;border-radius:12px;background:#111;touch-action:none;cursor:grab}
+    .modal-overlay-top{background:rgba(15,23,42,.7);z-index:9500}
+    .crop-stage{position:relative;width:320px;height:320px;max-width:100%;margin:0 auto;overflow:hidden;border-radius:var(--radius);background:#111;touch-action:none;cursor:grab}
     .crop-stage:active{cursor:grabbing}
     .crop-stage canvas{position:absolute;top:0;left:0;width:100%;height:100%}
     .crop-circle-overlay{position:absolute;inset:0;pointer-events:none;box-shadow:0 0 0 9999px rgba(0,0,0,.5);border-radius:50%;border:2px solid #fff}
@@ -855,7 +864,7 @@
                 </tr>
               </thead>
               <tbody id="absen-table-body">
-                <tr><td colspan="7" class="table-loading"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Memuat data...</td></tr>
+                <tr><td colspan="7" style="padding:0"><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-line short"></div></div></td></tr>
               </tbody>
             </table>
           </div>
@@ -887,7 +896,7 @@
             </div>
           </div>
           <div id="users-grid-container" class="users-grid">
-            <div class="table-loading" style="grid-column:1/-1"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Memuat data...</div>
+            <div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>
           </div>
         </div>
       </div>
@@ -972,7 +981,7 @@
             </div>
           </div>
           <div class="log-list" id="log-list-container">
-            <div class="table-loading"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Memuat log...</div>
+            <div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>
           </div>
           <div class="pagination" id="log-pagination" style="display:none">
             <span class="pagination-info" id="log-pagination-info"></span>
@@ -1101,7 +1110,7 @@
   </div>
 </div>
 
-<div id="modal-edit-profil">
+<div class="modal-overlay" id="modal-edit-profil">
   <div class="modal-card">
     <div class="modal-header">
       <h3>Update Profil</h3>
@@ -1142,7 +1151,7 @@
   </div>
 </div>
 
-<div id="modal-crop-foto">
+<div class="modal-overlay modal-overlay-top" id="modal-crop-foto">
   <div class="modal-card" style="max-width:420px">
     <div class="modal-header">
       <h3>Atur Foto Profil</h3>
@@ -1170,7 +1179,7 @@
   </div>
 </div>
 
-<div id="modal-daftar-wajah">
+<div class="modal-overlay modal-overlay-top" id="modal-daftar-wajah">
   <div class="modal-card" style="max-width:400px">
     <div class="modal-header">
       <h3>Daftarkan Wajah</h3>
@@ -1640,7 +1649,7 @@ async function loadAdminAbsen(){
     AdminState.allAbsen = groupAbsenByUserTanggal(raw);
     filterAndRenderAbsen();
   } catch(e) {
-    if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="table-empty">Gagal memuat data: ${e.message}</td></tr>`;
+    if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="table-empty"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="table-empty-title">Gagal memuat data</div><div class="table-empty-sub">${e.message}</div></td></tr>`;
   }
 }
 
@@ -1698,7 +1707,7 @@ function renderAbsenTable(){
   const rows = AdminState.filteredAbsen.slice(start, start+ps);
 
   if(rows.length === 0){
-    tbody.innerHTML = `<tr><td colspan="7" class="table-empty">Tidak ada data absensi</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="table-empty"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><div class="table-empty-title">Belum ada data absensi</div><div class="table-empty-sub">Belum ada data absensi hari ini</div></td></tr>`;
     if(pg) pg.style.display = 'none';
     return;
   }
@@ -1735,7 +1744,7 @@ function renderAbsenTable(){
 async function loadAdminUsers(){
   const container = $('#users-grid-container');
   if(!container) return;
-  container.innerHTML = `<div class="table-loading" style="grid-column:1/-1"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Memuat data...</div>`;
+  container.innerHTML = Array(8).fill(`<div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>`).join('');
   try {
     const r = await apiCall('getAllUsers', {token: AppState.token});
     AdminState.allUsers = Array.isArray(r) ? r : (r?.users || []);
@@ -1762,7 +1771,7 @@ function renderUsersGrid(){
   if(!container) return;
   const users = AdminState.filteredUsers;
   if(users.length === 0){
-    container.innerHTML = `<div class="table-empty" style="grid-column:1/-1">Tidak ada pengguna ditemukan</div>`;
+    container.innerHTML = `<div class="table-empty" style="grid-column:1/-1"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg><div class="table-empty-title">Tidak ada pengguna ditemukan</div><div class="table-empty-sub">Coba ubah kata kunci pencarian Anda</div></div>`;
     return;
   }
   container.innerHTML = users.map((u,i) => {
@@ -1923,7 +1932,7 @@ async function handleConfirmDeleteUser(){
 async function loadAdminLog(){
   const container = $('#log-list-container');
   if(!container) return;
-  container.innerHTML = `<div class="table-loading"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Memuat log...</div>`;
+  container.innerHTML = `<div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>`;
   try {
     const r = await apiCall('getAuditLogEnriched', {token: AppState.token});
     AdminState.allLogs = Array.isArray(r) ? r : (r?.logs || []);
@@ -1974,7 +1983,7 @@ function renderLogList(){
   const rows = AdminState.filteredLogs.slice(start, start+ps);
 
   if(rows.length === 0){
-    container.innerHTML = `<div class="table-empty">Tidak ada log ditemukan</div>`;
+    container.innerHTML = `<div class="table-empty"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div class="table-empty-title">Tidak ada log ditemukan</div><div class="table-empty-sub">Belum ada aktivitas yang tercatat</div></div>`;
     if(pg) pg.style.display = 'none';
     return;
   }
