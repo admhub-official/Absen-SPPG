@@ -134,6 +134,31 @@
     .profile-name{font-size:1.25rem;font-weight:800;letter-spacing:-0.01em}
     .profile-role{display:inline-flex;align-items:center;gap:0.35rem;background:var(--primary-light);color:var(--primary);font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:999px;margin-top:0.5rem}
     .profile-idcard{font-size:0.8125rem;color:var(--text-muted);margin-top:0.4rem;font-family:ui-monospace,monospace;letter-spacing:0.03em}
+    .face-status-badge{display:inline-flex;align-items:center;gap:0.35rem;font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:999px;margin-top:0.5rem}
+    .face-status-badge.registered{background:#dcfce7;color:#16a34a}
+    .face-status-badge.not-registered{background:#fef3c7;color:#b45309}
+    #modal-daftar-wajah{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:9500;display:none;align-items:center;justify-content:center;padding:1rem}
+    #modal-daftar-wajah.active{display:flex}
+    .facecam-wrap{position:relative;width:100%;max-width:340px;aspect-ratio:1/1;border-radius:16px;overflow:hidden;background:#111;margin:0 auto}
+    .facecam-wrap video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+    .facecam-wrap canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}
+    .facecam-status{text-align:center;font-size:0.875rem;font-weight:600;color:var(--text);margin-top:0.85rem;min-height:1.3rem}
+    .facecam-hint{text-align:center;font-size:0.8125rem;color:var(--text-muted);margin-top:0.25rem}
+    .facecam-progress{width:100%;max-width:340px;height:6px;border-radius:999px;background:var(--border);margin:0.75rem auto 0;overflow:hidden}
+    .facecam-progress-bar{height:100%;width:0%;background:var(--primary);transition:width .15s linear}
+    .facecam-page-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.75rem 1.25rem;max-width:420px;margin:0 auto}
+    .facecam-result-overlay{position:absolute;inset:0;background:rgba(15,23,42,.9);display:none;flex-direction:column;align-items:center;justify-content:center;gap:0.5rem;padding:1.5rem;text-align:center}
+    .facecam-result-overlay.show{display:flex}
+    .facecam-result-overlay.success .facecam-result-icon{color:#4ade80}
+    .facecam-result-overlay.error .facecam-result-icon{color:#f87171}
+    .facecam-result-icon{font-size:2.75rem;line-height:1}
+    .facecam-result-title{color:#fff;font-size:1.125rem;font-weight:800}
+    .facecam-result-detail{color:#d1d5db;font-size:0.875rem}
+    .facecam-wrap.detecting{box-shadow:0 0 0 3px var(--primary-light)}
+    @media(max-width:480px){
+      .facecam-wrap,.facecam-progress{max-width:100%}
+      .facecam-page-card{padding:1.25rem 1rem}
+    }
 
     .info-section{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);border:1px solid var(--border);padding:1.5rem 1.75rem;margin-bottom:1.25rem}
     .info-section-title{font-size:0.9375rem;font-weight:700;margin-bottom:1.1rem;display:flex;align-items:center;gap:0.5rem;color:var(--text)}
@@ -539,7 +564,17 @@
             <div class="profile-name" id="profil-nama">-</div>
             <span class="profile-role" id="profil-role">-</span>
             <div class="profile-idcard" id="profil-idcard">-</div>
-            <button class="btn btn-primary" id="btn-open-edit-profil" style="margin-top:1rem">Update Profil</button>
+            <div class="face-status-badge not-registered" id="profil-face-status">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/></svg>
+              <span id="profil-face-status-text">Wajah Belum Terdaftar</span>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;justify-content:center;margin-top:1rem">
+              <button class="btn btn-primary" id="btn-open-edit-profil">Update Profil</button>
+              <button class="btn btn-secondary" id="btn-open-daftar-wajah">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.35rem;vertical-align:-2px"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg>
+                <span id="btn-daftar-wajah-label">Daftarkan Wajah</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -762,6 +797,28 @@
           </div>
         </div>
       </div>
+
+      <!-- ===== VIEW: ABSEN MANDIRI (SCAN WAJAH) ===== -->
+      <div id="view-absen-scan" class="app-view hidden">
+        <div class="page-header">
+          <div class="page-title">Absen Mandiri</div>
+          <div class="page-subtitle">Scan wajah Anda untuk mencatat kehadiran</div>
+        </div>
+        <div class="facecam-page-card">
+          <div class="facecam-wrap" id="absen-facecam-wrap">
+            <video id="absen-facecam-video" autoplay playsinline muted></video>
+            <canvas id="absen-facecam-canvas"></canvas>
+            <div class="facecam-result-overlay" id="absen-result-overlay">
+              <div class="facecam-result-icon" id="absen-result-icon"></div>
+              <div class="facecam-result-title" id="absen-result-title"></div>
+              <div class="facecam-result-detail" id="absen-result-detail"></div>
+            </div>
+          </div>
+          <div class="facecam-progress"><div class="facecam-progress-bar" id="absen-progress-bar"></div></div>
+          <div class="facecam-status" id="absen-facecam-status">Memuat kamera...</div>
+          <div class="facecam-hint" id="absen-facecam-hint">Posisikan wajah Anda di dalam bingkai, lalu tersenyumlah</div>
+        </div>
+      </div>
       </div>
     </div>
 
@@ -928,10 +985,73 @@
   </div>
 </div>
 
+<div id="modal-daftar-wajah">
+  <div class="modal-card" style="max-width:400px">
+    <div class="modal-header">
+      <h3>Daftarkan Wajah</h3>
+      <button class="modal-close" id="btn-close-daftar-wajah">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="daftar-wajah-alert" class="inline-alert"></div>
+      <div class="facecam-wrap" id="facecam-wrap">
+        <video id="facecam-video" autoplay playsinline muted></video>
+        <canvas id="facecam-canvas"></canvas>
+      </div>
+      <div class="facecam-progress"><div class="facecam-progress-bar" id="facecam-progress-bar"></div></div>
+      <div class="facecam-status" id="facecam-status">Memuat kamera...</div>
+      <div class="facecam-hint">Posisikan wajah Anda di dalam bingkai, lalu tersenyumlah</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-daftar-wajah">Batal</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let SUPABASE_URL='',SUPABASE_KEY='';
 const CONFIG_ENDPOINT='https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';
 const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppState={token:null,user:null,currentPage:'login',currentView:'dashboard',pendingRegisterEmail:'',pendingResetEmail:'',pendingResetToken:'',resendTimerRegister:null,resendTimerReset:null};
+const FACEAPI_CDN_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
+const FACEAPI_MODEL_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+const FaceApiState={scriptLoaded:false,modelsLoaded:false,loadingPromise:null};
+function loadFaceApiLibrary(){
+  if(FaceApiState.scriptLoaded && window.faceapi) return Promise.resolve();
+  if(window.faceapi){FaceApiState.scriptLoaded=true;return Promise.resolve();}
+  return new Promise((resolve,reject)=>{
+    const existing=document.querySelector(`script[src="${FACEAPI_CDN_URL}"]`);
+    if(existing){
+      existing.addEventListener('load',()=>{FaceApiState.scriptLoaded=true;resolve();});
+      existing.addEventListener('error',()=>reject(new Error('Gagal memuat pustaka face-api.')));
+      return;
+    }
+    const s=document.createElement('script');
+    s.src=FACEAPI_CDN_URL;
+    s.async=true;
+    s.onload=()=>{FaceApiState.scriptLoaded=true;resolve();};
+    s.onerror=()=>reject(new Error('Gagal memuat pustaka face-api.'));
+    document.head.appendChild(s);
+  });
+}
+async function loadFaceApiModels(){
+  if(FaceApiState.modelsLoaded) return;
+  if(FaceApiState.loadingPromise) return FaceApiState.loadingPromise;
+  FaceApiState.loadingPromise=(async()=>{
+    await loadFaceApiLibrary();
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(FACEAPI_MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(FACEAPI_MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(FACEAPI_MODEL_URL),
+      faceapi.nets.faceExpressionNet.loadFromUri(FACEAPI_MODEL_URL)
+    ]);
+    FaceApiState.modelsLoaded=true;
+  })();
+  try{
+    await FaceApiState.loadingPromise;
+  }catch(err){
+    FaceApiState.loadingPromise=null;
+    throw err;
+  }
+}
 
 function formatTanggal(v){if(!v)return'-';const d=new Date(v);if(isNaN(d))return'-';return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});}
 function formatRupiah(v){if(v===undefined||v===null||v==='')return'-';const n=Number(v);if(isNaN(n))return'-';return'Rp '+n.toLocaleString('id-ID');}
@@ -955,7 +1075,8 @@ function showApp(){
   }
 }function showAuth(){$('#app-layout').classList.remove('active'),$('#auth-layout').classList.remove('hidden');}
 function switchView(v){AppState.currentView=v;$$('.app-view').forEach(e=>e.classList.add('hidden'));const t=document.getElementById(`view-${v}`);if(t)t.classList.remove('hidden');$$('.app-nav-item[data-view],.app-bottomnav-item[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));}
-function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';const avatarEl=$('#profil-avatar');if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);}
+function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';const avatarEl=$('#profil-avatar');if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);const tbAvatar=$('#topbar-avatar');if(tbAvatar){if(fotoUrl){tbAvatar.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{tbAvatar.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}}const tbName=$('#topbar-profile-name');if(tbName)tbName.textContent=nama||'-';
+const tbRole=$('#topbar-profile-role');if(tbRole)tbRole.textContent=u.role||u.Role||'USER';updateFaceStatusBadge();}
 async function loadProfilLengkap(){try{const r=await apiCall('getProfilLengkap',{token:AppState.token});if(r&&r.user){AppState.user=r.user;localStorage.setItem('auth_user',JSON.stringify(r.user));renderProfilFromUser();}}catch(e){console.error(e);}}
 function handleLogout(){localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user'),AppState.token=null,AppState.user=null;showAuth();navigateTo('login');}
 function navigateTo(p){AppState.currentPage=p;$$('.auth-page').forEach(e=>e.classList.add('hidden'));const t=$(`#page-${p}`);if(t)t.classList.remove('hidden');history.pushState({p},'',`#${p}`);}
@@ -1781,6 +1902,276 @@ function closeCropModal(){
   CropState.img=null;
 }
 
+const FaceRegState={stream:null,detectLoop:null,smileHoldMs:0,lastTs:0,busy:false};
+const FACE_SMILE_HOLD_TARGET_MS=900;
+const FACE_SMILE_THRESHOLD=0.7;
+
+function updateFaceStatusBadge(){
+  const u=AppState.user;if(!u)return;
+  const hasFace=!!(u.faceDescriptor||u.Face_Descriptor_JSON);
+  const badge=$('#profil-face-status'),label=$('#profil-face-status-text'),btnLabel=$('#btn-daftar-wajah-label');
+  if(!badge)return;
+  if(hasFace){
+    badge.classList.remove('not-registered');badge.classList.add('registered');
+    if(label)label.textContent='Wajah Sudah Terdaftar';
+    if(btnLabel)btnLabel.textContent='Perbarui Wajah';
+  }else{
+    badge.classList.remove('registered');badge.classList.add('not-registered');
+    if(label)label.textContent='Wajah Belum Terdaftar';
+    if(btnLabel)btnLabel.textContent='Daftarkan Wajah';
+  }
+}
+
+async function openDaftarWajah(){
+  hideInlineAlert('daftar-wajah-alert');
+  $('#facecam-status').textContent='Memuat kamera...';
+  $('#facecam-progress-bar').style.width='0%';
+  FaceRegState.smileHoldMs=0;
+  FaceRegState.lastTs=0;
+  FaceRegState.busy=false;
+  $('#modal-daftar-wajah').classList.add('active');
+  try{
+    FaceRegState.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:480},height:{ideal:480}},audio:false});
+    const video=$('#facecam-video');
+    video.srcObject=FaceRegState.stream;
+    await new Promise(res=>{video.onloadedmetadata=()=>res();});
+    $('#facecam-status').textContent='Memuat model deteksi wajah...';
+    await loadFaceApiModels();
+    const canvas=$('#facecam-canvas');
+    canvas.width=video.videoWidth||480;
+    canvas.height=video.videoHeight||480;
+    $('#facecam-status').textContent='Posisikan wajah di dalam bingkai';
+    faceRegDetectLoop();
+  }catch(err){
+    console.error(err);
+    $('#facecam-status').textContent='';
+    showInlineAlert('daftar-wajah-alert', err&&err.name==='NotAllowedError' ? 'Izin kamera ditolak. Aktifkan akses kamera untuk melanjutkan.' : 'Gagal mengakses kamera.');
+  }
+}
+
+function closeDaftarWajah(){
+  $('#modal-daftar-wajah').classList.remove('active');
+  if(FaceRegState.detectLoop) cancelAnimationFrame(FaceRegState.detectLoop);
+  FaceRegState.detectLoop=null;
+  if(FaceRegState.stream){FaceRegState.stream.getTracks().forEach(t=>t.stop());FaceRegState.stream=null;}
+  const ctx=$('#facecam-canvas').getContext('2d');
+  ctx.clearRect(0,0,$('#facecam-canvas').width,$('#facecam-canvas').height);
+}
+
+async function faceRegDetectLoop(){
+  if(FaceRegState.busy){FaceRegState.detectLoop=requestAnimationFrame(faceRegDetectLoop);return;}
+  const video=$('#facecam-video'),canvas=$('#facecam-canvas');
+  if(!video||video.readyState<2){FaceRegState.detectLoop=requestAnimationFrame(faceRegDetectLoop);return;}
+  const opts=new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:0.5});
+  const result=await faceapi.detectSingleFace(video,opts).withFaceLandmarks().withFaceExpressions().withFaceDescriptor();
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const now=performance.now();
+  const dt=FaceRegState.lastTs?now-FaceRegState.lastTs:0;
+  FaceRegState.lastTs=now;
+
+  if(!result){
+    FaceRegState.smileHoldMs=0;
+    $('#facecam-status').textContent='Wajah tidak terdeteksi';
+    $('#facecam-progress-bar').style.width='0%';
+    FaceRegState.detectLoop=requestAnimationFrame(faceRegDetectLoop);
+    return;
+  }
+
+  const box=result.detection.box;
+  ctx.strokeStyle='#4f46e5';ctx.lineWidth=3;
+  ctx.strokeRect(box.x,box.y,box.width,box.height);
+
+  const smileScore=(result.expressions && result.expressions.happy) || 0;
+  if(smileScore>=FACE_SMILE_THRESHOLD){
+    FaceRegState.smileHoldMs=Math.min(FACE_SMILE_HOLD_TARGET_MS,FaceRegState.smileHoldMs+dt);
+    $('#facecam-status').textContent='Bagus, tahan senyumnya...';
+  }else{
+    FaceRegState.smileHoldMs=Math.max(0,FaceRegState.smileHoldMs-dt*2);
+    $('#facecam-status').textContent='Tersenyumlah untuk melanjutkan';
+  }
+  const pct=Math.round((FaceRegState.smileHoldMs/FACE_SMILE_HOLD_TARGET_MS)*100);
+  $('#facecam-progress-bar').style.width=pct+'%';
+
+  if(FaceRegState.smileHoldMs>=FACE_SMILE_HOLD_TARGET_MS){
+    FaceRegState.busy=true;
+    await handleFaceCaptureComplete(result.descriptor,video);
+    return;
+  }
+
+  FaceRegState.detectLoop=requestAnimationFrame(faceRegDetectLoop);
+}
+
+const AbsenScanState={stream:null,detectLoop:null,smileHoldMs:0,lastTs:0,busy:false,coords:null};
+
+function getCurrentPositionPromise(){
+  return new Promise((resolve)=>{
+    if(!navigator.geolocation){resolve(null);return;}
+    navigator.geolocation.getCurrentPosition(
+      (pos)=>resolve({lat:pos.coords.latitude,lng:pos.coords.longitude}),
+      ()=>resolve(null),
+      {enableHighAccuracy:true,timeout:8000,maximumAge:0}
+    );
+  });
+}
+
+async function openAbsenScan(){
+  const overlay=$('#absen-result-overlay');
+  overlay.classList.remove('show','success','error');
+  $('#absen-facecam-status').textContent='Memuat kamera...';
+  $('#absen-facecam-hint').textContent='Posisikan wajah Anda di dalam bingkai, lalu tersenyumlah';
+  $('#absen-progress-bar').style.width='0%';
+  AbsenScanState.smileHoldMs=0;
+  AbsenScanState.lastTs=0;
+  AbsenScanState.busy=false;
+  AbsenScanState.coords=null;
+  try{
+    AbsenScanState.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:480},height:{ideal:480}},audio:false});
+    const video=$('#absen-facecam-video');
+    video.srcObject=AbsenScanState.stream;
+    await new Promise(res=>{video.onloadedmetadata=()=>res();});
+    $('#absen-facecam-status').textContent='Memuat model deteksi wajah...';
+    await loadFaceApiModels();
+    const canvas=$('#absen-facecam-canvas');
+    canvas.width=video.videoWidth||480;
+    canvas.height=video.videoHeight||480;
+    $('#absen-facecam-status').textContent='Mendeteksi lokasi Anda...';
+    AbsenScanState.coords=await getCurrentPositionPromise();
+    $('#absen-facecam-status').textContent='Posisikan wajah di dalam bingkai';
+    absenScanDetectLoop();
+  }catch(err){
+    console.error(err);
+    $('#absen-facecam-status').textContent=err&&err.name==='NotAllowedError' ? 'Izin kamera ditolak. Aktifkan akses kamera untuk melanjutkan.' : 'Gagal mengakses kamera.';
+  }
+}
+
+function closeAbsenScan(){
+  if(AbsenScanState.detectLoop) cancelAnimationFrame(AbsenScanState.detectLoop);
+  AbsenScanState.detectLoop=null;
+  if(AbsenScanState.stream){AbsenScanState.stream.getTracks().forEach(t=>t.stop());AbsenScanState.stream=null;}
+  const canvas=$('#absen-facecam-canvas');
+  if(canvas){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);}
+}
+
+async function absenScanDetectLoop(){
+  if(AbsenScanState.busy){AbsenScanState.detectLoop=requestAnimationFrame(absenScanDetectLoop);return;}
+  const video=$('#absen-facecam-video'),canvas=$('#absen-facecam-canvas');
+  if(!video||video.readyState<2){AbsenScanState.detectLoop=requestAnimationFrame(absenScanDetectLoop);return;}
+  const opts=new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:0.5});
+  const result=await faceapi.detectSingleFace(video,opts).withFaceLandmarks().withFaceExpressions().withFaceDescriptor();
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const now=performance.now();
+  const dt=AbsenScanState.lastTs?now-AbsenScanState.lastTs:0;
+  AbsenScanState.lastTs=now;
+
+  if(!result){
+    AbsenScanState.smileHoldMs=0;
+    $('#absen-facecam-status').textContent='Wajah tidak terdeteksi';
+    $('#absen-progress-bar').style.width='0%';
+    AbsenScanState.detectLoop=requestAnimationFrame(absenScanDetectLoop);
+    return;
+  }
+
+  const box=result.detection.box;
+  ctx.strokeStyle='#4f46e5';ctx.lineWidth=3;
+  ctx.strokeRect(box.x,box.y,box.width,box.height);
+
+  const smileScore=(result.expressions && result.expressions.happy) || 0;
+  if(smileScore>=FACE_SMILE_THRESHOLD){
+    AbsenScanState.smileHoldMs=Math.min(FACE_SMILE_HOLD_TARGET_MS,AbsenScanState.smileHoldMs+dt);
+    $('#absen-facecam-status').textContent='Bagus, tahan senyumnya...';
+  }else{
+    AbsenScanState.smileHoldMs=Math.max(0,AbsenScanState.smileHoldMs-dt*2);
+    $('#absen-facecam-status').textContent='Tersenyumlah untuk absen';
+  }
+  const pct=Math.round((AbsenScanState.smileHoldMs/FACE_SMILE_HOLD_TARGET_MS)*100);
+  $('#absen-progress-bar').style.width=pct+'%';
+
+  if(AbsenScanState.smileHoldMs>=FACE_SMILE_HOLD_TARGET_MS){
+    AbsenScanState.busy=true;
+    await handleAbsenScanComplete(result.descriptor);
+    return;
+  }
+
+  AbsenScanState.detectLoop=requestAnimationFrame(absenScanDetectLoop);
+}
+
+async function handleAbsenScanComplete(descriptor){
+  $('#absen-facecam-status').textContent='Memverifikasi...';
+  const overlay=$('#absen-result-overlay'),icon=$('#absen-result-icon'),title=$('#absen-result-title'),detail=$('#absen-result-detail');
+  try{
+    const faceDescriptorScan=Array.from(descriptor);
+    const idUser=AppState.user?.idUser||AppState.user?.ID_User;
+    const r=await apiCall('recordAbsensiSelf',{
+      token:AppState.token,
+      idUser,
+      faceDescriptorScan,
+      lat:AbsenScanState.coords?AbsenScanState.coords.lat:null,
+      lng:AbsenScanState.coords?AbsenScanState.coords.lng:null
+    });
+    if(r&&r.success){
+      overlay.classList.add('show','success');
+      overlay.classList.remove('error');
+      icon.textContent='✓';
+      title.textContent=`Absen ${r.message} Berhasil`;
+      detail.textContent=`${r.nama||''} • ${r.waktu||''}`;
+    }else{
+      overlay.classList.add('show','error');
+      overlay.classList.remove('success');
+      icon.textContent='✕';
+      title.textContent='Absen Gagal';
+      detail.textContent=r?.message||'Silakan coba lagi';
+    }
+  }catch(err){
+    overlay.classList.add('show','error');
+    overlay.classList.remove('success');
+    icon.textContent='✕';
+    title.textContent='Absen Gagal';
+    detail.textContent=err&&err.message?err.message:'Terjadi kesalahan';
+  }
+  setTimeout(()=>{
+    closeAbsenScan();
+    switchView('dashboard');
+  },5000);
+}
+
+async function handleFaceCaptureComplete(descriptor,video){
+  $('#facecam-status').textContent='Menyimpan data wajah...';
+  try{
+    const shot=document.createElement('canvas');
+    shot.width=video.videoWidth||480;
+    shot.height=video.videoHeight||480;
+    const sctx=shot.getContext('2d');
+    sctx.translate(shot.width,0);
+    sctx.scale(-1,1);
+    sctx.drawImage(video,0,0,shot.width,shot.height);
+    const fotoWajahBase64=shot.toDataURL('image/png');
+    const faceDescriptor=Array.from(descriptor);
+    const r=await apiCall('updateFaceDescriptor',{token:AppState.token,faceDescriptor,fotoWajahBase64});
+    if(r&&r.success){
+      if(AppState.user){
+        AppState.user.Face_Descriptor_JSON=faceDescriptor;
+        AppState.user.faceDescriptor=faceDescriptor;
+        localStorage.setItem('auth_user',JSON.stringify(AppState.user));
+      }
+      updateFaceStatusBadge();
+      showAlert('Wajah berhasil didaftarkan','success');
+      closeDaftarWajah();
+    }else{
+      showInlineAlert('daftar-wajah-alert',r?.message||'Gagal menyimpan data wajah');
+      FaceRegState.smileHoldMs=0;
+      FaceRegState.busy=false;
+      FaceRegState.detectLoop=requestAnimationFrame(faceRegDetectLoop);
+    }
+  }catch(err){
+    showInlineAlert('daftar-wajah-alert',err&&err.message?err.message:'Terjadi kesalahan saat menyimpan data wajah');
+    FaceRegState.smileHoldMs=0;
+    FaceRegState.busy=false;
+    FaceRegState.detectLoop=requestAnimationFrame(faceRegDetectLoop);
+  }
+}
+
 async function handleSaveCropFoto(){
   if(!CropState.img)return;
   const b=$('#btn-save-crop-foto'),o=b.innerHTML;
@@ -1861,14 +2252,17 @@ async function initApp(){
 
   $$('.app-nav-item[data-view],.app-bottomnav-item[data-view]').forEach(e=>e.addEventListener('click',()=>{
     const v = e.dataset.view;
+    if(AppState.currentView==='absen-scan' && v!=='absen-scan') closeAbsenScan();
     switchView(v);
     if(v==='admin-absen'){ loadAdminAbsen(); startAbsenRealtime(); }
     else { stopAbsenRealtime(); }
     if(v==='admin-users') loadAdminUsers();
     if(v==='admin-log') loadAdminLog();
+    if(v==='absen-scan') openAbsenScan();
   }));
   $('#btn-logout').addEventListener('click',handleLogout);
   $('#btn-logout-mobile').addEventListener('click',handleLogout);
+  $('#btn-topbar-profile')?.addEventListener('click',()=>{ switchView('profil'); stopAbsenRealtime(); });
 
   // Admin: update user modal
   $('#btn-admin-update-user')?.addEventListener('click', openAdminUpdateUserModal);
@@ -1894,6 +2288,9 @@ async function initApp(){
   $('#log-prev-btn')?.addEventListener('click',()=>{ AdminState.logPage--; renderLogList(); });
   $('#log-next-btn')?.addEventListener('click',()=>{ AdminState.logPage++; renderLogList(); });
   $('#btn-open-edit-profil').addEventListener('click',openEditProfil);
+  $('#btn-open-daftar-wajah').addEventListener('click',openDaftarWajah);
+  $('#btn-close-daftar-wajah').addEventListener('click',closeDaftarWajah);
+  $('#btn-cancel-daftar-wajah').addEventListener('click',closeDaftarWajah);
   $('#btn-ubah-foto-profil').addEventListener('click',()=>{
     const fotoUrl=AppState.user?.urlFotoProfil||AppState.user?.URL_Foto_Profil||'';
     if(fotoUrl){ openCropModalFromUrl(fotoUrl); } else { $('#input-foto-profil').click(); }
