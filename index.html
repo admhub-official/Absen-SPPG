@@ -894,6 +894,7 @@
         <input type="range" id="crop-zoom" min="100" max="300" value="100" style="flex:1">
       </div>
       <p style="text-align:center;color:var(--text-muted);font-size:0.8125rem;margin-top:0.5rem">Geser gambar dan atur zoom untuk memposisikan foto</p>
+      <button type="button" class="btn btn-secondary" id="btn-pilih-foto-baru" style="width:100%;margin-top:0.75rem;font-size:0.8125rem">📁 Pilih Foto Lain</button>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" id="btn-cancel-crop-foto">Batal</button>
@@ -1879,6 +1880,7 @@ async function initApp(){
   $('#btn-close-crop-foto').addEventListener('click',closeCropModal);
   $('#btn-cancel-crop-foto').addEventListener('click',closeCropModal);
   $('#btn-save-crop-foto').addEventListener('click',handleSaveCropFoto);
+  $('#btn-pilih-foto-baru').addEventListener('click',()=>$('#input-foto-profil').click());
   $('#crop-zoom').addEventListener('input',(e)=>{
     const pct=Number(e.target.value)/100;
     CropState.scale=CropState.minScale*pct;
