@@ -118,7 +118,10 @@
     .profile-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;margin-bottom:1.5rem;border:1px solid var(--border)}
     .profile-banner{background:linear-gradient(135deg,#4f46e5,#312e81);height:100px;position:relative}
     .profile-avatar-wrap{position:absolute;left:1.75rem;bottom:-36px}
-    .profile-avatar{width:88px;height:88px;border-radius:50%;border:4px solid var(--surface);background:#e0e7ff;display:flex;align-items:center;justify-content:center;font-size:1.75rem;font-weight:800;color:var(--primary);object-fit:cover;box-shadow:var(--shadow)}
+    .profile-avatar{width:88px;height:88px;border-radius:50%;border:4px solid var(--surface);background:#e0e7ff;display:flex;align-items:center;justify-content:center;font-size:1.75rem;font-weight:800;color:var(--primary);box-shadow:var(--shadow);overflow:hidden}
+    .profile-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .profile-avatar-edit-btn{position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;background:var(--primary);color:#fff;border:3px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:0.875rem;cursor:pointer;box-shadow:var(--shadow)}
+    .profile-avatar-edit-btn:hover{background:var(--primary-dark,#4338ca)}
     .profile-body{padding:3rem 1.75rem 1.75rem}
     .profile-name{font-size:1.25rem;font-weight:800;letter-spacing:-0.01em}
     .profile-role{display:inline-flex;align-items:center;gap:0.35rem;background:var(--primary-light);color:var(--primary);font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:999px;margin-top:0.5rem}
@@ -505,6 +508,8 @@
           <div class="profile-banner">
             <div class="profile-avatar-wrap">
               <div class="profile-avatar" id="profil-avatar">-</div>
+              <div class="profile-avatar-edit-btn" id="btn-upload-foto-profil" title="Ubah foto profil">📷</div>
+              <input type="file" id="input-foto-profil" accept="image/*" style="display:none">
             </div>
           </div>
           <div class="profile-body">
@@ -890,8 +895,59 @@ function showApp(){
   }
 }function showAuth(){$('#app-layout').classList.remove('active'),$('#auth-layout').classList.remove('hidden');}
 function switchView(v){AppState.currentView=v;$$('.app-view').forEach(e=>e.classList.add('hidden'));const t=document.getElementById(`view-${v}`);if(t)t.classList.remove('hidden');$$('.app-nav-item[data-view],.app-bottomnav-item[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));}
-function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;$('#profil-avatar').textContent=nama?nama.trim().charAt(0).toUpperCase():'?';$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);}
+function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';const avatarEl=$('#profil-avatar');if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);}
 async function loadProfilLengkap(){try{const r=await apiCall('getProfilLengkap',{token:AppState.token});if(r&&r.user){AppState.user=r.user;localStorage.setItem('auth_user',JSON.stringify(r.user));renderProfilFromUser();}}catch(e){console.error(e);}}
+function resizeImageToBase64(file, maxSize){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Gagal membaca file'));
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('File bukan gambar yang valid'));
+      img.onload = () => {
+        let { width, height } = img;
+        if(width > height){
+          if(width > maxSize){ height = Math.round(height*maxSize/width); width = maxSize; }
+        } else {
+          if(height > maxSize){ width = Math.round(width*maxSize/height); height = maxSize; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleUploadFotoProfil(file){
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ showAlert('File harus berupa gambar','error'); return; }
+  const btn = $('#btn-upload-foto-profil');
+  const original = btn.innerHTML;
+  btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div>';
+  try {
+    const fotoProfilBase64 = await resizeImageToBase64(file, 400);
+    const r = await apiCall('updateFotoProfil', {token: AppState.token, fotoProfilBase64});
+    if(r && r.success){
+      if(AppState.user){
+        AppState.user.URL_Foto_Profil = r.url;
+        AppState.user.urlFotoProfil = r.url;
+        localStorage.setItem('auth_user', JSON.stringify(AppState.user));
+      }
+      renderProfilFromUser();
+      showAlert('Foto profil berhasil diperbarui','success');
+    } else {
+      showAlert(r?.message || 'Gagal memperbarui foto profil','error');
+    }
+  } catch(e) {
+    showAlert(e.message || 'Gagal memperbarui foto profil','error');
+  } finally {
+    btn.innerHTML = original;
+  }
+}
 function handleLogout(){localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user'),AppState.token=null,AppState.user=null;showAuth();navigateTo('login');}
 function navigateTo(p){AppState.currentPage=p;$$('.auth-page').forEach(e=>e.classList.add('hidden'));const t=$(`#page-${p}`);if(t)t.classList.remove('hidden');history.pushState({p},'',`#${p}`);}
 function showAlert(m,t='info'){const i={success:'✓',error:'✕',warning:'⚠',info:'ℹ'},a=document.createElement('div');a.className=`alert ${t}`,a.innerHTML=`<span>${i[t]||i.info}</span><div style="flex:1">${m}</div><button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer">✕</button>`,$('#alert-box').appendChild(a),setTimeout(()=>{a.style.opacity='0';setTimeout(()=>a.remove(),300)},5000);}
@@ -1695,6 +1751,8 @@ async function initApp(){
   $('#log-prev-btn')?.addEventListener('click',()=>{ AdminState.logPage--; renderLogList(); });
   $('#log-next-btn')?.addEventListener('click',()=>{ AdminState.logPage++; renderLogList(); });
   $('#btn-open-edit-profil').addEventListener('click',openEditProfil);
+  $('#btn-upload-foto-profil').addEventListener('click',()=>$('#input-foto-profil').click());
+  $('#input-foto-profil').addEventListener('change',(e)=>{const f=e.target.files[0];if(f)handleUploadFotoProfil(f);e.target.value='';});
   $('#btn-close-edit-profil').addEventListener('click',closeEditProfil);
   $('#btn-cancel-edit-profil').addEventListener('click',closeEditProfil);
   $('#btn-save-edit-profil').addEventListener('click',handleSaveEditProfil);
