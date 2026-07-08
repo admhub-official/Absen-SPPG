@@ -1283,7 +1283,6 @@ function switchView(v){AppState.currentView=v;$$('.app-view').forEach(e=>e.class
 function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';const avatarEl=$('#profil-avatar');if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);const tbAvatar=$('#topbar-avatar');if(tbAvatar){if(fotoUrl){tbAvatar.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{tbAvatar.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}
 }
 const tbName=$('#topbar-profile-name');if(tbName)tbName.textContent=nama||'-';const adminGreet=$('#admin-dashboard-greeting');if(adminGreet)adminGreet.textContent=`Selamat datang, ${(u.role||u.Role||'').toUpperCase()||'Admin'}!`;
-const adminGreet=$('#admin-dashboard-greeting');if(adminGreet)adminGreet.textContent=`Selamat datang, ${(u.role||u.Role||'').toUpperCase()||'Admin'}!`;
 const tbRole=$('#topbar-profile-role');if(tbRole)tbRole.textContent=u.role||u.Role||'USER';updateFaceStatusBadge();}
 async function loadProfilLengkap(){try{const r=await apiCall('getProfilLengkap',{token:AppState.token});if(r&&r.user){AppState.user=r.user;localStorage.setItem('auth_user',JSON.stringify(r.user));renderProfilFromUser();}}catch(e){console.error(e);}}
 function renderTrendChart(trend7Hari){
@@ -2563,8 +2562,7 @@ async function initApp(){
   $('#btn-logout').addEventListener('click',handleLogout);
   $('#btn-dropdown-profil')?.addEventListener('click',()=>{ switchView('profil'); stopAbsenRealtime(); $('#topbar-dropdown')?.classList.remove('active'); });
   $('#btn-topbar-profile')?.addEventListener('click',(ev)=>{ ev.stopPropagation(); $('#topbar-dropdown')?.classList.toggle('active'); });
-  document.addEventListener('click',(ev)=>{ const dd=$('#topbar-dropdown');
-  if(dd && dd.classList.contains('active') && !dd.contains(ev.target) && !$('#btn-topbar-profile').contains(ev.target)) dd.classList.remove('active'); });
+  document.addEventListener('click',(ev)=>{ const dd=$('#topbar-dropdown'); if(dd && dd.classList.contains('active') && !dd.contains(ev.target) && !$('#btn-topbar-profile').contains(ev.target)) dd.classList.remove('active'); });
   $('#btn-dashboard-absen-cta')?.addEventListener('click',()=>{
     switchView('absen-scan');
     openAbsenScan();
