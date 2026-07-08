@@ -1478,9 +1478,9 @@ function filterAndRenderLog(){
   const q = ($('#log-search')?.value||'').toLowerCase();
   AdminState.filteredLogs = AdminState.allLogs.filter(log => {
     if(!q) return true;
-    const nama = (log.Nama_Lengkap||log.nama_lengkap||'').toLowerCase();
-    const email = (log.Email||log.email||'').toLowerCase();
-    const aktivitas = (log.Aktivitas||log.aktivitas||log.Action||log.action||'').toLowerCase();
+    const nama = (log._pelakuNama||'').toLowerCase();
+    const email = (log._pelakuEmail||'').toLowerCase();
+    const aktivitas = (log.Jenis_Aktivitas||'').toLowerCase();
     return nama.includes(q) || email.includes(q) || aktivitas.includes(q);
   });
   AdminState.logPage = 1;
@@ -1521,10 +1521,10 @@ function renderLogList(){
   }
 
   container.innerHTML = rows.map((log, idx) => {
-    const nama = log.Nama_Lengkap||log.nama_lengkap||'Unknown';
-    const email = log.Email||log.email||'-';
-    const aktivitas = log.Aktivitas||log.aktivitas||log.Action||log.action||'-';
-    const waktu = formatWaktu(log.Waktu||log.waktu||log.created_at||log.CreatedAt);
+    const nama = log._pelakuNama||'Tidak diketahui';
+    const email = log._pelakuEmail||'-';
+    const aktivitas = log.Jenis_Aktivitas||'-';
+    const waktu = formatWaktu(log.Waktu);
     const {cls, icon} = getLogIcon(aktivitas);
     return `<div class="log-item" onclick="openLogDetail(${start+idx})">
       <div class="log-icon ${cls}">${icon}</div>
@@ -1549,12 +1549,15 @@ function renderLogList(){
 function openLogDetail(index){
   const log = AdminState.filteredLogs[index];
   if(!log) return;
-  const nama = log.Nama_Lengkap||log.nama_lengkap||'Unknown';
-  const email = log.Email||log.email||'-';
-  const aktivitas = log.Aktivitas||log.aktivitas||log.Action||log.action||'-';
-  const waktu = formatWaktu(log.Waktu||log.waktu||log.created_at||log.CreatedAt);
-  const ipAddr = log.IP||log.ip||log.IP_Address||'-';
-  const detail = log.Detail||log.detail||log.Keterangan||log.keterangan||'-';
+  const nama = log._pelakuNama||'Tidak diketahui';
+  const email = log._pelakuEmail||'-';
+  const aktivitas = log.Jenis_Aktivitas||'-';
+  const waktu = formatWaktu(log.Waktu);
+  const ipAddr = log.IP_Address||'-';
+  let detail = '-';
+  if(log.Detail !== null && log.Detail !== undefined){
+    detail = typeof log.Detail === 'string' ? log.Detail : JSON.stringify(log.Detail, null, 2);
+  }
   const {cls, icon} = getLogIcon(aktivitas);
 
   $('#log-detail-body').innerHTML = `
@@ -1569,7 +1572,7 @@ function openLogDetail(index){
       <div><div class="info-item-label">Aktivitas</div><div class="info-item-value" style="font-weight:600;color:var(--text)">${aktivitas}</div></div>
       <div><div class="info-item-label">Waktu</div><div class="info-item-value">${waktu}</div></div>
       <div><div class="info-item-label">IP Address</div><div class="info-item-value">${ipAddr}</div></div>
-      <div><div class="info-item-label">Detail</div><div class="info-item-value">${detail}</div></div>
+      <div><div class="info-item-label">Detail</div><pre class="info-item-value" style="white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:0.8125rem;margin:0"></pre></div>
     </div>
   `;
   $('#modal-log-detail').classList.add('active');
