@@ -276,13 +276,6 @@
     .crop-stage:active{cursor:grabbing}
     .crop-stage canvas{position:absolute;top:0;left:0;width:100%;height:100%}
     .crop-circle-overlay{position:absolute;inset:0;pointer-events:none;box-shadow:0 0 0 9999px rgba(0,0,0,.5);border-radius:50%;border:2px solid #fff}
-    #modal-crop-foto{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:9500;display:none;align-items:center;justify-content:center;padding:1rem}
-    #modal-crop-foto.active{display:flex}
-    .crop-stage{position:relative;width:320px;height:320px;max-width:100%;margin:0 auto;overflow:hidden;border-radius:12px;background:#111;touch-action:none;cursor:grab}
-    .crop-stage:active{cursor:grabbing}
-    .crop-stage canvas{position:absolute;top:0;left:0;width:100%;height:100%}
-    .crop-circle-overlay{position:absolute;inset:0;pointer-events:none;box-shadow:0 0 0 9999px rgba(0,0,0,.5);border-radius:50%;border:2px solid #fff}
-    #modal-edit-profil.active{display:flex}
     .modal-card{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
     .modal-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
     .modal-header h3{font-size:1.125rem;font-weight:800}
@@ -1677,6 +1670,136 @@ async function handleSaveEditProfil(){
   }finally{
     b.disabled=false,b.innerHTML=o;
   }
+}
+
+/* ===== CROP FOTO PROFIL ===== */
+const CropState={img:null,scale:1,minScale:1,offsetX:0,offsetY:0,dragging:false,lastX:0,lastY:0,canvasSize:320};
+
+function openCropModalFromFile(file){
+  if(!file.type.startsWith('image/')){showAlert('File harus berupa gambar','error');return;}
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    const img=new Image();
+    img.onload=()=>{ openCropModalWithImage(img); };
+    img.onerror=()=>showAlert('File bukan gambar yang valid','error');
+    img.src=e.target.result;
+  };
+  reader.onerror=()=>showAlert('Gagal membaca file','error');
+  reader.readAsDataURL(file);
+}
+
+function openCropModalFromUrl(url){
+  const img=new Image();
+  img.crossOrigin='anonymous';
+  img.onload=()=>{ openCropModalWithImage(img); };
+  img.onerror=()=>showAlert('Gagal memuat foto saat ini','error');
+  img.src=url;
+}
+
+function openCropModalWithImage(img){
+  CropState.img=img;
+  const size=CropState.canvasSize;
+  const minScale=Math.max(size/img.width, size/img.height);
+  CropState.minScale=minScale;
+  CropState.scale=minScale;
+  CropState.offsetX=0;
+  CropState.offsetY=0;
+  $('#crop-zoom').value=100;
+  drawCropCanvas();
+  $('#modal-crop-foto').classList.add('active');
+}
+
+function drawCropCanvas(){
+  const canvas=$('#crop-canvas');
+  const ctx=canvas.getContext('2d');
+  const size=CropState.canvasSize;
+  canvas.width=size;canvas.height=size;
+  ctx.clearRect(0,0,size,size);
+  const img=CropState.img;
+  if(!img)return;
+  const w=img.width*CropState.scale;
+  const h=img.height*CropState.scale;
+  const x=(size-w)/2+CropState.offsetX;
+  const y=(size-h)/2+CropState.offsetY;
+  ctx.drawImage(img,x,y,w,h);
+}
+
+function clampCropOffset(){
+  const size=CropState.canvasSize;
+  const w=CropState.img.width*CropState.scale;
+  const h=CropState.img.height*CropState.scale;
+  const maxOffsetX=Math.max(0,(w-size)/2);
+  const maxOffsetY=Math.max(0,(h-size)/2);
+  CropState.offsetX=Math.min(maxOffsetX,Math.max(-maxOffsetX,CropState.offsetX));
+  CropState.offsetY=Math.min(maxOffsetY,Math.max(-maxOffsetY,CropState.offsetY));
+}
+
+function getCropResultBase64(){
+  const outSize=400;
+  const out=document.createElement('canvas');
+  out.width=outSize;out.height=outSize;
+  const ctx=out.getContext('2d');
+  const size=CropState.canvasSize;
+  const ratio=outSize/size;
+  const img=CropState.img;
+  const w=img.width*CropState.scale*ratio;
+  const h=img.height*CropState.scale*ratio;
+  const x=(outSize-w)/2+CropState.offsetX*ratio;
+  const y=(outSize-h)/2+CropState.offsetY*ratio;
+  ctx.drawImage(img,x,y,w,h);
+  return out.toDataURL('image/jpeg',0.9);
+}
+
+function closeCropModal(){
+  $('#modal-crop-foto').classList.remove('active');
+  CropState.img=null;
+}
+
+async function handleSaveCropFoto(){
+  if(!CropState.img)return;
+  const b=$('#btn-save-crop-foto'),o=b.innerHTML;
+  b.disabled=true,b.innerHTML='<div class="spinner" style="width:16px;height:16px;border-width:2px"></div>';
+  try{
+    const fotoProfilBase64=getCropResultBase64();
+    const r=await apiCall('updateFotoProfil',{token:AppState.token,fotoProfilBase64});
+    if(r&&r.success){
+      if(AppState.user){
+        AppState.user.URL_Foto_Profil=r.url;
+        AppState.user.urlFotoProfil=r.url;
+        localStorage.setItem('auth_user',JSON.stringify(AppState.user));
+      }
+      $('#edit-profil-avatar').innerHTML=`<img src="${r.url}" alt="Foto profil">`;
+      renderProfilFromUser();
+      showAlert('Foto profil berhasil diperbarui','success');
+      closeCropModal();
+    }else{
+      showAlert(r?.message||'Gagal memperbarui foto profil','error');
+    }
+  }catch(err){
+    showAlert(err&&err.message?err.message:'Gagal memperbarui foto profil','error');
+  }finally{
+    b.disabled=false,b.innerHTML=o;
+  }
+}
+
+function initCropDragEvents(){
+  const stage=$('#crop-stage');
+  const start=(clientX,clientY)=>{ CropState.dragging=true; CropState.lastX=clientX; CropState.lastY=clientY; };
+  const move=(clientX,clientY)=>{
+    if(!CropState.dragging)return;
+    CropState.offsetX+=clientX-CropState.lastX;
+    CropState.offsetY+=clientY-CropState.lastY;
+    CropState.lastX=clientX;CropState.lastY=clientY;
+    clampCropOffset();
+    drawCropCanvas();
+  };
+  const end=()=>{ CropState.dragging=false; };
+  stage.addEventListener('mousedown',(e)=>start(e.clientX,e.clientY));
+  window.addEventListener('mousemove',(e)=>move(e.clientX,e.clientY));
+  window.addEventListener('mouseup',end);
+  stage.addEventListener('touchstart',(e)=>{const t=e.touches[0];start(t.clientX,t.clientY);},{passive:true});
+  stage.addEventListener('touchmove',(e)=>{const t=e.touches[0];move(t.clientX,t.clientY);},{passive:true});
+  stage.addEventListener('touchend',end);
 }
 
 async function checkSession(){const st=localStorage.getItem('auth_token'),su=localStorage.getItem('auth_user');if(st&&su){try{const r=await apiCall('checkSession',{token:st});if(r&&r.valid){AppState.token=st,AppState.user=JSON.parse(su);return true;}}catch(e){}}localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user');return false;}
