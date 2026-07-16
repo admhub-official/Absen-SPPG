@@ -82,9 +82,65 @@ window.ABSEN_SUPABASE_CONFIG = window.ABSEN_SUPABASE_CONFIG || {
     }catch(e){m.querySelector('.payroll-hotfix-body').innerHTML=`<div class="payroll-hotfix-empty">${esc(e.message)}</div>`}
   }
 
+  async function renderAksesEmailBody(m,sppgOptions){
+    try{
+      const x=await absenApi('getAksesEmailList'),rows=x.aksesEmail||[];
+      const optionsHtml=sppgOptions.map(s=>`<option value="${esc(s.Nama_SPPG)}">${esc(s.Nama_SPPG)}${s.Yayasan?' — '+esc(s.Yayasan):''}</option>`).join('');
+      m.querySelector('.payroll-hotfix-body').innerHTML=`
+        <form id="hotfix-akses-form" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px;padding:14px;background:#f8fafc;border-radius:12px">
+          <div style="flex:1;min-width:200px">
+            <label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px">Email User</label>
+            <input type="email" id="hotfix-akses-email" required placeholder="user@gmail.com" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font:inherit">
+          </div>
+          <div style="flex:1;min-width:200px">
+            <label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px">SPPG</label>
+            <select id="hotfix-akses-sppg" required style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font:inherit">
+              <option value="">— Pilih SPPG —</option>${optionsHtml}
+            </select>
+          </div>
+          <button type="submit" style="padding:9px 18px;border:0;border-radius:8px;background:#4338ca;color:#fff;font-weight:600;cursor:pointer">Tambah</button>
+        </form>
+        <div id="hotfix-akses-msg"></div>
+        ${rows.length?`<table class="payroll-hotfix-table"><thead><tr><th>Email</th><th>SPPG</th><th>Yayasan</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.Email)}</td><td>${esc(r.SPPG)}</td><td>${esc(r.Yayasan||'-')}</td><td><span class="payroll-hotfix-badge">${r.Aktif?'Aktif':'Nonaktif'}</span></td><td><button type="button" class="hotfix-akses-del" data-id="${esc(r.ID_Akses)}" style="border:0;background:#fee2e2;color:#b91c1c;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:600">Hapus</button></td></tr>`).join('')}</tbody></table>`:'<div class="payroll-hotfix-empty">Belum ada mapping akses email.</div>'}
+      `;
+      m.querySelector('#hotfix-akses-form').onsubmit=async(e)=>{
+        e.preventDefault();
+        const msgEl=m.querySelector('#hotfix-akses-msg');
+        const email=m.querySelector('#hotfix-akses-email').value.trim();
+        const sppg=m.querySelector('#hotfix-akses-sppg').value;
+        msgEl.innerHTML='';
+        try{
+          await absenApi('saveAksesEmail',{email,sppg,aktif:true});
+          await renderAksesEmailBody(m,sppgOptions);
+        }catch(err){
+          msgEl.innerHTML=`<div style="color:#b91c1c;padding:8px 0">${esc(err.message)}</div>`;
+        }
+      };
+      m.querySelectorAll('.hotfix-akses-del').forEach(btn=>{
+        btn.onclick=async()=>{
+          if(!confirm('Hapus mapping akses ini?'))return;
+          try{
+            await absenApi('deleteAksesEmail',{idAkses:btn.dataset.id});
+            await renderAksesEmailBody(m,sppgOptions);
+          }catch(err){
+            m.querySelector('#hotfix-akses-msg').innerHTML=`<div style="color:#b91c1c;padding:8px 0">${esc(err.message)}</div>`;
+          }
+        };
+      });
+    }catch(e){
+      m.querySelector('.payroll-hotfix-body').innerHTML=`<div class="payroll-hotfix-empty">${esc(e.message)}</div>`;
+    }
+  }
+
   async function openConfig(){
-    const m=modal('Konfigurasi Admin','<div class="payroll-hotfix-empty">Konfigurasi akses ADMIN/AKUNTAN sudah disiapkan di database. Form pengaturan akan diaktifkan setelah handler konfigurasi ditambahkan ke router Absen.</div>');
-    try{await ensureToken()}catch(e){m.querySelector('.payroll-hotfix-body').innerHTML=`<div class="payroll-hotfix-empty">${esc(e.message)}</div>`}
+    const m=modal('Konfigurasi Admin');
+    try{
+      await ensureToken();
+      const sppgList=(await absenApi('getAllMasterSppgList')).masterSppg||[];
+      await renderAksesEmailBody(m,sppgList);
+    }catch(e){
+      m.querySelector('.payroll-hotfix-body').innerHTML=`<div class="payroll-hotfix-empty">${esc(e.message)}</div>`;
+    }
   }
 
   const ICONS={
