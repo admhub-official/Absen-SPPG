@@ -16,7 +16,7 @@ window.ABSEN_SUPABASE_CONFIG = window.ABSEN_SUPABASE_CONFIG || {
     if(document.getElementById('payroll-hotfix-style')) return;
     const s=document.createElement('style');
     s.id='payroll-hotfix-style';
-    s.textContent=`.payroll-hotfix-menu{display:flex!important;align-items:center;gap:.65rem;width:100%;padding:.65rem .8rem;border:0;background:transparent;color:inherit;cursor:pointer;text-align:left;border-radius:.65rem;font:inherit}.payroll-hotfix-menu:hover{background:rgba(99,102,241,.09)}.payroll-hotfix-modal{position:fixed;inset:0;z-index:9800;background:rgba(15,23,42,.7);display:flex;align-items:center;justify-content:center;padding:16px}.payroll-hotfix-card{background:#fff;color:#0f172a;width:min(1100px,100%);max-height:92vh;overflow:auto;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.25)}.payroll-hotfix-head{position:sticky;top:0;background:#fff;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #e2e8f0}.payroll-hotfix-body{padding:20px}.payroll-hotfix-close{border:0;background:#eef2ff;color:#4338ca;width:36px;height:36px;border-radius:50%;font-size:21px;cursor:pointer}.payroll-hotfix-table{width:100%;border-collapse:collapse;font-size:13px}.payroll-hotfix-table th,.payroll-hotfix-table td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}.payroll-hotfix-table th{background:#f8fafc}.payroll-hotfix-empty{text-align:center;padding:32px;color:#64748b}.payroll-hotfix-badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#e0e7ff;color:#3730a3;font-weight:700;font-size:11px}@media(max-width:700px){.payroll-hotfix-modal{padding:0}.payroll-hotfix-card{height:100vh;max-height:100vh;border-radius:0}.payroll-hotfix-body{padding:12px}}`;
+    s.textContent=`.payroll-hotfix-menu{display:flex!important;align-items:center;gap:.65rem;width:100%;padding:.65rem .8rem;border:0;background:transparent;color:inherit;cursor:pointer;text-align:left;border-radius:.65rem;font:inherit}.payroll-hotfix-menu:hover{background:rgba(99,102,241,.09)}.payroll-hotfix-modal{position:fixed;inset:0;z-index:9800;background:rgba(15,23,42,.7);display:flex;align-items:center;justify-content:center;padding:16px}.payroll-hotfix-card{background:#fff;color:#0f172a;width:min(1100px,100%);max-height:92vh;overflow:auto;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.25)}.payroll-hotfix-head{position:sticky;top:0;background:#fff;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #e2e8f0}.payroll-hotfix-body{padding:20px}.payroll-hotfix-close{border:0;background:#eef2ff;color:#4338ca;width:36px;height:36px;border-radius:50%;font-size:21px;cursor:pointer}.payroll-hotfix-table{width:100%;border-collapse:collapse;font-size:13px}.payroll-hotfix-table th,.payroll-hotfix-table td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}.payroll-hotfix-table th{background:#f8fafc}.payroll-hotfix-empty{text-align:center;padding:32px;color:#64748b}.payroll-hotfix-badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#e0e7ff;color:#3730a3;font-weight:700;font-size:11px}@media(max-width:700px){.payroll-hotfix-modal{padding:0}.payroll-hotfix-card{height:100vh;max-height:100vh;border-radius:0}.payroll-hotfix-body{padding:12px}}.payroll-hotfix-hamburger{display:none;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;border:1px solid #e2e8f0;background:transparent;cursor:pointer;margin-right:.5rem;color:inherit;flex-shrink:0}.hotfix-sidebar-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:390;display:none}.hotfix-sidebar-backdrop.active{display:block}@media(max-width:767px){.payroll-hotfix-hamburger{display:flex}.app-sidebar{display:flex!important;position:fixed;top:0;left:0;height:100vh;width:248px;max-width:82vw;z-index:400;transform:translateX(-100%);transition:transform .25s ease;box-shadow:0 0 40px rgba(0,0,0,.35)}.app-sidebar.hotfix-mobile-open{transform:translateX(0)}}`;
     document.head.appendChild(s);
   }
 
@@ -94,8 +94,36 @@ window.ABSEN_SUPABASE_CONFIG = window.ABSEN_SUPABASE_CONFIG || {
   }
   function visibleRole(){return String(document.querySelector('.app-topbar-profile-role')?.textContent||'').trim().toUpperCase()}
   function visibleName(){return String(document.querySelector('.app-topbar-profile-name')?.textContent||'').trim().toUpperCase()}
+  function visibleName(){return String(document.querySelector('.app-topbar-profile-name')?.textContent||'').trim().toUpperCase()}
+  function ensureHamburger(){
+    if(window.innerWidth>=768)return;
+    const topbar=document.querySelector('.app-topbar');
+    if(!topbar)return;
+    let backdrop=document.getElementById('hotfix-sidebar-backdrop');
+    if(!backdrop){
+      backdrop=document.createElement('div');
+      backdrop.id='hotfix-sidebar-backdrop';
+      backdrop.className='hotfix-sidebar-backdrop';
+      document.body.appendChild(backdrop);
+    }
+    const sidebar=document.querySelector('.app-sidebar');
+    const closeSidebar=()=>{sidebar?.classList.remove('hotfix-mobile-open');backdrop.classList.remove('active')};
+    backdrop.onclick=closeSidebar;
+    if(sidebar&&!sidebar.dataset.hotfixBound){
+      sidebar.addEventListener('click',e=>{if(e.target.closest('.app-nav-item'))closeSidebar()});
+      sidebar.dataset.hotfixBound='1';
+    }
+    if(document.getElementById('hotfix-hamburger'))return;
+    const btn=document.createElement('button');
+    btn.id='hotfix-hamburger';btn.type='button';btn.className='payroll-hotfix-hamburger';btn.setAttribute('aria-label','Buka menu');
+    btn.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+    btn.onclick=()=>{sidebar?.classList.toggle('hotfix-mobile-open');backdrop.classList.toggle('active')};
+    topbar.insertBefore(btn,topbar.firstChild);
+  }
+  function installMenus(){
   function installMenus(){
     addStyles();
+    ensureHamburger();
     const drop=document.querySelector('.app-topbar-dropdown'),nav=document.querySelector('.app-nav');
     const logout=drop&&[...drop.children].find(e=>/log\s*out|logout|keluar/i.test(e.textContent||''));
     add(drop,'hotfix-my-absen','My Absen',openMyAbsen,logout);
