@@ -94,7 +94,15 @@ window.ABSEN_SUPABASE_CONFIG = window.ABSEN_SUPABASE_CONFIG || {
   }
   function visibleRole(){return String(document.querySelector('.app-topbar-profile-role')?.textContent||'').trim().toUpperCase()}
   function visibleName(){return String(document.querySelector('.app-topbar-profile-name')?.textContent||'').trim().toUpperCase()}
-  function visibleName(){return String(document.querySelector('.app-topbar-profile-name')?.textContent||'').trim().toUpperCase()}
+
+  function realRoleFromState(){
+    try{
+      const u = (typeof AppState!=='undefined' && AppState && AppState.user) ? AppState.user : null;
+      const r = u && (u.role || u.Role);
+      return r ? String(r).trim().toUpperCase().replace(/_/g,' ') : '';
+    }catch(e){ return ''; }
+  }
+
   function ensureHamburger(){
     if(window.innerWidth>=768)return;
     const topbar=document.querySelector('.app-topbar');
@@ -120,20 +128,35 @@ window.ABSEN_SUPABASE_CONFIG = window.ABSEN_SUPABASE_CONFIG || {
     btn.onclick=()=>{sidebar?.classList.toggle('hotfix-mobile-open');backdrop.classList.toggle('active')};
     topbar.insertBefore(btn,topbar.firstChild);
   }
-  function installMenus(){
+
   function installMenus(){
     addStyles();
     ensureHamburger();
     const drop=document.querySelector('.app-topbar-dropdown'),nav=document.querySelector('.app-nav');
+
+    // Semua user: My Absen & My Payroll di dropdown profil topbar
     const logout=drop&&[...drop.children].find(e=>/log\s*out|logout|keluar/i.test(e.textContent||''));
     add(drop,'hotfix-my-absen','My Absen',openMyAbsen,logout);
     add(drop,'hotfix-my-payroll','My Payroll',openMyPayroll,logout);
-    const role=visibleRole();
-    if(['ADMIN','AKUNTAN','SUPER ADMIN'].includes(role))add(nav,'hotfix-payroll','Payroll',openPayroll,null,true);
-    const realRole=String((typeof AppState!=='undefined'&&AppState.user&&(AppState.user.role||AppState.user.Role))||'').trim().toUpperCase().replace(/_/g,' ');
-    const probableSuper=realRole?realRole==='SUPER ADMIN':(role==='SUPER ADMIN'||(role==='ADMIN'&&visibleName()==='ADMIN'));
-    if(probableSuper)add(nav,'hotfix-admin-config','Konfigurasi Admin',openConfig,null,true);
+
+    // Role dari teks yang tampil (fallback) dan dari data AppState (lebih akurat, kalau tersedia)
+    const visRole=visibleRole();
+    const stateRole=realRoleFromState();
+    const effectiveRole=stateRole||visRole;
+
+    // ADMIN / AKUNTAN: menu Payroll di sidebar
+    if(['ADMIN','AKUNTAN'].includes(effectiveRole) || ['ADMIN','AKUNTAN'].includes(visRole)){
+      add(nav,'hotfix-payroll','Payroll',openPayroll,null,true);
+    }
+
+    // SUPER ADMIN saja: menu Konfigurasi Admin di sidebar
+    const isSuperAdmin = effectiveRole==='SUPER ADMIN' || visRole==='SUPER ADMIN' ||
+      (effectiveRole==='ADMIN' && visibleName()==='ADMIN'); // fallback lama, jaga-jaga
+    if(isSuperAdmin){
+      add(nav,'hotfix-admin-config','Konfigurasi Admin',openConfig,null,true);
+    }
   }
+
   document.addEventListener('DOMContentLoaded',installMenus);
   installMenus();
   let hotfixPollCount=0;
