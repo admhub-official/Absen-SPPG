@@ -6,8 +6,12 @@ window.ABSEN_SUPABASE_CONFIG = window.ABSEN_SUPABASE_CONFIG || {
 };
 
 (function () {
-  var script = document.createElement('script');
-  script.src = './features.js?v=20260716';
-  script.defer = true;
-  document.head.appendChild(script);
+  function load(src) {
+    var script = document.createElement('script');
+    script.src = src;
+    script.defer = true;
+    document.head.appendChild(script);
+  }
+  load('./features.js?v=20260716');
+  load('./feature-menu-hotfix.js?v=20260716-2');
 })();
