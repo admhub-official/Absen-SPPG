@@ -16,7 +16,7 @@ window.ABSEN_SUPABASE_CONFIG = window.ABSEN_SUPABASE_CONFIG || {
     if(document.getElementById('payroll-hotfix-style')) return;
     const s=document.createElement('style');
     s.id='payroll-hotfix-style';
-    s.textContent=`.payroll-hotfix-menu{display:flex!important;align-items:center;gap:.65rem;width:100%;padding:.65rem .8rem;border:0;background:transparent;color:inherit;cursor:pointer;text-align:left;border-radius:.65rem;font:inherit}.payroll-hotfix-menu:hover{background:rgba(99,102,241,.09)}.payroll-hotfix-modal{position:fixed;inset:0;z-index:15000;background:rgba(15,23,42,.7);display:flex;align-items:center;justify-content:center;padding:16px}.payroll-hotfix-card{background:#fff;color:#0f172a;width:min(1100px,100%);max-height:92vh;overflow:auto;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.25)}.payroll-hotfix-head{position:sticky;top:0;background:#fff;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #e2e8f0}.payroll-hotfix-body{padding:20px}.payroll-hotfix-close{border:0;background:#eef2ff;color:#4338ca;width:36px;height:36px;border-radius:50%;font-size:21px;cursor:pointer}.payroll-hotfix-table{width:100%;border-collapse:collapse;font-size:13px}.payroll-hotfix-table th,.payroll-hotfix-table td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}.payroll-hotfix-table th{background:#f8fafc}.payroll-hotfix-empty{text-align:center;padding:32px;color:#64748b}.payroll-hotfix-badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#e0e7ff;color:#3730a3;font-weight:700;font-size:11px}@media(max-width:700px){.payroll-hotfix-modal{padding:0}.payroll-hotfix-card{height:100vh;max-height:100vh;border-radius:0}.payroll-hotfix-body{padding:12px}}`;
+    s.textContent=`.payroll-hotfix-menu{display:flex!important;align-items:center;gap:.65rem;width:100%;padding:.65rem .8rem;border:0;background:transparent;color:inherit;cursor:pointer;text-align:left;border-radius:.65rem;font:inherit}.payroll-hotfix-menu:hover{background:rgba(99,102,241,.09)}.payroll-hotfix-modal{position:fixed;inset:0;z-index:9800;background:rgba(15,23,42,.7);display:flex;align-items:center;justify-content:center;padding:16px}.payroll-hotfix-card{background:#fff;color:#0f172a;width:min(1100px,100%);max-height:92vh;overflow:auto;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.25)}.payroll-hotfix-head{position:sticky;top:0;background:#fff;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #e2e8f0}.payroll-hotfix-body{padding:20px}.payroll-hotfix-close{border:0;background:#eef2ff;color:#4338ca;width:36px;height:36px;border-radius:50%;font-size:21px;cursor:pointer}.payroll-hotfix-table{width:100%;border-collapse:collapse;font-size:13px}.payroll-hotfix-table th,.payroll-hotfix-table td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}.payroll-hotfix-table th{background:#f8fafc}.payroll-hotfix-empty{text-align:center;padding:32px;color:#64748b}.payroll-hotfix-badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#e0e7ff;color:#3730a3;font-weight:700;font-size:11px}@media(max-width:700px){.payroll-hotfix-modal{padding:0}.payroll-hotfix-card{height:100vh;max-height:100vh;border-radius:0}.payroll-hotfix-body{padding:12px}}`;
     document.head.appendChild(s);
   }
 
@@ -102,10 +102,16 @@ window.ABSEN_SUPABASE_CONFIG = window.ABSEN_SUPABASE_CONFIG || {
     add(drop,'hotfix-my-payroll','My Payroll',openMyPayroll,logout);
     const role=visibleRole();
     if(['ADMIN','AKUNTAN','SUPER ADMIN'].includes(role))add(nav,'hotfix-payroll','Payroll',openPayroll,null,true);
-    const probableSuper=role==='SUPER ADMIN'||(role==='ADMIN'&&visibleName()==='ADMIN');
+    const realRole=String((typeof AppState!=='undefined'&&AppState.user&&(AppState.user.role||AppState.user.Role))||'').trim().toUpperCase().replace(/_/g,' ');
+    const probableSuper=realRole?realRole==='SUPER ADMIN':(role==='SUPER ADMIN'||(role==='ADMIN'&&visibleName()==='ADMIN'));
     if(probableSuper)add(nav,'hotfix-admin-config','Konfigurasi Admin',openConfig,null,true);
   }
   document.addEventListener('DOMContentLoaded',installMenus);
   installMenus();
-  setInterval(installMenus,800);
+  let hotfixPollCount=0;
+  const hotfixPollId=setInterval(()=>{
+    installMenus();
+    hotfixPollCount++;
+    if(hotfixPollCount>=25)clearInterval(hotfixPollId); // berhenti otomatis setelah ~20 detik
+  },800);
 })();
