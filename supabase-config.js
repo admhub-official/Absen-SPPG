@@ -13,5 +13,5 @@ window.ABSEN_SUPABASE_CONFIG = window.ABSEN_SUPABASE_CONFIG || {
     document.head.appendChild(script);
   }
   load('./features.js?v=20260716');
-  load('./feature-menu-hotfix.js?v=20260716-2');
+  load('./feature-menu-hotfix.js?v=20260716-3');
 })();
