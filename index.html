@@ -402,6 +402,27 @@
     .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 1rem}
     @media(max-width:640px){.modal-grid{grid-template-columns:1fr}}
 
+    /* Feature views: attendance, payroll, complaints */
+    .feature-toolbar{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+    .feature-toolbar .form-input{width:auto;min-width:180px;padding:.6rem .75rem;font-size:.875rem}
+    .feature-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:1.35rem;margin-bottom:1rem}
+    .feature-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.7fr);gap:1rem;align-items:start}
+    .form-textarea{min-height:150px;resize:vertical;line-height:1.55;font-family:inherit}
+    .helper-text{font-size:.76rem;color:var(--text-muted);line-height:1.5;margin-top:.35rem}
+    .privacy-box{display:flex;gap:.75rem;padding:1rem;border:1px solid #c7d2fe;background:#eef2ff;border-radius:var(--radius);color:#3730a3;font-size:.82rem;line-height:1.5;margin-bottom:1rem}
+    .privacy-box svg{flex:none;margin-top:1px}
+    .toggle-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1rem}
+    .toggle{position:relative;width:46px;height:26px;flex:none}.toggle input{opacity:0;width:0;height:0}.toggle-slider{position:absolute;inset:0;background:#cbd5e1;border-radius:99px;cursor:pointer;transition:.2s}.toggle-slider:before{content:'';position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}.toggle input:checked+.toggle-slider{background:var(--primary)}.toggle input:checked+.toggle-slider:before{transform:translateX(20px)}
+    .complaint-list{display:flex;flex-direction:column;gap:.85rem}.complaint-card{border:1px solid var(--border);border-radius:var(--radius);padding:1rem;background:var(--surface)}
+    .complaint-card.unread{border-left:4px solid var(--primary)}.complaint-head{display:flex;justify-content:space-between;gap:.75rem;align-items:flex-start;margin-bottom:.65rem}.complaint-meta{display:flex;gap:.45rem;flex-wrap:wrap;align-items:center}.complaint-content{white-space:pre-wrap;word-break:break-word;font-size:.88rem;line-height:1.6;color:var(--text-secondary)}
+    .complaint-response{margin-top:.85rem;padding:.85rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius);font-size:.83rem;line-height:1.55;color:#166534}
+    .complaint-actions{display:flex;gap:.55rem;flex-wrap:wrap;margin-top:.85rem}.complaint-actions .form-input{flex:1;min-width:220px;padding:.6rem .7rem;font-size:.84rem}.btn-sm{padding:.55rem .85rem;font-size:.8rem}
+    .badge-neutral{background:#f1f5f9;color:#475569}.badge-primary{background:#e0e7ff;color:#3730a3}.badge-count{display:inline-flex;min-width:20px;height:20px;padding:0 6px;align-items:center;justify-content:center;border-radius:999px;background:#ef4444;color:#fff;font-size:.68rem;font-weight:800;margin-left:auto}
+    .punch-list{display:flex;flex-wrap:wrap;gap:.35rem}.punch-chip{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .5rem;background:#f1f5f9;border-radius:999px;font-size:.74rem;color:#334155}.punch-chip:first-child{background:#dcfce7;color:#166534}.punch-chip:last-child:not(:first-child){background:#dbeafe;color:#1e40af}
+    .empty-state{text-align:center;padding:2.5rem 1rem;color:var(--text-muted)}.empty-state strong{display:block;color:var(--text-secondary);margin-bottom:.25rem}
+    .loading-state{display:flex;align-items:center;justify-content:center;gap:.65rem;padding:2rem;color:var(--text-muted);font-size:.85rem}.loading-state .spinner{width:20px;height:20px;border:2px solid #e2e8f0;border-top-color:var(--primary)}
+    @media(max-width:760px){.feature-grid{grid-template-columns:1fr}.feature-card{padding:1rem}.feature-toolbar{align-items:stretch}.feature-toolbar .form-input{width:100%}.complaint-head{flex-direction:column}.app-bottomnav{overflow-x:auto}.app-bottomnav-item{min-width:62px}}
+
   </style>
 </head>
 <body>
@@ -568,12 +589,28 @@
       <span>Sistem Absensi</span>
     </div>
     <nav class="app-nav">
-      <button class="app-nav-item active" data-view="dashboard">
+      <button class="app-nav-item user-only-nav active" data-view="dashboard">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
         <span>Dashboard</span>
       </button>
+      <button class="app-nav-item user-only-nav" data-view="my-absensi">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Absensi Saya</span>
+      </button>
+      <button class="app-nav-item user-only-nav" data-view="my-payroll">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>
+        <span>Payroll Saya</span>
+      </button>
+      <button class="app-nav-item user-only-nav" data-view="pengaduan">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+        <span>Pengaduan</span>
+      </button>
       <!-- ADMIN ONLY NAV -->
       <div class="app-nav-item admin-only-nav" style="padding:0.5rem 0.9rem 0.25rem;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:rgba(255,255,255,.3);cursor:default;display:none">Admin</div>
+      <button class="app-nav-item admin-only-nav" data-view="admin-dashboard" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        <span>Dashboard</span>
+      </button>
       <button class="app-nav-item admin-only-nav" data-view="admin-absen" style="display:none">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <span>Data Absen</span>
@@ -581,6 +618,14 @@
       <button class="app-nav-item admin-only-nav" data-view="admin-users" style="display:none">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>
         <span>Data Users</span>
+      </button>
+      <button class="app-nav-item admin-only-nav" data-view="admin-payroll" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>
+        <span>Payroll</span>
+      </button>
+      <button class="app-nav-item admin-only-nav" data-view="admin-pengaduan" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+        <span>Inbox Pengaduan</span><span class="badge-count" id="complaint-nav-count" style="display:none">0</span>
       </button>
       <button class="app-nav-item admin-only-nav" data-view="admin-log" style="display:none">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -759,10 +804,47 @@
           </div>
           <div class="info-grid">
             <div><div class="info-item-label">Nama Bank</div><div class="info-item-value" id="p-bank">-</div></div>
+            <div><div class="info-item-label">Nomor Rekening</div><div class="info-item-value" id="p-nomor-rekening">-</div></div>
             <div><div class="info-item-label">Atas Nama Rekening</div><div class="info-item-value" id="p-rekening">-</div></div>
           </div>
         </div>
       </div>
+      <!-- ===== VIEW: ABSENSI SAYA ===== -->
+      <div id="view-my-absensi" class="app-view hidden">
+        <div class="feature-toolbar">
+          <div><div class="page-title">Absensi Saya</div><div class="page-subtitle">Seluruh punch valid dari aplikasi dan mesin absensi</div></div>
+          <input type="month" id="my-absensi-month" class="form-input" aria-label="Filter bulan absensi">
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-card-icon green">✓</div><div><div class="stat-card-value" id="my-absensi-complete">0</div><div class="stat-card-label">Hari Lengkap</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon blue">↦</div><div><div class="stat-card-value" id="my-absensi-arrivals">0</div><div class="stat-card-label">Punch Masuk</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon amber">↤</div><div><div class="stat-card-value" id="my-absensi-departures">0</div><div class="stat-card-label">Punch Pulang</div></div></div>
+        </div>
+        <div class="admin-card"><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Tanggal</th><th>Seluruh Punch</th><th>Status</th><th>Sumber</th></tr></thead><tbody id="my-absensi-body"><tr><td colspan="4"><div class="loading-state"><span class="spinner"></span>Memuat absensi...</div></td></tr></tbody></table></div></div>
+      </div>
+
+      <!-- ===== VIEW: PAYROLL SAYA ===== -->
+      <div id="view-my-payroll" class="app-view hidden">
+        <div class="page-header"><div class="page-title">Payroll Saya</div><div class="page-subtitle">Slip gaji yang telah diterbitkan untuk Anda</div></div>
+        <div class="feature-card" id="my-payroll-profile"></div>
+        <div class="admin-card"><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Periode</th><th>Hari Kerja</th><th>Gaji Harian</th><th>Total Diterima</th><th>Slip</th></tr></thead><tbody id="my-payroll-body"><tr><td colspan="5"><div class="loading-state"><span class="spinner"></span>Memuat payroll...</div></td></tr></tbody></table></div></div>
+      </div>
+
+      <!-- ===== VIEW: PENGADUAN USER ===== -->
+      <div id="view-pengaduan" class="app-view hidden">
+        <div class="page-header"><div class="page-title">Pengaduan</div><div class="page-subtitle">Laporkan kendala kerja, absensi, payroll, atau masalah lainnya</div></div>
+        <div class="feature-grid">
+          <form class="feature-card" id="complaint-form">
+            <div class="privacy-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><div><strong>Privasi terlindungi</strong><br>Jika memilih anonim, identitas Anda tidak ditampilkan kepada ADMIN. SUPER ADMIN tetap dapat mengakses identitas untuk kebutuhan audit dan keselamatan.</div></div>
+            <div class="form-group"><label class="form-label" for="complaint-category">Kategori</label><select id="complaint-category" class="form-input" required><option value="">Pilih kategori</option><option>Absensi</option><option>Payroll / Gaji</option><option>Akun dan Profil</option><option>Fasilitas Kerja</option><option>Etika / Perilaku</option><option>Keamanan</option><option>Lainnya</option></select></div>
+            <div class="form-group"><label class="form-label" for="complaint-message">Isi pengaduan</label><textarea id="complaint-message" class="form-input form-textarea" maxlength="5000" required placeholder="Jelaskan masalah secara runtut, waktu kejadian, dan dampaknya..."></textarea><div class="helper-text"><span id="complaint-char-count">0</span>/5000 karakter · minimal 10 karakter</div></div>
+            <div class="toggle-row"><div><strong>Kirim sebagai anonim</strong><div class="helper-text">ADMIN tidak akan melihat nama, email, ID Card, atau ID akun Anda.</div></div><label class="toggle"><input type="checkbox" id="complaint-anonymous"><span class="toggle-slider"></span></label></div>
+            <button class="btn btn-primary btn-block" id="btn-send-complaint" type="submit">Kirim Pengaduan</button>
+          </form>
+          <div><div class="feature-toolbar"><div><strong>Riwayat Saya</strong><div class="helper-text">Tanggapan admin akan muncul di sini</div></div><button class="btn btn-secondary btn-sm" id="btn-refresh-my-complaints" type="button">Muat Ulang</button></div><div class="complaint-list" id="my-complaint-list"><div class="loading-state"><span class="spinner"></span>Memuat riwayat...</div></div></div>
+        </div>
+      </div>
+
       <!-- ===== VIEW: ADMIN DASHBOARD ===== -->
       <div id="view-admin-dashboard" class="app-view hidden">
         <div class="welcome-card">
@@ -916,6 +998,24 @@
         </div>
       </div>
 
+      <!-- ===== VIEW: ADMIN PAYROLL ===== -->
+      <div id="view-admin-payroll" class="app-view hidden">
+        <div class="page-header"><div class="page-title">Payroll</div><div class="page-subtitle">Kesiapan data karyawan dan riwayat payroll sesuai cakupan akses</div></div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-card-icon purple">👥</div><div><div class="stat-card-value" id="payroll-employee-count">0</div><div class="stat-card-label">Karyawan Aktif</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon green">✓</div><div><div class="stat-card-value" id="payroll-ready-count">0</div><div class="stat-card-label">Data Gaji Siap</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon amber">!</div><div><div class="stat-card-value" id="payroll-incomplete-count">0</div><div class="stat-card-label">Data Belum Lengkap</div></div></div>
+        </div>
+        <div class="admin-card"><div class="admin-card-header"><div class="admin-card-title">Kesiapan Payroll Karyawan</div><div class="admin-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="payroll-search" type="search" placeholder="Cari karyawan..."></div></div><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Karyawan</th><th>Jabatan</th><th>SPPG</th><th>Gaji Harian</th><th>Status</th></tr></thead><tbody id="admin-payroll-body"><tr><td colspan="5"><div class="loading-state"><span class="spinner"></span>Memuat data payroll...</div></td></tr></tbody></table></div></div>
+      </div>
+
+      <!-- ===== VIEW: INBOX PENGADUAN ===== -->
+      <div id="view-admin-pengaduan" class="app-view hidden">
+        <div class="feature-toolbar"><div><div class="page-title">Inbox Pengaduan</div><div class="page-subtitle">Baca, tindak lanjuti, dan balas laporan pengguna</div></div><button class="btn btn-secondary btn-sm" id="btn-refresh-admin-complaints" type="button">Muat Ulang</button></div>
+        <div class="feature-card"><div class="feature-toolbar" style="margin:0"><select id="admin-complaint-status" class="form-input"><option value="">Semua Status</option><option>Belum Dibaca</option><option>Sudah Dibaca</option></select><select id="admin-complaint-category" class="form-input"><option value="">Semua Kategori</option><option>Absensi</option><option>Payroll / Gaji</option><option>Akun dan Profil</option><option>Fasilitas Kerja</option><option>Etika / Perilaku</option><option>Keamanan</option><option>Lainnya</option></select><input id="admin-complaint-search" type="search" class="form-input" placeholder="Cari isi atau pengirim..."></div></div>
+        <div class="complaint-list" id="admin-complaint-list"><div class="loading-state"><span class="spinner"></span>Memuat inbox...</div></div>
+      </div>
+
       <!-- ===== VIEW: ADMIN USER DETAIL ===== -->
       <div id="view-admin-user-detail" class="app-view hidden">
         <button class="back-btn" id="btn-back-from-user-detail">
@@ -973,6 +1073,7 @@
           <div class="info-section-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Data Rekening Bank</div>
           <div class="info-grid">
             <div><div class="info-item-label">Nama Bank</div><div class="info-item-value" id="ud-p-bank">-</div></div>
+            <div><div class="info-item-label">Nomor Rekening</div><div class="info-item-value" id="ud-p-nomor-rekening">-</div></div>
             <div><div class="info-item-label">Atas Nama Rekening</div><div class="info-item-value" id="ud-p-rekening">-</div></div>
           </div>
         </div>
@@ -1033,25 +1134,16 @@
     </div>
 
     <nav class="app-bottomnav">
-      <button class="app-bottomnav-item active" data-view="dashboard">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
-        Dashboard
-      </button>
-      <button class="app-bottomnav-item admin-only-nav" data-view="admin-absen" style="display:none">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        Absen
-      </button>
-      <button class="app-bottomnav-item app-bottomnav-item-scan" data-view="absen-scan">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg>
-      </button>
-      <button class="app-bottomnav-item admin-only-nav" data-view="admin-users" style="display:none">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>
-        Users
-      </button>
-      <button class="app-bottomnav-item admin-only-nav" data-view="admin-log" style="display:none">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        Log
-      </button>
+      <button class="app-bottomnav-item user-only-nav active" data-view="dashboard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
+      <button class="app-bottomnav-item user-only-nav" data-view="my-absensi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Riwayat</button>
+      <button class="app-bottomnav-item app-bottomnav-item-scan user-only-nav" data-view="absen-scan"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <button class="app-bottomnav-item user-only-nav" data-view="my-payroll"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Payroll</button>
+      <button class="app-bottomnav-item user-only-nav" data-view="pengaduan"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>Aduan</button>
+      <button class="app-bottomnav-item admin-only-nav" data-view="admin-dashboard" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
+      <button class="app-bottomnav-item admin-only-nav" data-view="admin-absen" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Absen</button>
+      <button class="app-bottomnav-item admin-only-nav" data-view="admin-users" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>Users</button>
+      <button class="app-bottomnav-item admin-only-nav" data-view="admin-payroll" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Payroll</button>
+      <button class="app-bottomnav-item admin-only-nav" data-view="admin-pengaduan" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>Inbox</button>
     </nav>
   </div>
 </div>
@@ -1083,6 +1175,7 @@
         <div class="form-group"><label class="form-label">Tanggal Mulai Kerja</label><input type="date" id="auu-mulai-kerja" class="form-input"></div>
         <div class="form-group"><label class="form-label">Gaji Harian</label><input type="number" id="auu-gaji" class="form-input"></div>
         <div class="form-group"><label class="form-label">Nama Bank</label><input type="text" id="auu-bank" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Nomor Rekening</label><input type="text" id="auu-nomor-rekening" class="form-input" inputmode="numeric"></div>
         <div class="form-group" style="grid-column:1/-1"><label class="form-label">Atas Nama Rekening</label><input type="text" id="auu-rekening" class="form-input"></div>
       </div>
     </div>
@@ -1156,6 +1249,7 @@
         <div class="form-group"><label class="form-label">Email</label><input type="email" id="edit-email" class="form-input"></div>
         <div class="form-group"><label class="form-label">No. WhatsApp</label><input type="text" id="edit-wa" class="form-input"></div>
         <div class="form-group"><label class="form-label">Nama Bank</label><input type="text" id="edit-bank" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Nomor Rekening</label><input type="text" id="edit-nomor-rekening" class="form-input" inputmode="numeric"></div>
         <div class="form-group"><label class="form-label">Atas Nama Rekening</label><input type="text" id="edit-rekening" class="form-input"></div>
       </div>
     </div>
@@ -1220,6 +1314,8 @@
 let SUPABASE_URL='',SUPABASE_KEY='';
 const CONFIG_ENDPOINT='https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';
 const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppState={token:null,user:null,currentPage:'login',currentView:'dashboard',pendingRegisterEmail:'',pendingResetEmail:'',pendingResetToken:'',resendTimerRegister:null,resendTimerReset:null};
+const escapeHtml=(value)=>String(value??'').replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const normalizeRole=(value)=>String(value||'').trim().toUpperCase().replace(/_/g,' ');
 const FACEAPI_CDN_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
 const FACEAPI_MODEL_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
 const FaceApiState={scriptLoaded:false,modelsLoaded:false,loadingPromise:null};
@@ -1273,14 +1369,33 @@ function showApp(){
   if(isAdmin()){
     showAdminNav();
     switchView('admin-dashboard');
+    loadComplaintNotification();
   } else {
+    showUserNav();
     switchView('dashboard');
   }
   loadDashboardData();
 }
 function showAuth(){$('#app-layout').classList.remove('active'),$('#auth-layout').classList.remove('hidden');}
-function switchView(v){AppState.currentView=v;$$('.app-view').forEach(e=>e.classList.add('hidden'));const t=document.getElementById(`view-${v}`);if(t)t.classList.remove('hidden');$$('.app-nav-item[data-view],.app-bottomnav-item[data-view],.sidebar-absen-btn[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));}
-function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';const avatarEl=$('#profil-avatar');if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);const tbAvatar=$('#topbar-avatar');if(tbAvatar){if(fotoUrl){tbAvatar.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{tbAvatar.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}
+function switchView(v){
+  AppState.currentView=v;
+  $$('.app-view').forEach(e=>e.classList.add('hidden'));
+  const target=document.getElementById(`view-${v}`);
+  if(!target){console.error('View tidak ditemukan:',v);return;}
+  target.classList.remove('hidden');
+  $$('.app-nav-item[data-view],.app-bottomnav-item[data-view],.sidebar-absen-btn[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));
+  if(!AppState.token)return;
+  if(v==='admin-absen'){loadAdminAbsen();startAbsenRealtime();}else{stopAbsenRealtime();}
+  if(v==='admin-users')loadAdminUsers();
+  if(v==='admin-log')loadAdminLog();
+  if(v==='admin-payroll')loadAdminPayroll();
+  if(v==='admin-pengaduan')loadAdminComplaints();
+  if(v==='my-absensi')loadMyAbsensi();
+  if(v==='my-payroll')loadMyPayroll();
+  if(v==='pengaduan')loadMyComplaints();
+  if(v==='absen-scan')openAbsenScan();
+}
+function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';const avatarEl=$('#profil-avatar');if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-nomor-rekening',u.nomorRekening||u.Nomor_Rekening);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);const tbAvatar=$('#topbar-avatar');if(tbAvatar){if(fotoUrl){tbAvatar.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{tbAvatar.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}
 }
 const tbName=$('#topbar-profile-name');if(tbName)tbName.textContent=nama||'-';const adminGreet=$('#admin-dashboard-greeting');if(adminGreet)adminGreet.textContent=`Selamat datang, ${(u.role||u.Role||'').toUpperCase()||'Admin'}!`;
 const tbRole=$('#topbar-profile-role');if(tbRole)tbRole.textContent=u.role||u.Role||'USER';updateFaceStatusBadge();}
@@ -1338,13 +1453,14 @@ function renderRiwayatMini(riwayat){
   }
   container.innerHTML=riwayat.map(r=>{
     const isDatang=r.jenis==='DATANG';
+    const isPulang=r.jenis==='PULANG';
     const icon=isDatang
       ?'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>'
       :'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
     return `<div class="riwayat-mini-item">
-      <div class="riwayat-mini-icon ${isDatang?'datang':'pulang'}">${icon}</div>
+      <div class="riwayat-mini-icon ${isDatang?'datang':isPulang?'pulang':'datang'}">${icon}</div>
       <div>
-        <div class="riwayat-mini-jenis">${isDatang?'Datang':'Pulang'}</div>
+        <div class="riwayat-mini-jenis">${isDatang?'Datang':isPulang?'Pulang':r.jenis==='PUNCH_TUNGGAL'?'Punch tunggal valid':'Punch tambahan'}</div>
         <div class="riwayat-mini-tanggal">${formatTanggal(r.tanggal)}</div>
       </div>
       <div class="riwayat-mini-waktu">${(r.waktu||'-').substring(0,5)}</div>
@@ -1602,6 +1718,7 @@ const AdminState = {
   filteredAbsen: [],
   absenPage: 1,
   absenPageSize: 20,
+  absenTotal: 0,
   allUsers: [],
   filteredUsers: [],
   selectedUser: null,
@@ -1615,12 +1732,18 @@ const AdminState = {
 function isAdmin(){
   const u = AppState.user;
   if(!u) return false;
-  const r = (u.role||u.Role||'').toLowerCase();
-  return r === 'admin' || r === 'superadmin';
+  const r = normalizeRole(u.role||u.Role);
+  return r === 'ADMIN' || r === 'SUPER ADMIN';
 }
 
 function showAdminNav(){
   document.querySelectorAll('.admin-only-nav').forEach(el => el.style.display = '');
+  document.querySelectorAll('.user-only-nav').forEach(el => el.style.display = 'none');
+}
+
+function showUserNav(){
+  document.querySelectorAll('.admin-only-nav').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.user-only-nav').forEach(el => el.style.display = '');
 }
 
 /* ---- Realtime Supabase channel untuk Data Absen ---- */
@@ -1634,7 +1757,7 @@ function startAbsenRealtime(){
     const ws = new WebSocket(wsUrl);
     AdminState.realtimeChannel = ws;
     ws.onopen = () => {
-      ws.send(JSON.stringify({topic:'realtime:public:Data_Absen',event:'phx_join',payload:{config:{postgres_changes:[{event:'*',schema:'public',table:'Data_Absen'}]}},ref:'1'}));
+      ws.send(JSON.stringify({topic:'realtime:public:Absensi',event:'phx_join',payload:{config:{postgres_changes:[{event:'*',schema:'public',table:'Absensi'}]}},ref:'1'}));
     };
     ws.onmessage = (ev) => {
       try {
@@ -1660,11 +1783,13 @@ function stopAbsenRealtime(){
 async function loadAdminAbsen(){
   const tbody = $('#absen-table-body');
   if(!tbody) return;
+  tbody.innerHTML='<tr><td colspan="7"><div class="loading-state"><span class="spinner"></span>Memuat data absensi...</div></td></tr>';
   try {
-    const r = await apiCall('getAbsensiData', {token: AppState.token});
-    const raw = Array.isArray(r) ? r : (r?.absensi || []);
-    AdminState.allAbsen = groupAbsenByUserTanggal(raw);
-    filterAndRenderAbsen();
+    const r = await apiCall('getAbsensiGroupedData', {token: AppState.token,page:AdminState.absenPage,pageSize:AdminState.absenPageSize,search:$('#absen-search')?.value.trim()||''});
+    AdminState.allAbsen = r?.absensi || [];
+    AdminState.filteredAbsen = AdminState.allAbsen;
+    AdminState.absenTotal = Number(r?.total)||0;
+    renderAbsenTable();
   } catch(e) {
     if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="table-empty"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="table-empty-title">Gagal memuat data</div><div class="table-empty-sub">${e.message}</div></td></tr>`;
   }
@@ -1685,9 +1810,13 @@ function groupAbsenByUserTanggal(raw){
         jamPulang: null,
         statusMasuk: null,
         statusPulang: null,
+        punches: [],
+        sumber: new Set(),
       };
     }
     const waktu = a.Waktu_Timestamp ? new Date(a.Waktu_Timestamp).toTimeString().split(' ')[0] : null;
+    if(waktu) byKey[key].punches.push({waktu,jenis:a.Jenis_Absen,status:a.Status_Validasi});
+    byKey[key].sumber.add(a.Sumber_Data||'APLIKASI');
     if(a.Jenis_Absen === 'DATANG'){
       byKey[key].jamMasuk = waktu;
       byKey[key].statusMasuk = a.Status_Validasi;
@@ -1696,32 +1825,33 @@ function groupAbsenByUserTanggal(raw){
       byKey[key].jamPulang = waktu;
       byKey[key].statusPulang = a.Status_Validasi;
     }
+    if(a.Jenis_Absen === 'PUNCH_TUNGGAL' && !byKey[key].jamMasuk){
+      byKey[key].jamMasuk = waktu;
+      byKey[key].statusMasuk = a.Status_Validasi;
+    }
   });
-  return Object.values(byKey).sort((x,y) => (y.Tanggal||'').localeCompare(x.Tanggal||''));
+  return Object.values(byKey).map(row=>({
+    ...row,
+    punches:row.punches.sort((a,b)=>a.waktu.localeCompare(b.waktu)),
+    sumber:[...row.sumber]
+  })).sort((x,y) => (y.Tanggal||'').localeCompare(x.Tanggal||''));
 }
 
 function filterAndRenderAbsen(){
-  const q = ($('#absen-search')?.value||'').toLowerCase();
-  AdminState.filteredAbsen = AdminState.allAbsen.filter(row => {
-    if(!q) return true;
-    const nama = (row.namaLengkap||'').toLowerCase();
-    const sppg = (row.sppg||'').toLowerCase();
-    return nama.includes(q) || sppg.includes(q);
-  });
   AdminState.absenPage = 1;
-  renderAbsenTable();
+  loadAdminAbsen();
 }
 
 function renderAbsenTable(){
   const tbody = $('#absen-table-body');
   const pg = $('#absen-pagination');
   if(!tbody) return;
-  const total = AdminState.filteredAbsen.length;
+  const total = AdminState.absenTotal;
   const ps = AdminState.absenPageSize;
   const page = AdminState.absenPage;
   const totalPages = Math.max(1, Math.ceil(total / ps));
   const start = (page-1)*ps;
-  const rows = AdminState.filteredAbsen.slice(start, start+ps);
+  const rows = AdminState.filteredAbsen;
 
   if(rows.length === 0){
     tbody.innerHTML = `<tr><td colspan="7" class="table-empty"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><div class="table-empty-title">Belum ada data absensi</div><div class="table-empty-sub">Belum ada data absensi hari ini</div></td></tr>`;
@@ -1736,16 +1866,18 @@ function renderAbsenTable(){
     const masuk = row.jamMasuk||'-';
     const keluar = row.jamPulang||'-';
     const lengkap = row.jamMasuk && row.jamPulang;
-    const statusText = lengkap ? 'Lengkap' : (row.jamMasuk ? 'Belum Pulang' : 'Belum Datang');
-    const statusBadge = lengkap ? 'badge-success' : (row.jamMasuk ? 'badge-warning' : 'badge-danger');
+    const punchTunggal = row.punches.length===1 || row.punches.some(p=>p.jenis==='PUNCH_TUNGGAL');
+    const statusText = lengkap ? 'Lengkap' : (punchTunggal ? 'Punch tunggal valid' : (row.jamMasuk ? 'Belum Pulang' : 'Belum Datang'));
+    const statusBadge = lengkap ? 'badge-success' : (punchTunggal || row.jamMasuk ? 'badge-warning' : 'badge-danger');
+    const keterangan = `${row.punches.length} punch · ${row.sumber.join(', ')}`;
     return `<tr>
-      <td><div style="font-weight:600">${nama}</div></td>
-      <td>${sppg}</td>
-      <td>${tgl}</td>
-      <td>${masuk}</td>
-      <td>${keluar}</td>
+      <td><div style="font-weight:600">${escapeHtml(nama)}</div></td>
+      <td>${escapeHtml(sppg)}</td>
+      <td>${escapeHtml(tgl)}</td>
+      <td>${escapeHtml(masuk)}</td>
+      <td>${escapeHtml(keluar)}</td>
       <td><span class="badge ${statusBadge}">${statusText}</span></td>
-      <td style="color:var(--text-secondary)">-</td>
+      <td style="color:var(--text-secondary)">${escapeHtml(keterangan)}</td>
     </tr>`;
   }).join('');
 
@@ -1848,6 +1980,7 @@ function openUserDetail(index){
   setInfo('ud-p-gaji', u.Gaji_Harian||u.gaji_harian, formatRupiah);
   setInfo('ud-p-status', u.Status_Akun||u.status_akun||'Aktif');
   setInfo('ud-p-bank', u.Nama_Bank||u.nama_bank);
+  setInfo('ud-p-nomor-rekening', u.Nomor_Rekening||u.nomor_rekening);
   setInfo('ud-p-rekening', u.Atas_Nama_Rekening||u.atas_nama_rekening);
 
   switchView('admin-user-detail');
@@ -1870,6 +2003,7 @@ function openAdminUpdateUserModal(){
   $('#auu-mulai-kerja').value = mk ? String(mk).split('T')[0] : '';
   $('#auu-gaji').value = u.Gaji_Harian||u.gaji_harian||'';
   $('#auu-bank').value = u.Nama_Bank||u.nama_bank||'';
+  $('#auu-nomor-rekening').value = u.Nomor_Rekening||u.nomor_rekening||'';
   $('#auu-rekening').value = u.Atas_Nama_Rekening||u.atas_nama_rekening||'';
   $('#modal-admin-update-user').classList.add('active');
 }
@@ -1889,6 +2023,7 @@ async function handleSaveAdminUpdateUser(){
     Tanggal_Mulai_Kerja: $('#auu-mulai-kerja').value || null,
     Gaji_Harian: $('#auu-gaji').value ? Number($('#auu-gaji').value) : null,
     Nama_Bank: $('#auu-bank').value.trim(),
+    Nomor_Rekening: $('#auu-nomor-rekening').value.trim(),
     Atas_Nama_Rekening: $('#auu-rekening').value.trim(),
   };
   if(!updates.Nama_Lengkap){ showInlineAlert('admin-update-user-alert','Nama lengkap tidak boleh kosong','warning'); return; }
@@ -2063,8 +2198,135 @@ function openLogDetail(index){
   $('#modal-log-detail').classList.add('active');
 }
 
-/* ---- switchView override untuk admin views ---- */
-const _originalSwitchView = window.switchView;
+/* ===================================================================
+   ATTENDANCE, PAYROLL, AND COMPLAINT MODULES
+   =================================================================== */
+const FeatureState={adminComplaints:[],filteredAdminComplaints:[],payrollEmployees:[]};
+
+function formatDateTime(value){
+  if(!value)return'-';
+  const date=new Date(value);
+  return Number.isNaN(date.getTime())?'-':date.toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'});
+}
+
+function safeExternalUrl(value){
+  try{const url=new URL(String(value||''));return url.protocol==='https:'?url.href:'';}catch{return'';}
+}
+
+async function loadMyAbsensi(){
+  const body=$('#my-absensi-body'); if(!body)return;
+  body.innerHTML='<tr><td colspan="4"><div class="loading-state"><span class="spinner"></span>Memuat absensi...</div></td></tr>';
+  try{
+    const month=$('#my-absensi-month')?.value||'';
+    const result=await apiCall('getMyAbsensi',{token:AppState.token,filterBulan:month||undefined});
+    const rows=result?.rows||[];
+    $('#my-absensi-complete').textContent=result?.totalHariKerja||0;
+    $('#my-absensi-arrivals').textContent=result?.totalDatang||0;
+    $('#my-absensi-departures').textContent=result?.totalPulang||0;
+    if(!rows.length){body.innerHTML='<tr><td colspan="4"><div class="empty-state"><strong>Belum ada data absensi</strong>Ubah filter bulan atau lakukan absensi pertama Anda.</div></td></tr>';return;}
+    body.innerHTML=rows.map(row=>{
+      const punches=(row.punches||[]).map(p=>`<span class="punch-chip" title="${escapeHtml(p.jenis||'Punch')}">${escapeHtml((p.waktu||'-').slice(0,5))}</span>`).join('');
+      const sources=[...new Set((row.punches||[]).map(p=>p.sumber||'APLIKASI'))];
+      const status=row.lengkap?'Lengkap':row.status==='PUNCH_TUNGGAL_VALID'?'Punch tunggal valid':'Belum lengkap';
+      const badge=row.lengkap?'badge-success':'badge-warning';
+      return `<tr><td><strong>${escapeHtml(formatTanggal(row.tanggal))}</strong></td><td><div class="punch-list">${punches||'-'}</div></td><td><span class="badge ${badge}">${status}</span></td><td>${escapeHtml(sources.join(', ')||'-')}</td></tr>`;
+    }).join('');
+  }catch(error){body.innerHTML=`<tr><td colspan="4"><div class="empty-state"><strong>Data gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
+}
+
+async function loadMyPayroll(){
+  const body=$('#my-payroll-body'),profile=$('#my-payroll-profile'); if(!body||!profile)return;
+  try{
+    const result=await apiCall('getMyPayroll',{token:AppState.token});
+    profile.innerHTML=`<strong>${escapeHtml(result?.namaLengkap||'Pengguna')}</strong><div class="helper-text">${escapeHtml(result?.jabatanDivisi||'-')} · ${escapeHtml(result?.sppg||'-')}</div>`;
+    const rows=result?.payroll||[];
+    if(!rows.length){body.innerHTML='<tr><td colspan="5"><div class="empty-state"><strong>Belum ada slip gaji</strong>Slip yang telah diterbitkan akan tampil di sini.</div></td></tr>';return;}
+    body.innerHTML=rows.map(row=>{const url=safeExternalUrl(row.urlPdf);return `<tr><td>${escapeHtml(formatTanggal(row.periodeMulai))} – ${escapeHtml(formatTanggal(row.periodeAkhir))}</td><td>${Number(row.jumlahHariKerja)||0}</td><td>${escapeHtml(formatRupiah(row.gajiHarian))}</td><td><strong>${escapeHtml(formatRupiah(row.totalGaji))}</strong></td><td>${url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Buka slip</a>`:'Belum tersedia'}</td></tr>`}).join('');
+  }catch(error){body.innerHTML=`<tr><td colspan="5"><div class="empty-state"><strong>Payroll gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
+}
+
+async function loadMyComplaints(){
+  const list=$('#my-complaint-list'); if(!list)return;
+  list.innerHTML='<div class="loading-state"><span class="spinner"></span>Memuat riwayat...</div>';
+  try{
+    const result=await apiCall('getRiwayatPengaduanSaya',{token:AppState.token});
+    const rows=result?.pengaduan||[];
+    if(!rows.length){list.innerHTML='<div class="feature-card empty-state"><strong>Belum ada pengaduan</strong>Pengaduan yang Anda kirim dan tanggapannya akan tersimpan di sini.</div>';return;}
+    list.innerHTML=rows.map(row=>`<article class="complaint-card ${row.Status_Baca==='Belum Dibaca'?'unread':''}"><div class="complaint-head"><div><div class="complaint-meta"><span class="badge badge-primary">${escapeHtml(row.Kategori||'Lainnya')}</span><span class="badge badge-neutral">${row.Jenis_Pengirim==='Anonymous'?'Anonim':'Dengan identitas'}</span></div><div class="helper-text">${escapeHtml(formatDateTime(row.Timestamp))} · ${escapeHtml(row.ID_Pengaduan)}</div></div><span class="badge ${row.Status_Baca==='Sudah Dibaca'?'badge-success':'badge-warning'}">${escapeHtml(row.Status_Baca||'Belum Dibaca')}</span></div><div class="complaint-content">${escapeHtml(row.Isi_Pengaduan||'')}</div>${row.Tanggapan_Admin?`<div class="complaint-response"><strong>Tanggapan Admin</strong><br>${escapeHtml(row.Tanggapan_Admin)}<div class="helper-text">${escapeHtml(formatDateTime(row.Waktu_Tanggapan))}</div></div>`:''}</article>`).join('');
+  }catch(error){list.innerHTML=`<div class="feature-card empty-state"><strong>Riwayat gagal dimuat</strong>${escapeHtml(error.message)}</div>`;}
+}
+
+async function handleSendComplaint(event){
+  event.preventDefault();
+  const category=$('#complaint-category').value,message=$('#complaint-message').value.trim(),anonymous=$('#complaint-anonymous').checked;
+  if(!category){showAlert('Pilih kategori pengaduan.','warning');return;}
+  if(message.length<10){showAlert('Isi pengaduan minimal 10 karakter.','warning');return;}
+  const button=$('#btn-send-complaint'),original=button.innerHTML;button.disabled=true;button.innerHTML='<span class="spinner" style="width:18px;height:18px;border-width:2px"></span>Mengirim...';
+  try{
+    await apiCall('kirimPengaduan',{token:AppState.token,Kategori:category,Isi_Pengaduan:message,Jenis_Pengirim:anonymous?'Anonymous':'Terdaftar'});
+    event.currentTarget.reset();$('#complaint-char-count').textContent='0';showAlert('Pengaduan berhasil dikirim.','success');await loadMyComplaints();
+  }catch(error){showAlert(error.message||'Pengaduan gagal dikirim.','error');}
+  finally{button.disabled=false;button.innerHTML=original;}
+}
+
+async function loadComplaintNotification(){
+  if(!isAdmin())return;
+  try{const result=await apiCall('getNotifikasiAdmin',{token:AppState.token});const count=Number(result?.jumlah)||0;const badge=$('#complaint-nav-count');if(badge){badge.textContent=count>99?'99+':String(count);badge.style.display=count?'inline-flex':'none';}}catch(error){console.error('Gagal memuat notifikasi pengaduan',error);}
+}
+
+async function loadAdminComplaints(){
+  const list=$('#admin-complaint-list');if(!list)return;
+  list.innerHTML='<div class="loading-state"><span class="spinner"></span>Memuat inbox...</div>';
+  try{const result=await apiCall('getDaftarPengaduan',{token:AppState.token});FeatureState.adminComplaints=result?.pengaduan||[];filterAdminComplaints();await loadComplaintNotification();}
+  catch(error){list.innerHTML=`<div class="feature-card empty-state"><strong>Inbox gagal dimuat</strong>${escapeHtml(error.message)}</div>`;}
+}
+
+function filterAdminComplaints(){
+  const status=$('#admin-complaint-status')?.value||'',category=$('#admin-complaint-category')?.value||'',query=($('#admin-complaint-search')?.value||'').toLowerCase();
+  FeatureState.filteredAdminComplaints=FeatureState.adminComplaints.filter(row=>(!status||row.Status_Baca===status)&&(!category||row.Kategori===category)&&(!query||`${row.Isi_Pengaduan||''} ${row._namaPengirim||''} ${row.ID_Pengaduan||''}`.toLowerCase().includes(query)));
+  renderAdminComplaints();
+}
+
+function renderAdminComplaints(){
+  const list=$('#admin-complaint-list');if(!list)return;const rows=FeatureState.filteredAdminComplaints;
+  if(!rows.length){list.innerHTML='<div class="feature-card empty-state"><strong>Tidak ada pengaduan</strong>Tidak ada laporan yang sesuai dengan filter.</div>';return;}
+  const isSuper=normalizeRole(AppState.user?.role||AppState.user?.Role)==='SUPER ADMIN';
+  list.innerHTML=rows.map(row=>{
+    const anonymous=row.Jenis_Pengirim==='Anonymous';
+    const identity=anonymous&&!isSuper?'Anonim':(row._namaPengirim||row.User_Pengirim||'Tidak diketahui');
+    const identityDetail=anonymous&&!isSuper?'Identitas disembunyikan':`${row._jabatanPengirim||'-'} · ${row._sppgPengirim||row.SPPG||'-'}${row._emailPengirim?' · '+row._emailPengirim:''}`;
+    return `<article class="complaint-card ${row.Status_Baca==='Belum Dibaca'?'unread':''}" data-complaint-id="${escapeHtml(row.ID_Pengaduan)}"><div class="complaint-head"><div><div class="complaint-meta"><span class="badge badge-primary">${escapeHtml(row.Kategori||'Lainnya')}</span><span class="badge badge-neutral">${anonymous?'Anonim':'Terdaftar'}</span></div><strong>${escapeHtml(identity)}</strong><div class="helper-text">${escapeHtml(identityDetail)}<br>${escapeHtml(formatDateTime(row.Timestamp))} · ${escapeHtml(row.ID_Pengaduan)}</div></div><span class="badge ${row.Status_Baca==='Sudah Dibaca'?'badge-success':'badge-warning'}">${escapeHtml(row.Status_Baca||'Belum Dibaca')}</span></div><div class="complaint-content">${escapeHtml(row.Isi_Pengaduan||'')}</div>${row.Tanggapan_Admin?`<div class="complaint-response"><strong>Tanggapan terakhir</strong><br>${escapeHtml(row.Tanggapan_Admin)}<div class="helper-text">${escapeHtml(formatDateTime(row.Waktu_Tanggapan))}</div></div>`:''}<div class="complaint-actions">${row.Status_Baca!=='Sudah Dibaca'?'<button type="button" class="btn btn-secondary btn-sm complaint-read-btn">Tandai Sudah Dibaca</button>':''}<input class="form-input complaint-response-input" maxlength="4000" placeholder="Ketik tanggapan untuk pengguna..."><button type="button" class="btn btn-primary btn-sm complaint-reply-btn">Kirim Tanggapan</button></div></article>`;
+  }).join('');
+  list.querySelectorAll('.complaint-card').forEach(card=>{
+    const id=card.dataset.complaintId;
+    card.querySelector('.complaint-read-btn')?.addEventListener('click',()=>markComplaintRead(id));
+    card.querySelector('.complaint-reply-btn')?.addEventListener('click',()=>replyComplaint(id,card.querySelector('.complaint-response-input').value));
+  });
+}
+
+async function markComplaintRead(id){
+  try{await apiCall('tandaiSudahDibaca',{token:AppState.token,idPengaduan:id});showAlert('Pengaduan ditandai sudah dibaca.','success');await loadAdminComplaints();}
+  catch(error){showAlert(error.message,'error');}
+}
+
+async function replyComplaint(id,response){
+  if(!String(response||'').trim()){showAlert('Tanggapan tidak boleh kosong.','warning');return;}
+  try{await apiCall('simpanTanggapanAdmin',{token:AppState.token,idPengaduan:id,tanggapan:String(response).trim()});showAlert('Tanggapan berhasil dikirim.','success');await loadAdminComplaints();}
+  catch(error){showAlert(error.message,'error');}
+}
+
+async function loadAdminPayroll(){
+  const body=$('#admin-payroll-body');if(!body)return;
+  try{const result=await apiCall('getKaryawanForPayroll',{token:AppState.token});FeatureState.payrollEmployees=result?.karyawan||[];renderAdminPayroll();}
+  catch(error){body.innerHTML=`<tr><td colspan="5"><div class="empty-state"><strong>Data payroll gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
+}
+
+function renderAdminPayroll(){
+  const query=($('#payroll-search')?.value||'').toLowerCase();const all=FeatureState.payrollEmployees;const rows=all.filter(row=>!query||`${row.namaLengkap||''} ${row.jabatanDivisi||''} ${row.sppg||''}`.toLowerCase().includes(query));
+  const ready=all.filter(row=>Number(row.gajiHarian)>0).length;$('#payroll-employee-count').textContent=all.length;$('#payroll-ready-count').textContent=ready;$('#payroll-incomplete-count').textContent=all.length-ready;
+  const body=$('#admin-payroll-body');if(!rows.length){body.innerHTML='<tr><td colspan="5"><div class="empty-state"><strong>Tidak ada karyawan</strong>Tidak ada data sesuai pencarian.</div></td></tr>';return;}
+  body.innerHTML=rows.map(row=>`<tr><td><strong>${escapeHtml(row.namaLengkap||'-')}</strong></td><td>${escapeHtml(row.jabatanDivisi||'-')}</td><td>${escapeHtml(row.sppg||'-')}</td><td>${escapeHtml(formatRupiah(row.gajiHarian))}</td><td><span class="badge ${Number(row.gajiHarian)>0?'badge-success':'badge-warning'}">${Number(row.gajiHarian)>0?'Siap':'Lengkapi gaji'}</span></td></tr>`).join('');
+}
 
 /* ===== EDIT PROFIL ===== */
 function openEditProfil(){
@@ -2083,6 +2345,7 @@ function openEditProfil(){
   $('#edit-email').value=u.email||u.Email||'';
   $('#edit-wa').value=u.noWhatsapp||u.No_Whatsapp||'';
   $('#edit-bank').value=u.namaBank||u.Nama_Bank||'';
+  $('#edit-nomor-rekening').value=u.nomorRekening||u.Nomor_Rekening||'';
   $('#edit-rekening').value=u.atasNamaRekening||u.Atas_Nama_Rekening||'';
   $('#modal-edit-profil').classList.add('active');
 }
@@ -2097,6 +2360,7 @@ async function handleSaveEditProfil(){
     Email:$('#edit-email').value.trim(),
     No_Whatsapp:$('#edit-wa').value.trim(),
     Nama_Bank:$('#edit-bank').value.trim(),
+    Nomor_Rekening:$('#edit-nomor-rekening').value.trim(),
     Atas_Nama_Rekening:$('#edit-rekening').value.trim(),
   };
   if(!updates.Nama_Lengkap){showInlineAlert('edit-profil-alert','Nama lengkap tidak boleh kosong','warning');return;}
@@ -2553,11 +2817,6 @@ async function initApp(){
     const v = e.dataset.view;
     if(AppState.currentView==='absen-scan' && v!=='absen-scan') closeAbsenScan();
     switchView(v);
-    if(v==='admin-absen'){ loadAdminAbsen(); startAbsenRealtime(); }
-    else { stopAbsenRealtime(); }
-    if(v==='admin-users') loadAdminUsers();
-    if(v==='admin-log') loadAdminLog();
-    if(v==='absen-scan') openAbsenScan();
   }));
   $('#btn-logout').addEventListener('click',handleLogout);
   $('#btn-dropdown-profil')?.addEventListener('click',()=>{ switchView('profil'); stopAbsenRealtime(); $('#topbar-dropdown')?.classList.remove('active'); });
@@ -2565,8 +2824,17 @@ async function initApp(){
   document.addEventListener('click',(ev)=>{ const dd=$('#topbar-dropdown'); if(dd && dd.classList.contains('active') && !dd.contains(ev.target) && !$('#btn-topbar-profile').contains(ev.target)) dd.classList.remove('active'); });
   $('#btn-dashboard-absen-cta')?.addEventListener('click',()=>{
     switchView('absen-scan');
-    openAbsenScan();
   });
+
+  $('#my-absensi-month')?.addEventListener('change',loadMyAbsensi);
+  $('#complaint-form')?.addEventListener('submit',handleSendComplaint);
+  $('#complaint-message')?.addEventListener('input',(event)=>{$('#complaint-char-count').textContent=event.target.value.length;});
+  $('#btn-refresh-my-complaints')?.addEventListener('click',loadMyComplaints);
+  $('#btn-refresh-admin-complaints')?.addEventListener('click',loadAdminComplaints);
+  $('#admin-complaint-status')?.addEventListener('change',filterAdminComplaints);
+  $('#admin-complaint-category')?.addEventListener('change',filterAdminComplaints);
+  $('#admin-complaint-search')?.addEventListener('input',filterAdminComplaints);
+  $('#payroll-search')?.addEventListener('input',renderAdminPayroll);
 
   // Admin: update user modal
   $('#btn-admin-update-user')?.addEventListener('click', openAdminUpdateUserModal);
@@ -2582,13 +2850,14 @@ async function initApp(){
   $('#btn-close-log-detail-footer')?.addEventListener('click',()=>$('#modal-log-detail').classList.remove('active'));
 
   // Admin: search input listeners
-  $('#absen-search')?.addEventListener('input', filterAndRenderAbsen);
+  let absenSearchTimer;
+  $('#absen-search')?.addEventListener('input',()=>{clearTimeout(absenSearchTimer);absenSearchTimer=setTimeout(filterAndRenderAbsen,300);});
   $('#users-search')?.addEventListener('input', filterAndRenderUsers);
   $('#log-search')?.addEventListener('input', filterAndRenderLog);
 
   // Admin: pagination
-  $('#absen-prev-btn')?.addEventListener('click',()=>{ AdminState.absenPage--; renderAbsenTable(); });
-  $('#absen-next-btn')?.addEventListener('click',()=>{ AdminState.absenPage++; renderAbsenTable(); });
+  $('#absen-prev-btn')?.addEventListener('click',()=>{ if(AdminState.absenPage>1){AdminState.absenPage--;loadAdminAbsen();} });
+  $('#absen-next-btn')?.addEventListener('click',()=>{ if(AdminState.absenPage<Math.ceil(AdminState.absenTotal/AdminState.absenPageSize)){AdminState.absenPage++;loadAdminAbsen();} });
   $('#log-prev-btn')?.addEventListener('click',()=>{ AdminState.logPage--; renderLogList(); });
   $('#log-next-btn')?.addEventListener('click',()=>{ AdminState.logPage++; renderLogList(); });
   $('#btn-open-edit-profil').addEventListener('click',openEditProfil);
