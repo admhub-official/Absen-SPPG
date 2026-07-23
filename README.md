@@ -11,6 +11,8 @@ Aplikasi absensi dan payroll multi-role untuk operasional SPPG. Frontend menggun
 
 Frontend tidak mengakses tabel langsung. Edge Function memakai service role di server, memvalidasi token pada tabel `Sessions`, lalu menerapkan cakupan akses berdasarkan role dan mapping SPPG.
 
+Logo dan ikon aplikasi disajikan langsung dari bucket publik Supabase Storage `icon aplikasi`. Aplikasi aktif tidak bergantung pada Google Drive, Google Apps Script, atau Google Spreadsheet.
+
 ## Hak Akses
 
 - `USER`: dashboard pribadi, absensi, payroll, profil, scan wajah, dan pengaduan.
