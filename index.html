@@ -424,7 +424,20 @@
     .punch-list{display:flex;flex-wrap:wrap;gap:.35rem}.punch-chip{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .5rem;background:#f1f5f9;border-radius:999px;font-size:.74rem;color:#334155}.punch-chip:first-child{background:#dcfce7;color:#166534}.punch-chip:last-child:not(:first-child){background:#dbeafe;color:#1e40af}
     .empty-state{text-align:center;padding:2.5rem 1rem;color:var(--text-muted)}.empty-state strong{display:block;color:var(--text-secondary);margin-bottom:.25rem}
     .loading-state{display:flex;align-items:center;justify-content:center;gap:.65rem;padding:2rem;color:var(--text-muted);font-size:.85rem}.loading-state .spinner{width:20px;height:20px;border:2px solid #e2e8f0;border-top-color:var(--primary)}
-    @media(max-width:760px){.feature-grid{grid-template-columns:1fr}.feature-card{padding:1rem}.feature-toolbar{align-items:stretch}.feature-toolbar .form-input{width:100%}.complaint-head{flex-direction:column}.app-bottomnav{overflow-x:auto}.app-bottomnav-item{min-width:62px}}
+    .payroll-command{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(160px,.55fr)) auto;gap:1rem;align-items:end}
+    .payroll-command-title{align-self:center}.payroll-command-title strong{display:block;font-size:1rem;color:var(--text)}.payroll-command-title span{display:block;margin-top:.3rem;font-size:.78rem;color:var(--text-muted);line-height:1.5}
+    .payroll-selection-bar{display:flex;align-items:center;justify-content:space-between;gap:.85rem;flex-wrap:wrap;padding:.8rem 1rem;background:#eef2ff;border:1px solid #c7d2fe;border-radius:var(--radius);margin-bottom:1rem}
+    .payroll-selection-count{font-size:.84rem;color:#3730a3}.payroll-selection-count strong{font-size:1rem}
+    .payroll-checkbox{width:18px;height:18px;accent-color:var(--primary);cursor:pointer}
+    .payroll-employee-cell{display:flex;align-items:center;gap:.7rem;min-width:190px}.payroll-avatar{width:34px;height:34px;border-radius:10px;background:#e0e7ff;color:#3730a3;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}.payroll-employee-meta{font-size:.74rem;color:var(--text-muted);margin-top:.15rem}
+    .payroll-money-input{width:140px;min-width:120px}.payroll-note-input{min-width:210px}
+    .payroll-total{font-size:.94rem;font-weight:800;color:#166534;white-space:nowrap}
+    .payroll-modal-card{max-width:980px}.payroll-modal-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem}.payroll-summary-item{padding:.85rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius)}.payroll-summary-item span{display:block;font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em}.payroll-summary-item strong{display:block;margin-top:.25rem;font-size:.9rem}
+    .signature-layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:1.2rem;margin-top:1.1rem;align-items:start}.signature-panel{padding:1rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg)}.signature-canvas-wrap{background:#fff;border:1.5px dashed #94a3b8;border-radius:var(--radius);overflow:hidden;touch-action:none}.signature-canvas-wrap canvas{display:block;width:100%;height:170px;cursor:crosshair}.signature-help{font-size:.76rem;color:var(--text-muted);line-height:1.5;margin-top:.55rem}.signature-legal{padding:1rem;border-radius:var(--radius);background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:.78rem;line-height:1.55}.signature-legal strong{display:block;margin-bottom:.3rem;color:#78350f}
+    .payroll-history-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}.payroll-download-btn{display:inline-flex;align-items:center;gap:.4rem}
+    .slip-period{font-weight:700;color:var(--text)}.slip-issued{font-size:.74rem;color:var(--text-muted);margin-top:.2rem}
+    @media(max-width:900px){.payroll-command{grid-template-columns:1fr 1fr}.payroll-command-title{grid-column:1/-1}.payroll-command .btn{width:100%}.signature-layout{grid-template-columns:1fr}.payroll-modal-summary{grid-template-columns:1fr 1fr}}
+    @media(max-width:760px){.feature-grid{grid-template-columns:1fr}.feature-card{padding:1rem}.feature-toolbar{align-items:stretch}.feature-toolbar .form-input{width:100%}.complaint-head{flex-direction:column}.app-bottomnav{overflow-x:auto}.app-bottomnav-item{min-width:62px}.payroll-command{grid-template-columns:1fr}.payroll-command-title{grid-column:auto}.payroll-modal-summary{grid-template-columns:1fr}.payroll-selection-bar{align-items:stretch}.payroll-selection-bar .btn{width:100%}.payroll-modal-card{max-height:96vh}.modal-footer{flex-wrap:wrap}.modal-footer .btn{flex:1}.signature-canvas-wrap canvas{height:150px}}
 
   </style>
 </head>
@@ -830,7 +843,7 @@
       <div id="view-my-payroll" class="app-view hidden">
         <div class="page-header"><div class="page-title">Payroll Saya</div><div class="page-subtitle">Slip gaji yang telah diterbitkan untuk Anda</div></div>
         <div class="feature-card" id="my-payroll-profile"></div>
-        <div class="admin-card"><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Periode</th><th>Hari Kerja</th><th>Gaji Harian</th><th>Total Diterima</th><th>Slip</th></tr></thead><tbody id="my-payroll-body"><tr><td colspan="5"><div class="loading-state"><span class="spinner"></span>Memuat payroll...</div></td></tr></tbody></table></div></div>
+        <div class="admin-card"><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Periode</th><th>Hari Kerja</th><th>Gaji Harian</th><th>Bonus</th><th>Potongan</th><th>Total Diterima</th><th>Slip PDF</th></tr></thead><tbody id="my-payroll-body"><tr><td colspan="7"><div class="loading-state"><span class="spinner"></span>Memuat payroll...</div></td></tr></tbody></table></div></div>
       </div>
 
       <!-- ===== VIEW: PENGADUAN USER ===== -->
@@ -1003,13 +1016,37 @@
 
       <!-- ===== VIEW: ADMIN PAYROLL ===== -->
       <div id="view-admin-payroll" class="app-view hidden">
-        <div class="page-header"><div class="page-title">Payroll</div><div class="page-subtitle">Kesiapan data karyawan dan riwayat payroll sesuai cakupan akses</div></div>
+        <div class="page-header"><div class="page-title">Payroll & Slip Gaji</div><div class="page-subtitle">Pilih periode, tinjau hari kerja, lalu terbitkan slip PDF bertanda tangan</div></div>
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-card-icon purple">👥</div><div><div class="stat-card-value" id="payroll-employee-count">0</div><div class="stat-card-label">Karyawan Aktif</div></div></div>
           <div class="stat-card"><div class="stat-card-icon green">✓</div><div><div class="stat-card-value" id="payroll-ready-count">0</div><div class="stat-card-label">Data Gaji Siap</div></div></div>
           <div class="stat-card"><div class="stat-card-icon amber">!</div><div><div class="stat-card-value" id="payroll-incomplete-count">0</div><div class="stat-card-label">Data Belum Lengkap</div></div></div>
         </div>
-        <div class="admin-card"><div class="admin-card-header"><div class="admin-card-title">Kesiapan Payroll Karyawan</div><div class="admin-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="payroll-search" type="search" placeholder="Cari karyawan..."></div></div><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Karyawan</th><th>Jabatan</th><th>SPPG</th><th>Gaji Harian</th><th>Status</th></tr></thead><tbody id="admin-payroll-body"><tr><td colspan="5"><div class="loading-state"><span class="spinner"></span>Memuat data payroll...</div></td></tr></tbody></table></div></div>
+        <div class="feature-card">
+          <div class="payroll-command">
+            <div class="payroll-command-title"><strong>1. Tentukan periode payroll</strong><span>Hari kerja dihitung dari absensi VALID. Punch tunggal impor yang valid tetap dihitung satu hari kerja.</span></div>
+            <div class="form-group" style="margin:0"><label class="form-label" for="payroll-period-start">Tanggal mulai</label><input id="payroll-period-start" type="date" class="form-input"></div>
+            <div class="form-group" style="margin:0"><label class="form-label" for="payroll-period-end">Tanggal akhir</label><input id="payroll-period-end" type="date" class="form-input"></div>
+            <button class="btn btn-secondary" id="btn-payroll-preview" type="button">Hitung Hari Kerja</button>
+          </div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div><div class="admin-card-title">2. Pilih karyawan</div><div class="helper-text">Hanya karyawan dengan gaji harian yang dapat dipilih</div></div>
+            <div class="admin-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="payroll-search" type="search" placeholder="Cari nama, jabatan, atau SPPG..."></div>
+          </div>
+          <div style="padding:0 1rem">
+            <div class="payroll-selection-bar">
+              <div class="payroll-selection-count"><strong id="payroll-selected-count">0</strong> karyawan dipilih</div>
+              <button class="btn btn-primary btn-sm" id="btn-open-payroll-publish" type="button" disabled>Atur Bonus & Terbitkan</button>
+            </div>
+          </div>
+          <div class="data-table-wrap"><table class="data-table"><thead><tr><th><input class="payroll-checkbox" id="payroll-select-all" type="checkbox" aria-label="Pilih semua karyawan siap"></th><th>Karyawan</th><th>Jabatan</th><th>SPPG</th><th>Gaji Harian</th><th>Hari Kerja</th><th>Subtotal</th><th>Status</th></tr></thead><tbody id="admin-payroll-body"><tr><td colspan="8"><div class="loading-state"><span class="spinner"></span>Memuat data payroll...</div></td></tr></tbody></table></div>
+        </div>
+        <div class="admin-card" style="margin-top:1rem">
+          <div class="admin-card-header payroll-history-head"><div><div class="admin-card-title">Slip Terakhir Diterbitkan</div><div class="helper-text">PDF tersimpan privat dan hanya dapat diunduh melalui tautan sementara</div></div><button class="btn btn-secondary btn-sm" id="btn-refresh-payroll-history" type="button">Muat Ulang</button></div>
+          <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Karyawan</th><th>Periode</th><th>SPPG</th><th>Total</th><th>Status</th><th>PDF</th></tr></thead><tbody id="admin-payroll-history-body"><tr><td colspan="6"><div class="loading-state"><span class="spinner"></span>Memuat riwayat slip...</div></td></tr></tbody></table></div>
+        </div>
       </div>
 
       <!-- ===== VIEW: INBOX PENGADUAN ===== -->
@@ -1148,6 +1185,42 @@
       <button class="app-bottomnav-item admin-only-nav" data-view="admin-payroll" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Payroll</button>
       <button class="app-bottomnav-item admin-only-nav" data-view="admin-pengaduan" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>Inbox</button>
     </nav>
+  </div>
+</div>
+
+<!-- ===== MODAL TERBITKAN SLIP GAJI ===== -->
+<div class="modal-overlay modal-overlay-top" id="modal-payroll-publish">
+  <div class="modal-card payroll-modal-card">
+    <div class="modal-header">
+      <div><h3>Terbitkan Slip Gaji</h3><div class="helper-text">Tinjau penyesuaian setiap karyawan dan bubuhkan tanda tangan penerbit</div></div>
+      <button class="modal-close" id="btn-close-payroll-publish" type="button" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="payroll-publish-alert" class="inline-alert"></div>
+      <div class="payroll-modal-summary">
+        <div class="payroll-summary-item"><span>Periode</span><strong id="payroll-modal-period">-</strong></div>
+        <div class="payroll-summary-item"><span>Jumlah Slip</span><strong id="payroll-modal-count">0 karyawan</strong></div>
+        <div class="payroll-summary-item"><span>Penerbit</span><strong id="payroll-modal-signer">-</strong></div>
+      </div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Karyawan</th><th>Hari / Subtotal</th><th>Bonus / Tambahan</th><th>Potongan</th><th>Keterangan Potongan</th><th>Total Bersih</th></tr></thead>
+          <tbody id="payroll-adjustment-body"></tbody>
+        </table>
+      </div>
+      <div class="signature-layout">
+        <div class="signature-panel">
+          <div class="form-label">Tanda tangan penerbit <span style="color:var(--danger)">*</span></div>
+          <div class="signature-canvas-wrap"><canvas id="payroll-signature-canvas" width="900" height="300" aria-label="Canvas tanda tangan penerbit"></canvas></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-top:.55rem"><div class="signature-help">Gunakan mouse, pena digital, atau jari. Tanda tangan akan dicantumkan pada seluruh slip di batch ini.</div><button class="btn btn-secondary btn-sm" id="btn-clear-payroll-signature" type="button">Hapus Tanda Tangan</button></div>
+        </div>
+        <div class="signature-legal"><strong>Konfirmasi penerbitan</strong>Dengan menandatangani dan menerbitkan, Anda menyatakan periode, jumlah hari kerja, bonus, potongan, dan total gaji telah diperiksa. Slip yang terbit langsung tersedia di akun karyawan terkait.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-payroll-publish" type="button">Batal</button>
+      <button class="btn btn-primary" id="btn-confirm-payroll-publish" type="button">Tandatangani & Terbitkan</button>
+    </div>
   </div>
 </div>
 
@@ -2204,7 +2277,16 @@ function openLogDetail(index){
 /* ===================================================================
    ATTENDANCE, PAYROLL, AND COMPLAINT MODULES
    =================================================================== */
-const FeatureState={adminComplaints:[],filteredAdminComplaints:[],payrollEmployees:[]};
+const FeatureState={
+  adminComplaints:[],
+  filteredAdminComplaints:[],
+  payrollEmployees:[],
+  payrollSelected:new Set(),
+  payrollPreview:{},
+  payrollHistory:[],
+  payrollSignatureDrawn:false,
+  payrollSignatureReady:false,
+};
 
 function formatDateTime(value){
   if(!value)return'-';
@@ -2239,13 +2321,23 @@ async function loadMyAbsensi(){
 
 async function loadMyPayroll(){
   const body=$('#my-payroll-body'),profile=$('#my-payroll-profile'); if(!body||!profile)return;
+  body.innerHTML='<tr><td colspan="7"><div class="loading-state"><span class="spinner"></span>Memuat payroll...</div></td></tr>';
   try{
     const result=await apiCall('getMyPayroll',{token:AppState.token});
     profile.innerHTML=`<strong>${escapeHtml(result?.namaLengkap||'Pengguna')}</strong><div class="helper-text">${escapeHtml(result?.jabatanDivisi||'-')} · ${escapeHtml(result?.sppg||'-')}</div>`;
     const rows=result?.payroll||[];
-    if(!rows.length){body.innerHTML='<tr><td colspan="5"><div class="empty-state"><strong>Belum ada slip gaji</strong>Slip yang telah diterbitkan akan tampil di sini.</div></td></tr>';return;}
-    body.innerHTML=rows.map(row=>{const url=safeExternalUrl(row.urlPdf);return `<tr><td>${escapeHtml(formatTanggal(row.periodeMulai))} – ${escapeHtml(formatTanggal(row.periodeAkhir))}</td><td>${Number(row.jumlahHariKerja)||0}</td><td>${escapeHtml(formatRupiah(row.gajiHarian))}</td><td><strong>${escapeHtml(formatRupiah(row.totalGaji))}</strong></td><td>${url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Buka slip</a>`:'Belum tersedia'}</td></tr>`}).join('');
-  }catch(error){body.innerHTML=`<tr><td colspan="5"><div class="empty-state"><strong>Payroll gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
+    if(!rows.length){body.innerHTML='<tr><td colspan="7"><div class="empty-state"><strong>Belum ada slip gaji</strong>Slip yang telah diterbitkan akan tampil di sini.</div></td></tr>';return;}
+    body.innerHTML=rows.map(row=>`<tr>
+      <td><div class="slip-period">${escapeHtml(formatTanggal(row.periodeMulai))} - ${escapeHtml(formatTanggal(row.periodeAkhir))}</div><div class="slip-issued">Terbit ${escapeHtml(formatDateTime(row.diterbitkanAt))}${row.namaPenerbit?' · '+escapeHtml(row.namaPenerbit):''}</div></td>
+      <td>${Number(row.jumlahHariKerja)||0} hari</td>
+      <td>${escapeHtml(formatRupiah(row.gajiHarian))}</td>
+      <td>${escapeHtml(formatRupiah(row.bonus||0))}</td>
+      <td>${escapeHtml(formatRupiah(row.potongan||0))}${row.keteranganPotongan?`<div class="payroll-employee-meta">${escapeHtml(row.keteranganPotongan)}</div>`:''}</td>
+      <td><strong class="payroll-total">${escapeHtml(formatRupiah(row.totalGaji))}</strong></td>
+      <td>${row.dapatDiunduh?`<button class="btn btn-primary btn-sm payroll-download-btn" type="button" data-slip-download="${escapeHtml(row.idSlip)}">Unduh PDF</button>`:'Belum tersedia'}</td>
+    </tr>`).join('');
+    body.querySelectorAll('[data-slip-download]').forEach(button=>button.addEventListener('click',()=>downloadPayrollSlip(button.dataset.slipDownload,button)));
+  }catch(error){body.innerHTML=`<tr><td colspan="7"><div class="empty-state"><strong>Payroll gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
 }
 
 async function loadMyComplaints(){
@@ -2320,15 +2412,198 @@ async function replyComplaint(id,response){
 
 async function loadAdminPayroll(){
   const body=$('#admin-payroll-body');if(!body)return;
-  try{const result=await apiCall('getKaryawanForPayroll',{token:AppState.token});FeatureState.payrollEmployees=result?.karyawan||[];renderAdminPayroll();}
-  catch(error){body.innerHTML=`<tr><td colspan="5"><div class="empty-state"><strong>Data payroll gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
+  setPayrollDefaultPeriod();
+  body.innerHTML='<tr><td colspan="8"><div class="loading-state"><span class="spinner"></span>Memuat data payroll...</div></td></tr>';
+  try{
+    const result=await apiCall('getKaryawanForPayroll',{token:AppState.token});
+    FeatureState.payrollEmployees=result?.karyawan||[];
+    const validIds=new Set(FeatureState.payrollEmployees.map(row=>String(row.idUser)));
+    FeatureState.payrollSelected=new Set([...FeatureState.payrollSelected].filter(id=>validIds.has(id)));
+    renderAdminPayroll();
+    await loadAdminPayrollHistory();
+  }
+  catch(error){body.innerHTML=`<tr><td colspan="8"><div class="empty-state"><strong>Data payroll gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
+}
+
+function getFilteredPayrollEmployees(){
+  const query=($('#payroll-search')?.value||'').trim().toLowerCase();
+  return FeatureState.payrollEmployees.filter(row=>!query||`${row.namaLengkap||''} ${row.jabatanDivisi||''} ${row.sppg||''}`.toLowerCase().includes(query));
 }
 
 function renderAdminPayroll(){
-  const query=($('#payroll-search')?.value||'').toLowerCase();const all=FeatureState.payrollEmployees;const rows=all.filter(row=>!query||`${row.namaLengkap||''} ${row.jabatanDivisi||''} ${row.sppg||''}`.toLowerCase().includes(query));
+  const all=FeatureState.payrollEmployees,rows=getFilteredPayrollEmployees();
   const ready=all.filter(row=>Number(row.gajiHarian)>0).length;$('#payroll-employee-count').textContent=all.length;$('#payroll-ready-count').textContent=ready;$('#payroll-incomplete-count').textContent=all.length-ready;
-  const body=$('#admin-payroll-body');if(!rows.length){body.innerHTML='<tr><td colspan="5"><div class="empty-state"><strong>Tidak ada karyawan</strong>Tidak ada data sesuai pencarian.</div></td></tr>';return;}
-  body.innerHTML=rows.map(row=>`<tr><td><strong>${escapeHtml(row.namaLengkap||'-')}</strong></td><td>${escapeHtml(row.jabatanDivisi||'-')}</td><td>${escapeHtml(row.sppg||'-')}</td><td>${escapeHtml(formatRupiah(row.gajiHarian))}</td><td><span class="badge ${Number(row.gajiHarian)>0?'badge-success':'badge-warning'}">${Number(row.gajiHarian)>0?'Siap':'Lengkapi gaji'}</span></td></tr>`).join('');
+  const selectedCount=FeatureState.payrollSelected.size;
+  $('#payroll-selected-count').textContent=selectedCount;
+  const publishButton=$('#btn-open-payroll-publish');if(publishButton)publishButton.disabled=selectedCount===0;
+  const selectableRows=rows.filter(row=>Number(row.gajiHarian)>0);
+  const selectAll=$('#payroll-select-all');
+  if(selectAll){
+    const selectedVisible=selectableRows.filter(row=>FeatureState.payrollSelected.has(String(row.idUser))).length;
+    selectAll.checked=selectableRows.length>0&&selectedVisible===selectableRows.length;
+    selectAll.indeterminate=selectedVisible>0&&selectedVisible<selectableRows.length;
+  }
+  const body=$('#admin-payroll-body');if(!rows.length){body.innerHTML='<tr><td colspan="8"><div class="empty-state"><strong>Tidak ada karyawan</strong>Tidak ada data sesuai pencarian.</div></td></tr>';return;}
+  body.innerHTML=rows.map(row=>{
+    const ready=Number(row.gajiHarian)>0,id=String(row.idUser),preview=FeatureState.payrollPreview[id],days=preview?.jumlahHariKerja;
+    const initials=(row.namaLengkap||'?').trim().split(/\s+/).slice(0,2).map(part=>part.charAt(0)).join('').toUpperCase();
+    const subtotal=days===undefined?null:Number(row.gajiHarian)*(Number(days)||0);
+    return `<tr>
+      <td><input class="payroll-checkbox payroll-row-check" type="checkbox" data-payroll-id="${escapeHtml(id)}" ${FeatureState.payrollSelected.has(id)?'checked':''} ${ready?'':'disabled'} aria-label="Pilih ${escapeHtml(row.namaLengkap||'karyawan')}"></td>
+      <td><div class="payroll-employee-cell"><div class="payroll-avatar">${escapeHtml(initials||'?')}</div><div><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(id)}</div></div></div></td>
+      <td>${escapeHtml(row.jabatanDivisi||'-')}</td><td>${escapeHtml(row.sppg||'-')}</td>
+      <td>${escapeHtml(formatRupiah(row.gajiHarian))}</td>
+      <td>${days===undefined?'<span class="helper-text">Belum dihitung</span>':`<strong>${Number(days)||0} hari</strong>`}</td>
+      <td>${subtotal===null?'-':escapeHtml(formatRupiah(subtotal))}</td>
+      <td><span class="badge ${ready?'badge-success':'badge-warning'}">${ready?'Siap':'Lengkapi gaji'}</span></td>
+    </tr>`;
+  }).join('');
+  body.querySelectorAll('.payroll-row-check').forEach(input=>input.addEventListener('change',()=>{
+    if(input.checked)FeatureState.payrollSelected.add(input.dataset.payrollId);else FeatureState.payrollSelected.delete(input.dataset.payrollId);
+    renderAdminPayroll();
+  }));
+}
+
+function validatePayrollPeriod(){
+  const start=$('#payroll-period-start')?.value||'',end=$('#payroll-period-end')?.value||'';
+  if(!start||!end){showAlert('Isi tanggal mulai dan tanggal akhir periode.','warning');return null;}
+  if(end<start){showAlert('Tanggal akhir tidak boleh sebelum tanggal mulai.','warning');return null;}
+  return{start,end};
+}
+
+async function previewPayrollAttendance(showSuccess=true){
+  const period=validatePayrollPeriod();if(!period)return false;
+  const ids=[...FeatureState.payrollSelected];
+  if(!ids.length){showAlert('Pilih minimal satu karyawan untuk menghitung hari kerja.','warning');return false;}
+  const button=$('#btn-payroll-preview'),original=button?.innerHTML;
+  if(button){button.disabled=true;button.innerHTML='<span class="spinner" style="width:16px;height:16px;border-width:2px"></span> Menghitung...';}
+  try{
+    const result=await apiCall('getAbsensiForPayrollPreview',{token:AppState.token,periodeMulai:period.start,periodeAkhir:period.end,idUserList:ids});
+    FeatureState.payrollPreview={...FeatureState.payrollPreview,...(result?.absensiPerUser||{})};
+    renderAdminPayroll();
+    if(showSuccess)showAlert('Hari kerja berhasil dihitung dari absensi valid.','success');
+    return true;
+  }catch(error){showAlert(error.message||'Gagal menghitung hari kerja.','error');return false;}
+  finally{if(button){button.disabled=false;button.innerHTML=original;}}
+}
+
+function setPayrollDefaultPeriod(){
+  const start=$('#payroll-period-start'),end=$('#payroll-period-end');if(!start||!end||start.value||end.value)return;
+  const now=new Date(),year=now.getFullYear(),month=now.getMonth();
+  const localDate=(date)=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  start.value=localDate(new Date(year,month,1));end.value=localDate(new Date(year,month+1,0));
+}
+
+async function openPayrollPublishModal(){
+  const period=validatePayrollPeriod();if(!period)return;
+  if(!FeatureState.payrollSelected.size){showAlert('Pilih minimal satu karyawan.','warning');return;}
+  if(FeatureState.payrollSelected.size>50){showAlert('Maksimal 50 karyawan per batch.','warning');return;}
+  const complete=await previewPayrollAttendance(false);if(!complete)return;
+  const selected=FeatureState.payrollEmployees.filter(row=>FeatureState.payrollSelected.has(String(row.idUser)));
+  $('#payroll-modal-period').textContent=`${formatTanggal(period.start)} - ${formatTanggal(period.end)}`;
+  $('#payroll-modal-count').textContent=`${selected.length} karyawan`;
+  $('#payroll-modal-signer').textContent=AppState.user?.namaLengkap||AppState.user?.Nama_Lengkap||'-';
+  const body=$('#payroll-adjustment-body');
+  body.innerHTML=selected.map(row=>{
+    const id=String(row.idUser),days=Number(FeatureState.payrollPreview[id]?.jumlahHariKerja)||0,subtotal=Number(row.gajiHarian)*days;
+    return `<tr data-payroll-adjustment="${escapeHtml(id)}" data-subtotal="${subtotal}">
+      <td><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(row.sppg||'-')}</div></td>
+      <td><strong>${days} hari</strong><div class="payroll-employee-meta">${escapeHtml(formatRupiah(subtotal))}</div></td>
+      <td><input class="form-input payroll-money-input payroll-bonus-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Bonus ${escapeHtml(row.namaLengkap||'')}"></td>
+      <td><input class="form-input payroll-money-input payroll-deduction-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Potongan ${escapeHtml(row.namaLengkap||'')}"></td>
+      <td><input class="form-input payroll-note-input payroll-deduction-note" type="text" maxlength="300" placeholder="Opsional"></td>
+      <td><span class="payroll-total">${escapeHtml(formatRupiah(subtotal))}</span></td>
+    </tr>`;
+  }).join('');
+  body.querySelectorAll('.payroll-money-input').forEach(input=>input.addEventListener('input',updatePayrollAdjustmentTotals));
+  hideInlineAlert('payroll-publish-alert');
+  FeatureState.payrollSignatureDrawn=false;
+  $('#modal-payroll-publish').classList.add('active');
+  requestAnimationFrame(()=>initializePayrollSignatureCanvas(true));
+}
+
+function updatePayrollAdjustmentTotals(){
+  $('#payroll-adjustment-body').querySelectorAll('[data-payroll-adjustment]').forEach(row=>{
+    const subtotal=Number(row.dataset.subtotal)||0,bonus=Math.max(0,Number(row.querySelector('.payroll-bonus-input').value)||0),deduction=Math.max(0,Number(row.querySelector('.payroll-deduction-input').value)||0);
+    row.querySelector('.payroll-total').textContent=formatRupiah(Math.max(0,subtotal+bonus-deduction));
+  });
+}
+
+function closePayrollPublishModal(){
+  $('#modal-payroll-publish')?.classList.remove('active');
+  FeatureState.payrollSignatureReady=false;
+}
+
+function initializePayrollSignatureCanvas(clear=false){
+  const canvas=$('#payroll-signature-canvas');if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  if(clear){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);FeatureState.payrollSignatureDrawn=false;}
+  if(FeatureState.payrollSignatureReady)return;
+  FeatureState.payrollSignatureReady=true;
+  ctx.lineWidth=5;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#0f172a';
+  let drawing=false;
+  const point=(event)=>{const rect=canvas.getBoundingClientRect(),source=event.touches?.[0]||event;return{x:(source.clientX-rect.left)*(canvas.width/rect.width),y:(source.clientY-rect.top)*(canvas.height/rect.height)};};
+  const start=(event)=>{event.preventDefault();drawing=true;const p=point(event);ctx.beginPath();ctx.moveTo(p.x,p.y);};
+  const move=(event)=>{if(!drawing)return;event.preventDefault();const p=point(event);ctx.lineTo(p.x,p.y);ctx.stroke();FeatureState.payrollSignatureDrawn=true;};
+  const stop=()=>{if(drawing){drawing=false;ctx.closePath();}};
+  canvas.addEventListener('pointerdown',start);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',stop);canvas.addEventListener('pointercancel',stop);canvas.addEventListener('pointerleave',stop);
+}
+
+function clearPayrollSignature(){
+  const canvas=$('#payroll-signature-canvas'),ctx=canvas?.getContext('2d');if(!ctx)return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);FeatureState.payrollSignatureDrawn=false;
+}
+
+async function publishPayrollSlips(){
+  hideInlineAlert('payroll-publish-alert');
+  if(!FeatureState.payrollSignatureDrawn){showInlineAlert('payroll-publish-alert','Bubuhkan tanda tangan penerbit sebelum menerbitkan slip.','warning');return;}
+  const period=validatePayrollPeriod();if(!period)return;
+  const rows=[...$('#payroll-adjustment-body').querySelectorAll('[data-payroll-adjustment]')];
+  const karyawanData=rows.map(row=>({
+    idUser:row.dataset.payrollAdjustment,
+    bonus:Math.max(0,Math.round(Number(row.querySelector('.payroll-bonus-input').value)||0)),
+    potongan:Math.max(0,Math.round(Number(row.querySelector('.payroll-deduction-input').value)||0)),
+    keteranganPotongan:row.querySelector('.payroll-deduction-note').value.trim(),
+  }));
+  const invalid=rows.find((row,index)=>Number(row.dataset.subtotal)+(karyawanData[index].bonus||0)-(karyawanData[index].potongan||0)<0);
+  if(invalid){showInlineAlert('payroll-publish-alert','Potongan tidak boleh membuat total gaji menjadi negatif.','warning');return;}
+  const button=$('#btn-confirm-payroll-publish'),original=button.innerHTML;button.disabled=true;button.innerHTML='<span class="spinner" style="width:17px;height:17px;border-width:2px"></span> Menerbitkan PDF...';
+  try{
+    const result=await apiCall('prosesPayroll',{token:AppState.token,periodeMulai:period.start,periodeAkhir:period.end,karyawanData,tandaTanganBase64:$('#payroll-signature-canvas').toDataURL('image/png')});
+    closePayrollPublishModal();FeatureState.payrollSelected.clear();FeatureState.payrollPreview={};renderAdminPayroll();await loadAdminPayrollHistory();
+    showAlert(result?.message||'Slip gaji berhasil diterbitkan.','success');
+  }catch(error){showInlineAlert('payroll-publish-alert',error.message||'Penerbitan slip gagal.');}
+  finally{button.disabled=false;button.innerHTML=original;}
+}
+
+async function loadAdminPayrollHistory(){
+  const body=$('#admin-payroll-history-body');if(!body)return;
+  body.innerHTML='<tr><td colspan="6"><div class="loading-state"><span class="spinner"></span>Memuat riwayat slip...</div></td></tr>';
+  try{
+    const result=await apiCall('getAllSlipGajiList',{token:AppState.token});
+    FeatureState.payrollHistory=(result?.slipGaji||[]).sort((a,b)=>new Date(b.Diterbitkan_At||b.Created_At||0)-new Date(a.Diterbitkan_At||a.Created_At||0));
+    const rows=FeatureState.payrollHistory.slice(0,30);
+    if(!rows.length){body.innerHTML='<tr><td colspan="6"><div class="empty-state"><strong>Belum ada slip diterbitkan</strong>Slip baru akan tampil di sini.</div></td></tr>';return;}
+    body.innerHTML=rows.map(row=>`<tr>
+      <td><strong>${escapeHtml(row._namaKaryawan||row.ID_User||'-')}</strong></td>
+      <td><div class="slip-period">${escapeHtml(formatTanggal(row.Periode_Mulai))} - ${escapeHtml(formatTanggal(row.Periode_Akhir))}</div><div class="slip-issued">${escapeHtml(formatDateTime(row.Diterbitkan_At||row.Created_At))}</div></td>
+      <td>${escapeHtml(row._sppgKaryawan||row.SPPG||'-')}</td><td><strong>${escapeHtml(formatRupiah(row.Total_Gaji_Diterima))}</strong></td>
+      <td><span class="badge ${row.Status_Penerbitan==='DITERBITKAN'?'badge-success':'badge-warning'}">${escapeHtml(row.Status_Penerbitan||'DRAFT')}</span></td>
+      <td>${row.PDF_Storage_Path||row.URL_PDF_Slip?`<button class="btn btn-secondary btn-sm payroll-download-btn" type="button" data-slip-download="${escapeHtml(row.ID_Slip)}">Unduh PDF</button>`:'-'}</td>
+    </tr>`).join('');
+    body.querySelectorAll('[data-slip-download]').forEach(button=>button.addEventListener('click',()=>downloadPayrollSlip(button.dataset.slipDownload,button)));
+  }catch(error){body.innerHTML=`<tr><td colspan="6"><div class="empty-state"><strong>Riwayat gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
+}
+
+async function downloadPayrollSlip(idSlip,button){
+  if(!idSlip)return;
+  const original=button?.innerHTML;if(button){button.disabled=true;button.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px"></span> Menyiapkan...';}
+  try{
+    const result=await apiCall('getSlipDownloadUrl',{token:AppState.token,idSlip});
+    const url=safeExternalUrl(result?.url);if(!url)throw new Error('Tautan PDF tidak valid');
+    const anchor=document.createElement('a');anchor.href=url;anchor.download=result?.filename||'slip-gaji.pdf';anchor.target='_blank';anchor.rel='noopener noreferrer';document.body.appendChild(anchor);anchor.click();anchor.remove();
+  }catch(error){showAlert(error.message||'Slip gagal diunduh.','error');}
+  finally{if(button){button.disabled=false;button.innerHTML=original;}}
 }
 
 /* ===== EDIT PROFIL ===== */
@@ -2838,6 +3113,21 @@ async function initApp(){
   $('#admin-complaint-category')?.addEventListener('change',filterAdminComplaints);
   $('#admin-complaint-search')?.addEventListener('input',filterAdminComplaints);
   $('#payroll-search')?.addEventListener('input',renderAdminPayroll);
+  $('#payroll-select-all')?.addEventListener('change',(event)=>{
+    getFilteredPayrollEmployees().filter(row=>Number(row.gajiHarian)>0).forEach(row=>{
+      const id=String(row.idUser);if(event.target.checked)FeatureState.payrollSelected.add(id);else FeatureState.payrollSelected.delete(id);
+    });
+    renderAdminPayroll();
+  });
+  $('#payroll-period-start')?.addEventListener('change',()=>{FeatureState.payrollPreview={};renderAdminPayroll();});
+  $('#payroll-period-end')?.addEventListener('change',()=>{FeatureState.payrollPreview={};renderAdminPayroll();});
+  $('#btn-payroll-preview')?.addEventListener('click',()=>previewPayrollAttendance(true));
+  $('#btn-open-payroll-publish')?.addEventListener('click',openPayrollPublishModal);
+  $('#btn-refresh-payroll-history')?.addEventListener('click',loadAdminPayrollHistory);
+  $('#btn-close-payroll-publish')?.addEventListener('click',closePayrollPublishModal);
+  $('#btn-cancel-payroll-publish')?.addEventListener('click',closePayrollPublishModal);
+  $('#btn-clear-payroll-signature')?.addEventListener('click',clearPayrollSignature);
+  $('#btn-confirm-payroll-publish')?.addEventListener('click',publishPayrollSlips);
 
   // Admin: update user modal
   $('#btn-admin-update-user')?.addEventListener('click', openAdminUpdateUserModal);

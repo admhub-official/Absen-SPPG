@@ -24,6 +24,15 @@ Logo dan ikon aplikasi disajikan langsung dari bucket publik Supabase Storage `i
 
 Pengaduan menyimpan relasi pengirim secara internal agar pengguna dapat melihat tanggapan dan SUPER ADMIN dapat melakukan audit. Untuk laporan anonim, API menghapus ID, nama, email, dan ID Card sebelum mengirim data kepada ADMIN. Tindakan membaca dan menanggapi dicatat pada audit log.
 
+## Payroll dan Slip PDF
+
+- `ADMIN` dan `SUPER ADMIN` dapat memilih hingga 50 karyawan per batch, termasuk pilih semua dari hasil pencarian.
+- Hari kerja dihitung di server dari absensi berstatus `VALID`. Pasangan `DATANG`/`PULANG` dan `PUNCH_TUNGGAL` impor yang valid sama-sama dihitung.
+- Gaji harian selalu dibaca ulang dari data `Users`; bonus dan potongan dapat diisi per karyawan sebelum penerbitan.
+- Tanda tangan dibuat pada canvas dan disematkan ke setiap PDF bersama identitas penerbit, tanggal terbit, tanggal cetak, periode, rincian, dan total bersih.
+- PDF disimpan di bucket privat `slip-gaji`. Aplikasi hanya memberikan signed URL lima menit setelah memeriksa sesi, kepemilikan slip, role, dan cakupan SPPG.
+- `USER` hanya dapat melihat dan mengunduh slip miliknya sendiri.
+
 ## Menjalankan Frontend
 
 Sajikan direktori ini melalui web server statis. Contoh:
