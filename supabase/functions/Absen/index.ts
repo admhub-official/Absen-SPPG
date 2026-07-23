@@ -6,6 +6,7 @@
 // @deno-types="npm:@types/node"
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { PDFDocument, StandardFonts, rgb } from "npm:pdf-lib@1.17.1";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -1749,7 +1750,7 @@ async function getDataKaryawan(data: { token?: string }): Promise<unknown> {
 
 async function getKaryawanForPayroll(data: { token?: string }): Promise<unknown> {
   const session = await validateSession(data?.token || "");
-  if (session.type !== "user" || !canManageOperations(session.role)) throw new ApiError("Akses ditolak");
+  if (session.type !== "user" || !isAdminRole(session.role)) throw new ApiError("Akses ditolak");
 
   const users = (await getScopedUsers(session)).filter((u) => u.Role === "USER" && isActive(u.Status_Aktif));
   return {
@@ -1761,17 +1762,233 @@ async function getKaryawanForPayroll(data: { token?: string }): Promise<unknown>
       jabatanDivisi: u.Jabatan_Divisi,
       gajiHarian: u.Gaji_Harian,
       sppg: u.SPPG,
+      yayasan: u.Yayasan,
     })),
   };
 }
 
 interface KaryawanPayrollInput {
   idUser: string;
-  gajiHarian?: number;
-  lembur?: number;
   bonus?: number;
   potongan?: number;
   keteranganPotongan?: string;
+}
+
+interface PayrollCalculation {
+  user: Record<string, any>;
+  attendanceIds: string[];
+  jumlahHariKerja: number;
+  tanggalKerja: string[];
+  gajiHarian: number;
+  subtotalGaji: number;
+  bonus: number;
+  potongan: number;
+  keteranganPotongan: string;
+  totalGaji: number;
+}
+
+function parseMoney(value: unknown, label: string): number {
+  const amount = Number(value ?? 0);
+  if (!Number.isFinite(amount) || amount < 0 || amount > 1_000_000_000) {
+    throw new ApiError(`${label} harus berupa nominal valid antara 0 dan 1 miliar`);
+  }
+  return Math.round(amount);
+}
+
+function parsePayrollDate(value: unknown, label: string): string {
+  const normalized = String(value || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) throw new ApiError(`${label} tidak valid`);
+  const date = new Date(`${normalized}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== normalized) {
+    throw new ApiError(`${label} tidak valid`);
+  }
+  return normalized;
+}
+
+function formatTanggalPdf(value: string | Date): string {
+  const date = value instanceof Date ? value : new Date(`${value}T00:00:00+07:00`);
+  return new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatTanggalWaktuPdf(value: Date): string {
+  return new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(value).replace(/\./g, ":") + " WIB";
+}
+
+function formatRupiahPdf(value: number): string {
+  return `Rp ${Math.round(value).toLocaleString("id-ID")}`;
+}
+
+function pdfSafeText(value: unknown): string {
+  return String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x20-\x7e]/g, "?");
+}
+
+function payrollSafePath(value: unknown): string {
+  return String(value || "data")
+    .normalize("NFKD")
+    .replace(/[^\w.-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80) || "data";
+}
+
+function decodePngDataUrl(value: unknown): Uint8Array {
+  const dataUrl = String(value || "");
+  const match = dataUrl.match(/^data:image\/png;base64,([A-Za-z0-9+/=\s]+)$/);
+  if (!match) throw new ApiError("Tanda tangan wajib dibuat pada canvas dan dikirim dalam format PNG");
+  const base64 = match[1].replace(/\s/g, "");
+  if (base64.length > 1_500_000) throw new ApiError("Ukuran tanda tangan terlalu besar");
+  try {
+    const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+    if (bytes.length < 100 || bytes.length > 1_000_000) throw new Error("invalid size");
+    if (
+      bytes[0] !== 0x89 || bytes[1] !== 0x50 || bytes[2] !== 0x4e || bytes[3] !== 0x47 ||
+      bytes[4] !== 0x0d || bytes[5] !== 0x0a || bytes[6] !== 0x1a || bytes[7] !== 0x0a
+    ) {
+      throw new Error("invalid signature");
+    }
+    return bytes;
+  } catch {
+    throw new ApiError("Data tanda tangan tidak valid");
+  }
+}
+
+function isCountedWorkDay(rows: Record<string, any>[]): boolean {
+  const hasSingleValidPunch = rows.some((row) => row.Jenis_Absen === "PUNCH_TUNGGAL");
+  const hasDatang = rows.some((row) => row.Jenis_Absen === "DATANG");
+  const hasPulang = rows.some((row) => row.Jenis_Absen === "PULANG");
+  return hasSingleValidPunch || (hasDatang && hasPulang);
+}
+
+async function buildPayrollSlipPdf(input: {
+  idSlip: string;
+  idPayroll: string;
+  calculation: PayrollCalculation;
+  signerName: string;
+  issuedAt: Date;
+  signatureBytes: Uint8Array;
+}): Promise<Uint8Array> {
+  const { idSlip, idPayroll, calculation, signerName, issuedAt, signatureBytes } = input;
+  const pdf = await PDFDocument.create();
+  pdf.setTitle(pdfSafeText(`Slip Gaji ${calculation.user.Nama_Lengkap || calculation.user.ID_User}`));
+  pdf.setAuthor(pdfSafeText(`SPPG ${calculation.user.SPPG || ""}`));
+  pdf.setSubject(`Slip gaji periode ${calculation.tanggalKerja[0] || ""}`);
+  pdf.setCreator("Sistem Absensi dan Payroll SPPG");
+  pdf.setCreationDate(issuedAt);
+  pdf.setModificationDate(issuedAt);
+
+  const page = pdf.addPage([595.28, 841.89]);
+  const regular = await pdf.embedFont(StandardFonts.Helvetica);
+  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const signature = await pdf.embedPng(signatureBytes);
+  const navy = rgb(0.06, 0.12, 0.24);
+  const blue = rgb(0.22, 0.27, 0.75);
+  const muted = rgb(0.35, 0.4, 0.48);
+  const border = rgb(0.87, 0.89, 0.93);
+  const pale = rgb(0.96, 0.97, 0.99);
+  const green = rgb(0.05, 0.45, 0.28);
+  const left = 48;
+  const right = 547;
+  const contentWidth = right - left;
+
+  page.drawRectangle({ x: 0, y: 758, width: 595.28, height: 83.89, color: navy });
+  page.drawRectangle({ x: left, y: 774, width: 7, height: 46, color: blue });
+  page.drawText("SATUAN PELAYANAN PEMENUHAN GIZI (SPPG)", {
+    x: left + 20, y: 801, size: 12, font: bold, color: rgb(1, 1, 1),
+  });
+  page.drawText(pdfSafeText(calculation.user.SPPG || "NAMA SPPG BELUM DIATUR").toUpperCase(), {
+    x: left + 20, y: 780, size: 18, font: bold, color: rgb(1, 1, 1),
+  });
+
+  page.drawText("SLIP GAJI", { x: left, y: 726, size: 20, font: bold, color: navy });
+  page.drawText(`No. ${idSlip}`, { x: left, y: 708, size: 9, font: regular, color: muted });
+  page.drawText(`Batch ${idPayroll}`, { x: right - 180, y: 726, size: 9, font: regular, color: muted });
+  page.drawText(`Terbit: ${formatTanggalWaktuPdf(issuedAt)}`, {
+    x: right - 180, y: 708, size: 9, font: regular, color: muted,
+  });
+
+  page.drawRectangle({ x: left, y: 615, width: contentWidth, height: 70, color: pale, borderColor: border, borderWidth: 1 });
+  const identityRows = [
+    ["Nama", pdfSafeText(calculation.user.Nama_Lengkap || "-")],
+    ["Jabatan / Divisi", pdfSafeText(calculation.user.Jabatan_Divisi || "-")],
+    ["Periode", `${formatTanggalPdf(input.calculation.user._periodeMulai)} s.d. ${formatTanggalPdf(input.calculation.user._periodeAkhir)}`],
+  ];
+  identityRows.forEach(([label, value], index) => {
+    const y = 663 - index * 20;
+    page.drawText(label, { x: left + 14, y, size: 9, font: bold, color: muted });
+    page.drawText(":", { x: left + 112, y, size: 9, font: regular, color: muted });
+    page.drawText(value.slice(0, 74), { x: left + 126, y, size: 10, font: regular, color: navy });
+  });
+
+  page.drawText("RINCIAN PENGHASILAN", { x: left, y: 582, size: 10, font: bold, color: navy });
+  page.drawRectangle({ x: left, y: 545, width: contentWidth, height: 27, color: navy });
+  page.drawText("KOMPONEN", { x: left + 14, y: 555, size: 9, font: bold, color: rgb(1, 1, 1) });
+  page.drawText("PERHITUNGAN", { x: left + 248, y: 555, size: 9, font: bold, color: rgb(1, 1, 1) });
+  page.drawText("NOMINAL", { x: right - 76, y: 555, size: 9, font: bold, color: rgb(1, 1, 1) });
+
+  const components = [
+    ["Gaji pokok", `${formatRupiahPdf(calculation.gajiHarian)} x ${calculation.jumlahHariKerja} hari`, calculation.subtotalGaji],
+    ["Bonus / Tambahan", "Penyesuaian manual", calculation.bonus],
+    ["Potongan", calculation.keteranganPotongan || "Tidak ada keterangan", -calculation.potongan],
+  ] as Array<[string, string, number]>;
+  let rowY = 513;
+  components.forEach(([label, detail, amount], index) => {
+    if (index % 2 === 1) page.drawRectangle({ x: left, y: rowY - 12, width: contentWidth, height: 36, color: pale });
+    page.drawText(label, { x: left + 14, y: rowY, size: 10, font: bold, color: navy });
+    page.drawText(pdfSafeText(detail).slice(0, 40), { x: left + 248, y: rowY, size: 9, font: regular, color: muted });
+    const nominal = amount < 0 ? `- ${formatRupiahPdf(Math.abs(amount))}` : formatRupiahPdf(amount);
+    page.drawText(nominal, {
+      x: right - 14 - regular.widthOfTextAtSize(nominal, 9), y: rowY, size: 9, font: regular, color: amount < 0 ? rgb(0.72, 0.12, 0.12) : navy,
+    });
+    page.drawLine({ start: { x: left, y: rowY - 13 }, end: { x: right, y: rowY - 13 }, thickness: 0.7, color: border });
+    rowY -= 36;
+  });
+
+  page.drawRectangle({ x: left, y: 375, width: contentWidth, height: 54, color: rgb(0.92, 0.98, 0.95), borderColor: rgb(0.65, 0.89, 0.76), borderWidth: 1 });
+  page.drawText("TOTAL GAJI DITERIMA", { x: left + 16, y: 396, size: 11, font: bold, color: green });
+  const totalText = formatRupiahPdf(calculation.totalGaji);
+  page.drawText(totalText, {
+    x: right - 16 - bold.widthOfTextAtSize(totalText, 16), y: 392, size: 16, font: bold, color: green,
+  });
+
+  page.drawText("Dokumen ini diterbitkan secara elektronik oleh sistem payroll SPPG.", {
+    x: left, y: 337, size: 8, font: regular, color: muted,
+  });
+  page.drawText(`Tanggal cetak: ${formatTanggalWaktuPdf(issuedAt)}`, {
+    x: left, y: 322, size: 8, font: regular, color: muted,
+  });
+
+  const signatureWidth = 145;
+  const signatureHeight = Math.min(72, signatureWidth * (signature.height / signature.width));
+  const signX = right - 190;
+  page.drawText("Diterbitkan oleh,", { x: signX, y: 305, size: 9, font: regular, color: navy });
+  page.drawImage(signature, { x: signX, y: 215, width: signatureWidth, height: signatureHeight });
+  page.drawLine({ start: { x: signX, y: 205 }, end: { x: right - 10, y: 205 }, thickness: 0.8, color: muted });
+  page.drawText(pdfSafeText(signerName).slice(0, 36), { x: signX, y: 190, size: 10, font: bold, color: navy });
+  page.drawText("ADMIN / PENERBIT", { x: signX, y: 176, size: 8, font: regular, color: muted });
+
+  page.drawLine({ start: { x: left, y: 90 }, end: { x: right, y: 90 }, thickness: 0.7, color: border });
+  page.drawText("Slip bersifat rahasia. Pastikan data dan nominal telah sesuai sebelum digunakan.", {
+    x: left, y: 72, size: 8, font: regular, color: muted,
+  });
+  page.drawText("1 / 1", { x: right - 20, y: 72, size: 8, font: regular, color: muted });
+
+  return await pdf.save({ useObjectStreams: false });
 }
 
 async function prosesPayroll(data: {
@@ -1782,137 +1999,260 @@ async function prosesPayroll(data: {
   tandaTanganBase64?: string;
 }): Promise<unknown> {
   const session = await validateSession(data?.token || "");
-  if (session.type !== "user" || !canManageOperations(session.role)) throw new ApiError("Akses ditolak");
-
-  const { periodeMulai, periodeAkhir, karyawanData, tandaTanganBase64 } = data;
-  if (!periodeMulai || !periodeAkhir || !karyawanData || karyawanData.length === 0) {
-    throw new ApiError("Data payroll tidak lengkap");
+  if (session.type !== "user" || !isAdminRole(session.role)) {
+    throw new ApiError("Akses ditolak. Hanya Admin atau Super Admin yang dapat menerbitkan slip.");
   }
 
+  const { karyawanData, tandaTanganBase64 } = data;
+  if (!karyawanData || karyawanData.length === 0) {
+    throw new ApiError("Data payroll tidak lengkap");
+  }
+  if (karyawanData.length > 50) throw new ApiError("Maksimal 50 slip dapat diterbitkan dalam satu batch");
+  const periodeMulai = parsePayrollDate(data.periodeMulai, "Tanggal mulai periode");
+  const periodeAkhir = parsePayrollDate(data.periodeAkhir, "Tanggal akhir periode");
+  const startMs = Date.parse(`${periodeMulai}T00:00:00Z`);
+  const endMs = Date.parse(`${periodeAkhir}T00:00:00Z`);
+  if (endMs < startMs) throw new ApiError("Tanggal akhir periode tidak boleh sebelum tanggal mulai");
+  if ((endMs - startMs) / 86_400_000 > 366) throw new ApiError("Periode payroll maksimal 366 hari");
+  const signatureBytes = decodePngDataUrl(tandaTanganBase64);
+  const uniqueUserIds = [...new Set(karyawanData.map((row) => String(row.idUser || "").trim()).filter(Boolean))];
+  if (uniqueUserIds.length !== karyawanData.length) throw new ApiError("Daftar karyawan berisi ID kosong atau duplikat");
+
   const scopedIds = await getScopedUserIdSet(session);
-  const karyawanDiluarScope = karyawanData.filter((k) => !scopedIds.has(k.idUser));
-  if (karyawanDiluarScope.length > 0) {
+  if (uniqueUserIds.some((idUser) => !scopedIds.has(idUser))) {
     throw new ApiError("Akses ditolak: terdapat karyawan di luar SPPG Anda pada data payroll ini");
   }
 
-  const idPayroll = generateId("PAY");
-
-  let ttdUrl = "";
-  if (tandaTanganBase64) {
-    ttdUrl = await uploadBase64ToStorage("tanda-tangan", `${idPayroll}/ttd.png`, tandaTanganBase64, "image/png");
+  const { data: users, error: usersError } = await supabase
+    .from("Users")
+    .select("ID_User, Nama_Lengkap, Jabatan_Divisi, Gaji_Harian, SPPG, Yayasan, Role, Status_Aktif")
+    .in("ID_User", uniqueUserIds);
+  if (usersError) throw new Error("Gagal mengambil data karyawan: " + usersError.message);
+  if ((users || []).length !== uniqueUserIds.length) throw new ApiError("Sebagian data karyawan tidak ditemukan");
+  const userMap = new Map((users || []).map((user: any) => [user.ID_User, user]));
+  for (const idUser of uniqueUserIds) {
+    const user: any = userMap.get(idUser);
+    if (!user || normalizeRole(user.Role) !== "USER" || !isActive(user.Status_Aktif)) {
+      throw new ApiError("Slip hanya dapat diterbitkan untuk karyawan aktif");
+    }
+    if (parseMoney(user.Gaji_Harian, "Gaji harian") <= 0) {
+      throw new ApiError(`Gaji harian ${user.Nama_Lengkap || idUser} belum diatur`);
+    }
   }
 
-  const { error: payrollInsertError } = await supabase.from("Payroll").insert({
-    ID_Payroll: idPayroll,
-    Periode_Mulai: periodeMulai,
-    Periode_Akhir: periodeAkhir,
-    Diproses_Oleh: session.idUser,
-    Tanda_Tangan_Digital_URL: ttdUrl,
-    Waktu_Proses: new Date().toISOString(),
-    Jumlah_Karyawan: karyawanData.length,
+  const { data: duplicates, error: duplicateError } = await supabase
+    .from("Slip_Gaji")
+    .select("ID_User")
+    .in("ID_User", uniqueUserIds)
+    .eq("Periode_Mulai", periodeMulai)
+    .eq("Periode_Akhir", periodeAkhir)
+    .eq("Status_Penerbitan", "DITERBITKAN");
+  if (duplicateError) throw new Error("Gagal memeriksa slip lama: " + duplicateError.message);
+  if ((duplicates || []).length) {
+    const duplicateNames = (duplicates || []).map((row: any) => userMap.get(row.ID_User)?.Nama_Lengkap || row.ID_User);
+    throw new ApiError(`Slip periode yang sama sudah diterbitkan untuk: ${duplicateNames.join(", ")}`);
+  }
+
+  const attendance = await selectAllRows(
+    "Absensi",
+    "ID_Absen, ID_User, Tanggal, Jenis_Absen, Status_Validasi, ID_Payroll",
+    (query) => query
+      .in("ID_User", uniqueUserIds)
+      .eq("Status_Validasi", "VALID")
+      .gte("Tanggal", periodeMulai)
+      .lte("Tanggal", periodeAkhir),
+  );
+
+  const inputMap = new Map(karyawanData.map((row) => [String(row.idUser), row]));
+  const calculations: PayrollCalculation[] = uniqueUserIds.map((idUser) => {
+    const user: any = userMap.get(idUser);
+    const input = inputMap.get(idUser)!;
+    const userAttendance = attendance.filter((row) => row.ID_User === idUser && !row.ID_Payroll);
+    const byDate = new Map<string, Record<string, any>[]>();
+    userAttendance.forEach((row) => {
+      const date = toDateStr(row.Tanggal);
+      const rows = byDate.get(date) || [];
+      rows.push(row);
+      byDate.set(date, rows);
+    });
+    const tanggalKerja = [...byDate.entries()]
+      .filter(([, rows]) => isCountedWorkDay(rows))
+      .map(([date]) => date)
+      .sort();
+    const countedDates = new Set(tanggalKerja);
+    const attendanceIds = userAttendance
+      .filter((row) => countedDates.has(toDateStr(row.Tanggal)))
+      .map((row) => row.ID_Absen);
+    const gajiHarian = parseMoney(user.Gaji_Harian, "Gaji harian");
+    const bonus = parseMoney(input.bonus, "Bonus / tambahan");
+    const potongan = parseMoney(input.potongan, "Potongan");
+    const subtotalGaji = gajiHarian * tanggalKerja.length;
+    const totalGaji = subtotalGaji + bonus - potongan;
+    if (totalGaji < 0) throw new ApiError(`Total gaji ${user.Nama_Lengkap || idUser} tidak boleh negatif`);
+    return {
+      user: { ...user, _periodeMulai: periodeMulai, _periodeAkhir: periodeAkhir },
+      attendanceIds,
+      jumlahHariKerja: tanggalKerja.length,
+      tanggalKerja,
+      gajiHarian,
+      subtotalGaji,
+      bonus,
+      potongan,
+      keteranganPotongan: String(input.keteranganPotongan || "").trim().slice(0, 300),
+      totalGaji,
+    };
   });
-  if (payrollInsertError) throw new Error("Gagal menyimpan batch payroll: " + payrollInsertError.message);
 
-  const allAbsensi = await selectAllRows("Absensi");
-  const absensi = allAbsensi;
-  const processedAbsensiIds: string[] = [];
+  const { data: signer, error: signerError } = await supabase
+    .from("Users")
+    .select("Nama_Lengkap, SPPG, Yayasan")
+    .eq("ID_User", session.idUser)
+    .maybeSingle();
+  if (signerError) throw new Error("Gagal mengambil data penerbit: " + signerError.message);
+  const signerName = String(signer?.Nama_Lengkap || "").trim();
+  if (!signerName) throw new ApiError("Nama lengkap Admin wajib diisi sebelum menerbitkan slip");
 
-  const mulaiStrPP = toDateStr(periodeMulai);
-  const akhirStrPP = toDateStr(periodeAkhir);
+  const idPayroll = generateId("PAY");
+  const issuedAt = new Date();
+  const year = new Intl.DateTimeFormat("en", { timeZone: "Asia/Jakarta", year: "numeric" }).format(issuedAt);
+  const signaturePath = `${year}/${idPayroll}/ttd-penerbit.png`;
+  const uploadedPdfPaths: string[] = [];
+  let payrollInserted = false;
 
-  for (const k of karyawanData) {
-    const idSlip = generateId("SLIP");
+  try {
+    const { error: signatureUploadError } = await supabase.storage
+      .from("tanda-tangan")
+      .upload(signaturePath, signatureBytes, { contentType: "image/png", upsert: false });
+    if (signatureUploadError) throw new Error("Gagal menyimpan tanda tangan: " + signatureUploadError.message);
 
-    const userAbsensi = absensi.filter((a) => {
-      if (a.ID_User !== k.idUser) return false;
-      if (a.Status_Validasi !== "VALID") return false;
-      if (a.ID_Payroll && a.ID_Payroll !== "") return false;
-      const tStrPP = toDateStr(a.Tanggal);
-      return tStrPP >= mulaiStrPP && tStrPP <= akhirStrPP;
-    });
-
-    const byDate: Record<string, typeof userAbsensi> = {};
-    userAbsensi.forEach((a) => {
-      const tStr = toDateStr(a.Tanggal);
-      if (!byDate[tStr]) byDate[tStr] = [];
-      byDate[tStr].push(a);
-    });
-
-    let jumlahHariKerja = 0;
-    Object.keys(byDate).forEach((dateStr) => {
-      const dayAbsensi = byDate[dateStr];
-      const hasDatang = dayAbsensi.some((a) => a.Jenis_Absen === "DATANG");
-      const hasPulang = dayAbsensi.some((a) => a.Jenis_Absen === "PULANG");
-      if (hasDatang && hasPulang) {
-        jumlahHariKerja++;
-        dayAbsensi.forEach((a) => {
-          if (a.Jenis_Absen === "DATANG" || a.Jenis_Absen === "PULANG") {
-            processedAbsensiIds.push(a.ID_Absen);
-          }
-        });
-      }
-    });
-
-    const gajiHarian = parseFloat(String(k.gajiHarian)) || 0;
-    const subtotalGaji = gajiHarian * jumlahHariKerja;
-    const lembur = parseFloat(String(k.lembur)) || 0;
-    const bonus = parseFloat(String(k.bonus)) || 0;
-    const potongan = parseFloat(String(k.potongan)) || 0;
-    const totalGaji = subtotalGaji + lembur + bonus - potongan;
-
-    const { error: slipInsertError } = await supabase.from("Slip_Gaji").insert({
-      ID_Slip: idSlip,
+    const sppgList = [...new Set(calculations.map((item) => item.user.SPPG).filter(Boolean))];
+    const yayasanList = [...new Set(calculations.map((item) => item.user.Yayasan).filter(Boolean))];
+    const { error: payrollInsertError } = await supabase.from("Payroll").insert({
       ID_Payroll: idPayroll,
-      ID_User: k.idUser,
       Periode_Mulai: periodeMulai,
       Periode_Akhir: periodeAkhir,
-      Jumlah_Hari_Kerja: jumlahHariKerja,
-      Gaji_Harian: gajiHarian,
-      Subtotal_Gaji: subtotalGaji,
-      Lembur_Nominal: lembur,
-      Bonus: bonus,
-      Potongan: potongan,
-      Keterangan_Potongan: k.keteranganPotongan || "",
-      Total_Gaji_Diterima: totalGaji,
-      URL_PDF_Slip: "",
+      Diproses_Oleh: session.idUser,
+      Tanda_Tangan_Digital_URL: signaturePath,
+      Waktu_Proses: issuedAt.toISOString(),
+      Jumlah_Karyawan: calculations.length,
+      SPPG: sppgList.length === 1 ? sppgList[0] : "MULTI SPPG",
+      Yayasan: yayasanList.length === 1 ? yayasanList[0] : "MULTI YAYASAN",
+      Status_Penerbitan: "DIPROSES",
+      Diterbitkan_At: null,
+      Diterbitkan_Oleh: session.idUser,
+      Nama_Penerbit: signerName,
     });
+    if (payrollInsertError) throw new Error("Gagal menyimpan batch payroll: " + payrollInsertError.message);
+    payrollInserted = true;
+
+    const slipRows: Record<string, unknown>[] = [];
+    const resultRows: Record<string, unknown>[] = [];
+    for (const calculation of calculations) {
+      const idSlip = generateId("SLIP");
+      const pdfBytes = await buildPayrollSlipPdf({
+        idSlip,
+        idPayroll,
+        calculation,
+        signerName,
+        issuedAt,
+        signatureBytes,
+      });
+      const pdfPath = `${year}/${idPayroll}/${payrollSafePath(calculation.user.Nama_Lengkap)}-${idSlip}.pdf`;
+      const { error: pdfUploadError } = await supabase.storage
+        .from("slip-gaji")
+        .upload(pdfPath, pdfBytes, { contentType: "application/pdf", upsert: false });
+      if (pdfUploadError) throw new Error(`Gagal menyimpan PDF ${calculation.user.Nama_Lengkap}: ${pdfUploadError.message}`);
+      uploadedPdfPaths.push(pdfPath);
+      const digest = await crypto.subtle.digest("SHA-256", pdfBytes);
+      const pdfSha256 = bytesToHex(new Uint8Array(digest));
+      slipRows.push({
+        ID_Slip: idSlip,
+        ID_Payroll: idPayroll,
+        ID_User: calculation.user.ID_User,
+        Periode_Mulai: periodeMulai,
+        Periode_Akhir: periodeAkhir,
+        Jumlah_Hari_Kerja: calculation.jumlahHariKerja,
+        Gaji_Harian: calculation.gajiHarian,
+        Subtotal_Gaji: calculation.subtotalGaji,
+        Lembur_Nominal: 0,
+        Bonus: calculation.bonus,
+        Potongan: calculation.potongan,
+        Keterangan_Potongan: calculation.keteranganPotongan,
+        Total_Gaji_Diterima: calculation.totalGaji,
+        URL_PDF_Slip: "",
+        PDF_Storage_Path: pdfPath,
+        PDF_SHA256: pdfSha256,
+        SPPG: calculation.user.SPPG,
+        Yayasan: calculation.user.Yayasan,
+        Status_Penerbitan: "DITERBITKAN",
+        Diterbitkan_At: issuedAt.toISOString(),
+        Diterbitkan_Oleh: session.idUser,
+        Nama_Penerbit: signerName,
+        Dicetak_At: issuedAt.toISOString(),
+      });
+      resultRows.push({
+        idSlip,
+        idUser: calculation.user.ID_User,
+        namaLengkap: calculation.user.Nama_Lengkap,
+        totalGaji: calculation.totalGaji,
+      });
+    }
+
+    const { error: slipInsertError } = await supabase.from("Slip_Gaji").insert(slipRows);
     if (slipInsertError) throw new Error("Gagal menyimpan slip gaji: " + slipInsertError.message);
+
+    const processedAttendanceIds = calculations.flatMap((item) => item.attendanceIds);
+    if (processedAttendanceIds.length > 0) {
+      const { error: updateAbsensiError } = await supabase
+        .from("Absensi")
+        .update({ ID_Payroll: idPayroll })
+        .in("ID_Absen", processedAttendanceIds);
+      if (updateAbsensiError) throw new Error("Gagal menandai absensi payroll: " + updateAbsensiError.message);
+    }
+
+    const { error: publishError } = await supabase
+      .from("Payroll")
+      .update({ Status_Penerbitan: "DITERBITKAN", Diterbitkan_At: issuedAt.toISOString() })
+      .eq("ID_Payroll", idPayroll);
+    if (publishError) throw new Error("Gagal menyelesaikan penerbitan payroll: " + publishError.message);
+
+    await logAudit(
+      "TERBITKAN_SLIP_GAJI",
+      {
+        idPayroll,
+        periodeMulai,
+        periodeAkhir,
+        jumlahKaryawan: calculations.length,
+        idUser: calculations.map((item) => item.user.ID_User),
+      },
+      session.idUser || null,
+    );
+
+    return {
+      success: true,
+      idPayroll,
+      jumlahSlip: calculations.length,
+      slip: resultRows,
+      message: `${calculations.length} slip gaji berhasil diterbitkan`,
+    };
+  } catch (error) {
+    if (uploadedPdfPaths.length) await supabase.storage.from("slip-gaji").remove(uploadedPdfPaths);
+    await supabase.storage.from("tanda-tangan").remove([signaturePath]);
+    if (payrollInserted) await supabase.from("Payroll").delete().eq("ID_Payroll", idPayroll);
+    throw error;
   }
-
-  if (processedAbsensiIds.length > 0) {
-    const { error: updateAbsensiError } = await supabase
-      .from("Absensi")
-      .update({ ID_Payroll: idPayroll })
-      .in("ID_Absen", processedAbsensiIds);
-    if (updateAbsensiError) console.error("Gagal update ID_Payroll di absensi:", updateAbsensiError.message);
-  }
-
-  await logAudit("PROSES_PAYROLL", { idPayroll, jumlahKaryawan: karyawanData.length }, session.idUser || null);
-
-  return {
-    success: true,
-    idPayroll,
-    message: `Payroll berhasil diproses untuk ${karyawanData.length} karyawan`,
-  };
-}
-
-async function updateSlipPdfUrl(data: { token?: string; idSlip?: string; pdfUrl?: string }): Promise<unknown> {
-  await validateSession(data?.token || "");
-
-  const { idSlip, pdfUrl } = data;
-  if (!idSlip) throw new ApiError("ID Slip tidak ditemukan");
-
-  const { error } = await supabase.from("Slip_Gaji").update({ URL_PDF_Slip: pdfUrl }).eq("ID_Slip", idSlip);
-  if (error) throw new Error("Gagal update URL PDF slip: " + error.message);
-
-  return { success: true };
 }
 
 async function getMyPayroll(data: { token?: string }): Promise<unknown> {
   const session = await validateSession(data?.token || "");
   if (session.type !== "user") throw new ApiError("Akses ditolak");
 
-  const { data: slips } = await supabase.from("Slip_Gaji").select("*").eq("ID_User", session.idUser);
+  const { data: slips } = await supabase
+    .from("Slip_Gaji")
+    .select("*")
+    .eq("ID_User", session.idUser)
+    .eq("Status_Penerbitan", "DITERBITKAN")
+    .order("Diterbitkan_At", { ascending: false });
   const { data: me } = await supabase.from("Users").select("*").eq("ID_User", session.idUser).maybeSingle();
 
   return {
@@ -1933,9 +2273,50 @@ async function getMyPayroll(data: { token?: string }): Promise<unknown> {
       potongan: s.Potongan,
       keteranganPotongan: s.Keterangan_Potongan,
       totalGaji: s.Total_Gaji_Diterima,
-      urlPdf: s.URL_PDF_Slip,
+      statusPenerbitan: s.Status_Penerbitan,
+      diterbitkanAt: s.Diterbitkan_At,
+      namaPenerbit: s.Nama_Penerbit,
+      dapatDiunduh: Boolean(s.PDF_Storage_Path || s.URL_PDF_Slip),
     })),
   };
+}
+
+async function getSlipDownloadUrl(data: { token?: string; idSlip?: string }): Promise<unknown> {
+  const session = await validateSession(data?.token || "");
+  if (session.type !== "user") throw new ApiError("Akses ditolak");
+  const idSlip = String(data.idSlip || "").trim();
+  if (!idSlip) throw new ApiError("ID slip tidak ditemukan");
+
+  const { data: slip, error } = await supabase
+    .from("Slip_Gaji")
+    .select("ID_Slip, ID_User, Periode_Mulai, Periode_Akhir, PDF_Storage_Path, URL_PDF_Slip, Status_Penerbitan")
+    .eq("ID_Slip", idSlip)
+    .maybeSingle();
+  if (error) throw new Error("Gagal mengambil slip: " + error.message);
+  if (!slip || slip.Status_Penerbitan !== "DITERBITKAN") throw new ApiError("Slip belum tersedia");
+
+  if (slip.ID_User !== session.idUser) {
+    if (!isAdminRole(session.role)) throw new ApiError("Akses ditolak");
+    const scopedIds = await getScopedUserIdSet(session);
+    if (!scopedIds.has(slip.ID_User)) throw new ApiError("Slip berada di luar cakupan SPPG Anda");
+  }
+
+  const storagePath = String(slip.PDF_Storage_Path || "").trim();
+  if (storagePath) {
+    const filename = `slip-gaji-${payrollSafePath(slip.Periode_Mulai)}-${payrollSafePath(slip.Periode_Akhir)}.pdf`;
+    const { data: signed, error: signedError } = await supabase.storage
+      .from("slip-gaji")
+      .createSignedUrl(storagePath, 300, { download: filename });
+    if (signedError || !signed?.signedUrl) throw new Error("Gagal membuat tautan unduhan slip");
+    await logAudit("UNDUH_SLIP_GAJI", { idSlip }, session.idUser || null);
+    return { success: true, url: signed.signedUrl, filename, expiresIn: 300 };
+  }
+
+  const legacyUrl = String(slip.URL_PDF_Slip || "");
+  if (legacyUrl.startsWith("https://")) {
+    return { success: true, url: legacyUrl, filename: `slip-gaji-${idSlip}.pdf`, expiresIn: 0 };
+  }
+  throw new ApiError("File PDF slip belum tersedia");
 }
 
 async function getAbsensiForPayrollPreview(data: {
@@ -1955,27 +2336,39 @@ async function getAbsensiForPayrollPreview(data: {
   const mulaiStr = toDateStr(periodeMulai);
   const akhirStr = toDateStr(periodeAkhir);
 
-  const allAbsensi = await selectAllRows("Absensi", "*", (q) => q.in("ID_User", idUserList));
+  const scopedIds = await getScopedUserIdSet(session);
+  const uniqueIds = [...new Set(idUserList.map((id) => String(id || "").trim()).filter(Boolean))];
+  if (uniqueIds.length > 50) throw new ApiError("Maksimal 50 karyawan dapat dipratinjau");
+  if (uniqueIds.some((id) => !scopedIds.has(id))) throw new ApiError("Terdapat karyawan di luar cakupan SPPG Anda");
+
+  const allAbsensi = await selectAllRows(
+    "Absensi",
+    "ID_User, Tanggal, Jenis_Absen, Status_Validasi, ID_Payroll",
+    (q) => q
+      .in("ID_User", uniqueIds)
+      .eq("Status_Validasi", "VALID")
+      .gte("Tanggal", mulaiStr)
+      .lte("Tanggal", akhirStr),
+  );
   const result: Record<string, { jumlahHariKerja: number; tanggalKerja: string[] }> = {};
 
-  idUserList.forEach((idUser) => {
+  uniqueIds.forEach((idUser) => {
     const userAbsensi = allAbsensi.filter((a) => {
       if (a.ID_User !== idUser) return false;
-      if (a.Status_Validasi !== "VALID") return false;
+      if (a.ID_Payroll) return false;
       const tStr = toDateStr(a.Tanggal);
       return tStr >= mulaiStr && tStr <= akhirStr;
     });
 
-    const byDate: Record<string, { datang: boolean; pulang: boolean }> = {};
+    const byDate: Record<string, Record<string, any>[]> = {};
     userAbsensi.forEach((a) => {
       const tStr = toDateStr(a.Tanggal);
-      if (!byDate[tStr]) byDate[tStr] = { datang: false, pulang: false };
-      if (a.Jenis_Absen === "DATANG") byDate[tStr].datang = true;
-      if (a.Jenis_Absen === "PULANG") byDate[tStr].pulang = true;
+      if (!byDate[tStr]) byDate[tStr] = [];
+      byDate[tStr].push(a);
     });
 
     const tanggalKerja = Object.keys(byDate)
-      .filter((d) => byDate[d].datang && byDate[d].pulang)
+      .filter((date) => isCountedWorkDay(byDate[date]))
       .sort();
 
     result[idUser] = { jumlahHariKerja: tanggalKerja.length, tanggalKerja };
@@ -2839,8 +3232,8 @@ const API_FUNCTIONS: Record<string, (data: any) => Promise<unknown>> = {
   getDataKaryawan,
   getKaryawanForPayroll,
   prosesPayroll,
-  updateSlipPdfUrl,
   getMyPayroll,
+  getSlipDownloadUrl,
   getAbsensiForPayrollPreview,
   getAllPayrollHistory,
   getAllSlipGajiList,
