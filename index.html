@@ -491,6 +491,9 @@
     .payroll-total{font-size:.94rem;font-weight:800;color:#166534;white-space:nowrap}
     .payroll-modal-card{max-width:980px}.payroll-modal-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem}.payroll-summary-item{padding:.85rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius)}.payroll-summary-item span{display:block;font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em}.payroll-summary-item strong{display:block;margin-top:.25rem;font-size:.9rem}
     .signature-layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:1.2rem;margin-top:1.1rem;align-items:start}.signature-panel{padding:1rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg)}.signature-canvas-wrap{background:#fff;border:1.5px dashed #94a3b8;border-radius:var(--radius);overflow:hidden;touch-action:none}.signature-canvas-wrap canvas{display:block;width:100%;height:170px;cursor:crosshair}.signature-help{font-size:.76rem;color:var(--text-muted);line-height:1.5;margin-top:.55rem}.signature-legal{padding:1rem;border-radius:var(--radius);background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:.78rem;line-height:1.55}.signature-legal strong{display:block;margin-bottom:.3rem;color:#78350f}
+    .payroll-tabs{display:flex;align-items:center;gap:.35rem;width:max-content;max-width:100%;padding:.3rem;margin-bottom:1rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);overflow-x:auto}
+    .payroll-tab{appearance:none;border:0;background:transparent;color:var(--text-muted);font:inherit;font-size:.84rem;font-weight:750;white-space:nowrap;padding:.72rem 1rem;border-radius:calc(var(--radius) - 4px);cursor:pointer;transition:background .18s,color .18s,box-shadow .18s}
+    .payroll-tab:hover{color:var(--text);background:var(--bg)}.payroll-tab.active{color:#fff;background:var(--primary);box-shadow:0 5px 14px rgba(79,70,229,.22)}.payroll-tab:focus-visible{outline:3px solid rgba(79,70,229,.22);outline-offset:2px}
     .payroll-history-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}.payroll-download-btn{display:inline-flex;align-items:center;gap:.4rem}
     .slip-period{font-weight:700;color:var(--text)}.slip-issued{font-size:.74rem;color:var(--text-muted);margin-top:.2rem}
     @media(max-width:900px){.payroll-command{grid-template-columns:1fr 1fr}.payroll-command-title{grid-column:1/-1}.payroll-command .btn{width:100%}.signature-layout{grid-template-columns:1fr}.payroll-modal-summary{grid-template-columns:1fr 1fr}}
@@ -1145,6 +1148,11 @@
       <!-- ===== VIEW: ADMIN PAYROLL ===== -->
       <div id="view-admin-payroll" class="app-view hidden">
         <div class="page-header"><div class="page-title">Payroll & Slip Gaji</div><div class="page-subtitle">Pilih periode, tinjau hari kerja, lalu terbitkan slip PDF bertanda tangan</div></div>
+        <div class="payroll-tabs" role="tablist" aria-label="Bagian Payroll">
+          <button class="payroll-tab active" id="payroll-tab-publish" type="button" role="tab" aria-selected="true" aria-controls="payroll-panel-publish" data-payroll-tab="publish">Penerbitan Slip</button>
+          <button class="payroll-tab" id="payroll-tab-history" type="button" role="tab" aria-selected="false" aria-controls="payroll-panel-history" tabindex="-1" data-payroll-tab="history">Riwayat Slip Diterbitkan</button>
+        </div>
+        <section id="payroll-panel-publish" role="tabpanel" aria-labelledby="payroll-tab-publish">
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-card-icon purple">👥</div><div><div class="stat-card-value" id="payroll-employee-count">0</div><div class="stat-card-label">Karyawan Aktif</div></div></div>
           <div class="stat-card"><div class="stat-card-icon green">✓</div><div><div class="stat-card-value" id="payroll-ready-count">0</div><div class="stat-card-label">Data Gaji Siap</div></div></div>
@@ -1171,10 +1179,13 @@
           </div>
           <div class="data-table-wrap"><table class="data-table"><thead><tr><th><input class="payroll-checkbox" id="payroll-select-all" type="checkbox" aria-label="Pilih semua karyawan siap"></th><th>Karyawan</th><th>Jabatan</th><th>SPPG</th><th>Gaji Harian</th><th>Hari Kerja</th><th>Subtotal</th><th>Status</th></tr></thead><tbody id="admin-payroll-body"><tr><td colspan="8"><div class="loading-state"><span class="spinner"></span>Memuat data payroll...</div></td></tr></tbody></table></div>
         </div>
-        <div class="admin-card" style="margin-top:1rem">
-          <div class="admin-card-header payroll-history-head"><div><div class="admin-card-title">Slip Terakhir Diterbitkan</div><div class="helper-text">PDF tersimpan privat dan hanya dapat diunduh melalui tautan sementara</div></div><button class="btn btn-secondary btn-sm" id="btn-refresh-payroll-history" type="button">Muat Ulang</button></div>
+        </section>
+        <section id="payroll-panel-history" class="hidden" role="tabpanel" aria-labelledby="payroll-tab-history">
+        <div class="admin-card">
+          <div class="admin-card-header payroll-history-head"><div><div class="admin-card-title">Riwayat Slip Diterbitkan</div><div class="helper-text">PDF tersimpan privat dan hanya dapat diunduh melalui tautan sementara</div></div><button class="btn btn-secondary btn-sm" id="btn-refresh-payroll-history" type="button">Muat Ulang</button></div>
           <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Karyawan</th><th>Periode</th><th>SPPG</th><th>Total</th><th>Status</th><th>PDF</th></tr></thead><tbody id="admin-payroll-history-body"><tr><td colspan="6"><div class="loading-state"><span class="spinner"></span>Memuat riwayat slip...</div></td></tr></tbody></table></div>
         </div>
+        </section>
       </div>
 
       <!-- ===== VIEW: INBOX PENGADUAN ===== -->
@@ -2576,6 +2587,8 @@ const FeatureState={
   payrollSelected:new Set(),
   payrollPreview:{},
   payrollHistory:[],
+  payrollActiveTab:'publish',
+  payrollHistoryLoaded:false,
   payrollSignatureDrawn:false,
   payrollSignatureReady:false,
 };
@@ -2836,8 +2849,23 @@ async function replyComplaint(id,response){
   catch(error){showAlert(error.message,'error');}
 }
 
+function setAdminPayrollTab(tab,loadHistory=true){
+  const activeTab=tab==='history'?'history':'publish';
+  FeatureState.payrollActiveTab=activeTab;
+  $$('[data-payroll-tab]').forEach(button=>{
+    const isActive=button.dataset.payrollTab===activeTab;
+    button.classList.toggle('active',isActive);
+    button.setAttribute('aria-selected',String(isActive));
+    button.tabIndex=isActive?0:-1;
+  });
+  $('#payroll-panel-publish')?.classList.toggle('hidden',activeTab!=='publish');
+  $('#payroll-panel-history')?.classList.toggle('hidden',activeTab!=='history');
+  if(activeTab==='history'&&loadHistory&&!FeatureState.payrollHistoryLoaded)loadAdminPayrollHistory();
+}
+
 async function loadAdminPayroll(){
   const body=$('#admin-payroll-body');if(!body)return;
+  setAdminPayrollTab(FeatureState.payrollActiveTab,false);
   setPayrollDefaultPeriod();
   body.innerHTML='<tr><td colspan="8"><div class="loading-state"><span class="spinner"></span>Memuat data payroll...</div></td></tr>';
   try{
@@ -2846,7 +2874,7 @@ async function loadAdminPayroll(){
     const validIds=new Set(FeatureState.payrollEmployees.map(row=>String(row.idUser)));
     FeatureState.payrollSelected=new Set([...FeatureState.payrollSelected].filter(id=>validIds.has(id)));
     renderAdminPayroll();
-    await loadAdminPayrollHistory();
+    if(FeatureState.payrollActiveTab==='history')await loadAdminPayrollHistory();
   }
   catch(error){body.innerHTML=`<tr><td colspan="8"><div class="empty-state"><strong>Data payroll gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
 }
@@ -2996,7 +3024,7 @@ async function publishPayrollSlips(){
   const button=$('#btn-confirm-payroll-publish'),original=button.innerHTML;button.disabled=true;button.innerHTML='<span class="spinner" style="width:17px;height:17px;border-width:2px"></span> Menerbitkan PDF...';
   try{
     const result=await apiCall('prosesPayroll',{token:AppState.token,periodeMulai:period.start,periodeAkhir:period.end,karyawanData,tandaTanganBase64:$('#payroll-signature-canvas').toDataURL('image/png')});
-    closePayrollPublishModal();FeatureState.payrollSelected.clear();FeatureState.payrollPreview={};renderAdminPayroll();await loadAdminPayrollHistory();
+    closePayrollPublishModal();FeatureState.payrollSelected.clear();FeatureState.payrollPreview={};renderAdminPayroll();FeatureState.payrollHistoryLoaded=false;await loadAdminPayrollHistory();setAdminPayrollTab('history',false);
     showAlert(result?.message||'Slip gaji berhasil diterbitkan.','success');
   }catch(error){showInlineAlert('payroll-publish-alert',error.message||'Penerbitan slip gagal.');}
   finally{button.disabled=false;button.innerHTML=original;}
@@ -3008,6 +3036,7 @@ async function loadAdminPayrollHistory(){
   try{
     const result=await apiCall('getAllSlipGajiList',{token:AppState.token});
     FeatureState.payrollHistory=(result?.slipGaji||[]).sort((a,b)=>new Date(b.Diterbitkan_At||b.Created_At||0)-new Date(a.Diterbitkan_At||a.Created_At||0));
+    FeatureState.payrollHistoryLoaded=true;
     const rows=FeatureState.payrollHistory.slice(0,30);
     if(!rows.length){body.innerHTML='<tr><td colspan="6"><div class="empty-state"><strong>Belum ada slip diterbitkan</strong>Slip baru akan tampil di sini.</div></td></tr>';return;}
     body.innerHTML=rows.map(row=>`<tr>
@@ -3018,7 +3047,7 @@ async function loadAdminPayrollHistory(){
       <td>${row.PDF_Storage_Path||row.URL_PDF_Slip?`<button class="btn btn-secondary btn-sm payroll-download-btn" type="button" data-slip-download="${escapeHtml(row.ID_Slip)}">Unduh PDF</button>`:'-'}</td>
     </tr>`).join('');
     body.querySelectorAll('[data-slip-download]').forEach(button=>button.addEventListener('click',()=>downloadPayrollSlip(button.dataset.slipDownload,button)));
-  }catch(error){body.innerHTML=`<tr><td colspan="6"><div class="empty-state"><strong>Riwayat gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
+  }catch(error){FeatureState.payrollHistoryLoaded=false;body.innerHTML=`<tr><td colspan="6"><div class="empty-state"><strong>Riwayat gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
 }
 
 async function downloadPayrollSlip(idSlip,button){
@@ -3678,6 +3707,16 @@ async function initApp(){
   $('#btn-refresh-admin-config')?.addEventListener('click',loadAdminConfiguration);
   $('#btn-save-admin-access')?.addEventListener('click',handleSaveAdminAccess);
   $('#config-account-search')?.addEventListener('input',()=>renderConfiguredRoles());
+  $$('[data-payroll-tab]').forEach(button=>{
+    button.addEventListener('click',()=>setAdminPayrollTab(button.dataset.payrollTab));
+    button.addEventListener('keydown',event=>{
+      if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+      event.preventDefault();
+      const next=event.key==='ArrowLeft'||event.key==='Home'?'publish':'history';
+      setAdminPayrollTab(next);
+      $(`[data-payroll-tab="${next}"]`)?.focus();
+    });
+  });
   $('#payroll-search')?.addEventListener('input',renderAdminPayroll);
   $('#payroll-select-all')?.addEventListener('change',(event)=>{
     getFilteredPayrollEmployees().filter(row=>Number(row.gajiHarian)>0).forEach(row=>{
