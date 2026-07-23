@@ -368,6 +368,66 @@ function generateSalt(): string {
   return crypto.randomUUID().replace(/-/g, "").substring(0, 16);
 }
 
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return bytesToHex(new Uint8Array(digest));
+}
+
+async function constantTimeStringEqual(left: string, right: string): Promise<boolean> {
+  const [leftHash, rightHash] = await Promise.all([sha256Hex(left), sha256Hex(right)]);
+  let difference = leftHash.length ^ rightHash.length;
+  const compareLength = Math.max(leftHash.length, rightHash.length);
+  for (let index = 0; index < compareLength; index++) {
+    difference |= (leftHash.charCodeAt(index) || 0) ^ (rightHash.charCodeAt(index) || 0);
+  }
+  return difference === 0;
+}
+
+async function createResetToken(): Promise<{ clientToken: string; storedToken: string; expiresAt: number }> {
+  const randomBytes = crypto.getRandomValues(new Uint8Array(32));
+  const secret = bytesToHex(randomBytes);
+  const expiresAt = Date.now() + CONFIG.RESET_TOKEN_DURATION_MS;
+  const clientToken = `v2.${secret}.${expiresAt}`;
+  const tokenHash = await sha256Hex(clientToken);
+  return {
+    clientToken,
+    storedToken: `v2$${tokenHash}$${expiresAt}`,
+    expiresAt,
+  };
+}
+
+async function validateResetToken(
+  storedValue: unknown,
+  presentedValue: unknown,
+): Promise<{ valid: boolean; expired: boolean }> {
+  const storedToken = String(storedValue || "").trim();
+  const presentedToken = String(presentedValue || "").trim();
+  if (!storedToken || !presentedToken) return { valid: false, expired: false };
+
+  if (storedToken.startsWith("v2$")) {
+    const parts = storedToken.split("$");
+    if (parts.length !== 3 || !/^[a-f0-9]{64}$/.test(parts[1])) return { valid: false, expired: false };
+    const expiresAt = Number(parts[2]);
+    if (!Number.isFinite(expiresAt)) return { valid: false, expired: false };
+    if (Date.now() > expiresAt) return { valid: false, expired: true };
+    const presentedHash = await sha256Hex(presentedToken);
+    return { valid: await constantTimeStringEqual(parts[1], presentedHash), expired: false };
+  }
+
+  // Kompatibilitas token lama: backend sebelumnya menyimpan "kode_expiry".
+  // Frontend OTP pernah mengirim token penuh, sedangkan endpoint lama hanya
+  // menerima bagian "kode". Keduanya diterima sampai token lama kedaluwarsa.
+  const legacyParts = storedToken.split("_");
+  if (legacyParts.length < 2) return { valid: false, expired: false };
+  const expiresAt = Number(legacyParts[legacyParts.length - 1]);
+  if (!Number.isFinite(expiresAt)) return { valid: false, expired: false };
+  if (Date.now() > expiresAt) return { valid: false, expired: true };
+  const legacyCode = legacyParts.slice(0, -1).join("_");
+  const matchesFullToken = await constantTimeStringEqual(storedToken, presentedToken);
+  const matchesLegacyCode = await constantTimeStringEqual(legacyCode, presentedToken);
+  return { valid: matchesFullToken || matchesLegacyCode, expired: false };
+}
+
 interface SessionData {
   type: "user" | "device";
   idUser?: string;
@@ -1029,17 +1089,23 @@ async function verifyResetPasswordOtp(data: { email?: string; kodeOtp?: string }
     throw new ApiError("Kode OTP salah. Silakan coba lagi.");
   }
 
-  const randomStr = String(Math.floor(10000000 + Math.random() * 90000000));
-  const expiry = Date.now() + CONFIG.RESET_TOKEN_DURATION_MS;
-  const resetToken = randomStr + "_" + expiry;
+  const resetToken = await createResetToken();
 
-  const { error: updateError } = await supabase.from("Users").update({ Token_Reset_Password: resetToken }).eq("ID_User", otpRow.ID_User);
+  const { error: updateError } = await supabase
+    .from("Users")
+    .update({ Token_Reset_Password: resetToken.storedToken })
+    .eq("ID_User", otpRow.ID_User);
   if (updateError) throw new Error("Gagal menyimpan token reset: " + updateError.message);
 
   await supabase.from("Email_OTP").delete().eq("Email", email).eq("Tujuan", "RESET");
   await logAudit("VERIFIKASI_OTP_RESET_BERHASIL", { email }, otpRow.ID_User);
 
-  return { success: true, resetToken, message: "Kode terverifikasi. Silakan buat password baru." };
+  return {
+    success: true,
+    resetToken: resetToken.clientToken,
+    expiresAt: new Date(resetToken.expiresAt).toISOString(),
+    message: "Kode terverifikasi. Silakan buat password baru.",
+  };
 }
 
 async function requestResetPassword(data: { username?: string; email?: string; idCardUnik?: string }): Promise<unknown> {
@@ -1081,6 +1147,8 @@ async function resetPassword(data: { username?: string; email?: string; token?: 
   const { username, email, token, newPassword } = data || {};
   const identifier = username || email;
   if (!identifier || !token || !newPassword) throw new ApiError("Data tidak lengkap");
+  if (newPassword.length < 6) throw new ApiError("Password baru minimal 6 karakter");
+  if (newPassword.length > 128) throw new ApiError("Password baru maksimal 128 karakter");
 
   await checkRateLimit(
     resetRateLimitKey(identifier),
@@ -1102,27 +1170,25 @@ async function resetPassword(data: { username?: string; email?: string; token?: 
     throw new ApiError("Token tidak valid");
   }
 
-  const storedParts = String(user.Token_Reset_Password).split("_");
-  const storedCode = storedParts[0];
-  if (storedCode !== String(token).trim()) {
+  const storedResetToken = String(user.Token_Reset_Password);
+  const tokenValidation = await validateResetToken(storedResetToken, token);
+  if (tokenValidation.expired) {
+    await supabase
+      .from("Users")
+      .update({ Token_Reset_Password: "" })
+      .eq("ID_User", user.ID_User)
+      .eq("Token_Reset_Password", storedResetToken);
+    throw new ApiError("Token sudah expired. Silakan ulangi proses lupa password.");
+  }
+  if (!tokenValidation.valid) {
     await recordFailure(resetRateLimitKey(identifier), RESET_RATE_LIMIT.MAX_ATTEMPTS, RESET_RATE_LIMIT.WINDOW_SECONDS, RESET_RATE_LIMIT.BLOCK_SECONDS);
     throw new ApiError("Token tidak valid");
   }
 
-  const parts = String(user.Token_Reset_Password).split("_");
-  if (parts.length < 2) throw new ApiError("Token tidak valid");
-  const expiry = parseInt(parts[parts.length - 1], 10);
-  if (isNaN(expiry) || Date.now() > expiry) {
-    await supabase.from("Users").update({ Token_Reset_Password: "" }).eq("ID_User", user.ID_User);
-    throw new ApiError("Token sudah expired. Silakan ulangi proses lupa password.");
-  }
-
-  await clearRateLimit(resetRateLimitKey(identifier));
-
   const salt = generateSalt();
   const passwordHash = await hashPassword(newPassword, salt);
 
-  const { error: updateError } = await supabase
+  const { data: updatedUser, error: updateError } = await supabase
     .from("Users")
     .update({
       Password_Hash: passwordHash,
@@ -1131,8 +1197,18 @@ async function resetPassword(data: { username?: string; email?: string; token?: 
       Percobaan_Password_Gagal: 0,
       Akun_Dibekukan: false,
     })
-    .eq("ID_User", user.ID_User);
+    .eq("ID_User", user.ID_User)
+    .eq("Token_Reset_Password", storedResetToken)
+    .select("ID_User")
+    .maybeSingle();
   if (updateError) throw new Error("Gagal menyimpan password baru: " + updateError.message);
+  if (!updatedUser) {
+    throw new ApiError("Token sudah digunakan atau tidak lagi valid. Silakan ulangi proses lupa password.");
+  }
+
+  await clearRateLimit(resetRateLimitKey(identifier));
+  const { error: revokeError } = await supabase.from("Sessions").delete().eq("ID_User", user.ID_User);
+  if (revokeError) console.error("Gagal mencabut sesi setelah reset password:", revokeError.message);
 
   await logAudit("RESET_PASSWORD", { identifier }, user.ID_User);
 
