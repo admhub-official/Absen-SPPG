@@ -481,7 +481,8 @@
     .punch-list{display:flex;flex-wrap:wrap;gap:.35rem}.punch-chip{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .5rem;background:#f1f5f9;border-radius:999px;font-size:.74rem;color:#334155}.punch-chip:first-child{background:#dcfce7;color:#166534}.punch-chip:last-child:not(:first-child){background:#dbeafe;color:#1e40af}
     .empty-state{text-align:center;padding:2.5rem 1rem;color:var(--text-muted)}.empty-state strong{display:block;color:var(--text-secondary);margin-bottom:.25rem}
     .loading-state{display:flex;align-items:center;justify-content:center;gap:.65rem;padding:2rem;color:var(--text-muted);font-size:.85rem}.loading-state .spinner{width:20px;height:20px;border:2px solid #e2e8f0;border-top-color:var(--primary)}
-    .payroll-command{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(160px,.55fr)) auto;gap:1rem;align-items:end}
+    .payroll-period-card{padding:1rem 1.1rem;overflow-x:auto}
+    .payroll-command{display:grid;grid-template-columns:minmax(200px,1fr) 155px 155px max-content;gap:.75rem;align-items:end;min-width:680px}
     .payroll-command-title{align-self:center}.payroll-command-title strong{display:block;font-size:1rem;color:var(--text)}.payroll-command-title span{display:block;margin-top:.3rem;font-size:.78rem;color:var(--text-muted);line-height:1.5}
     .payroll-selection-bar{display:flex;align-items:center;justify-content:space-between;gap:.85rem;flex-wrap:wrap;padding:.8rem 1rem;background:#eef2ff;border:1px solid #c7d2fe;border-radius:var(--radius);margin-bottom:1rem}
     .payroll-selection-count{font-size:.84rem;color:#3730a3}.payroll-selection-count strong{font-size:1rem}
@@ -494,10 +495,11 @@
     .payroll-tabs{display:flex;align-items:center;gap:.35rem;width:max-content;max-width:100%;padding:.3rem;margin-bottom:1rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);overflow-x:auto}
     .payroll-tab{appearance:none;border:0;background:transparent;color:var(--text-muted);font:inherit;font-size:.84rem;font-weight:750;white-space:nowrap;padding:.72rem 1rem;border-radius:calc(var(--radius) - 4px);cursor:pointer;transition:background .18s,color .18s,box-shadow .18s}
     .payroll-tab:hover{color:var(--text);background:var(--bg)}.payroll-tab.active{color:#fff;background:var(--primary);box-shadow:0 5px 14px rgba(79,70,229,.22)}.payroll-tab:focus-visible{outline:3px solid rgba(79,70,229,.22);outline-offset:2px}
+    .payroll-tab-panel[hidden],.payroll-tab-panel.hidden{display:none!important}
     .payroll-history-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}.payroll-download-btn{display:inline-flex;align-items:center;gap:.4rem}
     .slip-period{font-weight:700;color:var(--text)}.slip-issued{font-size:.74rem;color:var(--text-muted);margin-top:.2rem}
-    @media(max-width:900px){.payroll-command{grid-template-columns:1fr 1fr}.payroll-command-title{grid-column:1/-1}.payroll-command .btn{width:100%}.signature-layout{grid-template-columns:1fr}.payroll-modal-summary{grid-template-columns:1fr 1fr}}
-    @media(max-width:760px){.feature-grid{grid-template-columns:1fr}.feature-card{padding:1rem}.feature-toolbar{align-items:stretch}.feature-toolbar .form-input{width:100%}.complaint-head{flex-direction:column}.payroll-command{grid-template-columns:1fr}.payroll-command-title{grid-column:auto}.payroll-modal-summary{grid-template-columns:1fr}.payroll-selection-bar{align-items:stretch}.payroll-selection-bar .btn{width:100%}.payroll-modal-card{max-height:96vh}.modal-footer{flex-wrap:wrap}.modal-footer .btn{flex:1}.signature-canvas-wrap canvas{height:150px}}
+    @media(max-width:900px){.signature-layout{grid-template-columns:1fr}.payroll-modal-summary{grid-template-columns:1fr 1fr}}
+    @media(max-width:760px){.feature-grid{grid-template-columns:1fr}.feature-card{padding:1rem}.payroll-period-card{padding:.85rem}.feature-toolbar{align-items:stretch}.feature-toolbar .form-input{width:100%}.complaint-head{flex-direction:column}.payroll-modal-summary{grid-template-columns:1fr}.payroll-selection-bar{align-items:stretch}.payroll-selection-bar .btn{width:100%}.payroll-modal-card{max-height:96vh}.modal-footer{flex-wrap:wrap}.modal-footer .btn{flex:1}.signature-canvas-wrap canvas{height:150px}}
 
   </style>
 </head>
@@ -1152,13 +1154,13 @@
           <button class="payroll-tab active" id="payroll-tab-publish" type="button" role="tab" aria-selected="true" aria-controls="payroll-panel-publish" data-payroll-tab="publish">Penerbitan Slip</button>
           <button class="payroll-tab" id="payroll-tab-history" type="button" role="tab" aria-selected="false" aria-controls="payroll-panel-history" tabindex="-1" data-payroll-tab="history">Riwayat Slip Diterbitkan</button>
         </div>
-        <section id="payroll-panel-publish" role="tabpanel" aria-labelledby="payroll-tab-publish">
+        <section id="payroll-panel-publish" class="payroll-tab-panel" role="tabpanel" aria-labelledby="payroll-tab-publish">
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-card-icon purple">👥</div><div><div class="stat-card-value" id="payroll-employee-count">0</div><div class="stat-card-label">Karyawan Aktif</div></div></div>
           <div class="stat-card"><div class="stat-card-icon green">✓</div><div><div class="stat-card-value" id="payroll-ready-count">0</div><div class="stat-card-label">Data Gaji Siap</div></div></div>
           <div class="stat-card"><div class="stat-card-icon amber">!</div><div><div class="stat-card-value" id="payroll-incomplete-count">0</div><div class="stat-card-label">Data Belum Lengkap</div></div></div>
         </div>
-        <div class="feature-card">
+        <div class="feature-card payroll-period-card">
           <div class="payroll-command">
             <div class="payroll-command-title"><strong>1. Tentukan periode payroll</strong><span>Hari kerja dihitung dari absensi VALID. Punch tunggal impor yang valid tetap dihitung satu hari kerja.</span></div>
             <div class="form-group" style="margin:0"><label class="form-label" for="payroll-period-start">Tanggal mulai</label><input id="payroll-period-start" type="date" class="form-input"></div>
@@ -1180,7 +1182,7 @@
           <div class="data-table-wrap"><table class="data-table"><thead><tr><th><input class="payroll-checkbox" id="payroll-select-all" type="checkbox" aria-label="Pilih semua karyawan siap"></th><th>Karyawan</th><th>Jabatan</th><th>SPPG</th><th>Gaji Harian</th><th>Hari Kerja</th><th>Subtotal</th><th>Status</th></tr></thead><tbody id="admin-payroll-body"><tr><td colspan="8"><div class="loading-state"><span class="spinner"></span>Memuat data payroll...</div></td></tr></tbody></table></div>
         </div>
         </section>
-        <section id="payroll-panel-history" class="hidden" role="tabpanel" aria-labelledby="payroll-tab-history">
+        <section id="payroll-panel-history" class="payroll-tab-panel hidden" role="tabpanel" aria-labelledby="payroll-tab-history" hidden>
         <div class="admin-card">
           <div class="admin-card-header payroll-history-head"><div><div class="admin-card-title">Riwayat Slip Diterbitkan</div><div class="helper-text">PDF tersimpan privat dan hanya dapat diunduh melalui tautan sementara</div></div><button class="btn btn-secondary btn-sm" id="btn-refresh-payroll-history" type="button">Muat Ulang</button></div>
           <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Karyawan</th><th>Periode</th><th>SPPG</th><th>Total</th><th>Status</th><th>PDF</th></tr></thead><tbody id="admin-payroll-history-body"><tr><td colspan="6"><div class="loading-state"><span class="spinner"></span>Memuat riwayat slip...</div></td></tr></tbody></table></div>
@@ -2858,8 +2860,19 @@ function setAdminPayrollTab(tab,loadHistory=true){
     button.setAttribute('aria-selected',String(isActive));
     button.tabIndex=isActive?0:-1;
   });
-  $('#payroll-panel-publish')?.classList.toggle('hidden',activeTab!=='publish');
-  $('#payroll-panel-history')?.classList.toggle('hidden',activeTab!=='history');
+  const publishPanel=$('#payroll-panel-publish'),historyPanel=$('#payroll-panel-history');
+  if(publishPanel){
+    const isHidden=activeTab!=='publish';
+    publishPanel.hidden=isHidden;
+    publishPanel.classList.toggle('hidden',isHidden);
+    publishPanel.setAttribute('aria-hidden',String(isHidden));
+  }
+  if(historyPanel){
+    const isHidden=activeTab!=='history';
+    historyPanel.hidden=isHidden;
+    historyPanel.classList.toggle('hidden',isHidden);
+    historyPanel.setAttribute('aria-hidden',String(isHidden));
+  }
   if(activeTab==='history'&&loadHistory&&!FeatureState.payrollHistoryLoaded)loadAdminPayrollHistory();
 }
 
