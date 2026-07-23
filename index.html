@@ -498,35 +498,82 @@
     .payroll-tab-panel[hidden],.payroll-tab-panel.hidden{display:none!important}
     .payroll-history-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}.payroll-download-btn{display:inline-flex;align-items:center;gap:.4rem}
     .slip-period{font-weight:700;color:var(--text)}.slip-issued{font-size:.74rem;color:var(--text-muted);margin-top:.2rem}
+    .mobile-only{display:none}
     @media(max-width:900px){.signature-layout{grid-template-columns:1fr}.payroll-modal-summary{grid-template-columns:1fr 1fr}}
     @media(max-width:760px){.feature-grid{grid-template-columns:1fr}.feature-card{padding:1rem}.payroll-period-card{padding:.85rem}.feature-toolbar{align-items:stretch}.feature-toolbar .form-input{width:100%}.complaint-head{flex-direction:column}.payroll-modal-summary{grid-template-columns:1fr}.payroll-selection-bar{align-items:stretch}.payroll-selection-bar .btn{width:100%}.payroll-modal-card{max-height:96vh}.modal-footer{flex-wrap:wrap}.modal-footer .btn{flex:1}.signature-canvas-wrap canvas{height:150px}}
     @media(max-width:760px){
-      .payroll-period-card{overflow:visible}
-      .payroll-command{min-width:0;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.55rem}
-      .payroll-command-title{grid-column:1/-1}
-      .payroll-command-title strong{font-size:.86rem}
-      .payroll-command-title span{font-size:.68rem;line-height:1.35}
-      .payroll-command .form-label{font-size:.68rem;margin-bottom:.25rem}
-      .payroll-command .form-input{min-width:0;padding:.58rem .5rem;font-size:.72rem}
-      .payroll-command .btn{grid-column:1/-1;width:100%;padding:.65rem .75rem;font-size:.76rem}
-      .payroll-responsive-table{overflow:visible}
-      .payroll-responsive-table .data-table{display:block;width:100%;font-size:.74rem}
-      .payroll-responsive-table .data-table thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-      .payroll-responsive-table .data-table tbody{display:block}
-      .payroll-responsive-table .data-table tbody tr{display:block;padding:.65rem .7rem;border-bottom:1px solid var(--border)}
-      .payroll-responsive-table .data-table tbody tr:last-child{border-bottom:0}
-      .payroll-responsive-table .data-table td{display:grid;grid-template-columns:minmax(92px,38%) minmax(0,1fr);align-items:center;gap:.45rem;padding:.34rem 0;border:0;background:transparent!important;min-width:0;font-size:.72rem;line-height:1.35;word-break:break-word}
-      .payroll-responsive-table .data-table td::before{content:attr(data-label);font-size:.63rem;font-weight:800;line-height:1.25;letter-spacing:.025em;text-transform:uppercase;color:var(--text-muted)}
-      .payroll-responsive-table .data-table td[colspan]{display:block;padding:.5rem 0;text-align:center}
-      .payroll-responsive-table .data-table td[colspan]::before{display:none}
-      .payroll-responsive-table .helper-text,.payroll-responsive-table .payroll-employee-meta,.payroll-responsive-table .slip-issued{font-size:.62rem}
-      .payroll-responsive-table .payroll-employee-cell{min-width:0;gap:.5rem}
-      .payroll-responsive-table .payroll-avatar{width:28px;height:28px;border-radius:8px;font-size:.68rem}
-      .payroll-responsive-table .badge{font-size:.58rem;padding:.18rem .45rem}
-      .payroll-responsive-table .btn-sm{padding:.45rem .6rem;font-size:.67rem}
-      .payroll-responsive-table .payroll-money-input,.payroll-responsive-table .payroll-note-input{width:100%;min-width:0;padding:.52rem .55rem;font-size:.7rem}
-      .payroll-responsive-table .payroll-total{font-size:.75rem;white-space:normal}
-      .payroll-history-head{align-items:flex-start}
+      .desktop-only{display:none!important}
+      .mobile-only{display:inline}
+      #view-admin-payroll .page-header{margin-bottom:.85rem}
+      #view-admin-payroll .page-title{font-size:1.05rem}
+      #view-admin-payroll .page-subtitle{font-size:.68rem}
+      #view-admin-payroll .stats-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:.4rem;margin-bottom:.75rem}
+      #view-admin-payroll .stat-card{min-width:0;padding:.48rem .4rem;gap:.35rem;border-radius:.75rem}
+      #view-admin-payroll .stat-card-icon{width:24px;height:24px;border-radius:.45rem;font-size:.65rem}
+      #view-admin-payroll .stat-card-value{font-size:.82rem}
+      #view-admin-payroll .stat-card-label{font-size:.5rem;line-height:1.2}
+      .payroll-tabs{width:100%;padding:.2rem;gap:.2rem;margin-bottom:.7rem;overflow:hidden}
+      .payroll-tab{flex:1;min-width:0;padding:.5rem .25rem;font-size:.62rem;white-space:normal;line-height:1.2}
+      .payroll-period-card{padding:.55rem;overflow:hidden}
+      .payroll-command{min-width:0;grid-template-columns:minmax(48px,.75fr) minmax(68px,1fr) minmax(68px,1fr) minmax(58px,.8fr);gap:.28rem;align-items:end}
+      .payroll-command-title{grid-column:auto;align-self:center;min-width:0}
+      .payroll-command-title strong{font-size:.6rem;line-height:1.15}
+      .payroll-command-title>span{display:none}
+      .payroll-command .form-label{font-size:.49rem;margin-bottom:.18rem;line-height:1.1}
+      .payroll-command .form-input{width:100%;min-width:0;height:30px;padding:.28rem .15rem;font-size:.52rem;letter-spacing:-.025em}
+      .payroll-command input[type="date"]::-webkit-calendar-picker-indicator{width:10px;height:10px;margin:0;padding:0}
+      .payroll-command .btn{grid-column:auto;width:100%;height:30px;padding:.3rem .2rem;font-size:.55rem;line-height:1.1}
+      .payroll-selection-bar{flex-wrap:nowrap;align-items:center;padding:.48rem .55rem;gap:.35rem;margin-bottom:.55rem}
+      .payroll-selection-count{font-size:.58rem;white-space:nowrap}
+      .payroll-selection-count strong{font-size:.72rem}
+      .payroll-selection-bar .btn{width:auto;flex:0 1 auto;padding:.45rem .5rem;font-size:.57rem;white-space:nowrap}
+      .payroll-responsive-table{width:100%;overflow:hidden}
+      .payroll-responsive-table .data-table{display:table;width:100%;table-layout:fixed;font-size:.52rem}
+      .payroll-responsive-table .data-table thead{position:static;width:auto;height:auto;padding:0;margin:0;overflow:visible;clip:auto;white-space:normal;border:0}
+      .payroll-responsive-table .data-table tbody{display:table-row-group}
+      .payroll-responsive-table .data-table tr{display:table-row;padding:0;border:0}
+      .payroll-responsive-table .data-table th{display:table-cell;padding:.34rem .12rem;font-size:.45rem;line-height:1.15;letter-spacing:0;text-align:center;white-space:normal;overflow-wrap:anywhere}
+      .payroll-responsive-table .data-table td{display:table-cell;padding:.38rem .12rem;border-bottom:1px solid var(--border);font-size:.5rem;line-height:1.22;text-align:center;vertical-align:middle;white-space:normal;overflow-wrap:anywhere;word-break:normal;background:transparent!important}
+      .payroll-responsive-table .data-table td::before{display:none;content:none}
+      .payroll-responsive-table .data-table td[colspan]{display:table-cell;padding:.6rem .25rem}
+      .payroll-responsive-table .loading-state,.payroll-responsive-table .empty-state{padding:1rem .25rem;font-size:.62rem}
+      .payroll-responsive-table .helper-text{font-size:.46rem;line-height:1.2;margin:0}
+      .payroll-responsive-table .payroll-employee-cell{display:block;min-width:0}
+      .payroll-responsive-table .payroll-avatar,.payroll-responsive-table .payroll-employee-meta{display:none}
+      .payroll-responsive-table strong{font-size:inherit;line-height:inherit}
+      .payroll-responsive-table .badge{display:block;width:100%;padding:.15rem .08rem;font-size:.42rem;line-height:1.15;white-space:normal;letter-spacing:0}
+      .payroll-responsive-table .btn-sm{display:inline-flex;width:100%;padding:.28rem .08rem;font-size:.45rem;line-height:1.1;white-space:normal}
+      .payroll-responsive-table .slip-period{font-size:.48rem;line-height:1.2}
+      .payroll-responsive-table .slip-issued{font-size:.42rem;line-height:1.15}
+      .payroll-responsive-table .payroll-money-input,.payroll-responsive-table .payroll-note-input{width:100%;min-width:0;height:27px;padding:.2rem .1rem;font-size:.48rem;text-align:center;-moz-appearance:textfield}
+      .payroll-responsive-table .payroll-money-input::-webkit-inner-spin-button,.payroll-responsive-table .payroll-money-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+      .payroll-responsive-table .payroll-total{font-size:.48rem;line-height:1.15;white-space:normal}
+      .payroll-checkbox{width:12px;height:12px}
+      .payroll-employee-table th:nth-child(1),.payroll-employee-table td:nth-child(1){width:5%}
+      .payroll-employee-table th:nth-child(2),.payroll-employee-table td:nth-child(2){width:20%}
+      .payroll-employee-table th:nth-child(3),.payroll-employee-table td:nth-child(3){width:15%}
+      .payroll-employee-table th:nth-child(4),.payroll-employee-table td:nth-child(4){width:10%}
+      .payroll-employee-table th:nth-child(5),.payroll-employee-table td:nth-child(5){width:14%}
+      .payroll-employee-table th:nth-child(6),.payroll-employee-table td:nth-child(6){width:10%}
+      .payroll-employee-table th:nth-child(7),.payroll-employee-table td:nth-child(7){width:15%}
+      .payroll-employee-table th:nth-child(8),.payroll-employee-table td:nth-child(8){width:11%}
+      .payroll-history-table th:nth-child(1),.payroll-history-table td:nth-child(1){width:21%}
+      .payroll-history-table th:nth-child(2),.payroll-history-table td:nth-child(2){width:24%}
+      .payroll-history-table th:nth-child(3),.payroll-history-table td:nth-child(3){width:14%}
+      .payroll-history-table th:nth-child(4),.payroll-history-table td:nth-child(4){width:17%}
+      .payroll-history-table th:nth-child(5),.payroll-history-table td:nth-child(5){width:12%}
+      .payroll-history-table th:nth-child(6),.payroll-history-table td:nth-child(6){width:12%}
+      .payroll-adjustment-table th:nth-child(1),.payroll-adjustment-table td:nth-child(1){width:20%}
+      .payroll-adjustment-table th:nth-child(2),.payroll-adjustment-table td:nth-child(2){width:16%}
+      .payroll-adjustment-table th:nth-child(3),.payroll-adjustment-table td:nth-child(3){width:16%}
+      .payroll-adjustment-table th:nth-child(4),.payroll-adjustment-table td:nth-child(4){width:16%}
+      .payroll-adjustment-table th:nth-child(5),.payroll-adjustment-table td:nth-child(5){width:17%}
+      .payroll-adjustment-table th:nth-child(6),.payroll-adjustment-table td:nth-child(6){width:15%}
+      .payroll-modal-summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem}
+      .payroll-summary-item{min-width:0;padding:.45rem .3rem}
+      .payroll-summary-item span{font-size:.48rem}
+      .payroll-summary-item strong{font-size:.56rem;line-height:1.2;overflow-wrap:anywhere}
+      .payroll-history-head{align-items:center}
     }
 
   </style>
@@ -1190,10 +1237,10 @@
         </div>
         <div class="feature-card payroll-period-card">
           <div class="payroll-command">
-            <div class="payroll-command-title"><strong>1. Tentukan periode payroll</strong><span>Hari kerja dihitung dari absensi VALID. Punch tunggal impor yang valid tetap dihitung satu hari kerja.</span></div>
-            <div class="form-group" style="margin:0"><label class="form-label" for="payroll-period-start">Tanggal mulai</label><input id="payroll-period-start" type="date" class="form-input"></div>
-            <div class="form-group" style="margin:0"><label class="form-label" for="payroll-period-end">Tanggal akhir</label><input id="payroll-period-end" type="date" class="form-input"></div>
-            <button class="btn btn-secondary" id="btn-payroll-preview" type="button">Hitung Hari Kerja</button>
+            <div class="payroll-command-title"><strong><span class="desktop-only">1. Tentukan periode payroll</span><span class="mobile-only">1. Periode</span></strong><span>Hari kerja dihitung dari absensi VALID. Punch tunggal impor yang valid tetap dihitung satu hari kerja.</span></div>
+            <div class="form-group" style="margin:0"><label class="form-label" for="payroll-period-start"><span class="desktop-only">Tanggal mulai</span><span class="mobile-only">Mulai</span></label><input id="payroll-period-start" type="date" class="form-input"></div>
+            <div class="form-group" style="margin:0"><label class="form-label" for="payroll-period-end"><span class="desktop-only">Tanggal akhir</span><span class="mobile-only">Akhir</span></label><input id="payroll-period-end" type="date" class="form-input"></div>
+            <button class="btn btn-secondary" id="btn-payroll-preview" type="button"><span class="desktop-only">Hitung Hari Kerja</span><span class="mobile-only">Hitung</span></button>
           </div>
         </div>
         <div class="admin-card">
@@ -1207,13 +1254,13 @@
               <button class="btn btn-primary btn-sm" id="btn-open-payroll-publish" type="button" disabled>Atur Bonus & Terbitkan</button>
             </div>
           </div>
-          <div class="data-table-wrap payroll-responsive-table"><table class="data-table payroll-employee-table"><thead><tr><th><input class="payroll-checkbox" id="payroll-select-all" type="checkbox" aria-label="Pilih semua karyawan siap"></th><th>Karyawan</th><th>Jabatan</th><th>SPPG</th><th>Gaji Harian</th><th>Hari Kerja</th><th>Subtotal</th><th>Status</th></tr></thead><tbody id="admin-payroll-body"><tr><td colspan="8"><div class="loading-state"><span class="spinner"></span>Memuat data payroll...</div></td></tr></tbody></table></div>
+          <div class="data-table-wrap payroll-responsive-table"><table class="data-table payroll-employee-table"><thead><tr><th><input class="payroll-checkbox" id="payroll-select-all" type="checkbox" aria-label="Pilih semua karyawan siap"></th><th><span class="desktop-only">Karyawan</span><span class="mobile-only">User</span></th><th>Jabatan</th><th>SPPG</th><th><span class="desktop-only">Gaji Harian</span><span class="mobile-only">Gaji</span></th><th><span class="desktop-only">Hari Kerja</span><span class="mobile-only">Hari</span></th><th><span class="desktop-only">Subtotal</span><span class="mobile-only">Total</span></th><th>Status</th></tr></thead><tbody id="admin-payroll-body"><tr><td colspan="8"><div class="loading-state"><span class="spinner"></span>Memuat data payroll...</div></td></tr></tbody></table></div>
         </div>
         </section>
         <section id="payroll-panel-history" class="payroll-tab-panel hidden" role="tabpanel" aria-labelledby="payroll-tab-history" hidden>
         <div class="admin-card">
           <div class="admin-card-header payroll-history-head"><div><div class="admin-card-title">Riwayat Slip Diterbitkan</div><div class="helper-text">PDF tersimpan privat dan hanya dapat diunduh melalui tautan sementara</div></div><button class="btn btn-secondary btn-sm" id="btn-refresh-payroll-history" type="button">Muat Ulang</button></div>
-          <div class="data-table-wrap payroll-responsive-table"><table class="data-table payroll-history-table"><thead><tr><th>Karyawan</th><th>Periode</th><th>SPPG</th><th>Total</th><th>Status</th><th>PDF</th></tr></thead><tbody id="admin-payroll-history-body"><tr><td colspan="6"><div class="loading-state"><span class="spinner"></span>Memuat riwayat slip...</div></td></tr></tbody></table></div>
+          <div class="data-table-wrap payroll-responsive-table"><table class="data-table payroll-history-table"><thead><tr><th><span class="desktop-only">Karyawan</span><span class="mobile-only">User</span></th><th>Periode</th><th>SPPG</th><th>Total</th><th>Status</th><th>PDF</th></tr></thead><tbody id="admin-payroll-history-body"><tr><td colspan="6"><div class="loading-state"><span class="spinner"></span>Memuat riwayat slip...</div></td></tr></tbody></table></div>
         </div>
         </section>
       </div>
@@ -1411,7 +1458,7 @@
       </div>
       <div class="data-table-wrap payroll-responsive-table">
         <table class="data-table payroll-adjustment-table">
-          <thead><tr><th>Karyawan</th><th>Hari / Subtotal</th><th>Bonus / Tambahan</th><th>Potongan</th><th>Keterangan Potongan</th><th>Total Bersih</th></tr></thead>
+          <thead><tr><th><span class="desktop-only">Karyawan</span><span class="mobile-only">User</span></th><th><span class="desktop-only">Hari / Subtotal</span><span class="mobile-only">Hari / Total</span></th><th><span class="desktop-only">Bonus / Tambahan</span><span class="mobile-only">Bonus</span></th><th><span class="desktop-only">Potongan</span><span class="mobile-only">Pot.</span></th><th><span class="desktop-only">Keterangan Potongan</span><span class="mobile-only">Ket.</span></th><th><span class="desktop-only">Total Bersih</span><span class="mobile-only">Bersih</span></th></tr></thead>
           <tbody id="payroll-adjustment-body"></tbody>
         </table>
       </div>
