@@ -1,5 +1,4 @@
 window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   projectUrl: 'https://szwwpnbbsmjsbzzcecyj.supabase.co',
-  functionUrl: 'https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen',
   functionName: 'Absen'
 });
