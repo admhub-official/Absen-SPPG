@@ -2471,7 +2471,7 @@ const CRUD_CONFIG: Record<string, CrudConfig> = {
 };
 
 const CRUD_FORBIDDEN_FIELDS: Record<string, string[]> = {
-  users: ["ID_User", "Password_Hash", "Password_Salt", "Face_Descriptor_JSON", "Created_At"],
+  users: ["ID_User", "Password_Hash", "Password_Salt", "Face_Descriptor_JSON", "Role", "Created_At"],
   absensi: ["ID_Absen", "Created_At"],
   payroll: ["ID_Payroll", "Created_At"],
   slip_gaji: ["ID_Slip", "Created_At"],
@@ -2483,7 +2483,6 @@ const CRUD_FORBIDDEN_FIELDS: Record<string, string[]> = {
 
 const CRUD_ROLE_RESTRICTED_FIELDS: Record<string, Record<string, string[]>> = {
   users: {
-    Role: ["ADMIN", "SUPER ADMIN"],
     Gaji_Harian: ["ADMIN", "SUPER ADMIN"],
     Status_Aktif: ["ADMIN", "SUPER ADMIN"],
   },
@@ -2717,10 +2716,63 @@ async function getAllSlipGajiList(data: { token?: string }): Promise<unknown> {
 
 async function requireSuperAdmin(token: string): Promise<SessionData> {
   const session = await validateSession(token);
-  if (session.type !== "user" || session.role !== "SUPER ADMIN") {
+  if (session.type !== "user" || !isSuperAdmin(session.role)) {
     throw new ApiError("Akses ditolak. Hanya untuk Super Admin.");
   }
   return session;
+}
+
+async function getAdminConfiguration(data: { token?: string }): Promise<unknown> {
+  await requireSuperAdmin(data?.token || "");
+
+  const [usersResult, sppgResult, accessResult] = await Promise.all([
+    supabase
+      .from("Users")
+      .select("ID_User, Nama_Lengkap, Email, Role, SPPG, Yayasan, Status_Aktif")
+      .order("Nama_Lengkap", { ascending: true }),
+    supabase
+      .from("Master_SPPG")
+      .select("ID_Master_SPPG, Nama_SPPG, Yayasan, Aktif")
+      .order("Nama_SPPG", { ascending: true }),
+    supabase
+      .from("Akses_Email")
+      .select("ID_Akses, Email, SPPG, Aktif, Created_At")
+      .order("Email", { ascending: true }),
+  ]);
+
+  if (usersResult.error) throw new Error("Gagal mengambil akun: " + usersResult.error.message);
+  if (sppgResult.error) throw new Error("Gagal mengambil master SPPG: " + sppgResult.error.message);
+  if (accessResult.error) throw new Error("Gagal mengambil konfigurasi akses: " + accessResult.error.message);
+
+  const users = usersResult.data || [];
+  const masterSppg = (sppgResult.data || []).filter((row: any) => isActive(row.Aktif));
+  const userByEmail = new Map(
+    users
+      .filter((row: any) => row.Email)
+      .map((row: any) => [String(row.Email).trim().toLowerCase(), row]),
+  );
+  const sppgByName = new Map(
+    masterSppg.map((row: any) => [String(row.Nama_SPPG).trim().toUpperCase(), row]),
+  );
+
+  const access = (accessResult.data || []).map((row: any) => {
+    const account = userByEmail.get(String(row.Email || "").trim().toLowerCase());
+    const sppg = sppgByName.get(String(row.SPPG || "").trim().toUpperCase());
+    return {
+      ...row,
+      Nama_Admin: account?.Nama_Lengkap || "",
+      Role_Admin: account?.Role || "",
+      Yayasan: sppg?.Yayasan || "",
+    };
+  });
+
+  return {
+    success: true,
+    accounts: users,
+    adminAccounts: users.filter((row: any) => ["ADMIN", "AKUNTAN"].includes(normalizeRole(row.Role))),
+    masterSppg,
+    access,
+  };
 }
 
 async function getAksesEmailList(data: { token?: string }): Promise<unknown> {
@@ -2733,27 +2785,151 @@ async function getAksesEmailList(data: { token?: string }): Promise<unknown> {
 }
 
 async function saveAksesEmail(data: { token?: string; email?: string; sppg?: string; aktif?: boolean }): Promise<unknown> {
-  await requireSuperAdmin(data?.token || "");
+  const session = await requireSuperAdmin(data?.token || "");
   const email = (data.email || "").trim().toLowerCase();
   const sppg = (data.sppg || "").trim();
   if (!email) throw new ApiError("Email wajib diisi");
   if (!sppg) throw new ApiError("SPPG wajib dipilih");
 
+  const { data: account, error: accountError } = await supabase
+    .from("Users")
+    .select("ID_User, Nama_Lengkap, Email, Role")
+    .ilike("Email", email)
+    .maybeSingle();
+  if (accountError) throw new Error("Gagal memvalidasi akun: " + accountError.message);
+  if (!account || !["ADMIN", "AKUNTAN"].includes(normalizeRole(account.Role))) {
+    throw new ApiError("Akses hanya dapat diberikan kepada akun ADMIN atau AKUNTAN");
+  }
+
+  const { data: masterSppg, error: sppgError } = await supabase
+    .from("Master_SPPG")
+    .select("Nama_SPPG, Aktif")
+    .ilike("Nama_SPPG", sppg)
+    .maybeSingle();
+  if (sppgError) throw new Error("Gagal memvalidasi SPPG: " + sppgError.message);
+  if (!masterSppg || !isActive(masterSppg.Aktif)) throw new ApiError("SPPG tidak ditemukan atau tidak aktif");
+
+  const canonicalSppg = String(masterSppg.Nama_SPPG);
+  const { data: existingRows, error: existingError } = await supabase
+    .from("Akses_Email")
+    .select("ID_Akses, Aktif")
+    .ilike("Email", email)
+    .eq("SPPG", canonicalSppg)
+    .limit(1);
+  if (existingError) throw new Error("Gagal memeriksa akses: " + existingError.message);
+
+  const existing = existingRows?.[0];
+  if (existing) {
+    if (!isActive(existing.Aktif)) {
+      const { error: reactivateError } = await supabase
+        .from("Akses_Email")
+        .update({ Aktif: true })
+        .eq("ID_Akses", existing.ID_Akses);
+      if (reactivateError) throw new Error("Gagal mengaktifkan kembali akses: " + reactivateError.message);
+    }
+    await logAudit(
+      "KONFIGURASI_AKSES_ADMIN",
+      { tindakan: "AKTIFKAN", idUser: account.ID_User, email, sppg: canonicalSppg },
+      session.idUser || null,
+    );
+    return { success: true, message: "Akses ADMIN sudah aktif" };
+  }
+
   const { error } = await supabase.from("Akses_Email").insert({
     Email: email,
-    SPPG: sppg,
+    SPPG: canonicalSppg,
     Aktif: data.aktif !== false,
   });
   if (error) throw new Error("Gagal menyimpan Akses_Email: " + error.message);
+
+  await logAudit(
+    "KONFIGURASI_AKSES_ADMIN",
+    { tindakan: "TAMBAH", idUser: account.ID_User, email, sppg: canonicalSppg },
+    session.idUser || null,
+  );
   return { success: true, message: "Akses berhasil ditambahkan" };
 }
 
 async function deleteAksesEmail(data: { token?: string; idAkses?: string }): Promise<unknown> {
-  await requireSuperAdmin(data?.token || "");
+  const session = await requireSuperAdmin(data?.token || "");
   if (!data.idAkses) throw new ApiError("ID Akses wajib diisi");
+
+  const { data: existing, error: findError } = await supabase
+    .from("Akses_Email")
+    .select("ID_Akses, Email, SPPG")
+    .eq("ID_Akses", data.idAkses)
+    .maybeSingle();
+  if (findError) throw new Error("Gagal mencari akses: " + findError.message);
+  if (!existing) throw new ApiError("Konfigurasi akses tidak ditemukan");
+
   const { error } = await supabase.from("Akses_Email").delete().eq("ID_Akses", data.idAkses);
   if (error) throw new Error("Gagal menghapus Akses_Email: " + error.message);
+
+  await logAudit(
+    "KONFIGURASI_AKSES_ADMIN",
+    { tindakan: "HAPUS", idAkses: data.idAkses, email: existing.Email, sppg: existing.SPPG },
+    session.idUser || null,
+  );
   return { success: true, message: "Akses berhasil dihapus" };
+}
+
+async function setConfiguredUserRole(data: { token?: string; idUser?: string; role?: string }): Promise<unknown> {
+  const session = await requireSuperAdmin(data?.token || "");
+  const idUser = String(data?.idUser || "").trim();
+  const role = normalizeRole(data?.role);
+  if (!idUser) throw new ApiError("ID user wajib diisi");
+  if (!["USER", "ADMIN", "AKUNTAN"].includes(role)) throw new ApiError("Role tidak valid");
+
+  const { data: target, error: targetError } = await supabase
+    .from("Users")
+    .select("ID_User, Nama_Lengkap, Email, Role")
+    .eq("ID_User", idUser)
+    .maybeSingle();
+  if (targetError) throw new Error("Gagal mengambil akun: " + targetError.message);
+  if (!target) throw new ApiError("Akun tidak ditemukan");
+  if (isSuperAdmin(target.Role)) throw new ApiError("Role SUPER ADMIN tidak dapat diubah dari menu ini");
+
+  const previousRole = normalizeRole(target.Role);
+  if (previousRole === role) return { success: true, message: "Role akun tidak berubah" };
+
+  const { error: updateError } = await supabase
+    .from("Users")
+    .update({ Role: role, Updated_At: new Date().toISOString() })
+    .eq("ID_User", idUser);
+  if (updateError) throw new Error("Gagal memperbarui role: " + updateError.message);
+
+  const { error: revokeError } = await supabase.from("Sessions").delete().eq("ID_User", idUser);
+  if (revokeError) console.error("Gagal mencabut sesi setelah perubahan role:", revokeError.message);
+
+  if (role === "USER" && target.Email) {
+    const { error: cleanupError } = await supabase
+      .from("Akses_Email")
+      .delete()
+      .ilike("Email", String(target.Email).trim().toLowerCase());
+    if (cleanupError) console.error("Gagal membersihkan akses setelah demosi role:", cleanupError.message);
+  }
+
+  await logAudit(
+    "KONFIGURASI_ROLE_AKUN",
+    { idUser, nama: target.Nama_Lengkap, dari: previousRole, ke: role, sesiDicabut: !revokeError },
+    session.idUser || null,
+  );
+  return { success: true, message: "Role diperbarui. Sesi akun terkait telah dicabut." };
+}
+
+async function getMyActivity(data: { token?: string }): Promise<unknown> {
+  const session = await validateSession(data?.token || "");
+  if (session.type !== "user" || !session.idUser) throw new ApiError("Akses ditolak");
+
+  const { data: logs, error } = await supabase
+    .from("Audit_Log")
+    .select("ID_Log, Waktu, Jenis_Aktivitas, Detail, IP_Address")
+    .eq("ID_User_Pelaku", session.idUser)
+    .order("Waktu", { ascending: false })
+    .limit(100);
+  if (error) throw new Error("Gagal mengambil aktivitas Anda: " + error.message);
+
+  return { success: true, logs: logs || [] };
 }
 
 
@@ -3314,15 +3490,18 @@ const API_FUNCTIONS: Record<string, (data: any) => Promise<unknown>> = {
   getAllPayrollHistory,
   getAllSlipGajiList,
   getAllMasterSppgList,
+  getAdminConfiguration,
   getAksesEmailList,
   saveAksesEmail,
   deleteAksesEmail,
+  setConfiguredUserRole,
   getAllMasterJabatanList,
   updateData,
   deleteData,
   deleteMultipleData,
   getAuditLog,
   getAuditLogEnriched,
+  getMyActivity,
   getProfilLengkap,
   updateProfil,
   changePassword,
