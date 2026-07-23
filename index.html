@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 54399)
-Total output lines: 3255
-
 <!DOCTYPE html>
 <html lang="id" class="antialiased">
 <head>
@@ -1202,7 +1199,236 @@ Total output lines: 3255
             </div>
           </div>
           <div class="facecam-progress"><div class="facecam-progress-bar" id="absen-progress-bar"></div></div>
-          <div c…4399 tokens truncated…_/g,' ');
+          <div class="facecam-status" id="absen-facecam-status">Memuat kamera...</div>
+          <div class="facecam-hint" id="absen-facecam-hint">Posisikan wajah Anda di dalam bingkai, lalu tersenyumlah</div>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <nav class="app-bottomnav">
+      <button class="app-bottomnav-item user-only-nav active" data-view="dashboard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
+      <button class="app-bottomnav-item app-bottomnav-item-scan user-only-nav" data-view="absen-scan" aria-label="Absen dengan wajah"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg><span class="app-bottomnav-scan-label">Absen</span></button>
+      <button class="app-bottomnav-item user-only-nav" data-view="pengaduan"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>Aduan</button>
+      <button class="app-bottomnav-item admin-only-nav" data-view="admin-dashboard" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
+      <button class="app-bottomnav-item admin-only-nav" data-view="admin-users" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>Users</button>
+      <button class="app-bottomnav-item app-bottomnav-item-scan admin-only-nav" data-view="absen-scan" style="display:none" aria-label="Absen dengan wajah"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg><span class="app-bottomnav-scan-label">Absen</span></button>
+      <button class="app-bottomnav-item admin-only-nav" data-view="admin-payroll" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Payroll</button>
+      <button class="app-bottomnav-item app-bottomnav-more admin-only-nav" id="btn-mobile-more" type="button" style="display:none" aria-expanded="false" aria-controls="mobile-more-menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>Lainnya<span class="badge-count" data-complaint-count style="display:none">0</span></button>
+    </nav>
+    <div class="mobile-more-menu admin-only-nav" id="mobile-more-menu" style="display:none">
+      <div class="mobile-more-menu-title">Menu Admin Lainnya</div>
+      <button class="mobile-more-menu-item" data-view="admin-absen" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Data Absensi</button>
+      <button class="mobile-more-menu-item" data-view="admin-pengaduan" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>Inbox Pengaduan<span class="badge-count" data-complaint-count style="display:none">0</span></button>
+      <button class="mobile-more-menu-item" data-view="admin-log" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Log Aktivitas</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL TERBITKAN SLIP GAJI ===== -->
+<div class="modal-overlay modal-overlay-top" id="modal-payroll-publish">
+  <div class="modal-card payroll-modal-card">
+    <div class="modal-header">
+      <div><h3>Terbitkan Slip Gaji</h3><div class="helper-text">Tinjau penyesuaian setiap karyawan dan bubuhkan tanda tangan penerbit</div></div>
+      <button class="modal-close" id="btn-close-payroll-publish" type="button" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="payroll-publish-alert" class="inline-alert"></div>
+      <div class="payroll-modal-summary">
+        <div class="payroll-summary-item"><span>Periode</span><strong id="payroll-modal-period">-</strong></div>
+        <div class="payroll-summary-item"><span>Jumlah Slip</span><strong id="payroll-modal-count">0 karyawan</strong></div>
+        <div class="payroll-summary-item"><span>Penerbit</span><strong id="payroll-modal-signer">-</strong></div>
+      </div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Karyawan</th><th>Hari / Subtotal</th><th>Bonus / Tambahan</th><th>Potongan</th><th>Keterangan Potongan</th><th>Total Bersih</th></tr></thead>
+          <tbody id="payroll-adjustment-body"></tbody>
+        </table>
+      </div>
+      <div class="signature-layout">
+        <div class="signature-panel">
+          <div class="form-label">Tanda tangan penerbit <span style="color:var(--danger)">*</span></div>
+          <div class="signature-canvas-wrap"><canvas id="payroll-signature-canvas" width="900" height="300" aria-label="Canvas tanda tangan penerbit"></canvas></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-top:.55rem"><div class="signature-help">Gunakan mouse, pena digital, atau jari. Tanda tangan akan dicantumkan pada seluruh slip di batch ini.</div><button class="btn btn-secondary btn-sm" id="btn-clear-payroll-signature" type="button">Hapus Tanda Tangan</button></div>
+        </div>
+        <div class="signature-legal"><strong>Konfirmasi penerbitan</strong>Dengan menandatangani dan menerbitkan, Anda menyatakan periode, jumlah hari kerja, bonus, potongan, dan total gaji telah diperiksa. Slip yang terbit langsung tersedia di akun karyawan terkait.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-payroll-publish" type="button">Batal</button>
+      <button class="btn btn-primary" id="btn-confirm-payroll-publish" type="button">Tandatangani & Terbitkan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL UPDATE USER (ADMIN) ===== -->
+<div class="modal-overlay" id="modal-admin-update-user">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Update Data User</h3>
+      <button class="modal-close" id="btn-close-admin-update-user">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="admin-update-user-alert" class="inline-alert"></div>
+      <input type="hidden" id="admin-update-user-id">
+      <div class="modal-grid">
+        <div class="form-group"><label class="form-label">Nama Lengkap</label><input type="text" id="auu-nama" class="form-input"></div>
+        <div class="form-group"><label class="form-label">No. WhatsApp</label><input type="text" id="auu-wa" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Tempat Lahir</label><input type="text" id="auu-tempat-lahir" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Tanggal Lahir</label><input type="date" id="auu-tanggal-lahir" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Jenis Kelamin</label>
+          <select id="auu-jk" class="form-input">
+            <option value="">Pilih</option>
+            <option value="Laki-laki">Laki-laki</option>
+            <option value="Perempuan">Perempuan</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">SPPG</label><input type="text" id="auu-sppg" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Jabatan / Divisi</label><input type="text" id="auu-jabatan" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Tanggal Mulai Kerja</label><input type="date" id="auu-mulai-kerja" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Gaji Harian</label><input type="number" id="auu-gaji" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Nama Bank</label><input type="text" id="auu-bank" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Nomor Rekening</label><input type="text" id="auu-nomor-rekening" class="form-input" inputmode="numeric"></div>
+        <div class="form-group" style="grid-column:1/-1"><label class="form-label">Atas Nama Rekening</label><input type="text" id="auu-rekening" class="form-input"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-admin-update-user">Batal</button>
+      <button class="btn btn-primary" id="btn-save-admin-update-user">Simpan Perubahan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL KONFIRMASI HAPUS USER ===== -->
+<div class="modal-overlay" id="modal-admin-delete-user">
+  <div class="modal-card" style="max-width:400px">
+    <div class="modal-header">
+      <h3>Hapus User</h3>
+      <button class="modal-close" id="btn-close-admin-delete-user">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-secondary);font-size:0.9rem;line-height:1.6">Apakah Anda yakin ingin menghapus user <strong id="delete-user-name-confirm"></strong>? Tindakan ini tidak dapat dibatalkan.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-admin-delete-user">Batal</button>
+      <button class="btn" id="btn-confirm-admin-delete-user" style="background:var(--danger);color:#fff">Ya, Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL LOG DETAIL ===== -->
+<div class="modal-overlay" id="modal-log-detail">
+  <div class="modal-card" style="max-width:500px">
+    <div class="modal-header">
+      <h3>Detail Log Aktivitas</h3>
+      <button class="modal-close" id="btn-close-log-detail">✕</button>
+    </div>
+    <div class="modal-body" id="log-detail-body">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-close-log-detail-footer">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-edit-profil">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Update Profil</h3>
+      <button class="modal-close" id="btn-close-edit-profil">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="edit-profil-alert" class="inline-alert"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.75rem;margin-bottom:1.5rem">
+        <div class="profile-avatar" id="edit-profil-avatar" style="width:96px;height:96px;font-size:1.875rem;position:static">-</div>
+        <button type="button" class="btn btn-secondary" id="btn-ubah-foto-profil" style="font-size:0.8125rem;padding:0.5rem 1rem;display:inline-flex;align-items:center;gap:0.4rem">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Ubah Foto Profil
+        </button>
+        <input type="file" id="input-foto-profil" accept="image/*" style="display:none">
+      </div>
+      <div class="modal-grid">
+        <div class="form-group"><label class="form-label">Nama Lengkap</label><input type="text" id="edit-nama" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Username</label><input type="text" id="edit-username" class="form-input" disabled></div>
+        <div class="form-group"><label class="form-label">Tempat Lahir</label><input type="text" id="edit-tempat-lahir" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Tanggal Lahir</label><input type="date" id="edit-tanggal-lahir" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Jenis Kelamin</label>
+          <select id="edit-jk" class="form-input">
+            <option value="">Pilih</option>
+            <option value="Laki-laki">Laki-laki</option>
+            <option value="Perempuan">Perempuan</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Email</label><input type="email" id="edit-email" class="form-input"></div>
+        <div class="form-group"><label class="form-label">No. WhatsApp</label><input type="text" id="edit-wa" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Nama Bank</label><input type="text" id="edit-bank" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Nomor Rekening</label><input type="text" id="edit-nomor-rekening" class="form-input" inputmode="numeric"></div>
+        <div class="form-group"><label class="form-label">Atas Nama Rekening</label><input type="text" id="edit-rekening" class="form-input"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-edit-profil">Batal</button>
+      <button class="btn btn-primary" id="btn-save-edit-profil">Simpan Perubahan</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay modal-overlay-top" id="modal-crop-foto">
+  <div class="modal-card" style="max-width:420px">
+    <div class="modal-header">
+      <h3>Atur Foto Profil</h3>
+      <button class="modal-close" id="btn-close-crop-foto">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="crop-stage" id="crop-stage">
+        <canvas id="crop-canvas" width="320" height="320"></canvas>
+        <div class="crop-circle-overlay"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-top:1.25rem">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:var(--text-muted)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="range" id="crop-zoom" min="100" max="300" value="100" style="flex:1">
+      </div>
+      <p style="text-align:center;color:var(--text-muted);font-size:0.8125rem;margin-top:0.5rem">Geser gambar dan atur zoom untuk memposisikan foto</p>
+      <button type="button" class="btn btn-secondary" id="btn-pilih-foto-baru" style="width:100%;margin-top:0.75rem;font-size:0.8125rem;display:inline-flex;align-items:center;justify-content:center;gap:0.4rem">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Pilih Foto Lain
+      </button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-crop-foto">Batal</button>
+      <button class="btn btn-primary" id="btn-save-crop-foto">Simpan Foto</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay modal-overlay-top" id="modal-daftar-wajah">
+  <div class="modal-card" style="max-width:400px">
+    <div class="modal-header">
+      <h3>Daftarkan Wajah</h3>
+      <button class="modal-close" id="btn-close-daftar-wajah">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="daftar-wajah-alert" class="inline-alert"></div>
+      <div class="facecam-wrap" id="facecam-wrap">
+        <video id="facecam-video" autoplay playsinline muted></video>
+        <canvas id="facecam-canvas"></canvas>
+      </div>
+      <div class="facecam-progress"><div class="facecam-progress-bar" id="facecam-progress-bar"></div></div>
+      <div class="facecam-status" id="facecam-status">Memuat kamera...</div>
+      <div class="facecam-hint">Posisikan wajah Anda di dalam bingkai, lalu tersenyumlah</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-daftar-wajah">Batal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let SUPABASE_URL='',SUPABASE_KEY='';
+const CONFIG_ENDPOINT='https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';
+const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppState={token:null,user:null,currentPage:'login',currentView:'dashboard',pendingRegisterEmail:'',pendingResetEmail:'',pendingResetToken:'',resendTimerRegister:null,resendTimerReset:null};
+const escapeHtml=(value)=>String(value??'').replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const normalizeRole=(value)=>String(value||'').trim().toUpperCase().replace(/_/g,' ');
 const FACEAPI_CDN_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
 const FACEAPI_MODEL_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
 const FaceApiState={scriptLoaded:false,modelsLoaded:false,loadingPromise:null};
