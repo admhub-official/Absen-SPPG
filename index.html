@@ -40,7 +40,6 @@
     .auth-brand-feature-icon{width:34px;height:34px;flex-shrink:0;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius);display:flex;align-items:center;justify-content:center}
     .auth-form-panel{width:100%;max-width:480px;padding:clamp(1.5rem,4vw,3rem);display:flex;align-items:center;justify-content:center;background:var(--surface)}
     .auth-card{width:100%;max-width:380px}
-    .auth-logo{display:none}
     .auth-logo-mobile{display:none;align-items:center;gap:0.6rem;font-size:1.0625rem;font-weight:700;color:var(--primary);margin-bottom:1.5rem}
     .auth-logo-mobile img{width:34px;height:34px;display:block;object-fit:contain;border-radius:22%;flex-shrink:0}
     @media(max-width:1023px){.auth-logo-mobile{display:flex}}
@@ -103,7 +102,6 @@
     .app-nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
     .app-nav-item.active{background:var(--primary);color:#fff}
     .app-nav-item svg{flex-shrink:0}
-    .app-sidebar-footer{border-top:1px solid rgba(255,255,255,.08);padding-top:1rem;margin-top:0.5rem}
     .sidebar-absen-btn{display:flex;align-items:center;justify-content:center;gap:0.6rem;width:100%;padding:0.85rem 0.9rem;margin-bottom:1.25rem;border:none;border-radius:var(--radius);background:var(--primary);color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px -3px rgba(79,70,229,.55);transition:background .2s,transform .15s}
     .sidebar-absen-btn:hover{background:var(--primary-dark);transform:translateY(-1px)}
     .sidebar-absen-btn.active{background:var(--primary-dark);box-shadow:inset 0 0 0 2px rgba(255,255,255,.3)}
@@ -189,7 +187,6 @@
     .absen-today-card{display:flex;gap:0.75rem}
     .absen-today-pill{flex:1;padding:0.9rem 1rem;border-radius:var(--radius);text-align:center;border:1.5px solid var(--border)}
     .absen-today-pill.done{background:#d1fae5;border-color:#a7f3d0}
-    .absen-today-pill.pending{background:var(--bg)}
     .absen-today-pill-label{font-size:0.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.03em}
     .absen-today-pill-status{font-size:0.9rem;font-weight:700;margin-top:0.3rem}
     .absen-today-pill.done .absen-today-pill-status{color:#065f46}
@@ -205,8 +202,6 @@
     .profile-avatar-wrap{position:absolute;left:1.75rem;bottom:-36px}
     .profile-avatar{width:88px;height:88px;border-radius:50%;border:4px solid var(--surface);background:#e0e7ff;display:flex;align-items:center;justify-content:center;font-size:1.75rem;font-weight:800;color:var(--primary);box-shadow:var(--shadow);overflow:hidden}
     .profile-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-    .profile-avatar-edit-btn{position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;background:var(--primary);color:#fff;border:3px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:0.875rem;cursor:pointer;box-shadow:var(--shadow)}
-    .profile-avatar-edit-btn:hover{background:var(--primary-dark,#4338ca)}
     .profile-body{padding:3rem 1.75rem 1.75rem}
     .profile-name{font-size:1.25rem;font-weight:800;letter-spacing:-0.01em}
     .profile-role{display:inline-flex;align-items:center;gap:0.35rem;background:var(--primary-light);color:var(--primary);font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:999px;margin-top:0.5rem}
@@ -241,7 +236,6 @@
     .facecam-result-icon{font-size:2.75rem;line-height:1}
     .facecam-result-title{color:#fff;font-size:1.125rem;font-weight:800}
     .facecam-result-detail{color:#d1d5db;font-size:0.875rem}
-    .facecam-wrap.detecting{box-shadow:0 0 0 3px var(--primary-light)}
     @media(max-width:480px){
       .facecam-wrap,.facecam-progress{max-width:100%}
       .facecam-page-card{padding:1.25rem 1rem}
@@ -312,8 +306,6 @@
     .resend-row a{color:var(--primary);font-weight:600;cursor:pointer;text-decoration:none}
     .resend-row a:hover{text-decoration:underline}
     .resend-row a.disabled{color:var(--text-muted);cursor:not-allowed;pointer-events:none}
-    .field-error{color:var(--danger);font-size:0.8125rem;margin-top:0.4rem;display:none}
-    .field-error.show{display:block}
     .inline-alert{display:none;align-items:flex-start;gap:0.6rem;padding:0.75rem 0.9rem;border-radius:var(--radius);font-size:0.8125rem;line-height:1.5;margin-bottom:1.125rem;border-left:4px solid var(--danger);background:#fef2f2;color:#991b1b}
     .inline-alert.show{display:flex}
     .inline-alert.warning{border-left-color:var(--warning);background:#fffbeb;color:#92400e}
@@ -323,9 +315,6 @@
     .btn-secondary:hover{background:var(--bg)}
 
   /* ===== ADMIN STYLES ===== */
-    /* Nav item badge */
-    .nav-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--danger);color:#fff;font-size:0.625rem;font-weight:700;border-radius:999px;min-width:16px;height:16px;padding:0 4px;margin-left:auto}
-
     /* Data table */
     .admin-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;margin-bottom:1.5rem}
     .admin-card-header{padding:1.1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
@@ -352,7 +341,6 @@
     .table-empty-icon{width:56px;height:56px;margin:0 auto 0.85rem;color:var(--text-muted);opacity:0.55}
     .table-empty-title{font-weight:600;color:var(--text-secondary);font-size:0.9rem;margin-bottom:0.25rem}
     .table-empty-sub{color:var(--text-muted);font-size:0.8125rem}
-    .table-loading{text-align:center;padding:2.5rem 1rem;color:var(--text-muted);font-size:0.875rem;display:flex;align-items:center;justify-content:center;gap:0.5rem}
     @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
     .skel{background:linear-gradient(90deg,var(--border) 25%,#f1f5f9 37%,var(--border) 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite;border-radius:6px}
     .skel-row{display:flex;align-items:center;gap:1rem;padding:0.9rem 1.25rem;border-bottom:1px solid var(--border)}
@@ -411,7 +399,6 @@
     .config-account{display:flex;flex-direction:column;gap:.15rem}
     .config-account strong{font-size:.84rem}
     .config-account span{font-size:.72rem;color:var(--text-muted)}
-    .config-sppg-list{display:flex;flex-wrap:wrap;gap:.35rem}
     .config-danger-note{font-size:.72rem;color:var(--danger);margin-top:.3rem}
 
     /* Detail user view */
@@ -534,7 +521,6 @@
       .payroll-responsive-table .data-table tr{display:table-row;padding:0;border:0}
       .payroll-responsive-table .data-table th{display:table-cell;padding:.34rem .12rem;font-size:.45rem;line-height:1.15;letter-spacing:0;text-align:center;white-space:normal;overflow-wrap:anywhere}
       .payroll-responsive-table .data-table td{display:table-cell;padding:.38rem .12rem;border-bottom:1px solid var(--border);font-size:.5rem;line-height:1.22;text-align:center;vertical-align:middle;white-space:normal;overflow-wrap:anywhere;word-break:normal;background:transparent!important}
-      .payroll-responsive-table .data-table td::before{display:none;content:none}
       .payroll-responsive-table .data-table td[colspan]{display:table-cell;padding:.6rem .25rem}
       .payroll-responsive-table .loading-state,.payroll-responsive-table .empty-state{padding:1rem .25rem;font-size:.62rem}
       .payroll-responsive-table .helper-text{font-size:.46rem;line-height:1.2;margin:0}
@@ -1697,9 +1683,12 @@
   </div>
 </div>
 
+<script src="supabase-config.js"></script>
 <script>
+const APP_CONFIG=window.ABSEN_SUPABASE_CONFIG;
+if(!APP_CONFIG?.projectUrl||!APP_CONFIG?.functionName)throw new Error('Konfigurasi Supabase tidak lengkap.');
 let SUPABASE_URL='',SUPABASE_KEY='';
-const CONFIG_ENDPOINT='https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';
+const CONFIG_ENDPOINT=`${APP_CONFIG.projectUrl.replace(/\/$/,'')}/functions/v1/${encodeURIComponent(APP_CONFIG.functionName)}`;
 const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppState={token:null,user:null,currentPage:'login',currentView:'dashboard',pendingRegisterEmail:'',pendingResetEmail:'',pendingResetToken:'',profilePasswordEmail:'',profilePasswordResetToken:'',resendTimerRegister:null,resendTimerReset:null,resendTimerProfilePassword:null};
 const escapeHtml=(value)=>String(value??'').replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const normalizeRole=(value)=>String(value||'').trim().toUpperCase().replace(/_/g,' ');
@@ -1940,7 +1929,7 @@ function showAlert(m,t='info'){const i={success:'✓',error:'✕',warning:'⚠',
 function showInlineAlert(id,msg,type='error'){const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='inline-alert show'+(type==='warning'?' warning':'');}
 function hideInlineAlert(id){const el=document.getElementById(id);if(!el)return;el.className='inline-alert';el.textContent='';}
 async function loadPublicConfig(){const r=await fetch(CONFIG_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({function:'getPublicConfig',data:{}})});const d=await r.json();if(!d.success||!d.result?.url)throw new Error('Gagal memuat konfigurasi server');SUPABASE_URL=d.result.url;SUPABASE_KEY=d.result.anonKey;}
-async function apiCall(f,p={}){try{const r=await fetch(SUPABASE_URL+'/functions/v1/Absen',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({function:f,data:p})});const d=await r.json();if(!d.success)throw new Error(d.error||'Terjadi kesalahan pada server');return d.result;}catch(e){console.error(e);throw e;}}
+async function apiCall(f,p={}){try{const r=await fetch(CONFIG_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({function:f,data:p})});const d=await r.json();if(!d.success)throw new Error(d.error||'Terjadi kesalahan pada server');return d.result;}catch(e){console.error(e);throw e;}}
 
 /* ===== OTP INPUT HELPERS ===== */
 function setupOtpRow(rowId){const row=document.getElementById(rowId);if(!row)return;const inputs=[...row.querySelectorAll('input')];inputs.forEach((inp,idx)=>{inp.addEventListener('input',()=>{inp.value=inp.value.replace(/[^0-9]/g,'').slice(0,1);if(inp.value&&idx<inputs.length-1)inputs[idx+1].focus();});inp.addEventListener('keydown',ev=>{if(ev.key==='Backspace'&&!inp.value&&idx>0)inputs[idx-1].focus();});inp.addEventListener('paste',ev=>{ev.preventDefault();const txt=(ev.clipboardData||window.clipboardData).getData('text').replace(/[^0-9]/g,'').slice(0,inputs.length);txt.split('').forEach((ch,i)=>{if(inputs[i])inputs[i].value=ch;});const last=Math.min(txt.length,inputs.length)-1;if(last>=0)inputs[last].focus();});});}
@@ -2219,16 +2208,16 @@ function startAbsenRealtime(){
         if(msg.event === 'postgres_changes' || (msg.payload && msg.payload.data)) {
           loadAdminAbsen();
         }
-      } catch(e){}
+      } catch {}
     };
     ws.onerror = () => { AdminState.realtimeChannel = null; };
     ws.onclose = () => { AdminState.realtimeChannel = null; };
-  } catch(e){ AdminState.realtimeChannel = null; }
+  } catch { AdminState.realtimeChannel = null; }
 }
 
 function stopAbsenRealtime(){
   if(AdminState.realtimeChannel){
-    try { AdminState.realtimeChannel.close(); } catch(e){}
+    try { AdminState.realtimeChannel.close(); } catch {}
     AdminState.realtimeChannel = null;
   }
 }
@@ -2247,48 +2236,6 @@ async function loadAdminAbsen(){
   } catch(e) {
     if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="table-empty"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="table-empty-title">Gagal memuat data</div><div class="table-empty-sub">${e.message}</div></td></tr>`;
   }
-}
-
-function groupAbsenByUserTanggal(raw){
-  const byKey = {};
-  raw.forEach(a => {
-    const tglKey = a.Tanggal ? String(a.Tanggal).split('T')[0] : '';
-    const key = a.ID_User + '|' + tglKey;
-    if(!byKey[key]){
-      byKey[key] = {
-        ID_User: a.ID_User,
-        namaLengkap: a.namaLengkap || '-',
-        sppg: a.sppg || '-',
-        Tanggal: a.Tanggal,
-        jamMasuk: null,
-        jamPulang: null,
-        statusMasuk: null,
-        statusPulang: null,
-        punches: [],
-        sumber: new Set(),
-      };
-    }
-    const waktu = a.Waktu_Timestamp ? new Date(a.Waktu_Timestamp).toTimeString().split(' ')[0] : null;
-    if(waktu) byKey[key].punches.push({waktu,jenis:a.Jenis_Absen,status:a.Status_Validasi});
-    byKey[key].sumber.add(a.Sumber_Data||'APLIKASI');
-    if(a.Jenis_Absen === 'DATANG'){
-      byKey[key].jamMasuk = waktu;
-      byKey[key].statusMasuk = a.Status_Validasi;
-    }
-    if(a.Jenis_Absen === 'PULANG'){
-      byKey[key].jamPulang = waktu;
-      byKey[key].statusPulang = a.Status_Validasi;
-    }
-    if(a.Jenis_Absen === 'PUNCH_TUNGGAL' && !byKey[key].jamMasuk){
-      byKey[key].jamMasuk = waktu;
-      byKey[key].statusMasuk = a.Status_Validasi;
-    }
-  });
-  return Object.values(byKey).map(row=>({
-    ...row,
-    punches:row.punches.sort((a,b)=>a.waktu.localeCompare(b.waktu)),
-    sumber:[...row.sumber]
-  })).sort((x,y) => (y.Tanggal||'').localeCompare(x.Tanggal||''));
 }
 
 function filterAndRenderAbsen(){
@@ -2600,7 +2547,7 @@ function renderLogList(){
     const aktivitas = log.Jenis_Aktivitas||'-';
     const waktu = formatWaktu(log.Waktu);
     const {cls, icon} = getLogIcon(aktivitas);
-    return `<div class="log-item" onclick="openLogDetail(${start+idx})">
+    return `<div class="log-item" data-log-index="${start+idx}" role="button" tabindex="0">
       <div class="log-icon ${cls}">${icon}</div>
       <div class="log-body">
         <div class="log-user">${nama}</div>
@@ -2610,6 +2557,11 @@ function renderLogList(){
       <div class="log-time">${waktu}</div>
     </div>`;
   }).join('');
+  container.querySelectorAll('[data-log-index]').forEach(item=>{
+    const open=()=>openLogDetail(Number(item.dataset.logIndex));
+    item.addEventListener('click',open);
+    item.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}});
+  });
 
   if(pg){
     pg.style.display = 'flex';
@@ -2649,6 +2601,8 @@ function openLogDetail(index){
       <div><div class="info-item-label">Detail</div><pre class="info-item-value" style="white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:0.8125rem;margin:0"></pre></div>
     </div>
   `;
+  const detailEl=$('#log-detail-body pre');
+  if(detailEl)detailEl.textContent=detail;
   $('#modal-log-detail').classList.add('active');
 }
 
@@ -2991,13 +2945,13 @@ function renderAdminPayroll(){
     const initials=(row.namaLengkap||'?').trim().split(/\s+/).slice(0,2).map(part=>part.charAt(0)).join('').toUpperCase();
     const subtotal=days===undefined?null:Number(row.gajiHarian)*(Number(days)||0);
     return `<tr>
-      <td data-label="Pilih"><input class="payroll-checkbox payroll-row-check" type="checkbox" data-payroll-id="${escapeHtml(id)}" ${FeatureState.payrollSelected.has(id)?'checked':''} ${ready?'':'disabled'} aria-label="Pilih ${escapeHtml(row.namaLengkap||'karyawan')}"></td>
-      <td data-label="Karyawan"><div class="payroll-employee-cell"><div class="payroll-avatar">${escapeHtml(initials||'?')}</div><div><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(id)}</div></div></div></td>
-      <td data-label="Jabatan">${escapeHtml(row.jabatanDivisi||'-')}</td><td data-label="SPPG">${escapeHtml(row.sppg||'-')}</td>
-      <td data-label="Gaji Harian">${escapeHtml(formatRupiah(row.gajiHarian))}</td>
-      <td data-label="Hari Kerja">${days===undefined?'<span class="helper-text">Belum dihitung</span>':`<strong>${Number(days)||0} hari</strong>`}</td>
-      <td data-label="Subtotal">${subtotal===null?'-':escapeHtml(formatRupiah(subtotal))}</td>
-      <td data-label="Status"><span class="badge ${ready?'badge-success':'badge-warning'}">${ready?'Siap':'Lengkapi gaji'}</span></td>
+      <td><input class="payroll-checkbox payroll-row-check" type="checkbox" data-payroll-id="${escapeHtml(id)}" ${FeatureState.payrollSelected.has(id)?'checked':''} ${ready?'':'disabled'} aria-label="Pilih ${escapeHtml(row.namaLengkap||'karyawan')}"></td>
+      <td><div class="payroll-employee-cell"><div class="payroll-avatar">${escapeHtml(initials||'?')}</div><div><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(id)}</div></div></div></td>
+      <td>${escapeHtml(row.jabatanDivisi||'-')}</td><td>${escapeHtml(row.sppg||'-')}</td>
+      <td>${escapeHtml(formatRupiah(row.gajiHarian))}</td>
+      <td>${days===undefined?'<span class="helper-text">Belum dihitung</span>':`<strong>${Number(days)||0} hari</strong>`}</td>
+      <td>${subtotal===null?'-':escapeHtml(formatRupiah(subtotal))}</td>
+      <td><span class="badge ${ready?'badge-success':'badge-warning'}">${ready?'Siap':'Lengkapi gaji'}</span></td>
     </tr>`;
   }).join('');
   body.querySelectorAll('.payroll-row-check').forEach(input=>input.addEventListener('change',()=>{
@@ -3049,12 +3003,12 @@ async function openPayrollPublishModal(){
   body.innerHTML=selected.map(row=>{
     const id=String(row.idUser),days=Number(FeatureState.payrollPreview[id]?.jumlahHariKerja)||0,subtotal=Number(row.gajiHarian)*days;
     return `<tr data-payroll-adjustment="${escapeHtml(id)}" data-subtotal="${subtotal}">
-      <td data-label="Karyawan"><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(row.sppg||'-')}</div></td>
-      <td data-label="Hari / Subtotal"><strong>${days} hari</strong><div class="payroll-employee-meta">${escapeHtml(formatRupiah(subtotal))}</div></td>
-      <td data-label="Bonus / Tambahan"><input class="form-input payroll-money-input payroll-bonus-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Bonus ${escapeHtml(row.namaLengkap||'')}"></td>
-      <td data-label="Potongan"><input class="form-input payroll-money-input payroll-deduction-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Potongan ${escapeHtml(row.namaLengkap||'')}"></td>
-      <td data-label="Keterangan"><input class="form-input payroll-note-input payroll-deduction-note" type="text" maxlength="300" placeholder="Opsional"></td>
-      <td data-label="Total Bersih"><span class="payroll-total">${escapeHtml(formatRupiah(subtotal))}</span></td>
+      <td><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(row.sppg||'-')}</div></td>
+      <td><strong>${days} hari</strong><div class="payroll-employee-meta">${escapeHtml(formatRupiah(subtotal))}</div></td>
+      <td><input class="form-input payroll-money-input payroll-bonus-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Bonus ${escapeHtml(row.namaLengkap||'')}"></td>
+      <td><input class="form-input payroll-money-input payroll-deduction-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Potongan ${escapeHtml(row.namaLengkap||'')}"></td>
+      <td><input class="form-input payroll-note-input payroll-deduction-note" type="text" maxlength="300" placeholder="Opsional"></td>
+      <td><span class="payroll-total">${escapeHtml(formatRupiah(subtotal))}</span></td>
     </tr>`;
   }).join('');
   body.querySelectorAll('.payroll-money-input').forEach(input=>input.addEventListener('input',updatePayrollAdjustmentTotals));
@@ -3128,11 +3082,11 @@ async function loadAdminPayrollHistory(){
     const rows=FeatureState.payrollHistory.slice(0,30);
     if(!rows.length){body.innerHTML='<tr><td colspan="6"><div class="empty-state"><strong>Belum ada slip diterbitkan</strong>Slip baru akan tampil di sini.</div></td></tr>';return;}
     body.innerHTML=rows.map(row=>`<tr>
-      <td data-label="Karyawan"><strong>${escapeHtml(row._namaKaryawan||row.ID_User||'-')}</strong></td>
-      <td data-label="Periode"><div class="slip-period">${escapeHtml(formatTanggal(row.Periode_Mulai))} - ${escapeHtml(formatTanggal(row.Periode_Akhir))}</div><div class="slip-issued">${escapeHtml(formatDateTime(row.Diterbitkan_At||row.Created_At))}</div></td>
-      <td data-label="SPPG">${escapeHtml(row._sppgKaryawan||row.SPPG||'-')}</td><td data-label="Total"><strong>${escapeHtml(formatRupiah(row.Total_Gaji_Diterima))}</strong></td>
-      <td data-label="Status"><span class="badge ${row.Status_Penerbitan==='DITERBITKAN'?'badge-success':'badge-warning'}">${escapeHtml(row.Status_Penerbitan||'DRAFT')}</span></td>
-      <td data-label="PDF">${row.PDF_Storage_Path||row.URL_PDF_Slip?`<button class="btn btn-secondary btn-sm payroll-download-btn" type="button" data-slip-download="${escapeHtml(row.ID_Slip)}">Unduh PDF</button>`:'-'}</td>
+      <td><strong>${escapeHtml(row._namaKaryawan||row.ID_User||'-')}</strong></td>
+      <td><div class="slip-period">${escapeHtml(formatTanggal(row.Periode_Mulai))} - ${escapeHtml(formatTanggal(row.Periode_Akhir))}</div><div class="slip-issued">${escapeHtml(formatDateTime(row.Diterbitkan_At||row.Created_At))}</div></td>
+      <td>${escapeHtml(row._sppgKaryawan||row.SPPG||'-')}</td><td><strong>${escapeHtml(formatRupiah(row.Total_Gaji_Diterima))}</strong></td>
+      <td><span class="badge ${row.Status_Penerbitan==='DITERBITKAN'?'badge-success':'badge-warning'}">${escapeHtml(row.Status_Penerbitan||'DRAFT')}</span></td>
+      <td>${row.PDF_Storage_Path||row.URL_PDF_Slip?`<button class="btn btn-secondary btn-sm payroll-download-btn" type="button" data-slip-download="${escapeHtml(row.ID_Slip)}">Unduh PDF</button>`:'-'}</td>
     </tr>`).join('');
     body.querySelectorAll('[data-slip-download]').forEach(button=>button.addEventListener('click',()=>downloadPayrollSlip(button.dataset.slipDownload,button)));
   }catch(error){FeatureState.payrollHistoryLoaded=false;body.innerHTML=`<tr><td colspan="6"><div class="empty-state"><strong>Riwayat gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
@@ -3720,10 +3674,10 @@ function initCropDragEvents(){
   stage.addEventListener('touchend',end);
 }
 
-async function checkSession(){const st=localStorage.getItem('auth_token'),su=localStorage.getItem('auth_user');if(st&&su){try{const r=await apiCall('checkSession',{token:st});if(r&&r.valid){AppState.token=st,AppState.user=JSON.parse(su);return true;}}catch(e){}}localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user');return false;}
+async function checkSession(){const st=localStorage.getItem('auth_token'),su=localStorage.getItem('auth_user');if(st&&su){try{const r=await apiCall('checkSession',{token:st});if(r&&r.valid){AppState.token=st,AppState.user=JSON.parse(su);return true;}}catch {}}localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user');return false;}
 
 async function initApp(){
-  try{await loadPublicConfig();}catch(e){$('#session-loading').classList.add('hidden');$('#auth-layout').classList.remove('hidden');showAlert('Gagal terhubung ke server. Muat ulang halaman.','error');return;}
+  try{await loadPublicConfig();}catch{$('#session-loading').classList.add('hidden');$('#auth-layout').classList.remove('hidden');showAlert('Gagal terhubung ke server. Muat ulang halaman.','error');return;}
 
   setupOtpRow('verify-register-otp-row');
   setupOtpRow('verify-reset-otp-row');
@@ -3888,6 +3842,5 @@ async function initApp(){
 }
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',initApp):initApp();
 </script>
-<script src="supabase-config.js"></script>
 </body>
 </html>

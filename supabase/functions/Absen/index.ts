@@ -308,14 +308,6 @@ function bytesToHex(bytes: Uint8Array): string {
     .join("");
 }
 
-function hexToBytes(hex: string): Uint8Array {
-  const out = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < out.length; i++) {
-    out[i] = parseInt(hex.substr(i * 2, 2), 16);
-  }
-  return out;
-}
-
 async function pbkdf2Sha256(password: string, salt: string): Promise<string> {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
@@ -554,23 +546,6 @@ async function logAudit(jenisAktivitas: string, detail: unknown, idUserPelaku: s
     });
   } catch (e) {
     console.error("Audit log failed:", e);
-  }
-}
-
-async function isEmailConfirmed(email: string): Promise<boolean> {
-  if (!email) return true; // User tanpa email (mis. akun lama) tidak diblokir
-  try {
-    const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1, email: email } as any);
-    if (error) {
-      console.error("Gagal cek status verifikasi email:", error.message);
-      return true; // Fail-open: jangan blokir login karena error teknis pengecekan
-    }
-    const authUser = data?.users?.find((u) => (u.email || "").toLowerCase() === email.toLowerCase());
-    if (!authUser) return true; // Tidak ada entry auth (mis. akun lama sebelum fitur ini) → tidak diblokir
-    return !!authUser.email_confirmed_at;
-  } catch (e) {
-    console.error("Gagal cek status verifikasi email (exception):", e);
-    return true;
   }
 }
 
@@ -1183,8 +1158,6 @@ async function requestResetPassword(data: { username?: string; email?: string; i
 
   const { error: updateError } = await supabase.from("Users").update({ Token_Reset_Password: token }).eq("ID_User", user.ID_User);
   if (updateError) throw new Error("Gagal menyimpan token reset: " + updateError.message);
-
-  const menitBerlaku = Math.round(CONFIG.RESET_TOKEN_DURATION_MS / 60000);
 
   return { success: true, resetCode: randomStr, message: "Kode reset password berhasil dibuat." };
 }
