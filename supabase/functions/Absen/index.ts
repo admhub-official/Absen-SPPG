@@ -1,6 +1,6 @@
 // ============================================================
 // EDGE FUNCTION: api  —  BATCH 1: FONDASI + AUTH
-// Sistem Absensi Multi-User — Migrasi dari Google Apps Script
+// Sistem Absensi Multi-User — Backend Supabase Edge Function
 // ============================================================
 
 // @deno-types="npm:@types/node"
@@ -702,10 +702,10 @@ async function getPublicConfig(): Promise<unknown> {
 }
 async function getMasterData(): Promise<unknown> {
   const { data: sppgRows, error: errSppg } = await supabase.from("Master_SPPG").select("*");
-  if (errSppg) throw new Error("Sheet Master_SPPG tidak ditemukan atau error: " + errSppg.message);
+  if (errSppg) throw new Error("Data Master_SPPG tidak ditemukan atau error: " + errSppg.message);
 
   const { data: jabatanRows, error: errJabatan } = await supabase.from("Master_Jabatan").select("*");
-  if (errJabatan) throw new Error("Sheet Master_Jabatan tidak ditemukan atau error: " + errJabatan.message);
+  if (errJabatan) throw new Error("Data Master_Jabatan tidak ditemukan atau error: " + errJabatan.message);
 
   let sppgActive = (sppgRows || []).filter((s) => isActive(s.Aktif));
   if (sppgActive.length === 0 && (sppgRows || []).length > 0) sppgActive = sppgRows!;

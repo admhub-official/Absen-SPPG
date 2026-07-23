@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0f172a">
-  <link rel="icon" type="image/png" href="https://drive.google.com/thumbnail?id=1FLInXFlendmnziCYZiPY6qmBCqRZ_fu3&sz=w64">
+  <link rel="icon" type="image/png" href="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png">
+  <link rel="apple-touch-icon" href="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png">
   <title>Sistem Absensi - Login</title>
   <style>
     :root{--primary:#4f46e5;--primary-dark:#4338ca;--primary-light:#eef2ff;--primary-ring:rgba(79,70,229,.18);--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--bg:#f8fafc;--surface:#fff;--text:#0f172a;--text-secondary:#475569;--text-muted:#94a3b8;--border:#e2e8f0;--radius:0.75rem;--radius-lg:1.25rem;--shadow:0 1px 3px rgb(15 23 42/0.08);--shadow-lg:0 20px 40px -12px rgb(15 23 42/0.18)}
@@ -13,7 +14,8 @@
     #session-loading{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.35s ease,visibility 0.35s ease}
     #session-loading.hidden{opacity:0;visibility:hidden}
     .session-loading-logo{display:flex;align-items:center;gap:0.75rem;font-size:1.375rem;font-weight:700;color:#fff;margin-bottom:2rem;letter-spacing:-0.01em}
-    .session-loading-logo-icon{width:48px;height:48px;background:var(--primary);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -4px rgba(79,70,229,.5)}
+    .session-loading-logo-icon{width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .session-loading-logo-icon img{width:100%;height:100%;display:block;object-fit:contain;border-radius:22%}
     .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.12);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     .session-loading-text{color:rgba(255,255,255,0.6);margin-top:1.25rem;font-size:0.875rem}
@@ -31,7 +33,7 @@
     .auth-brand-panel{flex:1.1;background:radial-gradient(circle at 20% 20%,#312e81 0%,#0f172a 55%,#020617 100%);padding:clamp(2rem,4vw,3.5rem);display:flex;flex-direction:column;justify-content:center;color:#fff;position:relative;overflow:hidden}
     .auth-brand-panel::before{content:'';position:absolute;top:-120px;right:-120px;width:320px;height:320px;background:radial-gradient(circle,rgba(99,102,241,.35),transparent 70%);border-radius:50%}
     .auth-brand-mark{display:flex;align-items:center;gap:0.75rem;font-size:1.375rem;font-weight:700;margin-bottom:2.5rem;letter-spacing:-0.01em;position:relative}
-    .auth-brand-mark svg{background:rgba(255,255,255,.08);padding:6px;border-radius:var(--radius);box-sizing:content-box}
+    .auth-brand-mark img{width:38px;height:38px;display:block;object-fit:contain;border-radius:22%;flex-shrink:0}
     .auth-brand-headline{font-size:clamp(1.5rem,2.4vw,2.25rem);font-weight:800;margin-bottom:1rem;line-height:1.25;letter-spacing:-0.02em;position:relative;max-width:420px}
     .auth-brand-sub{font-size:0.9375rem;color:rgba(255,255,255,0.65);margin-bottom:2.25rem;line-height:1.6;max-width:380px;position:relative}
     .auth-brand-feature{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.875rem;font-size:0.875rem;color:rgba(255,255,255,.9);position:relative}
@@ -40,6 +42,7 @@
     .auth-card{width:100%;max-width:380px}
     .auth-logo{display:none}
     .auth-logo-mobile{display:none;align-items:center;gap:0.6rem;font-size:1.0625rem;font-weight:700;color:var(--primary);margin-bottom:1.5rem}
+    .auth-logo-mobile img{width:34px;height:34px;display:block;object-fit:contain;border-radius:22%;flex-shrink:0}
     @media(max-width:1023px){.auth-logo-mobile{display:flex}}
     .auth-card-title{font-size:1.625rem;font-weight:800;margin-bottom:0.375rem;letter-spacing:-0.02em}
     .auth-card-subtitle{font-size:0.9375rem;color:var(--text-secondary);margin-bottom:2rem;line-height:1.5}
@@ -94,7 +97,7 @@
     #app-layout.active{display:flex}
     .app-sidebar{width:248px;flex-shrink:0;background:#0f172a;color:#fff;display:flex;flex-direction:column;padding:1.5rem 1rem;position:sticky;top:0;height:100vh}
     .app-sidebar-brand{display:flex;align-items:center;gap:0.65rem;font-size:1.0625rem;font-weight:700;padding:0 0.5rem;margin-bottom:2rem;letter-spacing:-0.01em}
-    .app-sidebar-brand svg{background:var(--primary);padding:6px;border-radius:var(--radius);box-sizing:content-box;flex-shrink:0}
+    .app-sidebar-brand img{width:34px;height:34px;display:block;object-fit:contain;border-radius:22%;flex-shrink:0}
     .app-nav{display:flex;flex-direction:column;gap:0.25rem;flex:1}
     .app-nav-item{display:flex;align-items:center;gap:0.75rem;padding:0.7rem 0.9rem;border-radius:var(--radius);color:rgba(255,255,255,.65);text-decoration:none;font-size:0.9rem;font-weight:500;cursor:pointer;transition:background .2s,color .2s;border:none;background:none;width:100%;text-align:left}
     .app-nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
@@ -241,7 +244,7 @@
       #dashboard-absen-cta-wrap{display:none}
       .app-topbar{padding:1rem 1.25rem}
       .app-topbar-brand{display:flex;align-items:center;gap:0.55rem;font-weight:700;font-size:0.9375rem;color:var(--text)}
-      .app-topbar-brand svg{background:var(--primary);padding:5px;border-radius:var(--radius);box-sizing:content-box}
+      .app-topbar-brand img{width:32px;height:32px;display:block;object-fit:contain;border-radius:22%;flex-shrink:0}
       .app-content{padding:1.25rem 1rem 5.5rem}
       .app-bottomnav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:50;padding:0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom))}
       .app-bottomnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.2rem;padding:0.5rem 0;border:none;background:none;color:var(--text-muted);font-size:0.6875rem;font-weight:600;cursor:pointer}
@@ -426,12 +429,12 @@
   </style>
 </head>
 <body>
-<div id="session-loading"><div class="session-loading-logo"><div class="session-loading-logo-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>Sistem Absensi</div><div class="spinner"></div><div class="session-loading-text">Memverifikasi sesi...</div></div>
+<div id="session-loading"><div class="session-loading-logo"><div class="session-loading-logo-icon"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt=""></div>Sistem Absensi</div><div class="spinner"></div><div class="session-loading-text">Memverifikasi sesi...</div></div>
 <div id="alert-box"></div>
 <div id="auth-layout" class="hidden">
   <div id="page-login" class="page auth-page">
     <div class="auth-brand-panel">
-      <div class="auth-brand-mark"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+      <div class="auth-brand-mark"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">Sistem Absensi</div>
       <div class="auth-brand-headline">Kelola kehadiran & payroll dalam satu tempat.</div>
       <div class="auth-brand-sub">Absensi wajah, penggajian, dan manajemen karyawan yang cepat dan akurat.</div>
       <div class="auth-brand-features">
@@ -442,7 +445,7 @@
     </div>
     <div class="auth-form-panel">
       <div class="auth-card">
-        <div class="auth-logo-mobile"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+        <div class="auth-logo-mobile"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">Sistem Absensi</div>
         <div class="auth-card-title">Selamat datang kembali</div>
         <div class="auth-card-subtitle">Masuk untuk melanjutkan ke dashboard Anda</div>
         <div id="login-alert" class="inline-alert"></div>
@@ -456,7 +459,7 @@
   </div>
   <div id="page-register" class="page auth-page hidden">
     <div class="auth-brand-panel">
-      <div class="auth-brand-mark"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Sistem Absensi</div>
+      <div class="auth-brand-mark"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">Sistem Absensi</div>
       <div class="auth-brand-headline">Bergabung dan mulai kelola tim Anda.</div>
       <div class="auth-brand-sub">Buat akun untuk mengakses fitur absensi, payroll, dan manajemen karyawan.</div>
       <div class="auth-brand-features">
@@ -467,7 +470,7 @@
     </div>
     <div class="auth-form-panel">
       <div class="auth-card">
-        <div class="auth-logo-mobile"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Registrasi Akun</div>
+        <div class="auth-logo-mobile"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">Registrasi Akun</div>
         <div class="auth-card-title">Buat akun baru</div>
         <div class="auth-card-subtitle">Lengkapi data di bawah untuk mendaftar</div>
         <div class="form-group"><label class="form-label">Nama Lengkap *</label><input type="text" id="reg-nama" class="form-input" placeholder="Nama lengkap"></div>
@@ -485,13 +488,13 @@
 
   <div id="page-verify-register" class="page auth-page hidden">
     <div class="auth-brand-panel">
-      <div class="auth-brand-mark"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+      <div class="auth-brand-mark"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">Sistem Absensi</div>
       <div class="auth-brand-headline">Cek email Anda.</div>
       <div class="auth-brand-sub">Kami sudah mengirim kode verifikasi 6 digit ke email yang Anda daftarkan.</div>
     </div>
     <div class="auth-form-panel">
       <div class="auth-card">
-        <div class="auth-logo-mobile"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+        <div class="auth-logo-mobile"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">Sistem Absensi</div>
         <div class="auth-card-title">Masukkan Kode Verifikasi</div>
         <div class="auth-card-subtitle">Kode 6 digit dikirim ke <strong id="verify-register-email">-</strong></div>
         <div id="verify-register-alert" class="inline-alert"></div>
@@ -515,13 +518,13 @@
 
   <div id="page-forgot-password" class="page auth-page hidden">
     <div class="auth-brand-panel">
-      <div class="auth-brand-mark"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+      <div class="auth-brand-mark"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">Sistem Absensi</div>
       <div class="auth-brand-headline">Lupa password?</div>
       <div class="auth-brand-sub">Masukkan email akun Anda, kami akan mengirimkan kode reset password.</div>
     </div>
     <div class="auth-form-panel">
       <div class="auth-card">
-        <div class="auth-logo-mobile"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+        <div class="auth-logo-mobile"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">Sistem Absensi</div>
         <div class="auth-card-title">Reset Password</div>
         <div class="auth-card-subtitle">Masukkan email akun Anda untuk menerima kode reset</div>
         <div id="forgot-password-alert" class="inline-alert"></div>
@@ -534,13 +537,13 @@
 
   <div id="page-verify-reset" class="page auth-page hidden">
     <div class="auth-brand-panel">
-      <div class="auth-brand-mark"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+      <div class="auth-brand-mark"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">Sistem Absensi</div>
       <div class="auth-brand-headline">Cek email Anda.</div>
       <div class="auth-brand-sub">Masukkan kode reset password yang kami kirim ke email Anda.</div>
     </div>
     <div class="auth-form-panel">
       <div class="auth-card">
-        <div class="auth-logo-mobile"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+        <div class="auth-logo-mobile"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">Sistem Absensi</div>
         <div class="auth-card-title">Masukkan Kode Verifikasi</div>
         <div class="auth-card-subtitle">Kode 6 digit dikirim ke <strong id="verify-reset-email">-</strong></div>
         <div id="verify-reset-alert" class="inline-alert"></div>
@@ -564,13 +567,13 @@
 
   <div id="page-new-password" class="page auth-page hidden">
     <div class="auth-brand-panel">
-      <div class="auth-brand-mark"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+      <div class="auth-brand-mark"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">Sistem Absensi</div>
       <div class="auth-brand-headline">Buat password baru.</div>
       <div class="auth-brand-sub">Pastikan password baru Anda kuat dan mudah diingat.</div>
     </div>
     <div class="auth-form-panel">
       <div class="auth-card">
-        <div class="auth-logo-mobile"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sistem Absensi</div>
+        <div class="auth-logo-mobile"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">Sistem Absensi</div>
         <div class="auth-card-title">Password Baru</div>
         <div class="auth-card-subtitle">Masukkan password baru Anda</div>
         <div id="new-password-alert" class="inline-alert"></div>
@@ -585,7 +588,7 @@
 <div id="app-layout">
   <aside class="app-sidebar">
     <div class="app-sidebar-brand">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">
       <span>Sistem Absensi</span>
     </div>
     <nav class="app-nav">
@@ -637,7 +640,7 @@
   <div class="app-main">
     <div class="app-topbar">
       <div class="app-topbar-brand">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">
         Sistem Absensi
       </div>
       <div style="flex:1"></div>
