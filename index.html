@@ -500,6 +500,34 @@
     .slip-period{font-weight:700;color:var(--text)}.slip-issued{font-size:.74rem;color:var(--text-muted);margin-top:.2rem}
     @media(max-width:900px){.signature-layout{grid-template-columns:1fr}.payroll-modal-summary{grid-template-columns:1fr 1fr}}
     @media(max-width:760px){.feature-grid{grid-template-columns:1fr}.feature-card{padding:1rem}.payroll-period-card{padding:.85rem}.feature-toolbar{align-items:stretch}.feature-toolbar .form-input{width:100%}.complaint-head{flex-direction:column}.payroll-modal-summary{grid-template-columns:1fr}.payroll-selection-bar{align-items:stretch}.payroll-selection-bar .btn{width:100%}.payroll-modal-card{max-height:96vh}.modal-footer{flex-wrap:wrap}.modal-footer .btn{flex:1}.signature-canvas-wrap canvas{height:150px}}
+    @media(max-width:760px){
+      .payroll-period-card{overflow:visible}
+      .payroll-command{min-width:0;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.55rem}
+      .payroll-command-title{grid-column:1/-1}
+      .payroll-command-title strong{font-size:.86rem}
+      .payroll-command-title span{font-size:.68rem;line-height:1.35}
+      .payroll-command .form-label{font-size:.68rem;margin-bottom:.25rem}
+      .payroll-command .form-input{min-width:0;padding:.58rem .5rem;font-size:.72rem}
+      .payroll-command .btn{grid-column:1/-1;width:100%;padding:.65rem .75rem;font-size:.76rem}
+      .payroll-responsive-table{overflow:visible}
+      .payroll-responsive-table .data-table{display:block;width:100%;font-size:.74rem}
+      .payroll-responsive-table .data-table thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+      .payroll-responsive-table .data-table tbody{display:block}
+      .payroll-responsive-table .data-table tbody tr{display:block;padding:.65rem .7rem;border-bottom:1px solid var(--border)}
+      .payroll-responsive-table .data-table tbody tr:last-child{border-bottom:0}
+      .payroll-responsive-table .data-table td{display:grid;grid-template-columns:minmax(92px,38%) minmax(0,1fr);align-items:center;gap:.45rem;padding:.34rem 0;border:0;background:transparent!important;min-width:0;font-size:.72rem;line-height:1.35;word-break:break-word}
+      .payroll-responsive-table .data-table td::before{content:attr(data-label);font-size:.63rem;font-weight:800;line-height:1.25;letter-spacing:.025em;text-transform:uppercase;color:var(--text-muted)}
+      .payroll-responsive-table .data-table td[colspan]{display:block;padding:.5rem 0;text-align:center}
+      .payroll-responsive-table .data-table td[colspan]::before{display:none}
+      .payroll-responsive-table .helper-text,.payroll-responsive-table .payroll-employee-meta,.payroll-responsive-table .slip-issued{font-size:.62rem}
+      .payroll-responsive-table .payroll-employee-cell{min-width:0;gap:.5rem}
+      .payroll-responsive-table .payroll-avatar{width:28px;height:28px;border-radius:8px;font-size:.68rem}
+      .payroll-responsive-table .badge{font-size:.58rem;padding:.18rem .45rem}
+      .payroll-responsive-table .btn-sm{padding:.45rem .6rem;font-size:.67rem}
+      .payroll-responsive-table .payroll-money-input,.payroll-responsive-table .payroll-note-input{width:100%;min-width:0;padding:.52rem .55rem;font-size:.7rem}
+      .payroll-responsive-table .payroll-total{font-size:.75rem;white-space:normal}
+      .payroll-history-head{align-items:flex-start}
+    }
 
   </style>
 </head>
@@ -1179,13 +1207,13 @@
               <button class="btn btn-primary btn-sm" id="btn-open-payroll-publish" type="button" disabled>Atur Bonus & Terbitkan</button>
             </div>
           </div>
-          <div class="data-table-wrap"><table class="data-table"><thead><tr><th><input class="payroll-checkbox" id="payroll-select-all" type="checkbox" aria-label="Pilih semua karyawan siap"></th><th>Karyawan</th><th>Jabatan</th><th>SPPG</th><th>Gaji Harian</th><th>Hari Kerja</th><th>Subtotal</th><th>Status</th></tr></thead><tbody id="admin-payroll-body"><tr><td colspan="8"><div class="loading-state"><span class="spinner"></span>Memuat data payroll...</div></td></tr></tbody></table></div>
+          <div class="data-table-wrap payroll-responsive-table"><table class="data-table payroll-employee-table"><thead><tr><th><input class="payroll-checkbox" id="payroll-select-all" type="checkbox" aria-label="Pilih semua karyawan siap"></th><th>Karyawan</th><th>Jabatan</th><th>SPPG</th><th>Gaji Harian</th><th>Hari Kerja</th><th>Subtotal</th><th>Status</th></tr></thead><tbody id="admin-payroll-body"><tr><td colspan="8"><div class="loading-state"><span class="spinner"></span>Memuat data payroll...</div></td></tr></tbody></table></div>
         </div>
         </section>
         <section id="payroll-panel-history" class="payroll-tab-panel hidden" role="tabpanel" aria-labelledby="payroll-tab-history" hidden>
         <div class="admin-card">
           <div class="admin-card-header payroll-history-head"><div><div class="admin-card-title">Riwayat Slip Diterbitkan</div><div class="helper-text">PDF tersimpan privat dan hanya dapat diunduh melalui tautan sementara</div></div><button class="btn btn-secondary btn-sm" id="btn-refresh-payroll-history" type="button">Muat Ulang</button></div>
-          <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Karyawan</th><th>Periode</th><th>SPPG</th><th>Total</th><th>Status</th><th>PDF</th></tr></thead><tbody id="admin-payroll-history-body"><tr><td colspan="6"><div class="loading-state"><span class="spinner"></span>Memuat riwayat slip...</div></td></tr></tbody></table></div>
+          <div class="data-table-wrap payroll-responsive-table"><table class="data-table payroll-history-table"><thead><tr><th>Karyawan</th><th>Periode</th><th>SPPG</th><th>Total</th><th>Status</th><th>PDF</th></tr></thead><tbody id="admin-payroll-history-body"><tr><td colspan="6"><div class="loading-state"><span class="spinner"></span>Memuat riwayat slip...</div></td></tr></tbody></table></div>
         </div>
         </section>
       </div>
@@ -1381,8 +1409,8 @@
         <div class="payroll-summary-item"><span>Jumlah Slip</span><strong id="payroll-modal-count">0 karyawan</strong></div>
         <div class="payroll-summary-item"><span>Penerbit</span><strong id="payroll-modal-signer">-</strong></div>
       </div>
-      <div class="data-table-wrap">
-        <table class="data-table">
+      <div class="data-table-wrap payroll-responsive-table">
+        <table class="data-table payroll-adjustment-table">
           <thead><tr><th>Karyawan</th><th>Hari / Subtotal</th><th>Bonus / Tambahan</th><th>Potongan</th><th>Keterangan Potongan</th><th>Total Bersih</th></tr></thead>
           <tbody id="payroll-adjustment-body"></tbody>
         </table>
@@ -2916,13 +2944,13 @@ function renderAdminPayroll(){
     const initials=(row.namaLengkap||'?').trim().split(/\s+/).slice(0,2).map(part=>part.charAt(0)).join('').toUpperCase();
     const subtotal=days===undefined?null:Number(row.gajiHarian)*(Number(days)||0);
     return `<tr>
-      <td><input class="payroll-checkbox payroll-row-check" type="checkbox" data-payroll-id="${escapeHtml(id)}" ${FeatureState.payrollSelected.has(id)?'checked':''} ${ready?'':'disabled'} aria-label="Pilih ${escapeHtml(row.namaLengkap||'karyawan')}"></td>
-      <td><div class="payroll-employee-cell"><div class="payroll-avatar">${escapeHtml(initials||'?')}</div><div><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(id)}</div></div></div></td>
-      <td>${escapeHtml(row.jabatanDivisi||'-')}</td><td>${escapeHtml(row.sppg||'-')}</td>
-      <td>${escapeHtml(formatRupiah(row.gajiHarian))}</td>
-      <td>${days===undefined?'<span class="helper-text">Belum dihitung</span>':`<strong>${Number(days)||0} hari</strong>`}</td>
-      <td>${subtotal===null?'-':escapeHtml(formatRupiah(subtotal))}</td>
-      <td><span class="badge ${ready?'badge-success':'badge-warning'}">${ready?'Siap':'Lengkapi gaji'}</span></td>
+      <td data-label="Pilih"><input class="payroll-checkbox payroll-row-check" type="checkbox" data-payroll-id="${escapeHtml(id)}" ${FeatureState.payrollSelected.has(id)?'checked':''} ${ready?'':'disabled'} aria-label="Pilih ${escapeHtml(row.namaLengkap||'karyawan')}"></td>
+      <td data-label="Karyawan"><div class="payroll-employee-cell"><div class="payroll-avatar">${escapeHtml(initials||'?')}</div><div><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(id)}</div></div></div></td>
+      <td data-label="Jabatan">${escapeHtml(row.jabatanDivisi||'-')}</td><td data-label="SPPG">${escapeHtml(row.sppg||'-')}</td>
+      <td data-label="Gaji Harian">${escapeHtml(formatRupiah(row.gajiHarian))}</td>
+      <td data-label="Hari Kerja">${days===undefined?'<span class="helper-text">Belum dihitung</span>':`<strong>${Number(days)||0} hari</strong>`}</td>
+      <td data-label="Subtotal">${subtotal===null?'-':escapeHtml(formatRupiah(subtotal))}</td>
+      <td data-label="Status"><span class="badge ${ready?'badge-success':'badge-warning'}">${ready?'Siap':'Lengkapi gaji'}</span></td>
     </tr>`;
   }).join('');
   body.querySelectorAll('.payroll-row-check').forEach(input=>input.addEventListener('change',()=>{
@@ -2974,12 +3002,12 @@ async function openPayrollPublishModal(){
   body.innerHTML=selected.map(row=>{
     const id=String(row.idUser),days=Number(FeatureState.payrollPreview[id]?.jumlahHariKerja)||0,subtotal=Number(row.gajiHarian)*days;
     return `<tr data-payroll-adjustment="${escapeHtml(id)}" data-subtotal="${subtotal}">
-      <td><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(row.sppg||'-')}</div></td>
-      <td><strong>${days} hari</strong><div class="payroll-employee-meta">${escapeHtml(formatRupiah(subtotal))}</div></td>
-      <td><input class="form-input payroll-money-input payroll-bonus-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Bonus ${escapeHtml(row.namaLengkap||'')}"></td>
-      <td><input class="form-input payroll-money-input payroll-deduction-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Potongan ${escapeHtml(row.namaLengkap||'')}"></td>
-      <td><input class="form-input payroll-note-input payroll-deduction-note" type="text" maxlength="300" placeholder="Opsional"></td>
-      <td><span class="payroll-total">${escapeHtml(formatRupiah(subtotal))}</span></td>
+      <td data-label="Karyawan"><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(row.sppg||'-')}</div></td>
+      <td data-label="Hari / Subtotal"><strong>${days} hari</strong><div class="payroll-employee-meta">${escapeHtml(formatRupiah(subtotal))}</div></td>
+      <td data-label="Bonus / Tambahan"><input class="form-input payroll-money-input payroll-bonus-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Bonus ${escapeHtml(row.namaLengkap||'')}"></td>
+      <td data-label="Potongan"><input class="form-input payroll-money-input payroll-deduction-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Potongan ${escapeHtml(row.namaLengkap||'')}"></td>
+      <td data-label="Keterangan"><input class="form-input payroll-note-input payroll-deduction-note" type="text" maxlength="300" placeholder="Opsional"></td>
+      <td data-label="Total Bersih"><span class="payroll-total">${escapeHtml(formatRupiah(subtotal))}</span></td>
     </tr>`;
   }).join('');
   body.querySelectorAll('.payroll-money-input').forEach(input=>input.addEventListener('input',updatePayrollAdjustmentTotals));
@@ -3053,11 +3081,11 @@ async function loadAdminPayrollHistory(){
     const rows=FeatureState.payrollHistory.slice(0,30);
     if(!rows.length){body.innerHTML='<tr><td colspan="6"><div class="empty-state"><strong>Belum ada slip diterbitkan</strong>Slip baru akan tampil di sini.</div></td></tr>';return;}
     body.innerHTML=rows.map(row=>`<tr>
-      <td><strong>${escapeHtml(row._namaKaryawan||row.ID_User||'-')}</strong></td>
-      <td><div class="slip-period">${escapeHtml(formatTanggal(row.Periode_Mulai))} - ${escapeHtml(formatTanggal(row.Periode_Akhir))}</div><div class="slip-issued">${escapeHtml(formatDateTime(row.Diterbitkan_At||row.Created_At))}</div></td>
-      <td>${escapeHtml(row._sppgKaryawan||row.SPPG||'-')}</td><td><strong>${escapeHtml(formatRupiah(row.Total_Gaji_Diterima))}</strong></td>
-      <td><span class="badge ${row.Status_Penerbitan==='DITERBITKAN'?'badge-success':'badge-warning'}">${escapeHtml(row.Status_Penerbitan||'DRAFT')}</span></td>
-      <td>${row.PDF_Storage_Path||row.URL_PDF_Slip?`<button class="btn btn-secondary btn-sm payroll-download-btn" type="button" data-slip-download="${escapeHtml(row.ID_Slip)}">Unduh PDF</button>`:'-'}</td>
+      <td data-label="Karyawan"><strong>${escapeHtml(row._namaKaryawan||row.ID_User||'-')}</strong></td>
+      <td data-label="Periode"><div class="slip-period">${escapeHtml(formatTanggal(row.Periode_Mulai))} - ${escapeHtml(formatTanggal(row.Periode_Akhir))}</div><div class="slip-issued">${escapeHtml(formatDateTime(row.Diterbitkan_At||row.Created_At))}</div></td>
+      <td data-label="SPPG">${escapeHtml(row._sppgKaryawan||row.SPPG||'-')}</td><td data-label="Total"><strong>${escapeHtml(formatRupiah(row.Total_Gaji_Diterima))}</strong></td>
+      <td data-label="Status"><span class="badge ${row.Status_Penerbitan==='DITERBITKAN'?'badge-success':'badge-warning'}">${escapeHtml(row.Status_Penerbitan||'DRAFT')}</span></td>
+      <td data-label="PDF">${row.PDF_Storage_Path||row.URL_PDF_Slip?`<button class="btn btn-secondary btn-sm payroll-download-btn" type="button" data-slip-download="${escapeHtml(row.ID_Slip)}">Unduh PDF</button>`:'-'}</td>
     </tr>`).join('');
     body.querySelectorAll('[data-slip-download]').forEach(button=>button.addEventListener('click',()=>downloadPayrollSlip(button.dataset.slipDownload,button)));
   }catch(error){FeatureState.payrollHistoryLoaded=false;body.innerHTML=`<tr><td colspan="6"><div class="empty-state"><strong>Riwayat gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
