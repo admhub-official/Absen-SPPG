@@ -212,6 +212,17 @@
     .profile-role{display:inline-flex;align-items:center;gap:0.35rem;background:var(--primary-light);color:var(--primary);font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:999px;margin-top:0.5rem}
     .profile-action-row{display:flex;gap:0.6rem;justify-content:center;margin-top:0.85rem}
     .profile-action-row .btn{flex:0 1 auto}
+    .profile-security-value{display:flex;align-items:center;justify-content:space-between;gap:0.75rem}
+    .profile-password-mask{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;letter-spacing:0.14em;font-weight:800}
+    .profile-security-note{color:var(--text-muted);font-size:0.75rem;line-height:1.5;margin-top:0.35rem}
+    .password-flow-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:1.25rem}
+    .password-flow-step{padding:0.6rem 0.5rem;border:1px solid var(--border);border-radius:var(--radius);color:var(--text-muted);font-size:0.72rem;font-weight:700;text-align:center;background:var(--bg)}
+    .password-flow-step.active{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
+    .password-flow-step.done{border-color:#86efac;background:#dcfce7;color:#166534}
+    .password-flow-panel.hidden{display:none}
+    .password-flow-email{display:flex;align-items:center;gap:0.65rem;padding:0.8rem 0.9rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);font-size:0.875rem;font-weight:700;overflow-wrap:anywhere}
+    .password-flow-email svg{flex-shrink:0;color:var(--primary)}
+    .password-flow-help{font-size:0.8rem;color:var(--text-muted);line-height:1.55;margin:0.75rem 0 1rem}
     .face-status-badge{display:inline-flex;align-items:center;gap:0.35rem;font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:999px;margin-top:0.4rem}
     .face-status-badge.registered{background:#dcfce7;color:#16a34a}
     .face-status-badge.not-registered{background:#fef3c7;color:#b45309}
@@ -270,6 +281,9 @@
       .info-grid{grid-template-columns:1fr}
       .profile-avatar-wrap{left:1.25rem}
       .profile-body{padding:3rem 1.25rem 1.5rem}
+      .profile-action-row{flex-direction:column}
+      .profile-action-row .btn{width:100%}
+      .profile-security-value{align-items:flex-start;flex-direction:column}
       .info-section{padding:1.25rem}
     }
     @media(max-width:420px){
@@ -837,6 +851,10 @@
             </div>
             <div class="profile-action-row">
               <button class="btn btn-primary" id="btn-open-edit-profil">Update Profil</button>
+              <button class="btn btn-secondary" id="btn-open-profile-password" type="button">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.35rem;vertical-align:-2px"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Ganti Password
+              </button>
               <button class="btn btn-secondary" id="btn-open-daftar-wajah">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.35rem;vertical-align:-2px"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg>
                 <span id="btn-daftar-wajah-label">Perbarui Wajah</span>
@@ -851,6 +869,8 @@
             Data Pribadi
           </div>
           <div class="info-grid">
+            <div><div class="info-item-label">ID User</div><div class="info-item-value" id="p-id-user">-</div></div>
+            <div><div class="info-item-label">ID Card</div><div class="info-item-value" id="p-id-card">-</div></div>
             <div><div class="info-item-label">Nama Lengkap</div><div class="info-item-value" id="p-nama">-</div></div>
             <div><div class="info-item-label">Username</div><div class="info-item-value" id="p-username">-</div></div>
             <div><div class="info-item-label">Tempat Lahir</div><div class="info-item-value" id="p-tempat-lahir">-</div></div>
@@ -868,6 +888,7 @@
           </div>
           <div class="info-grid">
             <div><div class="info-item-label">SPPG</div><div class="info-item-value" id="p-sppg">-</div></div>
+            <div><div class="info-item-label">Yayasan</div><div class="info-item-value" id="p-yayasan">-</div></div>
             <div><div class="info-item-label">Jabatan / Divisi</div><div class="info-item-value" id="p-jabatan">-</div></div>
             <div><div class="info-item-label">Tanggal Mulai Kerja</div><div class="info-item-value" id="p-mulai-kerja">-</div></div>
             <div><div class="info-item-label">Gaji Harian</div><div class="info-item-value" id="p-gaji">-</div></div>
@@ -883,6 +904,33 @@
             <div><div class="info-item-label">Nama Bank</div><div class="info-item-value" id="p-bank">-</div></div>
             <div><div class="info-item-label">Nomor Rekening</div><div class="info-item-value" id="p-nomor-rekening">-</div></div>
             <div><div class="info-item-label">Atas Nama Rekening</div><div class="info-item-value" id="p-rekening">-</div></div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <div class="info-section-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            Akun &amp; Keamanan
+          </div>
+          <div class="info-grid">
+            <div><div class="info-item-label">Role</div><div class="info-item-value" id="p-role">-</div></div>
+            <div><div class="info-item-label">Status Akun</div><div class="info-item-value" id="p-status-akun">-</div></div>
+            <div>
+              <div class="info-item-label">Password</div>
+              <div class="profile-security-value">
+                <div>
+                  <div class="info-item-value profile-password-mask">xxxxxxxx</div>
+                  <div class="profile-security-note">Password lama tidak pernah disimpan atau ditampilkan dalam bentuk terbaca.</div>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="btn-profile-password-inline" type="button">Verifikasi &amp; Ganti</button>
+              </div>
+            </div>
+            <div><div class="info-item-label">Data Wajah</div><div class="info-item-value" id="p-status-wajah">-</div></div>
+            <div><div class="info-item-label">ID Card Digital</div><div class="info-item-value" id="p-id-card-digital">-</div></div>
+            <div><div class="info-item-label">QR Code</div><div class="info-item-value" id="p-qr-code">-</div></div>
+            <div><div class="info-item-label">Persetujuan Kebijakan Data</div><div class="info-item-value" id="p-persetujuan-data">-</div></div>
+            <div><div class="info-item-label">Akun Dibuat</div><div class="info-item-value" id="p-created-at">-</div></div>
+            <div><div class="info-item-label">Terakhir Diperbarui</div><div class="info-item-value" id="p-updated-at">-</div></div>
           </div>
         </div>
       </div>
@@ -1450,6 +1498,63 @@
   </div>
 </div>
 
+<div class="modal-overlay modal-overlay-top" id="modal-profile-password">
+  <div class="modal-card" style="max-width:500px">
+    <div class="modal-header">
+      <div><h3>Ganti Password</h3><div class="helper-text">Verifikasi email akun sebelum membuat password baru</div></div>
+      <button class="modal-close" id="btn-close-profile-password" type="button" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="password-flow-steps" aria-label="Tahapan ganti password">
+        <div class="password-flow-step active" data-profile-password-step-indicator="email">1. Email</div>
+        <div class="password-flow-step" data-profile-password-step-indicator="otp">2. OTP</div>
+        <div class="password-flow-step" data-profile-password-step-indicator="password">3. Password Baru</div>
+      </div>
+      <div id="profile-password-alert" class="inline-alert"></div>
+
+      <div class="password-flow-panel" id="profile-password-panel-email">
+        <div class="form-group">
+          <label class="form-label" for="profile-password-email">Email akun terdaftar</label>
+          <input type="email" id="profile-password-email" class="form-input" autocomplete="email" placeholder="nama@perusahaan.com">
+        </div>
+        <p class="password-flow-help">Masukkan email yang sama dengan profil ini. Kode OTP 6 digit akan dikirim ke email tersebut dan berlaku selama 10 menit.</p>
+        <button class="btn btn-primary btn-block" id="btn-request-profile-password-otp" type="button">Kirim Kode OTP</button>
+      </div>
+
+      <div class="password-flow-panel hidden" id="profile-password-panel-otp">
+        <div class="password-flow-email">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          <span id="profile-password-otp-email">-</span>
+        </div>
+        <p class="password-flow-help">Masukkan kode yang dikirim ke email. Kode ini hanya digunakan untuk memberi izin membuat password baru—password lama tetap tidak dapat dilihat.</p>
+        <div class="otp-input-row" id="profile-password-otp-row">
+          <input type="text" maxlength="1" inputmode="numeric" aria-label="Digit OTP 1">
+          <input type="text" maxlength="1" inputmode="numeric" aria-label="Digit OTP 2">
+          <input type="text" maxlength="1" inputmode="numeric" aria-label="Digit OTP 3">
+          <input type="text" maxlength="1" inputmode="numeric" aria-label="Digit OTP 4">
+          <input type="text" maxlength="1" inputmode="numeric" aria-label="Digit OTP 5">
+          <input type="text" maxlength="1" inputmode="numeric" aria-label="Digit OTP 6">
+        </div>
+        <button class="btn btn-primary btn-block" id="btn-verify-profile-password-otp" type="button">Verifikasi Kode</button>
+        <div class="resend-row">
+          Tidak menerima kode? <a id="btn-resend-profile-password">Kirim ulang email</a>
+          <span id="resend-profile-password-countdown"></span>
+        </div>
+      </div>
+
+      <div class="password-flow-panel hidden" id="profile-password-panel-password">
+        <div class="form-group"><label class="form-label" for="profile-new-password">Password Baru</label><input type="password" id="profile-new-password" class="form-input" autocomplete="new-password" maxlength="128" placeholder="Minimal 6 karakter"></div>
+        <div class="form-group"><label class="form-label" for="profile-new-password-confirm">Konfirmasi Password Baru</label><input type="password" id="profile-new-password-confirm" class="form-input" autocomplete="new-password" maxlength="128" placeholder="Ulangi password baru"></div>
+        <p class="password-flow-help">Setelah password diperbarui, seluruh sesi akun akan dicabut. Anda perlu login kembali memakai password baru.</p>
+        <button class="btn btn-primary btn-block" id="btn-submit-profile-password" type="button">Simpan Password Baru</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-profile-password" type="button">Batal</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay modal-overlay-top" id="modal-crop-foto">
   <div class="modal-card" style="max-width:420px">
     <div class="modal-header">
@@ -1503,7 +1608,7 @@
 <script>
 let SUPABASE_URL='',SUPABASE_KEY='';
 const CONFIG_ENDPOINT='https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen';
-const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppState={token:null,user:null,currentPage:'login',currentView:'dashboard',pendingRegisterEmail:'',pendingResetEmail:'',pendingResetToken:'',resendTimerRegister:null,resendTimerReset:null};
+const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppState={token:null,user:null,currentPage:'login',currentView:'dashboard',pendingRegisterEmail:'',pendingResetEmail:'',pendingResetToken:'',profilePasswordEmail:'',profilePasswordResetToken:'',resendTimerRegister:null,resendTimerReset:null,resendTimerProfilePassword:null};
 const escapeHtml=(value)=>String(value??'').replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const normalizeRole=(value)=>String(value||'').trim().toUpperCase().replace(/_/g,' ');
 const FACEAPI_CDN_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
@@ -1596,10 +1701,53 @@ function switchView(v){
   if(v==='pengaduan')loadMyComplaints();
   if(v==='absen-scan')openAbsenScan();
 }
-function renderProfilFromUser(){const u=AppState.user;if(!u)return;const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';$('#dashboard-greeting').textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';const avatarEl=$('#profil-avatar');if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}$('#profil-nama').textContent=nama||'-';$('#profil-role').textContent=u.role||u.Role||'USER';$('#profil-idcard').textContent=u.idCardUnik||u.ID_Card_Unik?`ID Card: ${u.idCardUnik||u.ID_Card_Unik}`:'-';setInfo('p-nama',nama);setInfo('p-username',u.username||u.Username);setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);setInfo('p-email',u.email||u.Email);setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);setInfo('p-sppg',u.sppg||u.SPPG);setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);setInfo('p-bank',u.namaBank||u.Nama_Bank);setInfo('p-nomor-rekening',u.nomorRekening||u.Nomor_Rekening);setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);const tbAvatar=$('#topbar-avatar');if(tbAvatar){if(fotoUrl){tbAvatar.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{tbAvatar.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}
+function renderProfilFromUser(){
+  const u=AppState.user;if(!u)return;
+  const nama=u.namaLengkap||u.Nama_Lengkap||u.nama||'';
+  const role=u.role||u.Role||'USER';
+  const idCard=u.idCardUnik||u.ID_Card_Unik||'';
+  const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';
+  const hasFace=Boolean(u.Wajah_Terdaftar||u.wajahTerdaftar||u.faceDescriptor||u.Face_Descriptor_JSON);
+  const statusAktif=u.statusAktif??u.Status_Aktif;
+  const akunDibekukan=u.akunDibekukan??u.Akun_Dibekukan;
+  const dashboardGreeting=$('#dashboard-greeting');if(dashboardGreeting)dashboardGreeting.textContent=`Selamat datang, ${nama.split(' ')[0]||'Pengguna'}!`;
+  const avatarEl=$('#profil-avatar');
+  if(avatarEl){if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}}
+  $('#profil-nama').textContent=nama||'-';
+  $('#profil-role').textContent=role;
+  $('#profil-idcard').textContent=idCard?`ID Card: ${idCard}`:'-';
+  setInfo('p-id-user',u.idUser||u.ID_User);
+  setInfo('p-id-card',idCard);
+  setInfo('p-nama',nama);
+  setInfo('p-username',u.username||u.Username);
+  setInfo('p-tempat-lahir',u.tempatLahir||u.Tempat_Lahir);
+  setInfo('p-tanggal-lahir',u.tanggalLahir||u.Tanggal_Lahir,formatTanggal);
+  setInfo('p-jk',u.jenisKelamin||u.Jenis_Kelamin);
+  setInfo('p-email',u.email||u.Email);
+  setInfo('p-wa',u.noWhatsapp||u.No_Whatsapp);
+  setInfo('p-sppg',u.sppg||u.SPPG);
+  setInfo('p-yayasan',u.yayasan||u.Yayasan);
+  setInfo('p-jabatan',u.jabatanDivisi||u.Jabatan_Divisi);
+  setInfo('p-mulai-kerja',u.tanggalMulaiKerja||u.Tanggal_Mulai_Kerja,formatTanggal);
+  setInfo('p-gaji',u.gajiHarian||u.Gaji_Harian,formatRupiah);
+  setInfo('p-bank',u.namaBank||u.Nama_Bank);
+  setInfo('p-nomor-rekening',u.nomorRekening||u.Nomor_Rekening);
+  setInfo('p-rekening',u.atasNamaRekening||u.Atas_Nama_Rekening);
+  setInfo('p-role',role);
+  setInfo('p-status-akun',akunDibekukan?'Dibekukan':statusAktif===false?'Tidak Aktif':'Aktif');
+  setInfo('p-status-wajah',hasFace?'Sudah Terdaftar':'Belum Terdaftar');
+  setInfo('p-id-card-digital',(u.ID_Card_Digital_Tersedia??u.idCardDigitalTersedia)?'Tersedia':'Belum Tersedia');
+  setInfo('p-qr-code',(u.QR_Code_Tersedia??u.qrCodeTersedia)?'Tersedia':'Belum Tersedia');
+  setInfo('p-persetujuan-data',(u.Setuju_Kebijakan_Data??u.setujuKebijakanData)?'Disetujui':'Belum Disetujui');
+  setInfo('p-created-at',u.Created_At||u.createdAt,formatDateTime);
+  setInfo('p-updated-at',u.Updated_At||u.updatedAt,formatDateTime);
+  const tbAvatar=$('#topbar-avatar');
+  if(tbAvatar){if(fotoUrl){tbAvatar.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{tbAvatar.textContent=nama?nama.trim().charAt(0).toUpperCase():'?';}}
+  const tbName=$('#topbar-profile-name');if(tbName)tbName.textContent=nama||'-';
+  const adminGreet=$('#admin-dashboard-greeting');if(adminGreet)adminGreet.textContent=`Selamat datang, ${String(role).toUpperCase()||'Admin'}!`;
+  const tbRole=$('#topbar-profile-role');if(tbRole)tbRole.textContent=role;
+  updateFaceStatusBadge();
 }
-const tbName=$('#topbar-profile-name');if(tbName)tbName.textContent=nama||'-';const adminGreet=$('#admin-dashboard-greeting');if(adminGreet)adminGreet.textContent=`Selamat datang, ${(u.role||u.Role||'').toUpperCase()||'Admin'}!`;
-const tbRole=$('#topbar-profile-role');if(tbRole)tbRole.textContent=u.role||u.Role||'USER';updateFaceStatusBadge();}
 async function loadProfilLengkap(){try{const r=await apiCall('getProfilLengkap',{token:AppState.token});if(r&&r.user){AppState.user=r.user;localStorage.setItem('auth_user',JSON.stringify(r.user));renderProfilFromUser();}}catch(e){console.error(e);}}
 function renderTrendChart(trend7Hari){
   const container=$('#dash-trend-chart');
@@ -1837,12 +1985,14 @@ async function handleForgotPassword(){
       $('#verify-reset-email').textContent=e;
       showAlert('Kode reset password telah dikirim ke email Anda.','success');
       navigateTo('verify-reset');
-      startResendCountdown(120,'btn-resend-reset','resend-reset-countdown','resendTimerReset');
+      startResendCountdown(r.cooldownDetik||120,'btn-resend-reset','resend-reset-countdown','resendTimerReset');
     }else{
       showInlineAlert('forgot-password-alert',r?.message||'Gagal mengirim kode reset');
     }
   }catch(err){
-    showInlineAlert('forgot-password-alert',err&&err.message?err.message:'Terjadi kesalahan');
+    const raw=err&&err.message?err.message:'Terjadi kesalahan';
+    const parts=String(raw).split('::');
+    showInlineAlert('forgot-password-alert',parts.length>1?parts.slice(1).join('::'):raw,parts[0]==='TUNGGU'?'warning':'error');
   }finally{
     b.disabled=false,b.innerHTML=o;
   }
@@ -1878,11 +2028,13 @@ async function handleResendReset(){
     const r=await apiCall('requestResetPasswordByEmail',{email:AppState.pendingResetEmail});
     if(r&&r.success){
       showAlert(r.message||'Kode berhasil dikirim ulang','success');
-      startResendCountdown(120,'btn-resend-reset','resend-reset-countdown','resendTimerReset');
+      startResendCountdown(r.cooldownDetik||120,'btn-resend-reset','resend-reset-countdown','resendTimerReset');
       clearOtpRow('verify-reset-otp-row');
     }
   }catch(err){
-    showInlineAlert('verify-reset-alert',err&&err.message?err.message:'Gagal mengirim ulang kode','warning');
+    const raw=err&&err.message?err.message:'Gagal mengirim ulang kode';
+    const parts=String(raw).split('::');
+    showInlineAlert('verify-reset-alert',parts.length>1?parts.slice(1).join('::'):raw,'warning');
   }
 }
 
@@ -2930,6 +3082,124 @@ async function handleSaveEditProfil(){
   }
 }
 
+/* ===== GANTI PASSWORD PROFIL DENGAN OTP ===== */
+function setProfilePasswordStep(step){
+  const steps=['email','otp','password'];
+  steps.forEach((name,index)=>{
+    const panel=$(`#profile-password-panel-${name}`);
+    if(panel)panel.classList.toggle('hidden',name!==step);
+    const indicator=document.querySelector(`[data-profile-password-step-indicator="${name}"]`);
+    if(indicator){
+      const activeIndex=steps.indexOf(step);
+      indicator.classList.toggle('active',name===step);
+      indicator.classList.toggle('done',index<activeIndex);
+    }
+  });
+}
+function resetProfilePasswordFlow(){
+  if(AppState.resendTimerProfilePassword){
+    clearInterval(AppState.resendTimerProfilePassword);
+    AppState.resendTimerProfilePassword=null;
+  }
+  AppState.profilePasswordEmail='';
+  AppState.profilePasswordResetToken='';
+  hideInlineAlert('profile-password-alert');
+  clearOtpRow('profile-password-otp-row');
+  $('#profile-new-password').value='';
+  $('#profile-new-password-confirm').value='';
+  $('#resend-profile-password-countdown').textContent='';
+  $('#btn-resend-profile-password').classList.remove('disabled');
+  setProfilePasswordStep('email');
+}
+function openProfilePasswordModal(){
+  resetProfilePasswordFlow();
+  const email=String(AppState.user?.email||AppState.user?.Email||'').trim();
+  $('#profile-password-email').value=email;
+  $('#modal-profile-password').classList.add('active');
+  setTimeout(()=>$('#profile-password-email').focus(),50);
+}
+function closeProfilePasswordModal(){
+  $('#modal-profile-password').classList.remove('active');
+  resetProfilePasswordFlow();
+}
+function profilePasswordErrorMessage(error,fallback){
+  const raw=error&&error.message?error.message:fallback;
+  const parts=String(raw).split('::');
+  return parts.length>1?parts.slice(1).join('::'):raw;
+}
+async function requestProfilePasswordOtp(isResend=false){
+  if(isResend&&$('#btn-resend-profile-password').classList.contains('disabled'))return;
+  hideInlineAlert('profile-password-alert');
+  const email=String(isResend?AppState.profilePasswordEmail:$('#profile-password-email').value).trim().toLowerCase();
+  if(!email){showInlineAlert('profile-password-alert','Masukkan email akun yang terdaftar.','warning');return;}
+  const button=isResend?$('#btn-resend-profile-password'):$('#btn-request-profile-password-otp');
+  const original=button.innerHTML;button.classList.add('disabled');button.disabled=true;
+  if(!isResend)button.innerHTML='<span class="spinner" style="width:17px;height:17px;border-width:2px"></span> Mengirim...';
+  try{
+    const result=await apiCall('requestProfilePasswordOtp',{token:AppState.token,email});
+    AppState.profilePasswordEmail=email;
+    $('#profile-password-otp-email').textContent=email;
+    clearOtpRow('profile-password-otp-row');
+    setProfilePasswordStep('otp');
+    startResendCountdown(result?.cooldownDetik||120,'btn-resend-profile-password','resend-profile-password-countdown','resendTimerProfilePassword');
+    showAlert(isResend?'Kode OTP baru telah dikirim.':'Kode OTP telah dikirim ke email Anda.','success');
+  }catch(error){
+    showInlineAlert('profile-password-alert',profilePasswordErrorMessage(error,'Gagal mengirim kode OTP.'),String(error?.message||'').startsWith('TUNGGU::')?'warning':'error');
+  }finally{
+    button.disabled=false;
+    if(!isResend)button.innerHTML=original;
+    if(!AppState.resendTimerProfilePassword)button.classList.remove('disabled');
+  }
+}
+async function verifyProfilePasswordOtp(){
+  hideInlineAlert('profile-password-alert');
+  const kodeOtp=getOtpValue('profile-password-otp-row');
+  if(kodeOtp.length!==6){showInlineAlert('profile-password-alert','Masukkan 6 digit kode OTP.','warning');return;}
+  const button=$('#btn-verify-profile-password-otp'),original=button.innerHTML;
+  button.disabled=true;button.innerHTML='<span class="spinner" style="width:17px;height:17px;border-width:2px"></span> Memverifikasi...';
+  try{
+    const result=await apiCall('verifyProfilePasswordOtp',{token:AppState.token,email:AppState.profilePasswordEmail,kodeOtp});
+    if(!result?.resetToken)throw new Error('Token penggantian password tidak diterima.');
+    AppState.profilePasswordResetToken=result.resetToken;
+    if(AppState.resendTimerProfilePassword){clearInterval(AppState.resendTimerProfilePassword);AppState.resendTimerProfilePassword=null;}
+    setProfilePasswordStep('password');
+    $('#profile-new-password').focus();
+  }catch(error){
+    clearOtpRow('profile-password-otp-row');
+    showInlineAlert('profile-password-alert',profilePasswordErrorMessage(error,'Kode OTP tidak valid.'));
+  }finally{
+    button.disabled=false;button.innerHTML=original;
+  }
+}
+async function submitProfilePassword(){
+  hideInlineAlert('profile-password-alert');
+  const newPassword=$('#profile-new-password').value;
+  const confirmation=$('#profile-new-password-confirm').value;
+  if(!newPassword||!confirmation){showInlineAlert('profile-password-alert','Isi password baru dan konfirmasinya.','warning');return;}
+  if(newPassword!==confirmation){showInlineAlert('profile-password-alert','Konfirmasi password baru tidak cocok.');return;}
+  if(newPassword.length<6){showInlineAlert('profile-password-alert','Password baru minimal 6 karakter.','warning');return;}
+  if(newPassword.length>128){showInlineAlert('profile-password-alert','Password baru maksimal 128 karakter.','warning');return;}
+  if(!AppState.profilePasswordResetToken){showInlineAlert('profile-password-alert','Verifikasi OTP belum lengkap. Silakan ulangi proses.','warning');setProfilePasswordStep('email');return;}
+  const button=$('#btn-submit-profile-password'),original=button.innerHTML;
+  button.disabled=true;button.innerHTML='<span class="spinner" style="width:17px;height:17px;border-width:2px"></span> Menyimpan...';
+  try{
+    const result=await apiCall('changeProfilePasswordWithOtp',{
+      token:AppState.token,
+      email:AppState.profilePasswordEmail,
+      resetToken:AppState.profilePasswordResetToken,
+      newPassword,
+    });
+    if(!result?.success)throw new Error(result?.message||'Password gagal diperbarui.');
+    $('#modal-profile-password').classList.remove('active');
+    handleLogout();
+    showAlert('Password berhasil diubah. Seluruh sesi telah dicabut; silakan login kembali.','success');
+  }catch(error){
+    showInlineAlert('profile-password-alert',profilePasswordErrorMessage(error,'Password gagal diperbarui.'));
+  }finally{
+    button.disabled=false;button.innerHTML=original;
+  }
+}
+
 /* ===== CROP FOTO PROFIL ===== */
 const CropState={img:null,scale:1,minScale:1,offsetX:0,offsetY:0,dragging:false,lastX:0,lastY:0,canvasSize:320};
 
@@ -3019,7 +3289,7 @@ const FACE_SMILE_THRESHOLD=0.7;
 
 function updateFaceStatusBadge(){
   const u=AppState.user;if(!u)return;
-  const hasFace=!!(u.faceDescriptor||u.Face_Descriptor_JSON);
+  const hasFace=Boolean(u.Wajah_Terdaftar||u.wajahTerdaftar||u.faceDescriptor||u.Face_Descriptor_JSON);
   const badge=$('#profil-face-status'),label=$('#profil-face-status-text'),btnLabel=$('#btn-daftar-wajah-label');
   if(!badge)return;
   if(hasFace){
@@ -3262,8 +3532,7 @@ async function handleFaceCaptureComplete(descriptor,video){
     const r=await apiCall('updateFaceDescriptor',{token:AppState.token,faceDescriptor,fotoWajahBase64});
     if(r&&r.success){
       if(AppState.user){
-        AppState.user.Face_Descriptor_JSON=faceDescriptor;
-        AppState.user.faceDescriptor=faceDescriptor;
+        AppState.user.Wajah_Terdaftar=true;
         localStorage.setItem('auth_user',JSON.stringify(AppState.user));
       }
       updateFaceStatusBadge();
@@ -3337,6 +3606,7 @@ async function initApp(){
 
   setupOtpRow('verify-register-otp-row');
   setupOtpRow('verify-reset-otp-row');
+  setupOtpRow('profile-password-otp-row');
 
   $('#btn-login').addEventListener('click',handleLogin);
   $('#btn-to-register').addEventListener('click',()=>navigateTo('register'));
@@ -3446,6 +3716,16 @@ async function initApp(){
   $('#log-prev-btn')?.addEventListener('click',()=>{ AdminState.logPage--; renderLogList(); });
   $('#log-next-btn')?.addEventListener('click',()=>{ AdminState.logPage++; renderLogList(); });
   $('#btn-open-edit-profil').addEventListener('click',openEditProfil);
+  $('#btn-open-profile-password').addEventListener('click',openProfilePasswordModal);
+  $('#btn-profile-password-inline').addEventListener('click',openProfilePasswordModal);
+  $('#btn-close-profile-password').addEventListener('click',closeProfilePasswordModal);
+  $('#btn-cancel-profile-password').addEventListener('click',closeProfilePasswordModal);
+  $('#btn-request-profile-password-otp').addEventListener('click',()=>requestProfilePasswordOtp(false));
+  $('#btn-resend-profile-password').addEventListener('click',()=>requestProfilePasswordOtp(true));
+  $('#btn-verify-profile-password-otp').addEventListener('click',verifyProfilePasswordOtp);
+  $('#btn-submit-profile-password').addEventListener('click',submitProfilePassword);
+  $('#profile-password-email').addEventListener('keypress',event=>{if(event.key==='Enter')requestProfilePasswordOtp(false);});
+  $('#profile-new-password-confirm').addEventListener('keypress',event=>{if(event.key==='Enter')submitProfilePassword();});
   $('#btn-open-daftar-wajah').addEventListener('click',openDaftarWajah);
   $('#btn-close-daftar-wajah').addEventListener('click',closeDaftarWajah);
   $('#btn-cancel-daftar-wajah').addEventListener('click',closeDaftarWajah);

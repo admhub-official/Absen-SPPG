@@ -24,6 +24,14 @@ Logo dan ikon aplikasi disajikan langsung dari bucket publik Supabase Storage `i
 
 Pengaduan menyimpan relasi pengirim secara internal agar pengguna dapat melihat tanggapan dan SUPER ADMIN dapat melakukan audit. Untuk laporan anonim, API menghapus ID, nama, email, dan ID Card sebelum mengirim data kepada ADMIN. Tindakan membaca dan menanggapi dicatat pada audit log.
 
+## Profil dan Keamanan Password
+
+- Profil menampilkan data pribadi, kepegawaian, rekening, status akun, status biometrik, serta metadata akun yang relevan.
+- Password hanya ditampilkan sebagai nilai tersamarkan `xxxxxxxx`. Server hanya menyimpan hash dan salt, sehingga password lama tidak dapat dibaca kembali.
+- Penggantian password dari Profil wajib memverifikasi email akun dengan OTP enam digit sebelum menerima token reset sekali pakai.
+- Token reset berlaku 15 menit dan tidak dapat digunakan ulang. Setelah password berhasil diganti, seluruh sesi akun dicabut dan pengguna harus login kembali.
+- Descriptor wajah, hash password, salt, token reset, dan ID file internal tidak dikirim oleh endpoint profil atau daftar pengguna.
+
 ## Payroll dan Slip PDF
 
 - `ADMIN` dan `SUPER ADMIN` dapat memilih hingga 50 karyawan per batch, termasuk pilih semua dari hasil pencarian.

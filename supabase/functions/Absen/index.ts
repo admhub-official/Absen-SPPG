@@ -576,16 +576,32 @@ async function isEmailConfirmed(email: string): Promise<boolean> {
 
 function sanitizeUser(user: Record<string, unknown>): Record<string, unknown> {
   const safe: Record<string, unknown> = {};
+  const excludedFields = new Set([
+    "Password_Hash",
+    "Password_Salt",
+    "Token_Reset_Password",
+    "Percobaan_Password_Gagal",
+    "Face_Descriptor_JSON",
+    "Foto_File_ID",
+    "Foto_Asli_File_ID",
+    "QR_Code_File_ID",
+    "URL_Foto_Profil_Asli",
+    "URL_Foto_Wajah_Ref",
+    "URL_ID_Card_PDF",
+    "URL_ID_Card_Depan",
+    "URL_ID_Card_Belakang",
+    "Link_PDF_QR",
+  ]);
   Object.keys(user).forEach((k) => {
-    if (
-      k !== "Password_Hash" &&
-      k !== "Password_Salt" &&
-      k !== "Token_Reset_Password" &&
-      k !== "Percobaan_Password_Gagal"
-    ) {
+    if (!excludedFields.has(k)) {
       safe[k] = user[k];
     }
   });
+  safe.Wajah_Terdaftar = Boolean(user.Face_Descriptor_JSON);
+  safe.ID_Card_Digital_Tersedia = Boolean(
+    user.URL_ID_Card_PDF || user.URL_ID_Card_Depan || user.URL_ID_Card_Belakang,
+  );
+  safe.QR_Code_Tersedia = Boolean(user.Link_PDF_QR || user.QR_Code_File_ID);
   return safe;
 }
 
@@ -1056,16 +1072,46 @@ async function requestResetPasswordByEmail(data: { email?: string }): Promise<un
     throw new ApiError("Email tidak terdaftar.");
   }
 
+  const { data: existingOtp } = await supabase
+    .from("Email_OTP")
+    .select("Expires_At, Resend_Count, Next_Resend_At")
+    .eq("Email", email)
+    .eq("Tujuan", "RESET")
+    .maybeSingle();
+  const now = Date.now();
+  const otpMasihAktif = Boolean(existingOtp && new Date(existingOtp.Expires_At).getTime() > now);
+  if (otpMasihAktif && existingOtp?.Next_Resend_At && new Date(existingOtp.Next_Resend_At).getTime() > now) {
+    const sisaDetik = Math.ceil((new Date(existingOtp.Next_Resend_At).getTime() - now) / 1000);
+    throw new ApiError(`TUNGGU::Mohon tunggu ${sisaDetik} detik sebelum meminta kode baru.`);
+  }
+  const resendCount = otpMasihAktif ? Number(existingOtp?.Resend_Count || 0) : 0;
+  if (otpMasihAktif && resendCount >= CONFIG.RESEND_OTP_MAX_PER_DAY) {
+    throw new ApiError("Batas kirim ulang kode telah tercapai. Tunggu kode kedaluwarsa sebelum mencoba lagi.");
+  }
+
   try {
-    await generateAndSendOtp(email, user.ID_User, user.Nama_Lengkap || "", "RESET");
+    await generateAndSendOtp(email, user.ID_User, user.Nama_Lengkap || "", "RESET", otpMasihAktif);
   } catch (eOtp) {
     console.error("Gagal mengirim kode reset password:", eOtp);
     throw new ApiError("Gagal mengirim kode reset password. Coba lagi nanti.");
   }
 
-  await logAudit("REQUEST_RESET_PASSWORD", { email }, user.ID_User);
+  const cooldownDetik = CONFIG.RESEND_OTP_BASE_COOLDOWN_SECONDS * Math.pow(2, resendCount);
+  if (otpMasihAktif) {
+    await supabase.from("Email_OTP").update({
+      Resend_Count: resendCount + 1,
+      Next_Resend_At: new Date(Date.now() + cooldownDetik * 1000).toISOString(),
+    }).eq("Email", email).eq("Tujuan", "RESET");
+  }
 
-  return { success: true, message: "Kode reset password berhasil dikirim ke email Anda." };
+  await logAudit("REQUEST_RESET_PASSWORD", { email, resendCount, cooldownDetik }, user.ID_User);
+
+  return {
+    success: true,
+    message: "Kode reset password berhasil dikirim ke email Anda.",
+    cooldownDetik,
+    sisaKirimUlang: CONFIG.RESEND_OTP_MAX_PER_DAY - (otpMasihAktif ? resendCount + 1 : 0),
+  };
 }
 
 async function verifyResetPasswordOtp(data: { email?: string; kodeOtp?: string }): Promise<unknown> {
@@ -1252,6 +1298,78 @@ async function changePassword(data: {
 
   await logAudit("CHANGE_PASSWORD", { idUser: session.idUser }, session.idUser || null);
   return { success: true, message: "Password berhasil diubah" };
+}
+
+async function getProfilePasswordOwner(token: string, submittedEmail?: string): Promise<{
+  idUser: string;
+  email: string;
+}> {
+  const session = await validateSession(token);
+  if (session.type !== "user" || !session.idUser) throw new ApiError("Akses ditolak");
+
+  const { data: user } = await supabase
+    .from("Users")
+    .select("ID_User, Email")
+    .eq("ID_User", session.idUser)
+    .maybeSingle();
+  if (!user) throw new ApiError("User tidak ditemukan");
+
+  const email = String(user.Email || "").trim().toLowerCase();
+  if (!email) {
+    throw new ApiError("Email belum tersedia di profil. Tambahkan email aktif sebelum mengganti password.");
+  }
+
+  const requestedEmail = String(submittedEmail || "").trim().toLowerCase();
+  if (!requestedEmail) throw new ApiError("Email wajib diisi");
+  if (requestedEmail !== email) {
+    throw new ApiError("Email tidak cocok dengan email yang terdaftar pada akun ini.");
+  }
+
+  return {
+    idUser: String(user.ID_User),
+    email,
+  };
+}
+
+async function requestProfilePasswordOtp(data: { token?: string; email?: string }): Promise<unknown> {
+  const owner = await getProfilePasswordOwner(data?.token || "", data?.email);
+  const resetRequest = await requestResetPasswordByEmail({ email: owner.email }) as Record<string, unknown>;
+  await logAudit("REQUEST_PROFILE_PASSWORD_OTP", { email: owner.email }, owner.idUser);
+  return {
+    ...resetRequest,
+    success: true,
+    email: owner.email,
+    message: "Kode OTP untuk mengganti password telah dikirim ke email terdaftar.",
+  };
+}
+
+async function verifyProfilePasswordOtp(data: {
+  token?: string;
+  email?: string;
+  kodeOtp?: string;
+}): Promise<unknown> {
+  const owner = await getProfilePasswordOwner(data?.token || "", data?.email);
+  const result = await verifyResetPasswordOtp({ email: owner.email, kodeOtp: data?.kodeOtp });
+  await logAudit("VERIFY_PROFILE_PASSWORD_OTP", { email: owner.email }, owner.idUser);
+  return result;
+}
+
+async function changeProfilePasswordWithOtp(data: {
+  token?: string;
+  email?: string;
+  resetToken?: string;
+  newPassword?: string;
+}): Promise<unknown> {
+  const owner = await getProfilePasswordOwner(data?.token || "", data?.email);
+  const result = await resetPassword({
+    email: owner.email,
+    token: data?.resetToken,
+    newPassword: data?.newPassword,
+  });
+  return {
+    ...(result as Record<string, unknown>),
+    logoutRequired: true,
+  };
 }
 
 async function toggleDeviceStatus(data: {
@@ -3467,6 +3585,9 @@ const API_FUNCTIONS: Record<string, (data: any) => Promise<unknown>> = {
   requestResetPasswordByEmail,
   verifyResetPasswordOtp,
   resetPassword,
+  requestProfilePasswordOtp,
+  verifyProfilePasswordOtp,
+  changeProfilePasswordWithOtp,
   resendConfirmationEmail,
   registerDevice,
   getAllDevices,
