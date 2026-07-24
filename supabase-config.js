@@ -8,6 +8,7 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
 
   function showLocationMessage(message) {
     window.setTimeout(() => {
+      if (typeof window.closeAbsenScan === 'function') window.closeAbsenScan();
       const status = document.getElementById('absen-facecam-status');
       if (status) status.textContent = message;
     }, 0);
