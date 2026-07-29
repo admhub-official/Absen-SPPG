@@ -203,7 +203,7 @@ function profileAssessment(user: any): { score: number; missing: string[] } {
     ["bank", user.Nama_Bank],
     ["nomor rekening", user.Nomor_Rekening],
     ["atas nama rekening", user.Atas_Nama_Rekening],
-    ["data wajah", user.Face_Descriptor_JSON || user.URL_Foto_Wajah_Ref],
+    ["data wajah", user._hasFace || user.Face_Descriptor_JSON || user.URL_Foto_Wajah_Ref],
   ];
   const missing = requirements.filter(([, value]) => !value).map(([label]) => label);
   return { score: Math.round(((requirements.length - missing.length) / requirements.length) * 100), missing };
@@ -213,12 +213,25 @@ async function getScopedOperationalUsers(auth: AuthenticatedUser): Promise<any[]
   const scoped = await getScopedAttendanceUsers(auth);
   const ids = scoped.map((row) => row.ID_User);
   if (!ids.length) return [];
-  const { data, error } = await supabase
-    .from("Users")
-    .select("ID_User, Username, Role, Status_Aktif, Nama_Lengkap, Tempat_Lahir, Tanggal_Lahir, Jenis_Kelamin, Email, No_Whatsapp, SPPG, Yayasan, Tanggal_Mulai_Kerja, Jabatan_Divisi, Gaji_Harian, Nama_Bank, Nomor_Rekening, Atas_Nama_Rekening, ID_Card_Unik, URL_Foto_Profil, URL_Foto_Wajah_Ref, Face_Descriptor_JSON, Setuju_Kebijakan_Data, Created_At, Updated_At")
-    .in("ID_User", ids);
-  if (error) throw new Error("Gagal membaca data operasional pengguna: " + error.message);
-  return data || [];
+  const [usersResult, faceResult] = await Promise.all([
+    supabase
+      .from("Users")
+      // Dashboard hanya memerlukan identitas dan indikator kelengkapan profil.
+      .select("ID_User,Role,Status_Aktif,Nama_Lengkap,Email,No_Whatsapp,SPPG,Jabatan_Divisi,Gaji_Harian,Nama_Bank,Nomor_Rekening,Atas_Nama_Rekening,URL_Foto_Wajah_Ref")
+      .in("ID_User", ids),
+    supabase
+      .from("Users")
+      .select("ID_User")
+      .in("ID_User", ids)
+      .not("Face_Descriptor_JSON", "is", null),
+  ]);
+  if (usersResult.error) throw new Error("Gagal membaca data operasional pengguna: " + usersResult.error.message);
+  if (faceResult.error) throw new Error("Gagal membaca status data wajah: " + faceResult.error.message);
+  const usersWithFace = new Set((faceResult.data || []).map((row: any) => String(row.ID_User)));
+  return (usersResult.data || []).map((row: any) => ({
+    ...row,
+    _hasFace: usersWithFace.has(String(row.ID_User)) || Boolean(row.URL_Foto_Wajah_Ref),
+  }));
 }
 
 async function getPresenceMap(userIds: string[]): Promise<Map<string, { online: boolean; lastActivity: string | null }>> {
@@ -261,7 +274,45 @@ async function handlePresenceHeartbeat(data: Record<string, unknown>): Promise<R
 
 async function handleOperationalUsers(data: Record<string, unknown>): Promise<Response> {
   const auth = await authenticateUser(data.token);
-  const users = await getScopedOperationalUsers(auth);
+  const scoped = await getScopedAttendanceUsers(auth);
+  const scopedIds = scoped.map((row) => row.ID_User);
+  const page = Math.max(1, Number(data.page) || 1);
+  const pageSize = Math.min(50, Math.max(10, Number(data.pageSize) || 25));
+  if (!scopedIds.length) return okResult({ users: [], total: 0, page, pageSize, filterOptions: {} });
+
+  const columns = "ID_User,Username,Role,Status_Aktif,Nama_Lengkap,Tempat_Lahir,Tanggal_Lahir,Jenis_Kelamin,Email,No_Whatsapp,SPPG,Yayasan,Tanggal_Mulai_Kerja,Jabatan_Divisi,Gaji_Harian,Nama_Bank,Nomor_Rekening,Atas_Nama_Rekening,ID_Card_Unik,URL_Foto_Profil,URL_Foto_Wajah_Ref,Setuju_Kebijakan_Data,Created_At,Updated_At";
+  let query = supabase.from("Users")
+    .select(columns, { count: "exact" })
+    .in("ID_User", scopedIds);
+  const search = String(data.search || "").trim().replace(/[%(),]/g, " ").slice(0, 100);
+  if (search) query = query.or(`Nama_Lengkap.ilike.%${search}%,SPPG.ilike.%${search}%,Jabatan_Divisi.ilike.%${search}%`);
+  const role = String(data.role || "").trim();
+  const sppg = String(data.sppg || "").trim();
+  const division = String(data.division || "").trim();
+  const account = String(data.account || "").trim().toUpperCase();
+  if (role) query = query.eq("Role", role);
+  if (sppg) query = query.eq("SPPG", sppg);
+  if (division) query = query.eq("Jabatan_Divisi", division);
+  if (account === "ACTIVE") query = query.eq("Status_Aktif", true);
+  if (account === "INACTIVE") query = query.eq("Status_Aktif", false);
+  const from = (page - 1) * pageSize;
+  const usersResult = await query.order("Nama_Lengkap").range(from, from + pageSize - 1);
+  if (usersResult.error) throw new Error("Gagal membaca data operasional pengguna: " + usersResult.error.message);
+  const users = usersResult.data || [];
+  const pageIds = users.map((user: any) => String(user.ID_User));
+  const [faceResult, optionsResult] = await Promise.all([
+    pageIds.length
+      ? supabase.from("Users").select("ID_User").in("ID_User", pageIds).not("Face_Descriptor_JSON", "is", null)
+      : Promise.resolve({ data: [], error: null }),
+    // Opsi filter hanya memuat tiga kolom kecil, bukan seluruh profil.
+    supabase.from("Users").select("Role,SPPG,Jabatan_Divisi").in("ID_User", scopedIds),
+  ]);
+  if (faceResult.error) throw new Error("Gagal membaca status data wajah: " + faceResult.error.message);
+  if (optionsResult.error) throw new Error("Gagal membaca opsi filter pengguna: " + optionsResult.error.message);
+  const usersWithFace = new Set((faceResult.data || []).map((row: any) => String(row.ID_User)));
+  users.forEach((row: any) => {
+    row._hasFace = usersWithFace.has(String(row.ID_User)) || Boolean(row.URL_Foto_Wajah_Ref);
+  });
   const presence = await getPresenceMap(users.map((user) => String(user.ID_User)));
   const userIds = users.map((user) => String(user.ID_User));
   let todayPunches: any[] = [];
@@ -278,6 +329,14 @@ async function handleOperationalUsers(data: Record<string, unknown>): Promise<Re
     punchMap.get(id)!.push(row);
   }
   return okResult({
+    total: usersResult.count || 0,
+    page,
+    pageSize,
+    filterOptions: {
+      roles: [...new Set((optionsResult.data || []).map((row: any) => String(row.Role || "")).filter(Boolean))].sort(),
+      sppg: [...new Set((optionsResult.data || []).map((row: any) => String(row.SPPG || "")).filter(Boolean))].sort(),
+      divisions: [...new Set((optionsResult.data || []).map((row: any) => String(row.Jabatan_Divisi || "")).filter(Boolean))].sort(),
+    },
     users: users.map((user) => {
       const assessment = profileAssessment(user);
       const current = presence.get(String(user.ID_User));
@@ -388,14 +447,18 @@ async function handleOperationalDashboard(data: Record<string, unknown>): Promis
 
 async function handleUserNotifications(data: Record<string, unknown>): Promise<Response> {
   const auth = await authenticateUser(data.token);
-  const { data: user, error: userError } = await supabase.from("Users").select("*").eq("ID_User", auth.idUser).maybeSingle();
+  const { data: user, error: userError } = await supabase.from("Users")
+    .select("Nama_Lengkap,Email,No_Whatsapp,SPPG,Jabatan_Divisi,Gaji_Harian,Nama_Bank,Nomor_Rekening,Atas_Nama_Rekening,URL_Foto_Wajah_Ref,Created_At,Updated_At")
+    .eq("ID_User", auth.idUser)
+    .maybeSingle();
   if (userError || !user) throw new Error("Profil pengguna tidak ditemukan.");
   const [slipsResult, complaintsResult] = await Promise.all([
     supabase.from("Slip_Gaji")
       .select("ID_Slip, Periode_Mulai, Periode_Akhir, Status_Penerbitan, Diterbitkan_At")
       .eq("ID_User", auth.idUser)
       .eq("Status_Penerbitan", "MENUNGGU_TTD_PENERIMA")
-      .order("Diterbitkan_At", { ascending: false }),
+      .order("Diterbitkan_At", { ascending: false })
+      .limit(20),
     supabase.from("Pengaduan")
       .select("ID_Pengaduan, Kategori, Status_Tiket, Tanggapan_Admin, Waktu_Tanggapan, Timestamp")
       .eq("User", auth.idUser)
@@ -573,87 +636,36 @@ function requireSuperAdmin(auth: AuthenticatedUser): void {
 async function handleSuperAdminOverview(data: Record<string, unknown>): Promise<Response> {
   const auth = await authenticateUser(data.token);
   requireSuperAdmin(auth);
-  const today = new Date().toISOString().slice(0, 10);
-  const [usersResult, attendanceResult, slipsResult, complaintsResult, sessionsResult, settingsResult] = await Promise.all([
-    supabase.from("Users").select("ID_User,Nama_Lengkap,Role,Status_Aktif,SPPG,Jabatan_Divisi,Gaji_Harian,Nama_Bank,Nomor_Rekening,URL_Foto_Wajah_Ref"),
-    supabase.from("Absensi").select("ID_User,SPPG,Jenis_Absen,Status_Validasi").eq("Tanggal", today),
-    supabase.from("Slip_Gaji").select("ID_Slip,SPPG,Total_Gaji_Diterima,URL_PDF_Slip,PDF_Storage_Path,Ditandatangani_Penerima_At"),
-    supabase.from("Pengaduan").select("ID_Pengaduan,SPPG,Status_Tiket"),
-    supabase.from("Sessions").select("ID_User,Expires_At"),
-    supabase.from("System_Settings").select("Setting_Key,Setting_Value,Description,Updated_At,Updated_By"),
-  ]);
-  for (const result of [usersResult, attendanceResult, slipsResult, complaintsResult, sessionsResult, settingsResult]) {
-    if (result.error) throw new Error(result.error.message);
-  }
-  const users = (usersResult.data || []).filter((row: any) => isActive(row.Status_Aktif));
-  const attendance = attendanceResult.data || [];
-  const slips = slipsResult.data || [];
-  const complaints = complaintsResult.data || [];
-  const activeSessions = (sessionsResult.data || []).filter((row: any) => new Date(row.Expires_At).getTime() > Date.now());
-  const sppgNames = [...new Set(users.map((row: any) => String(row.SPPG || "Tanpa SPPG")))].sort();
-  const bySppg = sppgNames.map((sppg) => {
-    const scopedUsers = users.filter((row: any) => String(row.SPPG || "Tanpa SPPG") === sppg);
-    const ids = new Set(scopedUsers.map((row: any) => String(row.ID_User)));
-    const scopedAttendance = attendance.filter((row: any) => ids.has(String(row.ID_User)));
-    const present = new Set(scopedAttendance.map((row: any) => String(row.ID_User))).size;
-    const complete = new Set(scopedAttendance.filter((row: any) => ["PULANG", "KELUAR"].includes(String(row.Jenis_Absen || "").toUpperCase())).map((row: any) => String(row.ID_User))).size;
-    return {
-      sppg,
-      employees: scopedUsers.length,
-      present,
-      attendanceRate: scopedUsers.length ? Math.round(present / scopedUsers.length * 100) : 0,
-      completePunchRate: present ? Math.round(complete / present * 100) : 0,
-      payrollTotal: slips.filter((row: any) => String(row.SPPG || "Tanpa SPPG") === sppg).reduce((sum: number, row: any) => sum + Number(row.Total_Gaji_Diterima || 0), 0),
-      pendingSlips: slips.filter((row: any) => String(row.SPPG || "Tanpa SPPG") === sppg && !row.Ditandatangani_Penerima_At).length,
-      openComplaints: complaints.filter((row: any) => String(row.SPPG || "Tanpa SPPG") === sppg && String(row.Status_Tiket || "BARU") !== "SELESAI").length,
-    };
+  // Agregasi dilakukan di Postgres agar riwayat mentah tidak keluar dari database.
+  const { data: overview, error } = await supabase.rpc("get_super_admin_overview_v4", {
+    p_today: jakartaDateString(),
   });
-  const normalizedNames = new Map<string, any[]>();
-  for (const user of users) {
-    const key = String(user.Nama_Lengkap || "").trim().toLowerCase().replace(/\s+/g, " ");
-    if (!key) continue;
-    normalizedNames.set(key, [...(normalizedNames.get(key) || []), user]);
-  }
-  const quality = {
-    duplicateNames: [...normalizedNames.values()].filter((rows) => rows.length > 1).map((rows) => ({ label: rows[0].Nama_Lengkap, count: rows.length })),
-    withoutDivision: users.filter((row: any) => !String(row.Jabatan_Divisi || "").trim()).map((row: any) => ({ id: row.ID_User, name: row.Nama_Lengkap, sppg: row.SPPG })),
-    withoutSalary: users.filter((row: any) => Number(row.Gaji_Harian || 0) <= 0).map((row: any) => ({ id: row.ID_User, name: row.Nama_Lengkap, sppg: row.SPPG })),
-    withoutBank: users.filter((row: any) => !String(row.Nama_Bank || "").trim() || !String(row.Nomor_Rekening || "").trim()).map((row: any) => ({ id: row.ID_User, name: row.Nama_Lengkap, sppg: row.SPPG })),
-    withoutFace: users.filter((row: any) => !String(row.URL_Foto_Wajah_Ref || "").trim()).map((row: any) => ({ id: row.ID_User, name: row.Nama_Lengkap, sppg: row.SPPG })),
-    slipsWithoutPdf: slips.filter((row: any) => !row.URL_PDF_Slip && !row.PDF_Storage_Path).map((row: any) => ({ id: row.ID_Slip, sppg: row.SPPG })),
-    inactiveWithSession: activeSessions.filter((session: any) => !(usersResult.data || []).some((user: any) => String(user.ID_User) === String(session.ID_User) && isActive(user.Status_Aktif))).map((row: any) => ({ id: row.ID_User })),
-  };
-  return okResult({
-    totals: {
-      sppg: bySppg.length,
-      employees: users.length,
-      admins: users.filter((row: any) => ["ADMIN", "AKUNTAN"].includes(String(row.Role || "").toUpperCase())).length,
-      attendanceRate: users.length ? Math.round(new Set(attendance.map((row: any) => String(row.ID_User))).size / users.length * 100) : 0,
-      payrollTotal: slips.reduce((sum: number, row: any) => sum + Number(row.Total_Gaji_Diterima || 0), 0),
-      pendingSlips: slips.filter((row: any) => !row.Ditandatangani_Penerima_At).length,
-      openComplaints: complaints.filter((row: any) => String(row.Status_Tiket || "BARU") !== "SELESAI").length,
-    },
-    bySppg,
-    quality,
-    settings: settingsResult.data || [],
-  });
+  if (error) throw new Error("Gagal membaca dashboard global: " + error.message);
+  return okResult(overview || {});
 }
 
 async function handleSuperAdminAudit(data: Record<string, unknown>): Promise<Response> {
   const auth = await authenticateUser(data.token);
   requireSuperAdmin(auth);
-  const limit = Math.min(500, Math.max(20, Number(data.limit) || 200));
-  const [logsResult, usersResult] = await Promise.all([
-    supabase.from("Audit_Log").select("ID_Log,Waktu,ID_User_Pelaku,Jenis_Aktivitas,Detail,IP_Address").order("Waktu", { ascending: false }).limit(limit),
-    supabase.from("Users").select("ID_User,Nama_Lengkap,Email,Role,SPPG"),
-  ]);
+  const limit = Math.min(200, Math.max(20, Number(data.limit) || 100));
+  let logQuery = supabase.from("Audit_Log")
+    .select("ID_Log,Waktu,ID_User_Pelaku,Jenis_Aktivitas,Detail,IP_Address")
+    .order("Waktu", { ascending: false })
+    .limit(limit);
+  const before = String(data.before || "").trim();
+  if (before) logQuery = logQuery.lt("Waktu", before);
+  const logsResult = await logQuery;
   if (logsResult.error) throw new Error(logsResult.error.message);
+  const actorIds = [...new Set((logsResult.data || []).map((row: any) => String(row.ID_User_Pelaku || "")).filter(Boolean))];
+  const usersResult = actorIds.length
+    ? await supabase.from("Users").select("ID_User,Nama_Lengkap,Email,Role,SPPG").in("ID_User", actorIds)
+    : { data: [], error: null };
   if (usersResult.error) throw new Error(usersResult.error.message);
   const users = new Map((usersResult.data || []).map((row: any) => [String(row.ID_User), row]));
   return okResult({ logs: (logsResult.data || []).map((log: any) => {
     const actor: any = users.get(String(log.ID_User_Pelaku)) || {};
     return { ...log, _pelakuNama: actor.Nama_Lengkap || "-", _pelakuEmail: actor.Email || "", _pelakuRole: actor.Role || "", _pelakuSppg: actor.SPPG || "" };
-  }) });
+  }), nextCursor: logsResult.data?.length === limit ? logsResult.data.at(-1)?.Waktu || null : null });
 }
 
 const SYSTEM_SETTING_KEYS = new Set([
@@ -741,7 +753,8 @@ async function handleRiskyAccessDelete(data: Record<string, unknown>): Promise<R
   requireSuperAdmin(auth);
   const reason = requireReason(data.reason);
   const id = String(data.idAkses || "").trim();
-  const { data: before, error: beforeError } = await supabase.from("Akses_Email").select("*").eq("ID_Akses", id).maybeSingle();
+  const { data: before, error: beforeError } = await supabase.from("Akses_Email")
+    .select("ID_Akses,Email,SPPG,Aktif,Created_At").eq("ID_Akses", id).maybeSingle();
   if (beforeError || !before) throw new Error("Mapping akses tidak ditemukan.");
   const { error } = await supabase.from("Akses_Email").delete().eq("ID_Akses", id);
   if (error) throw new Error("Gagal menghapus akses: " + error.message);
@@ -756,16 +769,17 @@ async function handleRiskyAccessSave(data: Record<string, unknown>): Promise<Res
   const email = String(data.email || "").trim().toLowerCase();
   const sppg = String(data.sppg || "").trim();
   if (!email.includes("@") || !sppg) throw new Error("Email atau cakupan SPPG tidak valid.");
-  const { data: before, error: beforeError } = await supabase.from("Akses_Email").select("*")
+  const accessColumns = "ID_Akses,Email,SPPG,Aktif,Created_At";
+  const { data: before, error: beforeError } = await supabase.from("Akses_Email").select(accessColumns)
     .ilike("Email", email).eq("SPPG", sppg).maybeSingle();
   if (beforeError) throw new Error(beforeError.message);
   let after: any = null;
   if (before) {
-    const result = await supabase.from("Akses_Email").update({ Aktif: true }).eq("ID_Akses", before.ID_Akses).select("*").single();
+    const result = await supabase.from("Akses_Email").update({ Aktif: true }).eq("ID_Akses", before.ID_Akses).select(accessColumns).single();
     if (result.error) throw new Error("Gagal memperbarui akses: " + result.error.message);
     after = result.data;
   } else {
-    const result = await supabase.from("Akses_Email").insert({ Email: email, SPPG: sppg, Aktif: true }).select("*").single();
+    const result = await supabase.from("Akses_Email").insert({ Email: email, SPPG: sppg, Aktif: true }).select(accessColumns).single();
     if (result.error) throw new Error("Gagal menambahkan akses: " + result.error.message);
     after = result.data;
   }

@@ -1425,6 +1425,13 @@
           <div id="users-grid-container" class="users-grid">
             <div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>
           </div>
+          <div class="pagination" id="users-pagination" style="display:none">
+            <span class="pagination-info" id="users-pagination-info"></span>
+            <div class="pagination-btns">
+              <button class="pagination-btn" id="users-prev-btn" type="button">â† Prev</button>
+              <button class="pagination-btn" id="users-next-btn" type="button">Next â†’</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2207,7 +2214,8 @@ function startPresenceHeartbeat(){
   stopPresenceHeartbeat();
   const send=()=>{if(!AppState.token)return;apiCall('presenceHeartbeat',{token:AppState.token,clientState:document.hidden?'HIDDEN':'ACTIVE'}).catch(error=>console.error('Heartbeat gagal',error));};
   send();
-  AppState.presenceTimer=setInterval(send,45000);
+  // Tetap di bawah ambang online dua menit sambil mengurangi trafik heartbeat 50%.
+  AppState.presenceTimer=setInterval(send,90000);
 }
 function stopPresenceHeartbeat(){if(AppState.presenceTimer){clearInterval(AppState.presenceTimer);AppState.presenceTimer=null;}}
 
@@ -2354,7 +2362,30 @@ function enhanceAccessibility(){
 function showInlineAlert(id,msg,type='error'){const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='inline-alert show'+(type==='warning'?' warning':'');}
 function hideInlineAlert(id){const el=document.getElementById(id);if(!el)return;el.className='inline-alert';el.textContent='';}
 async function loadPublicConfig(){const r=await fetch(CONFIG_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({function:'getPublicConfig',data:{}})});const d=await r.json();if(!d.success||!d.result?.url)throw new Error('Gagal memuat konfigurasi server');SUPABASE_URL=d.result.url;SUPABASE_KEY=d.result.anonKey;}
-async function apiCall(f,p={}){try{const r=await fetch(CONFIG_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({function:f,data:p})});const d=await r.json();if(!d.success)throw new Error(d.error||'Terjadi kesalahan pada server');return d.result;}catch(e){console.error(e);throw e;}}
+const API_CACHE_TTL=new Map([
+  ['getOperationalDashboardV2',20_000],['getOperationalUsersV2',30_000],
+  ['getSuperAdminOverviewV3',60_000],['getSuperAdminAuditV3',30_000],
+  ['getUserNotificationsV2',30_000],['getMyPayroll',30_000],
+  ['getAdminConfiguration',120_000],
+]);
+const ApiResponseCache=new Map(),ApiInFlight=new Map();
+function clearApiResponseCache(){ApiResponseCache.clear();ApiInFlight.clear();}
+async function apiCall(f,p={},options={}){
+  const ttl=API_CACHE_TTL.get(f)||0,payload={...p};delete payload.token;
+  const key=`${AppState.user?.idUser||AppState.user?.ID_User||'anon'}:${f}:${JSON.stringify(payload)}`;
+  const cached=ApiResponseCache.get(key);
+  if(ttl&&!options.force&&cached&&cached.expiresAt>Date.now())return cached.value;
+  if(ttl&&!options.force&&ApiInFlight.has(key))return ApiInFlight.get(key);
+  const request=(async()=>{try{
+    const r=await fetch(CONFIG_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({function:f,data:p})});
+    const d=await r.json();if(!d.success)throw new Error(d.error||'Terjadi kesalahan pada server');
+    // Cache hanya endpoint baca ber-TTL pendek; request identik bersamaan dideduplikasi.
+    if(ttl)ApiResponseCache.set(key,{value:d.result,expiresAt:Date.now()+ttl});else clearApiResponseCache();
+    return d.result;
+  }catch(e){console.error(e);throw e;}finally{ApiInFlight.delete(key);}})();
+  if(ttl)ApiInFlight.set(key,request);
+  return request;
+}
 
 /* ===== OTP INPUT HELPERS ===== */
 function setupOtpRow(rowId){const row=document.getElementById(rowId);if(!row)return;const inputs=[...row.querySelectorAll('input')];inputs.forEach((inp,idx)=>{inp.addEventListener('input',()=>{inp.value=inp.value.replace(/[^0-9]/g,'').slice(0,1);if(inp.value&&idx<inputs.length-1)inputs[idx+1].focus();});inp.addEventListener('keydown',ev=>{if(ev.key==='Backspace'&&!inp.value&&idx>0)inputs[idx-1].focus();});inp.addEventListener('paste',ev=>{ev.preventDefault();const txt=(ev.clipboardData||window.clipboardData).getData('text').replace(/[^0-9]/g,'').slice(0,inputs.length);txt.split('').forEach((ch,i)=>{if(inputs[i])inputs[i].value=ch;});const last=Math.min(txt.length,inputs.length)-1;if(last>=0)inputs[last].focus();});});}
@@ -2582,6 +2613,10 @@ const AdminState = {
   attendanceSelected: new Map(),
   allUsers: [],
   filteredUsers: [],
+  userPage: 1,
+  userPageSize: 25,
+  userTotal: 0,
+  userFilterOptions: {},
   userViewMode: 'cards',
   selectedUser: null,
   allLogs: [],
@@ -2631,11 +2666,14 @@ function startAbsenRealtime(){
     ws.onopen = () => {
       ws.send(JSON.stringify({topic:'realtime:public:Absensi',event:'phx_join',payload:{config:{postgres_changes:[{event:'*',schema:'public',table:'Absensi'}]}},ref:'1'}));
     };
+    let refreshTimer=null;
     ws.onmessage = (ev) => {
       try {
         const msg = JSON.parse(ev.data);
         if(msg.event === 'postgres_changes' || (msg.payload && msg.payload.data)) {
-          loadAdminAbsen();
+          // Satukan burst event Realtime menjadi satu fetch halaman aktif.
+          clearTimeout(refreshTimer);
+          refreshTimer=setTimeout(()=>loadAdminAbsen(),750);
         }
       } catch {}
     };
@@ -2812,24 +2850,31 @@ async function loadAdminUsers(){
   if(!container) return;
   container.innerHTML = Array(8).fill(`<div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>`).join('');
   try {
-    const r = await apiCall('getOperationalUsersV2', {token: AppState.token});
+    const r = await apiCall('getOperationalUsersV2', {
+      token:AppState.token,page:AdminState.userPage,pageSize:AdminState.userPageSize,
+      search:$('#users-search')?.value.trim()||'',
+      role:$('#users-role-filter')?.value||'',sppg:$('#users-sppg-filter')?.value||'',
+      division:$('#users-division-filter')?.value||'',account:$('#users-account-filter')?.value||'',
+    });
     AdminState.allUsers = Array.isArray(r) ? r : (r?.users || []);
-    populateUserFilterOptions();
+    AdminState.userTotal=Number(r?.total)||AdminState.allUsers.length;
+    AdminState.userFilterOptions=r?.filterOptions||AdminState.userFilterOptions||{};
+    populateUserFilterOptions(AdminState.userFilterOptions);
     filterAndRenderUsers();
   } catch(e) {
     container.innerHTML = `<div class="table-empty" style="grid-column:1/-1">Gagal memuat data: ${e.message}</div>`;
   }
 }
 
-function populateUserFilterOptions(){
+function populateUserFilterOptions(options={}){
   const fill=(id,values,label)=>{
     const select=$(id),current=select?.value||'';if(!select)return;
     select.innerHTML=`<option value="">Semua ${label}</option>`+[...new Set(values.filter(Boolean).map(String))].sort().map(value=>`<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
     if([...select.options].some(option=>option.value===current))select.value=current;
   };
-  fill('#users-role-filter',AdminState.allUsers.map(user=>normalizeRole(user.Role||user.role)),'role');
-  fill('#users-sppg-filter',AdminState.allUsers.map(user=>user.SPPG||user.sppg),'SPPG');
-  fill('#users-division-filter',AdminState.allUsers.map(user=>user.Jabatan_Divisi||user.jabatan_divisi),'divisi');
+  fill('#users-role-filter',options.roles||AdminState.allUsers.map(user=>normalizeRole(user.Role||user.role)),'role');
+  fill('#users-sppg-filter',options.sppg||AdminState.allUsers.map(user=>user.SPPG||user.sppg),'SPPG');
+  fill('#users-division-filter',options.divisions||AdminState.allUsers.map(user=>user.Jabatan_Divisi||user.jabatan_divisi),'divisi');
 }
 
 function filterAndRenderUsers(){
@@ -2858,6 +2903,14 @@ function renderUsersGrid(){
   const container = $('#users-grid-container');
   if(!container) return;
   const users = AdminState.filteredUsers;
+  const pagination=$('#users-pagination'),totalPages=Math.max(1,Math.ceil(AdminState.userTotal/AdminState.userPageSize));
+  if(pagination){
+    pagination.style.display='flex';
+    const start=(AdminState.userPage-1)*AdminState.userPageSize;
+    $('#users-pagination-info').textContent=`${AdminState.userTotal?start+1:0}â€“${Math.min(start+AdminState.userPageSize,AdminState.userTotal)} dari ${AdminState.userTotal} pengguna`;
+    $('#users-prev-btn').disabled=AdminState.userPage<=1;
+    $('#users-next-btn').disabled=AdminState.userPage>=totalPages;
+  }
   container.className=AdminState.userViewMode==='list'?'users-list':'users-grid';
   if(users.length === 0){
     container.innerHTML = `<div class="table-empty" style="grid-column:1/-1"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg><div class="table-empty-title">Tidak ada pengguna ditemukan</div><div class="table-empty-sub">Coba ubah kata kunci pencarian Anda</div></div>`;
@@ -2872,7 +2925,7 @@ function renderUsersGrid(){
     const avatarHtml = foto
       ? `<img src="${escapeHtml(foto)}" alt="${escapeHtml(nama)}" onerror="this.remove()">`
       : escapeHtml(inisial);
-    const active=u.Status_Aktif===true||String(u.Status_Aktif).toUpperCase()==='TRUE',face=Boolean(u.Face_Descriptor||u.Descriptor_Wajah||u.URL_Foto_Wajah),bank=Boolean(u.Nama_Bank&&u.Nomor_Rekening),salary=Number(u.Gaji_Harian)>0;
+    const active=u.Status_Aktif===true||String(u.Status_Aktif).toUpperCase()==='TRUE',face=Boolean(u._hasFace||u.URL_Foto_Wajah_Ref),bank=Boolean(u.Nama_Bank&&u.Nomor_Rekening),salary=Number(u.Gaji_Harian)>0;
     if(AdminState.userViewMode==='list')return `<div class="user-list-row" data-user-index="${i}" role="button" tabindex="0">
       <div class="user-list-identity"><div class="user-list-avatar">${avatarHtml}</div><div><strong>${escapeHtml(nama)}</strong><span>${escapeHtml(u.Email||u.Username||'-')}</span></div></div>
       <div class="user-list-cell"><strong>${escapeHtml(normalizeRole(u.Role||'USER'))}</strong>Role</div>
@@ -3042,7 +3095,7 @@ async function loadAdminLog(){
   if(!container) return;
   container.innerHTML = `<div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>`;
   try {
-    const r = await apiCall(isSuperAdminUser()?'getSuperAdminAuditV3':'getAuditLogEnriched', {token: AppState.token,limit:500});
+    const r = await apiCall(isSuperAdminUser()?'getSuperAdminAuditV3':'getAuditLogEnriched', {token: AppState.token,limit:100});
     AdminState.allLogs = Array.isArray(r) ? r : (r?.logs || []);
     populateAuditFilters();
     filterAndRenderLog();
@@ -3304,11 +3357,11 @@ function renderMyActivity(){
   }).join('');
 }
 
-async function loadSuperAdminOverview(){
+async function loadSuperAdminOverview(force=false){
   const panel=$('#super-admin-global-panel');if(!panel||!isSuperAdminUser())return;
   panel.classList.remove('hidden');
   try{
-    const result=await apiCall('getSuperAdminOverviewV3',{token:AppState.token});
+    const result=await apiCall('getSuperAdminOverviewV3',{token:AppState.token},{force});
     FeatureState.superOverview=result||{};
     const totals=result?.totals||{};
     $('#super-total-sppg').textContent=totals.sppg||0;
@@ -4689,7 +4742,7 @@ async function initApp(){
   $('#admin-complaint-category')?.addEventListener('change',filterAdminComplaints);
   $('#admin-complaint-search')?.addEventListener('input',filterAdminComplaints);
   $('#btn-refresh-admin-config')?.addEventListener('click',loadAdminConfiguration);
-  $('#btn-refresh-super-dashboard')?.addEventListener('click',loadSuperAdminOverview);
+  $('#btn-refresh-super-dashboard')?.addEventListener('click',()=>loadSuperAdminOverview(true));
   $('#btn-save-admin-access')?.addEventListener('click',handleSaveAdminAccess);
   $$('[data-setting-tab]').forEach(button=>button.addEventListener('click',()=>{FeatureState.systemSettingTab=button.dataset.settingTab;renderSystemSettings();}));
   $$('#system-quality-grid [data-quality-key]').forEach(button=>button.addEventListener('click',()=>renderSystemQuality(button.dataset.qualityKey)));
@@ -4747,9 +4800,10 @@ async function initApp(){
     document.getElementById(id)?.addEventListener('change',filterAndRenderAbsen);
   });
   $('#btn-reset-absen-filter')?.addEventListener('click',resetAttendanceFilters);
-  $('#users-search')?.addEventListener('input', filterAndRenderUsers);
+  let usersSearchTimer;
+  $('#users-search')?.addEventListener('input',()=>{clearTimeout(usersSearchTimer);usersSearchTimer=setTimeout(()=>{AdminState.userPage=1;loadAdminUsers();},300);});
   $('#users-operational-filter')?.addEventListener('change',filterAndRenderUsers);
-  ['users-role-filter','users-sppg-filter','users-division-filter','users-account-filter'].forEach(id=>document.getElementById(id)?.addEventListener('change',filterAndRenderUsers));
+  ['users-role-filter','users-sppg-filter','users-division-filter','users-account-filter'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>{AdminState.userPage=1;loadAdminUsers();}));
   $$('[data-user-view]').forEach(button=>button.addEventListener('click',()=>{
     AdminState.userViewMode=button.dataset.userView;
     $$('[data-user-view]').forEach(item=>item.classList.toggle('active',item===button));
@@ -4770,6 +4824,8 @@ async function initApp(){
   // Admin: pagination
   $('#absen-prev-btn')?.addEventListener('click',()=>{ if(AdminState.absenPage>1){AdminState.absenPage--;loadAdminAbsen();} });
   $('#absen-next-btn')?.addEventListener('click',()=>{ if(AdminState.absenPage<Math.ceil(AdminState.absenTotal/AdminState.absenPageSize)){AdminState.absenPage++;loadAdminAbsen();} });
+  $('#users-prev-btn')?.addEventListener('click',()=>{if(AdminState.userPage>1){AdminState.userPage--;loadAdminUsers();}});
+  $('#users-next-btn')?.addEventListener('click',()=>{if(AdminState.userPage<Math.ceil(AdminState.userTotal/AdminState.userPageSize)){AdminState.userPage++;loadAdminUsers();}});
   $('#log-prev-btn')?.addEventListener('click',()=>{ AdminState.logPage--; renderLogList(); });
   $('#log-next-btn')?.addEventListener('click',()=>{ AdminState.logPage++; renderLogList(); });
   $('#btn-open-edit-profil').addEventListener('click',openEditProfil);
