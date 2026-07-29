@@ -3098,7 +3098,26 @@ async function downloadPayrollSlip(idSlip,button){
   try{
     const result=await apiCall('getSlipDownloadUrl',{token:AppState.token,idSlip});
     const url=safeExternalUrl(result?.url);if(!url)throw new Error('Tautan PDF tidak valid');
-    const anchor=document.createElement('a');anchor.href=url;anchor.download=result?.filename||'slip-gaji.pdf';anchor.target='_blank';anchor.rel='noopener noreferrer';document.body.appendChild(anchor);anchor.click();anchor.remove();
+    const filename=String(result?.filename||'slip-gaji.pdf').replace(/[\\/:*?"<>|]+/g,'-');
+    try{
+      const response=await fetch(url);
+      if(!response.ok)throw new Error(`HTTP ${response.status}`);
+      const pdfBlob=await response.blob();
+      if(!pdfBlob.size)throw new Error('File PDF kosong');
+      const blobUrl=URL.createObjectURL(pdfBlob);
+      const anchor=document.createElement('a');
+      anchor.href=blobUrl;
+      anchor.download=filename;
+      anchor.style.display='none';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(()=>URL.revokeObjectURL(blobUrl),1000);
+    }catch(downloadError){
+      console.warn('Unduhan Blob tidak tersedia, menggunakan tautan langsung.',downloadError);
+      window.location.assign(url);
+    }
+    showAlert('Unduhan slip PDF dimulai.','success');
   }catch(error){showAlert(error.message||'Slip gagal diunduh.','error');}
   finally{if(button){button.disabled=false;button.innerHTML=original;}}
 }
