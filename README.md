@@ -52,3 +52,16 @@ python3 -m http.server 4173
 ```
 
 Endpoint aktif: `https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/Absen`.
+
+## Deployment Supabase
+
+Repository sudah dikaitkan ke project ref `szwwpnbbsmjsbzzcecyj`. Jalankan:
+
+```powershell
+.\deploy-supabase.ps1
+```
+
+Script tersebut men-deploy Edge Function `Absen` melalui Supabase CLI dan
+mempertahankan `verify_jwt = false` karena aplikasi menggunakan token sesi kustom
+yang divalidasi kembali oleh gateway terhadap tabel `Sessions`. Service-role key
+tetap hanya digunakan di dalam Edge Function dan tidak dikirim ke browser.

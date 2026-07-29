@@ -870,7 +870,7 @@
       </button>
       <button class="app-nav-item admin-only-nav super-admin-only-nav" data-view="admin-config" style="display:none">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.12.37.34.7.64.94.3.24.67.38 1.05.4H21v4h-.09A1.7 1.7 0 0 0 19.4 15z"/></svg>
-        <span>Konfigurasi Admin</span>
+        <span>Pengaturan Sistem</span>
       </button>
     </nav>
     </aside>
@@ -1228,6 +1228,16 @@
           <button class="operational-card" type="button" data-exception-view="admin-pengaduan"><div class="operational-card-label">Tiket Terbuka</div><div class="operational-card-value" id="ops-ticket-count">0</div><div class="operational-card-note">Belum berstatus selesai</div></button>
           <button class="operational-card" type="button" data-exception-view="admin-payroll"><div class="operational-card-label">Menunggu TTD User</div><div class="operational-card-value" id="ops-slip-count">0</div><div class="operational-card-note">Slip belum final</div></button>
         </div>
+        <section id="super-admin-global-panel" class="hidden">
+          <div class="feature-toolbar"><div><div class="page-title">Dashboard Global Lintas SPPG</div><div class="page-subtitle">Perbandingan kehadiran, payroll, risiko, dan tindak lanjut per unit</div></div><button class="btn btn-secondary btn-sm" id="btn-refresh-super-dashboard" type="button">Muat Ulang</button></div>
+          <div class="stats-grid">
+            <div class="stat-card"><div><div class="stat-card-value" id="super-total-sppg">0</div><div class="stat-card-label">SPPG aktif</div></div></div>
+            <div class="stat-card"><div><div class="stat-card-value" id="super-attendance-rate">0%</div><div class="stat-card-label">Kehadiran hari ini</div></div></div>
+            <div class="stat-card"><div><div class="stat-card-value" id="super-payroll-total">Rp0</div><div class="stat-card-label">Total payroll</div></div></div>
+            <div class="stat-card"><div><div class="stat-card-value" id="super-admin-count">0</div><div class="stat-card-label">ADMIN / AKUNTAN aktif</div></div></div>
+          </div>
+          <div class="admin-card"><div class="admin-card-header"><div><div class="admin-card-title">Perbandingan SPPG</div><div class="helper-text">Klik nama SPPG untuk membuka Data Users dan melakukan drill-down</div></div></div><div class="data-table-wrap mobile-card-table"><table class="data-table"><thead><tr><th>SPPG</th><th>Karyawan</th><th>Kehadiran</th><th>Punch lengkap</th><th>Payroll</th><th>Slip menunggu</th><th>Pengaduan</th></tr></thead><tbody id="super-sppg-body"><tr><td colspan="7"><div class="loading-state"><span class="spinner"></span>Memuat data global...</div></td></tr></tbody></table></div></div>
+        </section>
         <div class="dash-section" style="margin-bottom:1.25rem">
           <div class="dash-card"><div class="dash-card-title">Prioritas Kehadiran Hari Ini</div><div class="exception-list" id="ops-attendance-list"><div class="belum-absen-empty">Memuat prioritas...</div></div></div>
           <div class="dash-card"><div class="dash-card-title">Kualitas Data Pengguna</div><div class="exception-list" id="ops-profile-list"><div class="belum-absen-empty">Memuat kualitas data...</div></div></div>
@@ -1481,6 +1491,13 @@
               <input type="text" id="log-search" placeholder="Cari nama / email / aktivitas...">
             </div>
           </div>
+          <div class="absen-filter-grid" id="audit-filter-grid">
+            <div class="form-group"><label class="form-label" for="log-filter-role">Role</label><select id="log-filter-role" class="form-input"><option value="">Semua role</option><option>SUPER ADMIN</option><option>ADMIN</option><option>AKUNTAN</option><option>USER</option></select></div>
+            <div class="form-group"><label class="form-label" for="log-filter-sppg">SPPG</label><select id="log-filter-sppg" class="form-input"><option value="">Semua SPPG</option></select></div>
+            <div class="form-group"><label class="form-label" for="log-filter-type">Aktivitas</label><select id="log-filter-type" class="form-input"><option value="">Semua aktivitas</option></select></div>
+            <div class="form-group"><label class="form-label" for="log-filter-start">Mulai</label><input id="log-filter-start" class="form-input" type="date"></div>
+            <div class="form-group"><label class="form-label" for="log-filter-end">Akhir</label><input id="log-filter-end" class="form-input" type="date"></div>
+          </div>
           <div class="log-list" id="log-list-container">
             <div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>
           </div>
@@ -1494,10 +1511,10 @@
         </div>
       </div>
 
-      <!-- ===== VIEW: KONFIGURASI ADMIN (SUPER ADMIN) ===== -->
+      <!-- ===== VIEW: PENGATURAN SISTEM (SUPER ADMIN) ===== -->
       <div id="view-admin-config" class="app-view hidden">
         <div class="feature-toolbar">
-          <div><div class="page-title">Konfigurasi Admin</div><div class="page-subtitle">Atur role akun dan cakupan SPPG untuk ADMIN atau AKUNTAN</div></div>
+          <div><div class="page-title">Pengaturan Sistem</div><div class="page-subtitle">Kontrol akses, kebijakan operasional, kualitas data, serta keamanan lintas SPPG</div></div>
           <button class="btn btn-secondary btn-sm" id="btn-refresh-admin-config" type="button">Muat Ulang</button>
         </div>
         <div class="config-overview">
@@ -1505,6 +1522,19 @@
           <div class="config-stat"><span>Mapping Akses Aktif</span><strong id="config-access-count">0</strong></div>
           <div class="config-stat"><span>SPPG Aktif</span><strong id="config-sppg-count">0</strong></div>
         </div>
+        <div class="feature-card">
+          <div class="feature-toolbar"><div><strong>Pusat Kualitas Data</strong><div class="helper-text">Anomali global yang perlu diperbaiki sebelum memengaruhi absensi dan payroll</div></div></div>
+          <div class="operational-grid" id="system-quality-grid">
+            <button class="operational-card" type="button" data-quality-key="duplicateNames"><div class="operational-card-label">Nama Ganda</div><div class="operational-card-value" id="quality-duplicates">0</div></button>
+            <button class="operational-card" type="button" data-quality-key="withoutDivision"><div class="operational-card-label">Tanpa Divisi</div><div class="operational-card-value" id="quality-division">0</div></button>
+            <button class="operational-card" type="button" data-quality-key="withoutSalary"><div class="operational-card-label">Tanpa Gaji</div><div class="operational-card-value" id="quality-salary">0</div></button>
+            <button class="operational-card" type="button" data-quality-key="withoutBank"><div class="operational-card-label">Rekening Belum Lengkap</div><div class="operational-card-value" id="quality-bank">0</div></button>
+            <button class="operational-card" type="button" data-quality-key="slipsWithoutPdf"><div class="operational-card-label">Slip Tanpa PDF</div><div class="operational-card-value" id="quality-pdf">0</div></button>
+            <button class="operational-card" type="button" data-quality-key="inactiveWithSession"><div class="operational-card-label">Akun Nonaktif Bersesi</div><div class="operational-card-value" id="quality-session">0</div></button>
+          </div>
+          <div class="exception-list" id="system-quality-detail"><div class="belum-absen-empty">Pilih indikator untuk melihat detail.</div></div>
+        </div>
+        <div class="feature-card"><div class="feature-toolbar"><div><strong>Kebijakan & Konfigurasi Aktif</strong><div class="helper-text">Ringkasan konfigurasi dari System_Settings; perubahan tetap dilakukan melalui alur yang diaudit</div></div></div><div class="data-table-wrap mobile-card-table"><table class="data-table"><thead><tr><th>Kunci</th><th>Nilai</th><th>Keterangan</th><th>Diperbarui</th></tr></thead><tbody id="system-settings-body"><tr><td colspan="4"><div class="loading-state"><span class="spinner"></span>Memuat pengaturan...</div></td></tr></tbody></table></div></div>
         <div class="feature-card">
           <div class="feature-toolbar"><div><strong>Berikan Cakupan SPPG</strong><div class="helper-text">Satu akun dapat menerima akses ke lebih dari satu SPPG</div></div></div>
           <div class="config-section-note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".5" fill="currentColor"/></svg><div>ADMIN dan AKUNTAN hanya dapat melihat pengguna, absensi, payroll, dan pengaduan dari SPPG yang ditetapkan di sini. SUPER ADMIN tetap memiliki akses global.</div></div>
@@ -2144,6 +2174,7 @@ async function loadDashboardData(){
       $('#dash-admin-pulang-hari-ini').textContent=Math.max(0,(r.totals?.employees||0)-(r.totals?.notArrived||0)-(r.totals?.notDeparted||0));
       $('#dash-admin-payroll-bulan-ini').textContent=r.totals?.pendingRecipientSignatures??0;
       $('#dash-trend-chart').innerHTML='<div class="belum-absen-empty" style="width:100%">Dashboard kini memprioritaskan pengecualian operasional hari ini.</div>';
+      if(isSuperAdminUser())await loadSuperAdminOverview();
     }else{
       $('#dash-total-hari-kerja').textContent=r.totalHariKerja??0;
       $('#dash-total-gaji').textContent=formatRupiah(r.totalGajiDiterima??0);
@@ -2773,8 +2804,9 @@ async function loadAdminLog(){
   if(!container) return;
   container.innerHTML = `<div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>`;
   try {
-    const r = await apiCall('getAuditLogEnriched', {token: AppState.token});
+    const r = await apiCall(isSuperAdminUser()?'getSuperAdminAuditV3':'getAuditLogEnriched', {token: AppState.token,limit:500});
     AdminState.allLogs = Array.isArray(r) ? r : (r?.logs || []);
+    populateAuditFilters();
     filterAndRenderLog();
   } catch(e) {
     container.innerHTML = `<div class="table-empty">Gagal memuat log: ${e.message}</div>`;
@@ -2783,7 +2815,14 @@ async function loadAdminLog(){
 
 function filterAndRenderLog(){
   const q = ($('#log-search')?.value||'').toLowerCase();
+  const role=$('#log-filter-role')?.value||'',sppg=$('#log-filter-sppg')?.value||'',type=$('#log-filter-type')?.value||'';
+  const start=$('#log-filter-start')?.value||'',end=$('#log-filter-end')?.value||'';
   AdminState.filteredLogs = AdminState.allLogs.filter(log => {
+    if(role&&normalizeRole(log._pelakuRole)!==normalizeRole(role))return false;
+    if(sppg&&String(log._pelakuSppg||'')!==sppg)return false;
+    if(type&&String(log.Jenis_Aktivitas||'')!==type)return false;
+    const date=String(log.Waktu||'').slice(0,10);
+    if(start&&date<start)return false;if(end&&date>end)return false;
     if(!q) return true;
     const nama = (log._pelakuNama||'').toLowerCase();
     const email = (log._pelakuEmail||'').toLowerCase();
@@ -2792,6 +2831,16 @@ function filterAndRenderLog(){
   });
   AdminState.logPage = 1;
   renderLogList();
+}
+
+function populateAuditFilters(){
+  const sppg=$('#log-filter-sppg'),type=$('#log-filter-type');if(!sppg||!type)return;
+  const selectedSppg=sppg.value,selectedType=type.value;
+  const sppgValues=[...new Set(AdminState.allLogs.map(row=>String(row._pelakuSppg||'').trim()).filter(Boolean))].sort();
+  const typeValues=[...new Set(AdminState.allLogs.map(row=>String(row.Jenis_Aktivitas||'').trim()).filter(Boolean))].sort();
+  sppg.innerHTML='<option value="">Semua SPPG</option>'+sppgValues.map(value=>`<option>${escapeHtml(value)}</option>`).join('');
+  type.innerHTML='<option value="">Semua aktivitas</option>'+typeValues.map(value=>`<option>${escapeHtml(value)}</option>`).join('');
+  sppg.value=selectedSppg;type.value=selectedType;
 }
 
 function getLogIcon(aktivitas){
@@ -2871,6 +2920,7 @@ function openLogDetail(index){
     detail = typeof log.Detail === 'string' ? log.Detail : JSON.stringify(log.Detail, null, 2);
   }
   const {cls, icon} = getLogIcon(aktivitas);
+  const change=typeof log.Detail==='object'&&log.Detail?(log.Detail.before!==undefined||log.Detail.after!==undefined?`<div class="feature-card" style="margin-top:1rem"><strong>Perubahan sebelum → sesudah</strong><div class="info-grid" style="margin-top:.75rem"><div><div class="info-item-label">Sebelum</div><pre class="info-item-value">${escapeHtml(JSON.stringify(log.Detail.before??{},null,2))}</pre></div><div><div class="info-item-label">Sesudah</div><pre class="info-item-value">${escapeHtml(JSON.stringify(log.Detail.after??{},null,2))}</pre></div></div></div>`:''):'';
 
   $('#log-detail-body').innerHTML = `
     <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
@@ -2886,6 +2936,7 @@ function openLogDetail(index){
       <div><div class="info-item-label">IP Address</div><div class="info-item-value">${ipAddr}</div></div>
       <div><div class="info-item-label">Detail</div><pre class="info-item-value" style="white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:0.8125rem;margin:0"></pre></div>
     </div>
+    ${change}
   `;
   const detailEl=$('#log-detail-body pre');
   if(detailEl)detailEl.textContent=detail;
@@ -2911,6 +2962,7 @@ const FeatureState={
   recipientSignatureDrawn:false,
   recipientSignatureReady:false,
   recipientSlipId:'',
+  superOverview:null,
 };
 
 function formatDateTime(value){
@@ -2991,6 +3043,48 @@ function renderMyActivity(){
   }).join('');
 }
 
+async function loadSuperAdminOverview(){
+  const panel=$('#super-admin-global-panel');if(!panel||!isSuperAdminUser())return;
+  panel.classList.remove('hidden');
+  try{
+    const result=await apiCall('getSuperAdminOverviewV3',{token:AppState.token});
+    FeatureState.superOverview=result||{};
+    const totals=result?.totals||{};
+    $('#super-total-sppg').textContent=totals.sppg||0;
+    $('#super-attendance-rate').textContent=`${totals.attendanceRate||0}%`;
+    $('#super-payroll-total').textContent=formatRupiah(totals.payrollTotal||0);
+    $('#super-admin-count').textContent=totals.admins||0;
+    const body=$('#super-sppg-body'),rows=result?.bySppg||[];
+    body.innerHTML=rows.length?rows.map(row=>`<tr>
+      <td data-primary="true"><button class="btn btn-sm btn-secondary super-sppg-drilldown" type="button" data-sppg="${escapeHtml(row.sppg)}">${escapeHtml(row.sppg)}</button></td>
+      <td data-label="Karyawan">${Number(row.employees)||0}</td><td data-label="Kehadiran">${Number(row.attendanceRate)||0}%</td>
+      <td data-label="Punch lengkap">${Number(row.completePunchRate)||0}%</td><td data-label="Payroll">${escapeHtml(formatRupiah(row.payrollTotal||0))}</td>
+      <td data-label="Slip menunggu">${Number(row.pendingSlips)||0}</td><td data-label="Pengaduan">${Number(row.openComplaints)||0}</td>
+    </tr>`).join(''):'<tr><td colspan="7"><div class="table-empty">Belum ada data SPPG.</div></td></tr>';
+    body.querySelectorAll('.super-sppg-drilldown').forEach(button=>button.addEventListener('click',()=>{switchView('admin-users');setTimeout(()=>{const search=$('#users-search');if(search){search.value=button.dataset.sppg||'';search.dispatchEvent(new Event('input'));}},0);}));
+    renderSystemQuality();
+    renderSystemSettings();
+  }catch(error){
+    $('#super-sppg-body').innerHTML=`<tr><td colspan="7"><div class="table-empty">Gagal memuat dashboard global: ${escapeHtml(error.message)}</div></td></tr>`;
+  }
+}
+
+function renderSystemQuality(key=''){
+  const quality=FeatureState.superOverview?.quality||{};
+  const mapping={duplicateNames:'quality-duplicates',withoutDivision:'quality-division',withoutSalary:'quality-salary',withoutBank:'quality-bank',slipsWithoutPdf:'quality-pdf',inactiveWithSession:'quality-session'};
+  Object.entries(mapping).forEach(([name,id])=>{const el=$(`#${id}`);if(el)el.textContent=(quality[name]||[]).length;});
+  const detail=$('#system-quality-detail');if(!detail)return;
+  if(!key){detail.innerHTML='<div class="belum-absen-empty">Pilih indikator untuk melihat detail.</div>';return;}
+  const rows=quality[key]||[];
+  detail.innerHTML=rows.length?rows.slice(0,50).map(row=>`<div class="exception-item"><div><strong>${escapeHtml(row.name||row.label||row.id||'-')}</strong><span>${escapeHtml(row.sppg||'Lintas SPPG')}${row.count?` · ${Number(row.count)} akun`:''}</span></div><span class="badge badge-warning">Perlu ditinjau</span></div>`).join(''):'<div class="belum-absen-empty">Tidak ada anomali untuk kategori ini.</div>';
+}
+
+function renderSystemSettings(){
+  const body=$('#system-settings-body');if(!body)return;
+  const rows=FeatureState.superOverview?.settings||[];
+  body.innerHTML=rows.length?rows.map(row=>`<tr><td data-primary="true"><strong>${escapeHtml(row.Setting_Key||'-')}</strong></td><td data-label="Nilai"><code>${escapeHtml(JSON.stringify(row.Setting_Value??{}))}</code></td><td data-label="Keterangan">${escapeHtml(row.Description||'-')}</td><td data-label="Diperbarui">${escapeHtml(formatDateTime(row.Updated_At))}</td></tr>`).join(''):'<tr><td colspan="4"><div class="table-empty">Belum ada pengaturan sistem.</div></td></tr>';
+}
+
 async function loadAdminConfiguration(){
   const accessBody=$('#config-access-body'),roleBody=$('#config-role-body');
   if(!accessBody||!roleBody)return;
@@ -3005,6 +3099,7 @@ async function loadAdminConfiguration(){
     const result=await apiCall('getAdminConfiguration',{token:AppState.token});
     FeatureState.adminConfiguration=result||{};
     renderAdminConfiguration();
+    await loadSuperAdminOverview();
   }catch(error){
     accessBody.innerHTML=`<tr><td colspan="6"><div class="table-empty">Gagal memuat konfigurasi: ${escapeHtml(error.message)}</div></td></tr>`;
     roleBody.innerHTML='<tr><td colspan="4"><div class="table-empty">Data akun tidak tersedia.</div></td></tr>';
@@ -4191,7 +4286,9 @@ async function initApp(){
   $('#admin-complaint-category')?.addEventListener('change',filterAdminComplaints);
   $('#admin-complaint-search')?.addEventListener('input',filterAdminComplaints);
   $('#btn-refresh-admin-config')?.addEventListener('click',loadAdminConfiguration);
+  $('#btn-refresh-super-dashboard')?.addEventListener('click',loadSuperAdminOverview);
   $('#btn-save-admin-access')?.addEventListener('click',handleSaveAdminAccess);
+  $$('#system-quality-grid [data-quality-key]').forEach(button=>button.addEventListener('click',()=>renderSystemQuality(button.dataset.qualityKey)));
   $('#config-account-search')?.addEventListener('input',()=>renderConfiguredRoles());
   $$('[data-payroll-tab]').forEach(button=>{
     button.addEventListener('click',()=>setAdminPayrollTab(button.dataset.payrollTab));
@@ -4248,6 +4345,7 @@ async function initApp(){
   $('#users-search')?.addEventListener('input', filterAndRenderUsers);
   $('#users-operational-filter')?.addEventListener('change',filterAndRenderUsers);
   $('#log-search')?.addEventListener('input', filterAndRenderLog);
+  $$('#audit-filter-grid input,#audit-filter-grid select').forEach(input=>input.addEventListener('change',filterAndRenderLog));
 
   // Admin: pagination
   $('#absen-prev-btn')?.addEventListener('click',()=>{ if(AdminState.absenPage>1){AdminState.absenPage--;loadAdminAbsen();} });

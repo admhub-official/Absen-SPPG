@@ -551,6 +551,96 @@ async function writeAudit(activity: string, detail: Record<string, unknown>, idU
   }
 }
 
+function requireSuperAdmin(auth: AuthenticatedUser): void {
+  if (auth.role !== "SUPER ADMIN") throw new Error("Akses hanya untuk SUPER ADMIN.");
+}
+
+async function handleSuperAdminOverview(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  requireSuperAdmin(auth);
+  const today = new Date().toISOString().slice(0, 10);
+  const [usersResult, attendanceResult, slipsResult, complaintsResult, sessionsResult, settingsResult] = await Promise.all([
+    supabase.from("Users").select("ID_User,Nama_Lengkap,Role,Status_Aktif,SPPG,Jabatan_Divisi,Gaji_Harian,Nama_Bank,Nomor_Rekening,URL_Foto_Wajah_Ref"),
+    supabase.from("Absensi").select("ID_User,SPPG,Jenis_Absen,Status_Validasi").eq("Tanggal", today),
+    supabase.from("Slip_Gaji").select("ID_Slip,SPPG,Total_Gaji_Diterima,URL_PDF_Slip,PDF_Storage_Path,Ditandatangani_Penerima_At"),
+    supabase.from("Pengaduan").select("ID_Pengaduan,SPPG,Status_Tiket"),
+    supabase.from("Sessions").select("ID_User,Expires_At"),
+    supabase.from("System_Settings").select("Setting_Key,Setting_Value,Description,Updated_At,Updated_By"),
+  ]);
+  for (const result of [usersResult, attendanceResult, slipsResult, complaintsResult, sessionsResult, settingsResult]) {
+    if (result.error) throw new Error(result.error.message);
+  }
+  const users = (usersResult.data || []).filter((row: any) => isActive(row.Status_Aktif));
+  const attendance = attendanceResult.data || [];
+  const slips = slipsResult.data || [];
+  const complaints = complaintsResult.data || [];
+  const activeSessions = (sessionsResult.data || []).filter((row: any) => new Date(row.Expires_At).getTime() > Date.now());
+  const sppgNames = [...new Set(users.map((row: any) => String(row.SPPG || "Tanpa SPPG")))].sort();
+  const bySppg = sppgNames.map((sppg) => {
+    const scopedUsers = users.filter((row: any) => String(row.SPPG || "Tanpa SPPG") === sppg);
+    const ids = new Set(scopedUsers.map((row: any) => String(row.ID_User)));
+    const scopedAttendance = attendance.filter((row: any) => ids.has(String(row.ID_User)));
+    const present = new Set(scopedAttendance.map((row: any) => String(row.ID_User))).size;
+    const complete = new Set(scopedAttendance.filter((row: any) => ["PULANG", "KELUAR"].includes(String(row.Jenis_Absen || "").toUpperCase())).map((row: any) => String(row.ID_User))).size;
+    return {
+      sppg,
+      employees: scopedUsers.length,
+      present,
+      attendanceRate: scopedUsers.length ? Math.round(present / scopedUsers.length * 100) : 0,
+      completePunchRate: present ? Math.round(complete / present * 100) : 0,
+      payrollTotal: slips.filter((row: any) => String(row.SPPG || "Tanpa SPPG") === sppg).reduce((sum: number, row: any) => sum + Number(row.Total_Gaji_Diterima || 0), 0),
+      pendingSlips: slips.filter((row: any) => String(row.SPPG || "Tanpa SPPG") === sppg && !row.Ditandatangani_Penerima_At).length,
+      openComplaints: complaints.filter((row: any) => String(row.SPPG || "Tanpa SPPG") === sppg && String(row.Status_Tiket || "BARU") !== "SELESAI").length,
+    };
+  });
+  const normalizedNames = new Map<string, any[]>();
+  for (const user of users) {
+    const key = String(user.Nama_Lengkap || "").trim().toLowerCase().replace(/\s+/g, " ");
+    if (!key) continue;
+    normalizedNames.set(key, [...(normalizedNames.get(key) || []), user]);
+  }
+  const quality = {
+    duplicateNames: [...normalizedNames.values()].filter((rows) => rows.length > 1).map((rows) => ({ label: rows[0].Nama_Lengkap, count: rows.length })),
+    withoutDivision: users.filter((row: any) => !String(row.Jabatan_Divisi || "").trim()).map((row: any) => ({ id: row.ID_User, name: row.Nama_Lengkap, sppg: row.SPPG })),
+    withoutSalary: users.filter((row: any) => Number(row.Gaji_Harian || 0) <= 0).map((row: any) => ({ id: row.ID_User, name: row.Nama_Lengkap, sppg: row.SPPG })),
+    withoutBank: users.filter((row: any) => !String(row.Nama_Bank || "").trim() || !String(row.Nomor_Rekening || "").trim()).map((row: any) => ({ id: row.ID_User, name: row.Nama_Lengkap, sppg: row.SPPG })),
+    withoutFace: users.filter((row: any) => !String(row.URL_Foto_Wajah_Ref || "").trim()).map((row: any) => ({ id: row.ID_User, name: row.Nama_Lengkap, sppg: row.SPPG })),
+    slipsWithoutPdf: slips.filter((row: any) => !row.URL_PDF_Slip && !row.PDF_Storage_Path).map((row: any) => ({ id: row.ID_Slip, sppg: row.SPPG })),
+    inactiveWithSession: activeSessions.filter((session: any) => !(usersResult.data || []).some((user: any) => String(user.ID_User) === String(session.ID_User) && isActive(user.Status_Aktif))).map((row: any) => ({ id: row.ID_User })),
+  };
+  return okResult({
+    totals: {
+      sppg: bySppg.length,
+      employees: users.length,
+      admins: users.filter((row: any) => ["ADMIN", "AKUNTAN"].includes(String(row.Role || "").toUpperCase())).length,
+      attendanceRate: users.length ? Math.round(new Set(attendance.map((row: any) => String(row.ID_User))).size / users.length * 100) : 0,
+      payrollTotal: slips.reduce((sum: number, row: any) => sum + Number(row.Total_Gaji_Diterima || 0), 0),
+      pendingSlips: slips.filter((row: any) => !row.Ditandatangani_Penerima_At).length,
+      openComplaints: complaints.filter((row: any) => String(row.Status_Tiket || "BARU") !== "SELESAI").length,
+    },
+    bySppg,
+    quality,
+    settings: settingsResult.data || [],
+  });
+}
+
+async function handleSuperAdminAudit(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  requireSuperAdmin(auth);
+  const limit = Math.min(500, Math.max(20, Number(data.limit) || 200));
+  const [logsResult, usersResult] = await Promise.all([
+    supabase.from("Audit_Log").select("ID_Log,Waktu,ID_User_Pelaku,Jenis_Aktivitas,Detail,IP_Address").order("Waktu", { ascending: false }).limit(limit),
+    supabase.from("Users").select("ID_User,Nama_Lengkap,Email,Role,SPPG"),
+  ]);
+  if (logsResult.error) throw new Error(logsResult.error.message);
+  if (usersResult.error) throw new Error(usersResult.error.message);
+  const users = new Map((usersResult.data || []).map((row: any) => [String(row.ID_User), row]));
+  return okResult({ logs: (logsResult.data || []).map((log: any) => {
+    const actor: any = users.get(String(log.ID_User_Pelaku)) || {};
+    return { ...log, _pelakuNama: actor.Nama_Lengkap || "-", _pelakuEmail: actor.Email || "", _pelakuRole: actor.Role || "", _pelakuSppg: actor.SPPG || "" };
+  }) });
+}
+
 function coreCompatibilityPoint(sppg: string, actualLat: number, actualLng: number): { lat: number; lng: number } {
   const key = normalizeSppgKey(sppg);
   if (key === "CISITU") return { lat: -6.889491, lng: 108.044861 };
@@ -730,6 +820,12 @@ Deno.serve(async (req: Request) => {
     }
     if (body.function === "getOperationalDashboardV2") {
       return await handleOperationalDashboard(body.data || {});
+    }
+    if (body.function === "getSuperAdminOverviewV3") {
+      return await handleSuperAdminOverview(body.data || {});
+    }
+    if (body.function === "getSuperAdminAuditV3") {
+      return await handleSuperAdminAudit(body.data || {});
     }
     if (body.function === "getUserNotificationsV2") {
       return await handleUserNotifications(body.data || {});

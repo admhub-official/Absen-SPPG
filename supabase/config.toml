@@ -1,0 +1,5 @@
+project_id = "szwwpnbbsmjsbzzcecyj"
+
+[functions.Absen]
+verify_jwt = false
+
