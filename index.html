@@ -478,7 +478,7 @@
     .payroll-money-input{width:140px;min-width:120px}.payroll-note-input{min-width:210px}
     .payroll-total{font-size:.94rem;font-weight:800;color:#166534;white-space:nowrap}
     .payroll-modal-card{max-width:980px}.payroll-modal-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem}.payroll-summary-item{padding:.85rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius)}.payroll-summary-item span{display:block;font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em}.payroll-summary-item strong{display:block;margin-top:.25rem;font-size:.9rem}
-    .signature-layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:1.2rem;margin-top:1.1rem;align-items:start}.signature-panel{padding:1rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg)}.signature-canvas-wrap{background:#fff;border:1.5px dashed #94a3b8;border-radius:var(--radius);overflow:hidden;touch-action:none}.signature-canvas-wrap canvas{display:block;width:100%;height:170px;cursor:crosshair}.signature-help{font-size:.76rem;color:var(--text-muted);line-height:1.5;margin-top:.55rem}.signature-legal{padding:1rem;border-radius:var(--radius);background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:.78rem;line-height:1.55}.signature-legal strong{display:block;margin-bottom:.3rem;color:#78350f}
+    .signature-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:1rem;margin-top:1.1rem;align-items:start}.signature-approval-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}.signature-panel{padding:1rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg)}.signature-canvas-wrap{background:#fff;border:1.5px dashed #94a3b8;border-radius:var(--radius);overflow:hidden;touch-action:none}.signature-canvas-wrap canvas{display:block;width:100%;height:150px;cursor:crosshair}.signature-help{font-size:.76rem;color:var(--text-muted);line-height:1.5;margin-top:.55rem}.signature-legal{padding:1rem;border-radius:var(--radius);background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:.78rem;line-height:1.55}.signature-legal strong{display:block;margin-bottom:.3rem;color:#78350f}.payroll-sign-btn{white-space:normal;line-height:1.2}.payroll-status-note{font-size:.7rem;color:var(--text-muted);margin-top:.3rem}
     .payroll-tabs{display:flex;align-items:center;gap:.35rem;width:max-content;max-width:100%;padding:.3rem;margin-bottom:1rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);overflow-x:auto}
     .payroll-tab{appearance:none;border:0;background:transparent;color:var(--text-muted);font:inherit;font-size:.84rem;font-weight:750;white-space:nowrap;padding:.72rem 1rem;border-radius:calc(var(--radius) - 4px);cursor:pointer;transition:background .18s,color .18s,box-shadow .18s}
     .payroll-tab:hover{color:var(--text);background:var(--bg)}.payroll-tab.active{color:#fff;background:var(--primary);box-shadow:0 5px 14px rgba(79,70,229,.22)}.payroll-tab:focus-visible{outline:3px solid rgba(79,70,229,.22);outline-offset:2px}
@@ -486,7 +486,7 @@
     .payroll-history-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}.payroll-download-btn{display:inline-flex;align-items:center;gap:.4rem}
     .slip-period{font-weight:700;color:var(--text)}.slip-issued{font-size:.74rem;color:var(--text-muted);margin-top:.2rem}
     .mobile-only{display:none}
-    @media(max-width:900px){.signature-layout{grid-template-columns:1fr}.payroll-modal-summary{grid-template-columns:1fr 1fr}}
+    @media(max-width:900px){.signature-layout,.signature-approval-grid{grid-template-columns:1fr}.payroll-modal-summary{grid-template-columns:1fr 1fr}}
     @media(max-width:760px){.feature-grid{grid-template-columns:1fr}.feature-card{padding:1rem}.payroll-period-card{padding:.85rem}.feature-toolbar{align-items:stretch}.feature-toolbar .form-input{width:100%}.complaint-head{flex-direction:column}.payroll-modal-summary{grid-template-columns:1fr}.payroll-selection-bar{align-items:stretch}.payroll-selection-bar .btn{width:100%}.payroll-modal-card{max-height:96vh}.modal-footer{flex-wrap:wrap}.modal-footer .btn{flex:1}.signature-canvas-wrap canvas{height:150px}}
     @media(max-width:760px){
       .desktop-only{display:none!important}
@@ -1432,7 +1432,7 @@
 <div class="modal-overlay modal-overlay-top" id="modal-payroll-publish">
   <div class="modal-card payroll-modal-card">
     <div class="modal-header">
-      <div><h3>Terbitkan Slip Gaji</h3><div class="helper-text">Tinjau penyesuaian setiap karyawan dan bubuhkan tanda tangan penerbit</div></div>
+      <div><h3>Terbitkan Slip Gaji</h3><div class="helper-text">Tinjau nominal, lalu lengkapi tanda tangan Akuntan dan Kepala SPPG</div></div>
       <button class="modal-close" id="btn-close-payroll-publish" type="button" aria-label="Tutup">✕</button>
     </div>
     <div class="modal-body">
@@ -1449,17 +1449,55 @@
         </table>
       </div>
       <div class="signature-layout">
-        <div class="signature-panel">
-          <div class="form-label">Tanda tangan penerbit <span style="color:var(--danger)">*</span></div>
-          <div class="signature-canvas-wrap"><canvas id="payroll-signature-canvas" width="900" height="300" aria-label="Canvas tanda tangan penerbit"></canvas></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-top:.55rem"><div class="signature-help">Gunakan mouse, pena digital, atau jari. Tanda tangan akan dicantumkan pada seluruh slip di batch ini.</div><button class="btn btn-secondary btn-sm" id="btn-clear-payroll-signature" type="button">Hapus Tanda Tangan</button></div>
+        <div class="signature-approval-grid">
+          <div class="signature-panel">
+            <div class="form-group">
+              <label class="form-label" for="payroll-accountant-name">Mengetahui - Nama Akuntan <span style="color:var(--danger)">*</span></label>
+              <input id="payroll-accountant-name" class="form-input" maxlength="120" placeholder="Nama lengkap Akuntan">
+            </div>
+            <div class="form-label">Tanda tangan Akuntan <span style="color:var(--danger)">*</span></div>
+            <div class="signature-canvas-wrap"><canvas id="payroll-accountant-signature-canvas" width="900" height="300" aria-label="Canvas tanda tangan Akuntan"></canvas></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-top:.55rem"><div class="signature-help">Tanda tangan ini ditampilkan sebagai pihak yang mengetahui.</div><button class="btn btn-secondary btn-sm" id="btn-clear-accountant-signature" type="button">Hapus</button></div>
+          </div>
+          <div class="signature-panel">
+            <div class="form-group">
+              <label class="form-label" for="payroll-head-name">Menyetujui - Nama Kepala SPPG <span style="color:var(--danger)">*</span></label>
+              <input id="payroll-head-name" class="form-input" maxlength="120" placeholder="Nama lengkap Kepala SPPG">
+            </div>
+            <div class="form-label">Tanda tangan Kepala SPPG <span style="color:var(--danger)">*</span></div>
+            <div class="signature-canvas-wrap"><canvas id="payroll-head-signature-canvas" width="900" height="300" aria-label="Canvas tanda tangan Kepala SPPG"></canvas></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-top:.55rem"><div class="signature-help">Tanda tangan ini ditampilkan sebagai pihak yang menyetujui.</div><button class="btn btn-secondary btn-sm" id="btn-clear-head-signature" type="button">Hapus</button></div>
+          </div>
         </div>
-        <div class="signature-legal"><strong>Konfirmasi penerbitan</strong>Dengan menandatangani dan menerbitkan, Anda menyatakan periode, jumlah hari kerja, bonus, potongan, dan total gaji telah diperiksa. Slip yang terbit langsung tersedia di akun karyawan terkait.</div>
+        <div class="signature-legal"><strong>Konfirmasi penerbitan</strong>Logo BGN akan diambil dari Storage. Setelah diterbitkan, setiap slip masuk ke akun karyawan dengan status Menunggu TTD Penerima. PDF final dan tombol unduh baru tersedia setelah karyawan menandatangani slip pada akunnya sendiri.</div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" id="btn-cancel-payroll-publish" type="button">Batal</button>
-      <button class="btn btn-primary" id="btn-confirm-payroll-publish" type="button">Tandatangani & Terbitkan</button>
+      <button class="btn btn-primary" id="btn-confirm-payroll-publish" type="button">Kirim untuk TTD Penerima</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL TANDA TANGAN PENERIMA SLIP ===== -->
+<div class="modal-overlay modal-overlay-top" id="modal-payroll-recipient-signature">
+  <div class="modal-card" style="max-width:620px">
+    <div class="modal-header">
+      <div><h3>Tanda Tangan Penerima</h3><div class="helper-text" id="recipient-signature-period">Periksa slip sebelum menandatangani</div></div>
+      <button class="modal-close" id="btn-close-recipient-signature" type="button" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="recipient-signature-alert" class="inline-alert"></div>
+      <div class="signature-panel">
+        <div class="form-label">Tanda tangan penerima <span style="color:var(--danger)">*</span></div>
+        <div class="signature-canvas-wrap"><canvas id="payroll-recipient-signature-canvas" width="900" height="300" aria-label="Canvas tanda tangan penerima"></canvas></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-top:.55rem"><div class="signature-help">Dengan menandatangani, Anda mengonfirmasi penerimaan slip gaji pada periode tersebut.</div><button class="btn btn-secondary btn-sm" id="btn-clear-recipient-signature" type="button">Hapus</button></div>
+      </div>
+      <div class="signature-legal" style="margin-top:1rem"><strong>Persetujuan penerima</strong>Tanda tangan, waktu, dan ID akun Anda akan dicatat pada slip. PDF final berlogo BGN dengan tanda tangan Akuntan, Kepala SPPG, dan Penerima akan dibuat setelah konfirmasi.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-recipient-signature" type="button">Batal</button>
+      <button class="btn btn-primary" id="btn-confirm-recipient-signature" type="button">Tandatangani & Finalisasi PDF</button>
     </div>
   </div>
 </div>
@@ -1689,6 +1727,8 @@ const APP_CONFIG=window.ABSEN_SUPABASE_CONFIG;
 if(!APP_CONFIG?.projectUrl||!APP_CONFIG?.functionName)throw new Error('Konfigurasi Supabase tidak lengkap.');
 let SUPABASE_URL='',SUPABASE_KEY='';
 const CONFIG_ENDPOINT=`${APP_CONFIG.projectUrl.replace(/\/$/,'')}/functions/v1/${encodeURIComponent(APP_CONFIG.functionName)}`;
+const LOGO_BGN_STORAGE_URL=`${APP_CONFIG.projectUrl.replace(/\/$/,'')}/storage/v1/object/public/Logo%20BGN/LOGO_BGN.webp`;
+let BgnLogoPngPromise=null;
 const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppState={token:null,user:null,currentPage:'login',currentView:'dashboard',pendingRegisterEmail:'',pendingResetEmail:'',pendingResetToken:'',profilePasswordEmail:'',profilePasswordResetToken:'',resendTimerRegister:null,resendTimerReset:null,resendTimerProfilePassword:null};
 const escapeHtml=(value)=>String(value??'').replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const normalizeRole=(value)=>String(value||'').trim().toUpperCase().replace(/_/g,' ');
@@ -2620,8 +2660,11 @@ const FeatureState={
   payrollHistory:[],
   payrollActiveTab:'publish',
   payrollHistoryLoaded:false,
-  payrollSignatureDrawn:false,
-  payrollSignatureReady:false,
+  payrollSignatureDrawn:{accountant:false,head:false},
+  payrollSignatureReady:new Set(),
+  recipientSignatureDrawn:false,
+  recipientSignatureReady:false,
+  recipientSlipId:'',
 };
 
 function formatDateTime(value){
@@ -2632,6 +2675,29 @@ function formatDateTime(value){
 
 function safeExternalUrl(value){
   try{const url=new URL(String(value||''));return url.protocol==='https:'?url.href:'';}catch{return'';}
+}
+
+function loadBgnLogoAsPng(){
+  if(BgnLogoPngPromise)return BgnLogoPngPromise;
+  BgnLogoPngPromise=new Promise((resolve,reject)=>{
+    const image=new Image();
+    image.crossOrigin='anonymous';
+    image.onload=()=>{
+      try{
+        const maxSide=600,scale=Math.min(1,maxSide/Math.max(image.naturalWidth||1,image.naturalHeight||1));
+        const canvas=document.createElement('canvas');
+        canvas.width=Math.max(1,Math.round((image.naturalWidth||1)*scale));
+        canvas.height=Math.max(1,Math.round((image.naturalHeight||1)*scale));
+        const context=canvas.getContext('2d');
+        context.clearRect(0,0,canvas.width,canvas.height);
+        context.drawImage(image,0,0,canvas.width,canvas.height);
+        resolve(canvas.toDataURL('image/png'));
+      }catch(error){reject(new Error('Logo BGN gagal dikonversi untuk PDF.'));}
+    };
+    image.onerror=()=>reject(new Error('Logo BGN tidak dapat dimuat dari Storage.'));
+    image.src=`${LOGO_BGN_STORAGE_URL}?v=${Date.now()}`;
+  }).catch(error=>{BgnLogoPngPromise=null;throw error;});
+  return BgnLogoPngPromise;
 }
 
 function humanizeActivity(value){
@@ -2804,9 +2870,14 @@ async function loadMyPayroll(){
       <td>${escapeHtml(formatRupiah(row.bonus||0))}</td>
       <td>${escapeHtml(formatRupiah(row.potongan||0))}${row.keteranganPotongan?`<div class="payroll-employee-meta">${escapeHtml(row.keteranganPotongan)}</div>`:''}</td>
       <td><strong class="payroll-total">${escapeHtml(formatRupiah(row.totalGaji))}</strong></td>
-      <td>${row.dapatDiunduh?`<button class="btn btn-primary btn-sm payroll-download-btn" type="button" data-slip-download="${escapeHtml(row.idSlip)}">Unduh PDF</button>`:'Belum tersedia'}</td>
+      <td>${row.perluTandaTangan
+        ?`<button class="btn btn-primary btn-sm payroll-sign-btn" type="button" data-slip-sign="${escapeHtml(row.idSlip)}" data-slip-period="${escapeHtml(`${formatTanggal(row.periodeMulai)} - ${formatTanggal(row.periodeAkhir)}`)}">Tanda Tangani</button><div class="payroll-status-note">PDF menunggu TTD penerima</div>`
+        :row.dapatDiunduh
+          ?`<button class="btn btn-primary btn-sm payroll-download-btn" type="button" data-slip-download="${escapeHtml(row.idSlip)}">Unduh PDF</button>`
+          :'<span class="payroll-status-note">Belum tersedia</span>'}</td>
     </tr>`).join('');
     body.querySelectorAll('[data-slip-download]').forEach(button=>button.addEventListener('click',()=>downloadPayrollSlip(button.dataset.slipDownload,button)));
+    body.querySelectorAll('[data-slip-sign]').forEach(button=>button.addEventListener('click',()=>openRecipientSignatureModal(button.dataset.slipSign,button.dataset.slipPeriod)));
   }catch(error){body.innerHTML=`<tr><td colspan="7"><div class="empty-state"><strong>Payroll gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
 }
 
@@ -2996,6 +3067,8 @@ async function openPayrollPublishModal(){
   if(FeatureState.payrollSelected.size>50){showAlert('Maksimal 50 karyawan per batch.','warning');return;}
   const complete=await previewPayrollAttendance(false);if(!complete)return;
   const selected=FeatureState.payrollEmployees.filter(row=>FeatureState.payrollSelected.has(String(row.idUser)));
+  const selectedSppg=new Set(selected.map(row=>String(row.sppg||'').trim()).filter(Boolean));
+  if(selectedSppg.size!==1){showAlert('Pilih karyawan dari satu SPPG saja untuk setiap batch tanda tangan.','warning');return;}
   $('#payroll-modal-period').textContent=`${formatTanggal(period.start)} - ${formatTanggal(period.end)}`;
   $('#payroll-modal-count').textContent=`${selected.length} karyawan`;
   $('#payroll-modal-signer').textContent=AppState.user?.namaLengkap||AppState.user?.Nama_Lengkap||'-';
@@ -3013,9 +3086,14 @@ async function openPayrollPublishModal(){
   }).join('');
   body.querySelectorAll('.payroll-money-input').forEach(input=>input.addEventListener('input',updatePayrollAdjustmentTotals));
   hideInlineAlert('payroll-publish-alert');
-  FeatureState.payrollSignatureDrawn=false;
+  FeatureState.payrollSignatureDrawn={accountant:false,head:false};
+  $('#payroll-accountant-name').value='';
+  $('#payroll-head-name').value='';
   $('#modal-payroll-publish').classList.add('active');
-  requestAnimationFrame(()=>initializePayrollSignatureCanvas(true));
+  requestAnimationFrame(()=>{
+    initializeSignatureCanvas('payroll-accountant-signature-canvas','accountant',true);
+    initializeSignatureCanvas('payroll-head-signature-canvas','head',true);
+  });
 }
 
 function updatePayrollAdjustmentTotals(){
@@ -3027,32 +3105,40 @@ function updatePayrollAdjustmentTotals(){
 
 function closePayrollPublishModal(){
   $('#modal-payroll-publish')?.classList.remove('active');
-  FeatureState.payrollSignatureReady=false;
 }
 
-function initializePayrollSignatureCanvas(clear=false){
-  const canvas=$('#payroll-signature-canvas');if(!canvas)return;
+function initializeSignatureCanvas(canvasId,stateKey,clear=false){
+  const canvas=$(`#${canvasId}`);if(!canvas)return;
   const ctx=canvas.getContext('2d');
-  if(clear){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);FeatureState.payrollSignatureDrawn=false;}
-  if(FeatureState.payrollSignatureReady)return;
-  FeatureState.payrollSignatureReady=true;
+  if(clear){
+    ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);
+    if(stateKey==='recipient')FeatureState.recipientSignatureDrawn=false;else FeatureState.payrollSignatureDrawn[stateKey]=false;
+  }
+  if(stateKey==='recipient'&&FeatureState.recipientSignatureReady)return;
+  if(stateKey!=='recipient'&&FeatureState.payrollSignatureReady.has(stateKey))return;
+  if(stateKey==='recipient')FeatureState.recipientSignatureReady=true;else FeatureState.payrollSignatureReady.add(stateKey);
   ctx.lineWidth=5;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#0f172a';
   let drawing=false;
   const point=(event)=>{const rect=canvas.getBoundingClientRect(),source=event.touches?.[0]||event;return{x:(source.clientX-rect.left)*(canvas.width/rect.width),y:(source.clientY-rect.top)*(canvas.height/rect.height)};};
   const start=(event)=>{event.preventDefault();drawing=true;const p=point(event);ctx.beginPath();ctx.moveTo(p.x,p.y);};
-  const move=(event)=>{if(!drawing)return;event.preventDefault();const p=point(event);ctx.lineTo(p.x,p.y);ctx.stroke();FeatureState.payrollSignatureDrawn=true;};
+  const move=(event)=>{if(!drawing)return;event.preventDefault();const p=point(event);ctx.lineTo(p.x,p.y);ctx.stroke();if(stateKey==='recipient')FeatureState.recipientSignatureDrawn=true;else FeatureState.payrollSignatureDrawn[stateKey]=true;};
   const stop=()=>{if(drawing){drawing=false;ctx.closePath();}};
   canvas.addEventListener('pointerdown',start);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',stop);canvas.addEventListener('pointercancel',stop);canvas.addEventListener('pointerleave',stop);
 }
 
-function clearPayrollSignature(){
-  const canvas=$('#payroll-signature-canvas'),ctx=canvas?.getContext('2d');if(!ctx)return;
-  ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);FeatureState.payrollSignatureDrawn=false;
+function clearSignatureCanvas(canvasId,stateKey){
+  const canvas=$(`#${canvasId}`),ctx=canvas?.getContext('2d');if(!ctx)return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+  if(stateKey==='recipient')FeatureState.recipientSignatureDrawn=false;else FeatureState.payrollSignatureDrawn[stateKey]=false;
 }
 
 async function publishPayrollSlips(){
   hideInlineAlert('payroll-publish-alert');
-  if(!FeatureState.payrollSignatureDrawn){showInlineAlert('payroll-publish-alert','Bubuhkan tanda tangan penerbit sebelum menerbitkan slip.','warning');return;}
+  const namaAkuntan=$('#payroll-accountant-name').value.trim(),namaKepalaSppg=$('#payroll-head-name').value.trim();
+  if(!namaAkuntan){showInlineAlert('payroll-publish-alert','Isi nama Akuntan.','warning');return;}
+  if(!namaKepalaSppg){showInlineAlert('payroll-publish-alert','Isi nama Kepala SPPG.','warning');return;}
+  if(!FeatureState.payrollSignatureDrawn.accountant){showInlineAlert('payroll-publish-alert','Bubuhkan tanda tangan Akuntan.','warning');return;}
+  if(!FeatureState.payrollSignatureDrawn.head){showInlineAlert('payroll-publish-alert','Bubuhkan tanda tangan Kepala SPPG.','warning');return;}
   const period=validatePayrollPeriod();if(!period)return;
   const rows=[...$('#payroll-adjustment-body').querySelectorAll('[data-payroll-adjustment]')];
   const karyawanData=rows.map(row=>({
@@ -3063,11 +3149,22 @@ async function publishPayrollSlips(){
   }));
   const invalid=rows.find((row,index)=>Number(row.dataset.subtotal)+(karyawanData[index].bonus||0)-(karyawanData[index].potongan||0)<0);
   if(invalid){showInlineAlert('payroll-publish-alert','Potongan tidak boleh membuat total gaji menjadi negatif.','warning');return;}
-  const button=$('#btn-confirm-payroll-publish'),original=button.innerHTML;button.disabled=true;button.innerHTML='<span class="spinner" style="width:17px;height:17px;border-width:2px"></span> Menerbitkan PDF...';
+  const button=$('#btn-confirm-payroll-publish'),original=button.innerHTML;button.disabled=true;button.innerHTML='<span class="spinner" style="width:17px;height:17px;border-width:2px"></span> Menyiapkan slip...';
   try{
-    const result=await apiCall('prosesPayroll',{token:AppState.token,periodeMulai:period.start,periodeAkhir:period.end,karyawanData,tandaTanganBase64:$('#payroll-signature-canvas').toDataURL('image/png')});
+    const logoBgnBase64=await loadBgnLogoAsPng();
+    const result=await apiCall('prosesPayroll',{
+      token:AppState.token,
+      periodeMulai:period.start,
+      periodeAkhir:period.end,
+      karyawanData,
+      namaAkuntan,
+      namaKepalaSppg,
+      tandaTanganAkuntanBase64:$('#payroll-accountant-signature-canvas').toDataURL('image/png'),
+      tandaTanganKepalaSppgBase64:$('#payroll-head-signature-canvas').toDataURL('image/png'),
+      logoBgnBase64,
+    });
     closePayrollPublishModal();FeatureState.payrollSelected.clear();FeatureState.payrollPreview={};renderAdminPayroll();FeatureState.payrollHistoryLoaded=false;await loadAdminPayrollHistory();setAdminPayrollTab('history',false);
-    showAlert(result?.message||'Slip gaji berhasil diterbitkan.','success');
+    showAlert(result?.message||'Slip dikirim ke akun karyawan untuk tanda tangan penerima.','success');
   }catch(error){showInlineAlert('payroll-publish-alert',error.message||'Penerbitan slip gagal.');}
   finally{button.disabled=false;button.innerHTML=original;}
 }
@@ -3090,6 +3187,40 @@ async function loadAdminPayrollHistory(){
     </tr>`).join('');
     body.querySelectorAll('[data-slip-download]').forEach(button=>button.addEventListener('click',()=>downloadPayrollSlip(button.dataset.slipDownload,button)));
   }catch(error){FeatureState.payrollHistoryLoaded=false;body.innerHTML=`<tr><td colspan="6"><div class="empty-state"><strong>Riwayat gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
+}
+
+function openRecipientSignatureModal(idSlip,period){
+  if(!idSlip)return;
+  FeatureState.recipientSlipId=idSlip;
+  FeatureState.recipientSignatureDrawn=false;
+  $('#recipient-signature-period').textContent=period||'Periksa slip sebelum menandatangani';
+  hideInlineAlert('recipient-signature-alert');
+  $('#modal-payroll-recipient-signature').classList.add('active');
+  requestAnimationFrame(()=>initializeSignatureCanvas('payroll-recipient-signature-canvas','recipient',true));
+}
+
+function closeRecipientSignatureModal(){
+  $('#modal-payroll-recipient-signature')?.classList.remove('active');
+  FeatureState.recipientSlipId='';
+}
+
+async function confirmRecipientSignature(){
+  hideInlineAlert('recipient-signature-alert');
+  if(!FeatureState.recipientSlipId){showInlineAlert('recipient-signature-alert','Slip tidak ditemukan. Muat ulang halaman.','warning');return;}
+  if(!FeatureState.recipientSignatureDrawn){showInlineAlert('recipient-signature-alert','Bubuhkan tanda tangan penerima terlebih dahulu.','warning');return;}
+  const button=$('#btn-confirm-recipient-signature'),original=button.innerHTML;
+  button.disabled=true;button.innerHTML='<span class="spinner" style="width:17px;height:17px;border-width:2px"></span> Membuat PDF final...';
+  try{
+    const result=await apiCall('signPayrollReceipt',{
+      token:AppState.token,
+      idSlip:FeatureState.recipientSlipId,
+      tandaTanganPenerimaBase64:$('#payroll-recipient-signature-canvas').toDataURL('image/png'),
+    });
+    closeRecipientSignatureModal();
+    await loadMyPayroll();
+    showAlert(result?.message||'Slip berhasil ditandatangani dan PDF final tersedia.','success');
+  }catch(error){showInlineAlert('recipient-signature-alert',error.message||'Slip gagal ditandatangani.');}
+  finally{button.disabled=false;button.innerHTML=original;}
 }
 
 async function downloadPayrollSlip(idSlip,button){
@@ -3792,8 +3923,13 @@ async function initApp(){
   $('#btn-refresh-payroll-history')?.addEventListener('click',loadAdminPayrollHistory);
   $('#btn-close-payroll-publish')?.addEventListener('click',closePayrollPublishModal);
   $('#btn-cancel-payroll-publish')?.addEventListener('click',closePayrollPublishModal);
-  $('#btn-clear-payroll-signature')?.addEventListener('click',clearPayrollSignature);
+  $('#btn-clear-accountant-signature')?.addEventListener('click',()=>clearSignatureCanvas('payroll-accountant-signature-canvas','accountant'));
+  $('#btn-clear-head-signature')?.addEventListener('click',()=>clearSignatureCanvas('payroll-head-signature-canvas','head'));
   $('#btn-confirm-payroll-publish')?.addEventListener('click',publishPayrollSlips);
+  $('#btn-close-recipient-signature')?.addEventListener('click',closeRecipientSignatureModal);
+  $('#btn-cancel-recipient-signature')?.addEventListener('click',closeRecipientSignatureModal);
+  $('#btn-clear-recipient-signature')?.addEventListener('click',()=>clearSignatureCanvas('payroll-recipient-signature-canvas','recipient'));
+  $('#btn-confirm-recipient-signature')?.addEventListener('click',confirmRecipientSignature);
 
   // Admin: update user modal
   $('#btn-admin-update-user')?.addEventListener('click', openAdminUpdateUserModal);

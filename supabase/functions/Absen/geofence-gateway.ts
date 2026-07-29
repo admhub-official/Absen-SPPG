@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { handlePayrollSignatureWorkflow } from "./payroll-signature-workflow.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -342,6 +343,10 @@ Deno.serve(async (req: Request) => {
     }
     if (body.function === "recordAbsensiSelf") {
       return await handleRecordAttendance(body);
+    }
+    const payrollWorkflow = await handlePayrollSignatureWorkflow(body.function, body.data || {}, supabase);
+    if (payrollWorkflow.handled) {
+      return okResult(payrollWorkflow.result);
     }
     return await forwardToCore(body);
   } catch (error) {

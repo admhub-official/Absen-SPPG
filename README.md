@@ -37,7 +37,9 @@ Pengaduan menyimpan relasi pengirim secara internal agar pengguna dapat melihat 
 - `ADMIN` dan `SUPER ADMIN` dapat memilih hingga 50 karyawan per batch, termasuk pilih semua dari hasil pencarian.
 - Hari kerja dihitung di server dari absensi berstatus `VALID`. Pasangan `DATANG`/`PULANG` dan `PUNCH_TUNGGAL` impor yang valid sama-sama dihitung.
 - Gaji harian selalu dibaca ulang dari data `Users`; bonus dan potongan dapat diisi per karyawan sebelum penerbitan.
-- Tanda tangan dibuat pada canvas dan disematkan ke setiap PDF bersama identitas penerbit, tanggal terbit, tanggal cetak, periode, rincian, dan total bersih.
+- Admin mengisi tanda tangan `Mengetahui - Akuntan` dan `Menyetujui - Kepala SPPG` saat mengirim batch slip.
+- Slip terlebih dahulu berstatus `MENUNGGU_TTD_PENERIMA`. Karyawan wajib menandatangani slip dari akunnya sendiri sebelum PDF final dapat diunduh.
+- PDF final memuat logo BGN dari bucket publik `Logo BGN`, tiga tanda tangan, identitas penerima, periode, rincian penghasilan, total bersih, serta waktu finalisasi.
 - PDF disimpan di bucket privat `slip-gaji`. Aplikasi hanya memberikan signed URL lima menit setelah memeriksa sesi, kepemilikan slip, role, dan cakupan SPPG.
 - `USER` hanya dapat melihat dan mengunduh slip miliknya sendiri.
 
