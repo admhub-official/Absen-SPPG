@@ -33,6 +33,9 @@ const HANDLED_FUNCTIONS = new Set([
   "getSlipDownloadUrl",
   "signPayrollReceipt",
 ]);
+const STORAGE_CACHE_TTL_MS = 15 * 60 * 1000;
+const STORAGE_CACHE_MAX_ENTRIES = 32;
+const storageDownloadCache = new Map<string, { bytes: Uint8Array; expiresAt: number }>();
 
 function normalizeRole(value: unknown): string {
   return String(value || "").trim().toUpperCase().replace(/_/g, " ");
@@ -168,11 +171,16 @@ async function validateSession(supabase: SupabaseClient, token: unknown): Promis
   return { idUser: String(user.ID_User), role: normalizeRole(user.Role || session.Role) };
 }
 
-async function getScopedUserIds(supabase: SupabaseClient, session: PayrollSession): Promise<Set<string>> {
+async function getScopedUserIds(
+  supabase: SupabaseClient,
+  session: PayrollSession,
+  targetIds: string[],
+): Promise<Set<string>> {
+  const uniqueTargetIds = [...new Set(targetIds.map(String).filter(Boolean))];
+  if (!uniqueTargetIds.length) return new Set();
   if (isSuperAdmin(session.role)) {
-    const { data, error } = await supabase.from("Users").select("ID_User");
-    if (error) throw new Error("Gagal membaca cakupan pengguna: " + error.message);
-    return new Set((data || []).map((row: JsonRecord) => String(row.ID_User)));
+    // SUPER ADMIN sudah tervalidasi; tidak perlu mengunduh seluruh ID pengguna.
+    return new Set(uniqueTargetIds);
   }
 
   const { data: actor, error: actorError } = await supabase
@@ -196,7 +204,8 @@ async function getScopedUserIds(supabase: SupabaseClient, session: PayrollSessio
   const { data: users, error: usersError } = await supabase
     .from("Users")
     .select("ID_User, Role")
-    .in("SPPG", sppgList);
+    .in("SPPG", sppgList)
+    .in("ID_User", uniqueTargetIds);
   if (usersError) throw new Error("Gagal membaca pengguna SPPG: " + usersError.message);
   return new Set((users || [])
     .filter((row: JsonRecord) => !isSuperAdmin(row.Role))
@@ -229,9 +238,20 @@ async function downloadStorageObject(
   path: string,
   label: string,
 ): Promise<Uint8Array> {
+  const cacheKey = `${bucket}:${path}`;
+  const cached = storageDownloadCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.bytes.slice();
   const { data, error } = await supabase.storage.from(bucket).download(path);
   if (error || !data) throw new Error(`${label} tidak dapat dibaca`);
-  return new Uint8Array(await data.arrayBuffer());
+  const bytes = new Uint8Array(await data.arrayBuffer());
+  // Cache kecil pada instance Edge yang hangat mencegah logo/TTD batch yang sama
+  // diunduh ulang untuk setiap penerima, sehingga mengurangi Storage egress.
+  if (storageDownloadCache.size >= STORAGE_CACHE_MAX_ENTRIES) {
+    const oldestKey = storageDownloadCache.keys().next().value;
+    if (oldestKey) storageDownloadCache.delete(oldestKey);
+  }
+  storageDownloadCache.set(cacheKey, { bytes, expiresAt: Date.now() + STORAGE_CACHE_TTL_MS });
+  return bytes.slice();
 }
 
 async function logAudit(
@@ -456,7 +476,7 @@ async function processPayroll(
 
   const uniqueIds = [...new Set(employees.map((row) => String(row.idUser || "").trim()).filter(Boolean))];
   if (uniqueIds.length !== employees.length) throw new Error("Daftar karyawan berisi ID kosong atau duplikat");
-  const scopedIds = await getScopedUserIds(supabase, session);
+  const scopedIds = await getScopedUserIds(supabase, session, uniqueIds);
   if (uniqueIds.some((id) => !scopedIds.has(id))) {
     throw new Error("Akses ditolak: terdapat karyawan di luar cakupan SPPG Anda");
   }
@@ -569,7 +589,11 @@ async function processPayroll(
     ]) {
       const { error } = await supabase.storage
         .from("tanda-tangan")
-        .upload(asset.path, asset.bytes, { contentType: "image/png", upsert: false });
+        .upload(asset.path, asset.bytes, {
+          contentType: "image/png",
+          cacheControl: "31536000",
+          upsert: false,
+        });
       if (error) throw new Error(`Gagal menyimpan ${asset.label}: ${error.message}`);
       uploadedPaths.push(asset.path);
     }
@@ -672,10 +696,12 @@ async function getMyPayroll(supabase: SupabaseClient, data: JsonRecord): Promise
   const session = await validateSession(supabase, data.token);
   const { data: slips, error: slipsError } = await supabase
     .from("Slip_Gaji")
-    .select("*")
+    // Payload slip dibatasi ke kolom yang benar-benar dirender di halaman pengguna.
+    .select("ID_Slip,ID_Payroll,ID_User,Periode_Mulai,Periode_Akhir,Jumlah_Hari_Kerja,Gaji_Harian,Subtotal_Gaji,Lembur_Nominal,Bonus,Potongan,Keterangan_Potongan,Total_Gaji_Diterima,Status_Penerbitan,Diterbitkan_At,Nama_Penerbit,Ditandatangani_Penerima_At,PDF_Storage_Path,URL_PDF_Slip")
     .eq("ID_User", session.idUser)
     .in("Status_Penerbitan", ["MENUNGGU_TTD_PENERIMA", "DITERBITKAN"])
-    .order("Diterbitkan_At", { ascending: false });
+    .order("Diterbitkan_At", { ascending: false })
+    .limit(50);
   if (slipsError) throw new Error("Gagal mengambil slip gaji: " + slipsError.message);
   const { data: user, error: userError } = await supabase
     .from("Users")
@@ -719,7 +745,7 @@ async function signPayrollReceipt(supabase: SupabaseClient, data: JsonRecord): P
 
   const { data: slip, error: slipError } = await supabase
     .from("Slip_Gaji")
-    .select("*")
+    .select("ID_Slip,ID_Payroll,ID_User,Periode_Mulai,Periode_Akhir,Jumlah_Hari_Kerja,Gaji_Harian,Subtotal_Gaji,Bonus,Potongan,Keterangan_Potongan,Total_Gaji_Diterima,Status_Penerbitan")
     .eq("ID_Slip", idSlip)
     .maybeSingle();
   if (slipError) throw new Error("Gagal membaca slip: " + slipError.message);
@@ -732,7 +758,10 @@ async function signPayrollReceipt(supabase: SupabaseClient, data: JsonRecord): P
   }
 
   const [{ data: payroll, error: payrollError }, { data: user, error: userError }] = await Promise.all([
-    supabase.from("Payroll").select("*").eq("ID_Payroll", slip.ID_Payroll).maybeSingle(),
+    supabase.from("Payroll")
+      .select("ID_Payroll,Nama_Akuntan,Nama_Kepala_SPPG,TTD_Akuntan_Path,TTD_Kepala_SPPG_Path,Logo_BGN_Path")
+      .eq("ID_Payroll", slip.ID_Payroll)
+      .maybeSingle(),
     supabase.from("Users")
       .select("ID_User, Nama_Lengkap, Jabatan_Divisi, SPPG")
       .eq("ID_User", session.idUser)
@@ -760,7 +789,11 @@ async function signPayrollReceipt(supabase: SupabaseClient, data: JsonRecord): P
   try {
     const { error: signatureUploadError } = await supabase.storage
       .from("tanda-tangan")
-      .upload(recipientPath, recipientSignatureBytes, { contentType: "image/png", upsert: false });
+      .upload(recipientPath, recipientSignatureBytes, {
+        contentType: "image/png",
+        cacheControl: "31536000",
+        upsert: false,
+      });
     if (signatureUploadError) throw new Error("Gagal menyimpan tanda tangan penerima: " + signatureUploadError.message);
     recipientUploaded = true;
 
@@ -776,7 +809,11 @@ async function signPayrollReceipt(supabase: SupabaseClient, data: JsonRecord): P
     });
     const { error: pdfUploadError } = await supabase.storage
       .from("slip-gaji")
-      .upload(pdfPath, pdfBytes, { contentType: "application/pdf", upsert: false });
+      .upload(pdfPath, pdfBytes, {
+        contentType: "application/pdf",
+        cacheControl: "31536000",
+        upsert: false,
+      });
     if (pdfUploadError) throw new Error("Gagal menyimpan PDF final: " + pdfUploadError.message);
     pdfUploaded = true;
 
@@ -849,7 +886,7 @@ async function getSlipDownloadUrl(supabase: SupabaseClient, data: JsonRecord): P
   if (slip.Status_Penerbitan !== "DITERBITKAN") throw new Error("Slip belum tersedia");
   if (String(slip.ID_User) !== session.idUser) {
     if (!isAdminRole(session.role)) throw new Error("Akses ditolak");
-    const scopedIds = await getScopedUserIds(supabase, session);
+    const scopedIds = await getScopedUserIds(supabase, session, [String(slip.ID_User)]);
     if (!scopedIds.has(String(slip.ID_User))) throw new Error("Slip berada di luar cakupan SPPG Anda");
   }
 
