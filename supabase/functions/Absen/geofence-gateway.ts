@@ -263,6 +263,20 @@ async function handleOperationalUsers(data: Record<string, unknown>): Promise<Re
   const auth = await authenticateUser(data.token);
   const users = await getScopedOperationalUsers(auth);
   const presence = await getPresenceMap(users.map((user) => String(user.ID_User)));
+  const userIds = users.map((user) => String(user.ID_User));
+  let todayPunches: any[] = [];
+  if (userIds.length) {
+    const { data: rows, error } = await supabase.from("Absensi").select("ID_User,Jenis_Absen,Status_Validasi")
+      .in("ID_User", userIds).eq("Tanggal", jakartaDateString());
+    if (error) throw new Error("Gagal membaca punch hari ini: " + error.message);
+    todayPunches = rows || [];
+  }
+  const punchMap = new Map<string, any[]>();
+  for (const row of todayPunches) {
+    const id = String(row.ID_User);
+    if (!punchMap.has(id)) punchMap.set(id, []);
+    punchMap.get(id)!.push(row);
+  }
   return okResult({
     users: users.map((user) => {
       const assessment = profileAssessment(user);
@@ -273,6 +287,7 @@ async function handleOperationalUsers(data: Record<string, unknown>): Promise<Re
         _lastActivity: current?.lastActivity || null,
         _profileScore: assessment.score,
         _missingProfile: assessment.missing,
+        _todayPunches: punchMap.get(String(user.ID_User)) || [],
       };
     }),
   });
@@ -641,6 +656,180 @@ async function handleSuperAdminAudit(data: Record<string, unknown>): Promise<Res
   }) });
 }
 
+const SYSTEM_SETTING_KEYS = new Set([
+  "menu.user.complaints",
+  "menu.admin.payroll",
+  "menu.admin.audit",
+  "attendance.geofence_required",
+  "attendance.capture_gps_accuracy",
+  "attendance.allow_import_single_punch",
+  "attendance.correction_requires_audit",
+  "payroll.recipient_signature_required",
+  "payroll.accountant_signature_required",
+  "payroll.head_signature_required",
+  "payroll.private_pdf",
+  "notification.new_slip",
+  "notification.complaint_reply",
+  "notification.incomplete_attendance",
+  "notification.global_announcement",
+  "security.idle_session_expiry",
+  "security.revoke_on_password_reset",
+  "security.risky_action_reason",
+  "security.two_step_confirmation",
+]);
+
+function requireReason(value: unknown): string {
+  const reason = String(value || "").trim();
+  if (reason.length < 10) throw new Error("Alasan tindakan wajib diisi minimal 10 karakter.");
+  if (reason.length > 500) throw new Error("Alasan tindakan maksimal 500 karakter.");
+  return reason;
+}
+
+async function handleSystemSettings(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  requireSuperAdmin(auth);
+  const mode = String(data.mode || "GET").toUpperCase();
+  if (mode === "GET") {
+    const { data: rows, error } = await supabase.from("System_Settings")
+      .select("Setting_Key,Setting_Value,Description,Updated_At,Updated_By")
+      .order("Setting_Key");
+    if (error) throw new Error("Gagal membaca pengaturan sistem: " + error.message);
+    return okResult({ settings: rows || [] });
+  }
+  const key = String(data.key || "").trim();
+  if (!SYSTEM_SETTING_KEYS.has(key)) throw new Error("Kunci pengaturan tidak diizinkan.");
+  const reason = requireReason(data.reason);
+  const { data: before, error: beforeError } = await supabase.from("System_Settings")
+    .select("Setting_Key,Setting_Value,Description,Updated_At,Updated_By")
+    .eq("Setting_Key", key).maybeSingle();
+  if (beforeError) throw new Error(beforeError.message);
+  const after = {
+    Setting_Key: key,
+    Setting_Value: { enabled: Boolean(data.enabled) },
+    Description: String(data.description || before?.Description || key).slice(0, 500),
+    Updated_At: new Date().toISOString(),
+    Updated_By: auth.idUser,
+  };
+  const { error } = await supabase.from("System_Settings").upsert(after, { onConflict: "Setting_Key" });
+  if (error) throw new Error("Gagal menyimpan pengaturan: " + error.message);
+  await writeAudit("UPDATE_SYSTEM_SETTING", { object: key, reason, before: before || null, after }, auth.idUser);
+  return okResult({ setting: after });
+}
+
+async function handleRiskyRoleChange(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  requireSuperAdmin(auth);
+  const reason = requireReason(data.reason);
+  const idUser = String(data.idUser || "").trim();
+  const role = String(data.role || "").trim().toUpperCase().replace(/_/g, " ");
+  if (!idUser || !["USER", "ADMIN", "AKUNTAN"].includes(role)) throw new Error("Target atau role tidak valid.");
+  if (idUser === auth.idUser) throw new Error("SUPER ADMIN tidak dapat mengubah role akunnya sendiri.");
+  const { data: before, error: beforeError } = await supabase.from("Users")
+    .select("ID_User,Nama_Lengkap,Email,Role,SPPG,Status_Aktif").eq("ID_User", idUser).maybeSingle();
+  if (beforeError || !before) throw new Error("Akun target tidak ditemukan.");
+  if (String(before.Role || "").toUpperCase().replace(/_/g, " ") === "SUPER ADMIN") throw new Error("Role SUPER ADMIN tidak dapat diubah melalui menu ini.");
+  const { data: updated, error } = await supabase.from("Users").update({ Role: role, Updated_At: new Date().toISOString() })
+    .eq("ID_User", idUser).select("ID_User,Nama_Lengkap,Email,Role,SPPG,Status_Aktif").single();
+  if (error) throw new Error("Gagal memperbarui role: " + error.message);
+  await supabase.from("Sessions").delete().eq("ID_User", idUser);
+  await writeAudit("UPDATE_ROLE_RISKY", { object: `Users:${idUser}`, reason, before, after: updated }, auth.idUser);
+  return okResult({ message: "Role berhasil diperbarui dan sesi aktif dicabut.", user: updated });
+}
+
+async function handleRiskyAccessDelete(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  requireSuperAdmin(auth);
+  const reason = requireReason(data.reason);
+  const id = String(data.idAkses || "").trim();
+  const { data: before, error: beforeError } = await supabase.from("Akses_Email").select("*").eq("ID_Akses", id).maybeSingle();
+  if (beforeError || !before) throw new Error("Mapping akses tidak ditemukan.");
+  const { error } = await supabase.from("Akses_Email").delete().eq("ID_Akses", id);
+  if (error) throw new Error("Gagal menghapus akses: " + error.message);
+  await writeAudit("DELETE_ACCESS_RISKY", { object: `Akses_Email:${id}`, reason, before, after: null }, auth.idUser);
+  return okResult({ message: "Cakupan akses berhasil dihapus." });
+}
+
+async function handleRiskyAccessSave(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  requireSuperAdmin(auth);
+  const reason = requireReason(data.reason);
+  const email = String(data.email || "").trim().toLowerCase();
+  const sppg = String(data.sppg || "").trim();
+  if (!email.includes("@") || !sppg) throw new Error("Email atau cakupan SPPG tidak valid.");
+  const { data: before, error: beforeError } = await supabase.from("Akses_Email").select("*")
+    .ilike("Email", email).eq("SPPG", sppg).maybeSingle();
+  if (beforeError) throw new Error(beforeError.message);
+  let after: any = null;
+  if (before) {
+    const result = await supabase.from("Akses_Email").update({ Aktif: true }).eq("ID_Akses", before.ID_Akses).select("*").single();
+    if (result.error) throw new Error("Gagal memperbarui akses: " + result.error.message);
+    after = result.data;
+  } else {
+    const result = await supabase.from("Akses_Email").insert({ Email: email, SPPG: sppg, Aktif: true }).select("*").single();
+    if (result.error) throw new Error("Gagal menambahkan akses: " + result.error.message);
+    after = result.data;
+  }
+  await writeAudit("SAVE_ACCESS_RISKY", { object: `Akses_Email:${after.ID_Akses}`, reason, before: before || null, after }, auth.idUser);
+  return okResult({ message: "Cakupan akses berhasil disimpan.", access: after });
+}
+
+async function handleRiskyUserDelete(body: { function?: string; data?: Record<string, unknown> }): Promise<Response> {
+  const data = body.data || {};
+  const auth = await authenticateUser(data.token);
+  const reason = requireReason(data.reason);
+  const idUser = String(data.id || "").trim();
+  if (!idUser || idUser === auth.idUser) throw new Error("Target penghapusan tidak valid.");
+  const scopedUsers = await getScopedOperationalUsers(auth);
+  if (!scopedUsers.some((row) => String(row.ID_User) === idUser)) throw new Error("Akun target berada di luar cakupan.");
+  const { data: before, error } = await supabase.from("Users").select("ID_User,Nama_Lengkap,Email,Role,SPPG,Status_Aktif")
+    .eq("ID_User", idUser).maybeSingle();
+  if (error || !before) throw new Error("Akun target tidak ditemukan.");
+  if (String(before.Role || "").toUpperCase().replace(/_/g, " ") === "SUPER ADMIN") throw new Error("Akun SUPER ADMIN tidak dapat dihapus.");
+  const response = await forwardToCore(body);
+  let payload: any = null;
+  try { payload = await response.clone().json(); } catch { /* respons core tetap diteruskan */ }
+  if (payload?.success && payload?.result?.success) {
+    await writeAudit("DELETE_USER_RISKY", { object: `Users:${idUser}`, reason, before, after: null }, auth.idUser);
+  }
+  return response;
+}
+
+async function handleAttendanceValidation(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  if (!["ADMIN", "SUPER ADMIN"].includes(auth.role)) throw new Error("Akses ditolak.");
+  const reason = requireReason(data.reason);
+  const action = String(data.action || "").toUpperCase();
+  if (!["VALID", "DITOLAK", "PERLU_KOREKSI"].includes(action)) throw new Error("Aksi validasi tidak valid.");
+  const items = Array.isArray(data.items) ? data.items.slice(0, 100) : [];
+  if (!items.length) throw new Error("Pilih minimal satu data absensi.");
+  const scopedUsers = await getScopedAttendanceUsers(auth);
+  const allowedIds = new Set(scopedUsers.map((row) => row.ID_User));
+  const results: any[] = [];
+  for (const item of items) {
+    const idUser = String(item?.idUser || "").trim();
+    const date = optionalIsoDate(item?.tanggal);
+    if (!allowedIds.has(idUser) || !date) throw new Error("Data absensi di luar cakupan atau tanggal tidak valid.");
+    const { data: before, error: beforeError } = await supabase.from("Absensi")
+      .select("ID_Absen,ID_User,Tanggal,Jenis_Absen,Status_Validasi,Catatan_Validasi")
+      .eq("ID_User", idUser).eq("Tanggal", date);
+    if (beforeError) throw new Error(beforeError.message);
+    const { data: after, error } = await supabase.from("Absensi")
+      .update({ Status_Validasi: action, Catatan_Validasi: reason })
+      .eq("ID_User", idUser).eq("Tanggal", date)
+      .select("ID_Absen,ID_User,Tanggal,Jenis_Absen,Status_Validasi,Catatan_Validasi");
+    if (error) throw new Error("Validasi absensi gagal: " + error.message);
+    results.push({ idUser, date, updated: after?.length || 0 });
+    await writeAudit("BULK_ATTENDANCE_VALIDATION", {
+      object: `Absensi:${idUser}:${date}`,
+      action,
+      reason,
+      before: before || [],
+      after: after || [],
+    }, auth.idUser);
+  }
+  return okResult({ message: `${results.reduce((sum, row) => sum + row.updated, 0)} punch berhasil diperbarui.`, results });
+}
+
 function coreCompatibilityPoint(sppg: string, actualLat: number, actualLng: number): { lat: number; lng: number } {
   const key = normalizeSppgKey(sppg);
   if (key === "CISITU") return { lat: -6.889491, lng: 108.044861 };
@@ -826,6 +1015,24 @@ Deno.serve(async (req: Request) => {
     }
     if (body.function === "getSuperAdminAuditV3") {
       return await handleSuperAdminAudit(body.data || {});
+    }
+    if (body.function === "manageSystemSettingsV3") {
+      return await handleSystemSettings(body.data || {});
+    }
+    if (body.function === "setConfiguredUserRole") {
+      return await handleRiskyRoleChange(body.data || {});
+    }
+    if (body.function === "saveAksesEmail") {
+      return await handleRiskyAccessSave(body.data || {});
+    }
+    if (body.function === "deleteAksesEmail") {
+      return await handleRiskyAccessDelete(body.data || {});
+    }
+    if (body.function === "validateAttendanceBulkV3") {
+      return await handleAttendanceValidation(body.data || {});
+    }
+    if (body.function === "deleteData" && String(body.data?.menu || "").toLowerCase() === "users") {
+      return await handleRiskyUserDelete(body);
     }
     if (body.function === "getUserNotificationsV2") {
       return await handleUserNotifications(body.data || {});

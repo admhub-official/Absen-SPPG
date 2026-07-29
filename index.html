@@ -656,6 +656,21 @@
       .notification-wrap{margin-right:.35rem}
     }
 
+    .validation-tabs,.user-filter-toolbar{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+    .validation-tab,.view-toggle{border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);border-radius:999px;padding:.5rem .8rem;font-weight:700;cursor:pointer}
+    .validation-tab.active,.view-toggle.active{background:var(--primary);border-color:var(--primary);color:#fff}
+    .attendance-selection-bar{display:none;position:sticky;bottom:calc(72px + env(safe-area-inset-bottom));z-index:20;align-items:center;justify-content:space-between;gap:.75rem;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-lg);border-radius:var(--radius);margin:.75rem 0}
+    .attendance-selection-bar.show{display:flex}
+    .users-list{display:flex;flex-direction:column;gap:.5rem;padding:1rem}
+    .user-list-row{display:grid;grid-template-columns:minmax(190px,1.4fr) repeat(5,minmax(100px,1fr)) auto;gap:.75rem;align-items:center;border:1px solid var(--border);border-radius:var(--radius);padding:.8rem;background:var(--surface);cursor:pointer}
+    .user-list-row:hover{border-color:var(--primary);box-shadow:var(--shadow-sm)}
+    .user-list-identity{display:flex;align-items:center;gap:.65rem;min-width:0}.user-list-identity strong,.user-list-identity span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.user-list-identity span{font-size:.75rem;color:var(--text-secondary)}
+    .user-list-avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--primary-light);color:var(--primary);font-weight:800;overflow:hidden;flex:none}.user-list-avatar img{width:100%;height:100%;object-fit:cover}
+    .user-list-cell{font-size:.78rem;color:var(--text-secondary)}.user-list-cell strong{display:block;color:var(--text);font-size:.8rem}
+    .system-setting-list{display:flex;flex-direction:column;gap:.7rem;padding:1rem}.system-setting-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;border:1px solid var(--border);border-radius:var(--radius);padding:.9rem}.system-setting-row span{display:block;color:var(--text-secondary);font-size:.8rem;margin-top:.2rem}
+    .setting-toggle{width:48px;height:28px;border:0;border-radius:999px;background:#cbd5e1;padding:3px;cursor:pointer;flex:none}.setting-toggle::after{content:"";display:block;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s}.setting-toggle.active{background:var(--primary)}.setting-toggle.active::after{transform:translateX(20px)}
+    .risk-stage{display:none}.risk-stage.active{display:block}.risk-impact{padding:.85rem;border-radius:var(--radius);background:var(--danger-light);color:var(--danger);line-height:1.55}.risk-confirm-word{font-weight:800;letter-spacing:.04em}
+    @media(max-width:900px){.user-list-row{grid-template-columns:1fr 1fr}.user-list-identity{grid-column:1/-1}.user-list-row .btn{justify-self:end}.attendance-selection-bar{align-items:flex-start;flex-direction:column}}
   </style>
 </head>
 <body>
@@ -844,7 +859,11 @@
       </button>
       <!-- ADMIN ONLY NAV -->
       <div class="app-nav-item admin-only-nav" style="padding:0.5rem 0.9rem 0.25rem;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:rgba(255,255,255,.3);cursor:default;display:none">Admin</div>
-      <button class="app-nav-item admin-only-nav" data-view="admin-dashboard" style="display:none">
+      <button class="app-nav-item admin-only-nav super-admin-only-nav" data-view="super-dashboard" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+        <span>Dashboard Global</span>
+      </button>
+      <button class="app-nav-item admin-only-nav non-super-admin-only-nav" data-view="admin-dashboard" style="display:none">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
         <span>Dashboard</span>
       </button>
@@ -1267,6 +1286,9 @@
         </div>
       </div>
 
+      <!-- ===== VIEW: SUPER ADMIN DASHBOARD GLOBAL ===== -->
+      <div id="view-super-dashboard" class="app-view hidden"></div>
+
       <!-- ===== VIEW: ADMIN DATA ABSEN ===== -->
       <div id="view-admin-absen" class="app-view hidden">
         <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">
@@ -1277,6 +1299,14 @@
           <div class="realtime-label" id="absen-realtime-label">
             <span class="realtime-dot"></span> Realtime aktif
           </div>
+        </div>
+        <div class="validation-tabs" role="tablist" aria-label="Pusat validasi absensi" style="margin-bottom:.85rem">
+          <button class="validation-tab active" type="button" data-validation-tab="ALL">Semua</button>
+          <button class="validation-tab" type="button" data-validation-tab="INCOMPLETE">Tidak lengkap</button>
+          <button class="validation-tab" type="button" data-validation-tab="SINGLE">Punch tunggal</button>
+          <button class="validation-tab" type="button" data-validation-tab="INVALID">Tidak valid</button>
+          <button class="validation-tab" type="button" data-validation-tab="LATE">Terlambat</button>
+          <button class="validation-tab" type="button" data-validation-tab="CORRECTION">Perlu koreksi</button>
         </div>
         <div class="feature-card absen-filter-card">
           <div class="absen-filter-grid">
@@ -1304,6 +1334,7 @@
             <table class="data-table">
               <thead>
                 <tr>
+                  <th><input type="checkbox" id="absen-select-all" aria-label="Pilih semua absensi pada halaman"></th>
                   <th>Pengguna</th>
                   <th>SPPG</th>
                   <th>Tanggal</th>
@@ -1317,6 +1348,14 @@
                 <tr><td colspan="7" style="padding:0"><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-line short"></div></div></td></tr>
               </tbody>
             </table>
+          </div>
+          <div class="attendance-selection-bar" id="attendance-selection-bar">
+            <strong><span id="attendance-selected-count">0</span> data dipilih</strong>
+            <div style="display:flex;gap:.45rem;flex-wrap:wrap">
+              <button class="btn btn-sm btn-primary" type="button" data-attendance-action="VALID">Validasi</button>
+              <button class="btn btn-sm btn-secondary" type="button" data-attendance-action="PERLU_KOREKSI">Perlu Koreksi</button>
+              <button class="btn btn-sm" style="background:var(--danger);color:#fff" type="button" data-attendance-action="DITOLAK">Tolak</button>
+            </div>
           </div>
           <div class="pagination" id="absen-pagination" style="display:none">
             <span class="pagination-info" id="absen-pagination-info"></span>
@@ -1344,11 +1383,14 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input type="text" id="users-search" placeholder="Cari nama / SPPG / jabatan...">
             </div>
-            <select class="form-input" id="users-operational-filter" aria-label="Filter status operasional">
-              <option value="">Semua kondisi</option>
-              <option value="ONLINE">Sedang online</option>
-              <option value="INCOMPLETE">Profil belum lengkap</option>
-            </select>
+          </div>
+          <div class="user-filter-toolbar" style="padding:0 1rem 1rem">
+            <select class="form-input" id="users-operational-filter" aria-label="Filter status operasional"><option value="">Semua kondisi</option><option value="ONLINE">Sedang online</option><option value="INCOMPLETE">Profil belum lengkap</option></select>
+            <select class="form-input" id="users-role-filter" aria-label="Filter role"><option value="">Semua role</option></select>
+            <select class="form-input" id="users-sppg-filter" aria-label="Filter SPPG"><option value="">Semua SPPG</option></select>
+            <select class="form-input" id="users-division-filter" aria-label="Filter divisi"><option value="">Semua divisi</option></select>
+            <select class="form-input" id="users-account-filter" aria-label="Filter akun"><option value="">Semua akun</option><option value="ACTIVE">Aktif</option><option value="INACTIVE">Nonaktif</option></select>
+            <div style="margin-left:auto;display:flex;gap:.35rem"><button class="view-toggle active" type="button" data-user-view="cards">Kartu</button><button class="view-toggle" type="button" data-user-view="list">Daftar</button></div>
           </div>
           <div id="users-grid-container" class="users-grid">
             <div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>
@@ -1534,7 +1576,18 @@
           </div>
           <div class="exception-list" id="system-quality-detail"><div class="belum-absen-empty">Pilih indikator untuk melihat detail.</div></div>
         </div>
-        <div class="feature-card"><div class="feature-toolbar"><div><strong>Kebijakan & Konfigurasi Aktif</strong><div class="helper-text">Ringkasan konfigurasi dari System_Settings; perubahan tetap dilakukan melalui alur yang diaudit</div></div></div><div class="data-table-wrap mobile-card-table"><table class="data-table"><thead><tr><th>Kunci</th><th>Nilai</th><th>Keterangan</th><th>Diperbarui</th></tr></thead><tbody id="system-settings-body"><tr><td colspan="4"><div class="loading-state"><span class="spinner"></span>Memuat pengaturan...</div></td></tr></tbody></table></div></div>
+        <div class="feature-card">
+          <div class="feature-toolbar"><div><strong>Kebijakan & Konfigurasi Aktif</strong><div class="helper-text">Setiap perubahan meminta konfirmasi dua tahap, alasan wajib, dan dicatat sebelum → sesudah.</div></div></div>
+          <div class="payroll-tabs system-setting-tabs" role="tablist" aria-label="Kategori pengaturan sistem">
+            <button class="payroll-tab active" type="button" data-setting-tab="access">Role & Akses</button>
+            <button class="payroll-tab" type="button" data-setting-tab="menu">Visibilitas Menu</button>
+            <button class="payroll-tab" type="button" data-setting-tab="attendance">Absensi & Geofence</button>
+            <button class="payroll-tab" type="button" data-setting-tab="payroll">Payroll & TTD</button>
+            <button class="payroll-tab" type="button" data-setting-tab="notification">Notifikasi</button>
+            <button class="payroll-tab" type="button" data-setting-tab="security">Keamanan & Sesi</button>
+          </div>
+          <div id="system-settings-body" class="system-setting-list"><div class="loading-state"><span class="spinner"></span>Memuat pengaturan...</div></div>
+        </div>
         <div class="feature-card">
           <div class="feature-toolbar"><div><strong>Berikan Cakupan SPPG</strong><div class="helper-text">Satu akun dapat menerima akses ke lebih dari satu SPPG</div></div></div>
           <div class="config-section-note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".5" fill="currentColor"/></svg><div>ADMIN dan AKUNTAN hanya dapat melihat pengguna, absensi, payroll, dan pengaduan dari SPPG yang ditetapkan di sini. SUPER ADMIN tetap memiliki akses global.</div></div>
@@ -1585,7 +1638,8 @@
       <button class="app-bottomnav-item user-only-nav active" data-view="dashboard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
       <button class="app-bottomnav-item app-bottomnav-item-scan user-only-nav" data-view="absen-scan" aria-label="Absen dengan wajah"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg><span class="app-bottomnav-scan-label">Absen</span></button>
       <button class="app-bottomnav-item user-only-nav" data-view="pengaduan"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>Aduan</button>
-      <button class="app-bottomnav-item admin-only-nav" data-view="admin-dashboard" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
+      <button class="app-bottomnav-item admin-only-nav super-admin-only-nav" data-view="super-dashboard" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>Global</button>
+      <button class="app-bottomnav-item admin-only-nav non-super-admin-only-nav" data-view="admin-dashboard" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
       <button class="app-bottomnav-item admin-only-nav" data-view="admin-users" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>Users</button>
       <button class="app-bottomnav-item app-bottomnav-item-scan admin-only-nav" data-view="absen-scan" style="display:none" aria-label="Absen dengan wajah"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg><span class="app-bottomnav-scan-label">Absen</span></button>
       <button class="app-bottomnav-item admin-only-nav" data-view="admin-payroll" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Payroll</button>
@@ -1675,6 +1729,29 @@
   </div>
 </div>
 
+<!-- ===== MODAL PENGAMAN TINDAKAN BERISIKO ===== -->
+<div class="modal-overlay" id="modal-risk-confirm">
+  <div class="modal-card" style="max-width:520px">
+    <div class="modal-header"><h3 id="risk-title">Konfirmasi tindakan</h3><button class="modal-close" id="btn-close-risk" type="button" aria-label="Tutup">✕</button></div>
+    <div class="modal-body">
+      <div class="risk-stage active" id="risk-stage-impact">
+        <p class="risk-impact" id="risk-impact"></p>
+        <p class="helper-text" style="margin-top:.8rem">Tinjau dampak dan objek yang akan berubah sebelum melanjutkan.</p>
+      </div>
+      <div class="risk-stage" id="risk-stage-reason">
+        <div class="form-group"><label class="form-label" for="risk-reason">Alasan perubahan (minimal 10 karakter)</label><textarea class="form-input" id="risk-reason" rows="4" maxlength="500" placeholder="Jelaskan alasan tindakan ini..." required></textarea></div>
+        <div class="form-group"><label class="form-label" for="risk-confirm-text">Ketik <span class="risk-confirm-word">KONFIRMASI</span></label><input class="form-input" id="risk-confirm-text" autocomplete="off"></div>
+        <div class="inline-alert" id="risk-alert"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-risk" type="button">Batal</button>
+      <button class="btn btn-primary" id="btn-risk-next" type="button">Lanjut</button>
+      <button class="btn" id="btn-risk-confirm" type="button" style="display:none;background:var(--danger);color:#fff">Konfirmasi Tindakan</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODAL UPDATE USER (ADMIN) ===== -->
 <div class="modal-overlay" id="modal-admin-update-user">
   <div class="modal-card">
@@ -1709,23 +1786,6 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" id="btn-cancel-admin-update-user">Batal</button>
       <button class="btn btn-primary" id="btn-save-admin-update-user">Simpan Perubahan</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== MODAL KONFIRMASI HAPUS USER ===== -->
-<div class="modal-overlay" id="modal-admin-delete-user">
-  <div class="modal-card" style="max-width:400px">
-    <div class="modal-header">
-      <h3>Hapus User</h3>
-      <button class="modal-close" id="btn-close-admin-delete-user">✕</button>
-    </div>
-    <div class="modal-body">
-      <p style="color:var(--text-secondary);font-size:0.9rem;line-height:1.6">Apakah Anda yakin ingin menghapus user <strong id="delete-user-name-confirm"></strong>? Tindakan ini tidak dapat dibatalkan.</p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" id="btn-cancel-admin-delete-user">Batal</button>
-      <button class="btn" id="btn-confirm-admin-delete-user" style="background:var(--danger);color:#fff">Ya, Hapus</button>
     </div>
   </div>
 </div>
@@ -1957,7 +2017,7 @@ function showApp(){
   renderProfilFromUser();
   if(isAdmin()){
     showAdminNav();
-    switchView('admin-dashboard');
+    switchView(isSuperAdminUser()?'super-dashboard':'admin-dashboard');
     loadComplaintNotification();
   } else {
     showUserNav();
@@ -1989,6 +2049,7 @@ function switchView(v){
   if(v==='admin-payroll')loadAdminPayroll();
   if(v==='admin-pengaduan')loadAdminComplaints();
   if(v==='admin-config')loadAdminConfiguration();
+  if(v==='super-dashboard')loadSuperAdminOverview();
   if(v==='my-absensi')loadMyAbsensi();
   if(v==='my-payroll')loadMyPayroll();
   if(v==='my-activity')loadMyActivity();
@@ -2174,7 +2235,6 @@ async function loadDashboardData(){
       $('#dash-admin-pulang-hari-ini').textContent=Math.max(0,(r.totals?.employees||0)-(r.totals?.notArrived||0)-(r.totals?.notDeparted||0));
       $('#dash-admin-payroll-bulan-ini').textContent=r.totals?.pendingRecipientSignatures??0;
       $('#dash-trend-chart').innerHTML='<div class="belum-absen-empty" style="width:100%">Dashboard kini memprioritaskan pengecualian operasional hari ini.</div>';
-      if(isSuperAdminUser())await loadSuperAdminOverview();
     }else{
       $('#dash-total-hari-kerja').textContent=r.totalHariKerja??0;
       $('#dash-total-gaji').textContent=formatRupiah(r.totalGajiDiterima??0);
@@ -2193,6 +2253,74 @@ async function loadDashboardData(){
 function handleLogout(){localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user'),AppState.token=null,AppState.user=null;showAuth();navigateTo('login');}
 function navigateTo(p){AppState.currentPage=p;$$('.auth-page').forEach(e=>e.classList.add('hidden'));const t=$(`#page-${p}`);if(t)t.classList.remove('hidden');history.pushState({p},'',`#${p}`);}
 function showAlert(m,t='info'){const i={success:'✓',error:'✕',warning:'⚠',info:'ℹ'},a=document.createElement('div');a.className=`alert ${t}`,a.innerHTML=`<span>${i[t]||i.info}</span><div style="flex:1">${m}</div><button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer">✕</button>`,$('#alert-box').appendChild(a),setTimeout(()=>{a.style.opacity='0';setTimeout(()=>a.remove(),300)},5000);}
+
+let RiskConfirmation=null;
+function closeRiskConfirmation(value=null){
+  const modal=$('#modal-risk-confirm');
+  modal?.classList.remove('active');
+  if(RiskConfirmation?.resolve)RiskConfirmation.resolve(value);
+  RiskConfirmation=null;
+}
+function confirmRiskAction({title='Konfirmasi tindakan',impact='Tindakan ini akan mengubah data sistem.'}={}){
+  if(RiskConfirmation)closeRiskConfirmation(null);
+  $('#risk-title').textContent=title;
+  $('#risk-impact').textContent=impact;
+  $('#risk-reason').value='';
+  $('#risk-confirm-text').value='';
+  $('#risk-alert').className='inline-alert';
+  $('#risk-alert').textContent='';
+  $('#risk-stage-impact').classList.add('active');
+  $('#risk-stage-reason').classList.remove('active');
+  $('#btn-risk-next').style.display='';
+  $('#btn-risk-confirm').style.display='none';
+  $('#modal-risk-confirm').classList.add('active');
+  return new Promise(resolve=>{RiskConfirmation={resolve};});
+}
+function advanceRiskConfirmation(){
+  $('#risk-stage-impact').classList.remove('active');
+  $('#risk-stage-reason').classList.add('active');
+  $('#btn-risk-next').style.display='none';
+  $('#btn-risk-confirm').style.display='';
+  $('#risk-reason').focus();
+}
+function finishRiskConfirmation(){
+  const reason=$('#risk-reason').value.trim(),confirmation=$('#risk-confirm-text').value.trim().toUpperCase();
+  const alert=$('#risk-alert');
+  if(reason.length<10||confirmation!=='KONFIRMASI'){
+    alert.className='inline-alert show error';
+    alert.textContent=reason.length<10?'Alasan harus berisi minimal 10 karakter.':'Ketik KONFIRMASI dengan tepat.';
+    return;
+  }
+  closeRiskConfirmation({reason});
+}
+function enhanceAccessibility(){
+  $$('button:not([type])').forEach(button=>button.type='button');
+  const focusable='button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  $$('.modal-overlay').forEach(modal=>{
+    modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('tabindex','-1');
+    const title=modal.querySelector('.modal-header h3');if(title){if(!title.id)title.id=`${modal.id}-title`;modal.setAttribute('aria-labelledby',title.id);}
+    let previousFocus=null;
+    new MutationObserver(()=>{
+      if(modal.classList.contains('active')){previousFocus=document.activeElement;setTimeout(()=>modal.querySelector(focusable)?.focus(),0);}
+      else if(previousFocus?.focus){previousFocus.focus();previousFocus=null;}
+    }).observe(modal,{attributes:true,attributeFilter:['class']});
+  });
+  document.addEventListener('keydown',event=>{
+    const modal=$('.modal-overlay.active');if(!modal)return;
+    if(event.key==='Tab'){
+      const items=[...modal.querySelectorAll(focusable)].filter(el=>el.offsetParent!==null);
+      if(!items.length){event.preventDefault();modal.focus();return;}
+      const first=items[0],last=items[items.length-1];
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+    }
+    if(event.key==='Escape'){
+      event.preventDefault();
+      if(modal.id==='modal-risk-confirm')closeRiskConfirmation(null);
+      else (modal.querySelector('.modal-close,.btn-secondary')||modal).click();
+    }
+  });
+}
 function showInlineAlert(id,msg,type='error'){const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='inline-alert show'+(type==='warning'?' warning':'');}
 function hideInlineAlert(id){const el=document.getElementById(id);if(!el)return;el.className='inline-alert';el.textContent='';}
 async function loadPublicConfig(){const r=await fetch(CONFIG_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({function:'getPublicConfig',data:{}})});const d=await r.json();if(!d.success||!d.result?.url)throw new Error('Gagal memuat konfigurasi server');SUPABASE_URL=d.result.url;SUPABASE_KEY=d.result.anonKey;}
@@ -2420,8 +2548,11 @@ const AdminState = {
   absenPage: 1,
   absenPageSize: 20,
   absenTotal: 0,
+  attendanceValidationTab: 'ALL',
+  attendanceSelected: new Map(),
   allUsers: [],
   filteredUsers: [],
+  userViewMode: 'cards',
   selectedUser: null,
   allLogs: [],
   filteredLogs: [],
@@ -2446,6 +2577,7 @@ function showAdminNav(){
   document.querySelectorAll('.admin-only-nav').forEach(el => el.style.display = '');
   document.querySelectorAll('.user-only-nav').forEach(el => el.style.display = 'none');
   document.querySelectorAll('.super-admin-only-nav').forEach(el => el.style.display = isSuperAdminUser() ? '' : 'none');
+  document.querySelectorAll('.non-super-admin-only-nav').forEach(el => el.style.display = isSuperAdminUser() ? 'none' : '');
   closeNavigationMenus();
 }
 
@@ -2498,7 +2630,7 @@ async function loadAdminAbsen(){
     showAlert('Tanggal akhir filter tidak boleh sebelum tanggal mulai.','warning');
     return;
   }
-  tbody.innerHTML='<tr><td colspan="7"><div class="loading-state"><span class="spinner"></span>Memuat data absensi...</div></td></tr>';
+  tbody.innerHTML='<tr><td colspan="8"><div class="loading-state"><span class="spinner"></span>Memuat data absensi...</div></td></tr>';
   try {
     const r = await apiCall('getAbsensiGroupedDataV2', {
       token:AppState.token,
@@ -2512,14 +2644,28 @@ async function loadAdminAbsen(){
       source:$('#absen-filter-source')?.value||undefined,
     });
     AdminState.allAbsen = r?.absensi || [];
-    AdminState.filteredAbsen = AdminState.allAbsen;
+    AdminState.filteredAbsen = filterAttendanceValidationRows(AdminState.allAbsen);
     AdminState.absenTotal = Number(r?.total)||0;
     updateAttendanceFilterOptions(r?.filterOptions);
     renderAttendanceFilterSummary();
     renderAbsenTable();
   } catch(e) {
-    if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="table-empty"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="table-empty-title">Gagal memuat data</div><div class="table-empty-sub">${e.message}</div></td></tr>`;
+    if(tbody) tbody.innerHTML = `<tr><td colspan="8" class="table-empty"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="table-empty-title">Gagal memuat data</div><div class="table-empty-sub">${escapeHtml(e.message)}</div></td></tr>`;
   }
+}
+
+function filterAttendanceValidationRows(rows){
+  const tab=AdminState.attendanceValidationTab;
+  return rows.filter(row=>{
+    const punches=row.punches||[],statuses=punches.map(p=>String(p.status||p.Status_Validasi||'').toUpperCase()),notes=punches.map(p=>String(p.catatan||p.Catatan_Validasi||'').toUpperCase());
+    const complete=Boolean(row.jamMasuk&&row.jamPulang),single=punches.length===1||punches.some(p=>p.jenis==='PUNCH_TUNGGAL');
+    if(tab==='INCOMPLETE')return !complete;
+    if(tab==='SINGLE')return single;
+    if(tab==='INVALID')return statuses.includes('DITOLAK')||statuses.includes('TIDAK VALID');
+    if(tab==='CORRECTION')return statuses.includes('PERLU_KOREKSI');
+    if(tab==='LATE')return notes.some(note=>note.includes('TERLAMBAT'));
+    return true;
+  });
 }
 
 function updateAttendanceFilterOptions(options){
@@ -2567,7 +2713,7 @@ function renderAbsenTable(){
   const rows = AdminState.filteredAbsen;
 
   if(rows.length === 0){
-    tbody.innerHTML = `<tr><td colspan="7" class="table-empty"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><div class="table-empty-title">Belum ada data absensi</div><div class="table-empty-sub">Belum ada data absensi hari ini</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="table-empty"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><div class="table-empty-title">Tidak ada antrean</div><div class="table-empty-sub">Tidak ada data pada kategori validasi ini.</div></td></tr>`;
     if(pg) pg.style.display = 'none';
     return;
   }
@@ -2583,7 +2729,9 @@ function renderAbsenTable(){
     const statusText = lengkap ? 'Lengkap' : (punchTunggal ? 'Punch tunggal valid' : (row.jamMasuk ? 'Belum Pulang' : 'Belum Datang'));
     const statusBadge = lengkap ? 'badge-success' : (punchTunggal || row.jamMasuk ? 'badge-warning' : 'badge-danger');
     const keterangan = `${row.punches.length} punch · ${row.sumber.join(', ')}`;
+    const idUser=String(row.ID_User||row.idUser||''),key=`${idUser}|${row.Tanggal}`,selected=AdminState.attendanceSelected.has(key);
     return `<tr>
+      <td><input class="attendance-row-check" type="checkbox" data-key="${escapeHtml(key)}" data-user="${escapeHtml(idUser)}" data-date="${escapeHtml(row.Tanggal||'')}" aria-label="Pilih absensi ${escapeHtml(nama)} ${escapeHtml(tgl)}" ${selected?'checked':''}></td>
       <td data-primary="true"><div style="font-weight:700">${escapeHtml(nama)}</div><div class="payroll-employee-meta">${escapeHtml(sppg)}</div></td>
       <td data-label="SPPG">${escapeHtml(sppg)}</td>
       <td data-label="Tanggal">${escapeHtml(tgl)}</td>
@@ -2593,6 +2741,12 @@ function renderAbsenTable(){
       <td data-label="Keterangan" style="color:var(--text-secondary)">${escapeHtml(keterangan)}</td>
     </tr>`;
   }).join('');
+  tbody.querySelectorAll('.attendance-row-check').forEach(input=>input.addEventListener('change',()=>{
+    if(input.checked)AdminState.attendanceSelected.set(input.dataset.key,{idUser:input.dataset.user,tanggal:input.dataset.date});
+    else AdminState.attendanceSelected.delete(input.dataset.key);
+    updateAttendanceSelectionBar();
+  }));
+  updateAttendanceSelectionBar();
 
   if(pg){
     pg.style.display = 'flex';
@@ -2600,6 +2754,26 @@ function renderAbsenTable(){
     $('#absen-prev-btn').disabled = page <= 1;
     $('#absen-next-btn').disabled = page >= totalPages;
   }
+}
+
+function updateAttendanceSelectionBar(){
+  const count=AdminState.attendanceSelected.size;
+  $('#attendance-selected-count').textContent=count;
+  $('#attendance-selection-bar')?.classList.toggle('show',count>0);
+  const all=$('#absen-select-all'),checks=[...$$('.attendance-row-check')];
+  if(all){all.checked=checks.length>0&&checks.every(item=>item.checked);all.indeterminate=checks.some(item=>item.checked)&&!all.checked;}
+}
+
+async function validateSelectedAttendance(action){
+  const items=[...AdminState.attendanceSelected.values()];if(!items.length)return;
+  const result=await confirmRiskAction({title:'Validasi absensi massal',impact:`${items.length} data absensi akan diubah menjadi ${action.replaceAll('_',' ')}. Perubahan dicatat pada Audit Log.`});
+  if(!result)return;
+  try{
+    await apiCall('validateAttendanceBulkV3',{token:AppState.token,action,items,reason:result.reason});
+    AdminState.attendanceSelected.clear();
+    showAlert('Validasi absensi berhasil disimpan.','success');
+    await loadAdminAbsen();
+  }catch(error){showAlert(error.message||'Validasi absensi gagal.','error');}
 }
 
 /* ---- Load Data Users ---- */
@@ -2610,18 +2784,37 @@ async function loadAdminUsers(){
   try {
     const r = await apiCall('getOperationalUsersV2', {token: AppState.token});
     AdminState.allUsers = Array.isArray(r) ? r : (r?.users || []);
+    populateUserFilterOptions();
     filterAndRenderUsers();
   } catch(e) {
     container.innerHTML = `<div class="table-empty" style="grid-column:1/-1">Gagal memuat data: ${e.message}</div>`;
   }
 }
 
+function populateUserFilterOptions(){
+  const fill=(id,values,label)=>{
+    const select=$(id),current=select?.value||'';if(!select)return;
+    select.innerHTML=`<option value="">Semua ${label}</option>`+[...new Set(values.filter(Boolean).map(String))].sort().map(value=>`<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
+    if([...select.options].some(option=>option.value===current))select.value=current;
+  };
+  fill('#users-role-filter',AdminState.allUsers.map(user=>normalizeRole(user.Role||user.role)),'role');
+  fill('#users-sppg-filter',AdminState.allUsers.map(user=>user.SPPG||user.sppg),'SPPG');
+  fill('#users-division-filter',AdminState.allUsers.map(user=>user.Jabatan_Divisi||user.jabatan_divisi),'divisi');
+}
+
 function filterAndRenderUsers(){
   const q = ($('#users-search')?.value||'').toLowerCase();
   const operational=$('#users-operational-filter')?.value||'';
+  const role=$('#users-role-filter')?.value||'',sppgFilter=$('#users-sppg-filter')?.value||'',division=$('#users-division-filter')?.value||'',account=$('#users-account-filter')?.value||'';
   AdminState.filteredUsers = AdminState.allUsers.filter(u => {
     if(operational==='ONLINE'&&!u._online)return false;
     if(operational==='INCOMPLETE'&&Number(u._profileScore)>=100)return false;
+    if(role&&normalizeRole(u.Role||u.role)!==role)return false;
+    if(sppgFilter&&String(u.SPPG||u.sppg||'')!==sppgFilter)return false;
+    if(division&&String(u.Jabatan_Divisi||u.jabatan_divisi||'')!==division)return false;
+    const active=u.Status_Aktif===true||String(u.Status_Aktif).toUpperCase()==='TRUE';
+    if(account==='ACTIVE'&&!active)return false;
+    if(account==='INACTIVE'&&active)return false;
     if(!q)return true;
     const nama = (u.Nama_Lengkap||u.nama_lengkap||'').toLowerCase();
     const sppg = (u.SPPG||u.sppg||'').toLowerCase();
@@ -2635,6 +2828,7 @@ function renderUsersGrid(){
   const container = $('#users-grid-container');
   if(!container) return;
   const users = AdminState.filteredUsers;
+  container.className=AdminState.userViewMode==='list'?'users-list':'users-grid';
   if(users.length === 0){
     container.innerHTML = `<div class="table-empty" style="grid-column:1/-1"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg><div class="table-empty-title">Tidak ada pengguna ditemukan</div><div class="table-empty-sub">Coba ubah kata kunci pencarian Anda</div></div>`;
     return;
@@ -2648,7 +2842,17 @@ function renderUsersGrid(){
     const avatarHtml = foto
       ? `<img src="${escapeHtml(foto)}" alt="${escapeHtml(nama)}" onerror="this.remove()">`
       : escapeHtml(inisial);
-    return `<div class="user-card" data-user-index="${i}" onclick="openUserDetail(${i})">
+    const active=u.Status_Aktif===true||String(u.Status_Aktif).toUpperCase()==='TRUE',face=Boolean(u.Face_Descriptor||u.Descriptor_Wajah||u.URL_Foto_Wajah),bank=Boolean(u.Nama_Bank&&u.Nomor_Rekening),salary=Number(u.Gaji_Harian)>0;
+    if(AdminState.userViewMode==='list')return `<div class="user-list-row" data-user-index="${i}" role="button" tabindex="0">
+      <div class="user-list-identity"><div class="user-list-avatar">${avatarHtml}</div><div><strong>${escapeHtml(nama)}</strong><span>${escapeHtml(u.Email||u.Username||'-')}</span></div></div>
+      <div class="user-list-cell"><strong>${escapeHtml(normalizeRole(u.Role||'USER'))}</strong>Role</div>
+      <div class="user-list-cell"><strong>${escapeHtml(sppg)}</strong>SPPG</div>
+      <div class="user-list-cell"><strong>${escapeHtml(jabatan)}</strong>Divisi</div>
+      <div class="user-list-cell"><strong>${u._online?'Online':active?'Offline':'Nonaktif'}</strong>Status</div>
+      <div class="user-list-cell"><strong>${face?'Wajah ✓':'Wajah —'} · ${bank?'Rekening ✓':'Rekening —'}</strong>${salary?'Gaji tersedia':'Gaji kosong'} · ${u._todayPunches?.length?`${u._todayPunches.length} punch hari ini`:'Belum punch'} · Profil ${Number(u._profileScore)||0}%</div>
+      <button class="btn btn-sm btn-secondary" type="button">Detail</button>
+    </div>`;
+    return `<div class="user-card" data-user-index="${i}" role="button" tabindex="0">
       <div class="user-avatar-wrap">${avatarHtml}</div>
       <div class="user-card-name">${escapeHtml(nama)}</div>
       <div class="user-card-sppg">${escapeHtml(sppg)}</div>
@@ -2657,6 +2861,9 @@ function renderUsersGrid(){
       <div class="profile-completeness" title="Kelengkapan profil ${Number(u._profileScore)||0}%"><span style="width:${Math.max(0,Math.min(100,Number(u._profileScore)||0))}%"></span></div>
     </div>`;
   }).join('');
+  container.querySelectorAll('[data-user-index]').forEach(row=>{
+    const open=()=>openUserDetail(Number(row.dataset.userIndex));row.addEventListener('click',open);row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}});
+  });
 }
 
 function openUserDetail(index){
@@ -2766,22 +2973,23 @@ const r = await apiCall('updateData', {token: AppState.token, menu: 'users', id:
   }
 }
 
-function openAdminDeleteUserModal(){
+async function openAdminDeleteUserModal(){
   const u = AdminState.selectedUser;
   if(!u) return;
   const nama = u.Nama_Lengkap||u.nama_lengkap||'user ini';
-  $('#delete-user-name-confirm').textContent = nama;
-  $('#modal-admin-delete-user').classList.add('active');
+  const confirmation=await confirmRiskAction({title:'Hapus akun pengguna',impact:`Akun ${nama} beserta akses masuknya akan dihapus. Data transaksi terkait dapat terdampak dan tindakan ini tidak dapat dibatalkan.`});
+  if(!confirmation)return;
+  await handleConfirmDeleteUser(confirmation.reason);
 }
 
-async function handleConfirmDeleteUser(){
+async function handleConfirmDeleteUser(reason){
   const u = AdminState.selectedUser;
   if(!u) return;
   const userId = u.ID_User;
-  const b = $('#btn-confirm-admin-delete-user'), o = b.innerHTML;
-  b.disabled = true; b.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px"></div>';
+  const b = $('#btn-admin-delete-user'), o = b?.innerHTML;
+  if(b){b.disabled = true;b.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px"></div>';}
   try {
-    const r = await apiCall('deleteData', {token: AppState.token, menu: 'users', id: userId});
+    const r = await apiCall('deleteData', {token: AppState.token, menu: 'users', id: userId, reason});
     if(r && r.success){
       showAlert('User berhasil dihapus','success');
       $('#modal-admin-delete-user').classList.remove('active');
@@ -2794,7 +3002,7 @@ async function handleConfirmDeleteUser(){
   } catch(e) {
     showAlert(e.message||'Terjadi kesalahan','error');
   } finally {
-    b.disabled = false; b.innerHTML = o;
+    if(b){b.disabled = false;b.innerHTML = o;}
   }
 }
 
@@ -2963,7 +3171,30 @@ const FeatureState={
   recipientSignatureReady:false,
   recipientSlipId:'',
   superOverview:null,
+  systemSettingTab:'access',
 };
+
+const SYSTEM_SETTING_DEFINITIONS=[
+  {tab:'menu',key:'menu.user.complaints',label:'Menu Pengaduan USER',description:'Tampilkan pusat pengaduan untuk pengguna.',enabled:true},
+  {tab:'menu',key:'menu.admin.payroll',label:'Menu Payroll ADMIN',description:'Izinkan ADMIN mengakses penerbitan payroll.',enabled:true},
+  {tab:'menu',key:'menu.admin.audit',label:'Menu Audit Log',description:'Tampilkan audit operasional bagi ADMIN.',enabled:true},
+  {tab:'attendance',key:'attendance.geofence_required',label:'Geofence wajib',description:'Tolak absensi di luar radius SPPG.',enabled:true},
+  {tab:'attendance',key:'attendance.capture_gps_accuracy',label:'Simpan akurasi GPS',description:'Rekam metadata akurasi lokasi setiap punch.',enabled:true},
+  {tab:'attendance',key:'attendance.allow_import_single_punch',label:'Punch tunggal impor',description:'Izinkan punch tunggal hasil impor dihitung valid.',enabled:true},
+  {tab:'attendance',key:'attendance.correction_requires_audit',label:'Audit koreksi absensi',description:'Setiap koreksi wajib menyertakan alasan dan audit.',enabled:true},
+  {tab:'payroll',key:'payroll.recipient_signature_required',label:'TTD penerima wajib',description:'Slip final memerlukan tanda tangan penerima.',enabled:true},
+  {tab:'payroll',key:'payroll.accountant_signature_required',label:'TTD akuntan wajib',description:'Penerbitan slip memerlukan tanda tangan akuntan.',enabled:true},
+  {tab:'payroll',key:'payroll.head_signature_required',label:'TTD Kepala SPPG wajib',description:'Penerbitan slip memerlukan tanda tangan kepala SPPG.',enabled:true},
+  {tab:'payroll',key:'payroll.private_pdf',label:'PDF slip privat',description:'Batasi unduhan slip hanya untuk pihak berwenang.',enabled:true},
+  {tab:'notification',key:'notification.new_slip',label:'Notifikasi slip baru',description:'Beri tahu pengguna saat slip diterbitkan.',enabled:true},
+  {tab:'notification',key:'notification.complaint_reply',label:'Notifikasi balasan pengaduan',description:'Beri tahu pengguna saat tiket ditanggapi.',enabled:true},
+  {tab:'notification',key:'notification.incomplete_attendance',label:'Pengingat absensi tidak lengkap',description:'Beri peringatan punch hari ini belum lengkap.',enabled:true},
+  {tab:'notification',key:'notification.global_announcement',label:'Pengumuman global',description:'Izinkan SUPER ADMIN menerbitkan pengumuman lintas SPPG.',enabled:false},
+  {tab:'security',key:'security.idle_session_expiry',label:'Kedaluwarsa sesi idle',description:'Akhiri sesi yang tidak aktif sesuai kebijakan.',enabled:true},
+  {tab:'security',key:'security.revoke_on_password_reset',label:'Cabut sesi saat reset password',description:'Keluar dari seluruh perangkat setelah perubahan sandi.',enabled:true},
+  {tab:'security',key:'security.risky_action_reason',label:'Alasan tindakan wajib',description:'Wajibkan alasan pada perubahan berisiko.',enabled:true},
+  {tab:'security',key:'security.two_step_confirmation',label:'Konfirmasi dua tahap',description:'Tampilkan dampak lalu minta frasa konfirmasi.',enabled:true},
+];
 
 function formatDateTime(value){
   if(!value)return'-';
@@ -3081,8 +3312,35 @@ function renderSystemQuality(key=''){
 
 function renderSystemSettings(){
   const body=$('#system-settings-body');if(!body)return;
-  const rows=FeatureState.superOverview?.settings||[];
-  body.innerHTML=rows.length?rows.map(row=>`<tr><td data-primary="true"><strong>${escapeHtml(row.Setting_Key||'-')}</strong></td><td data-label="Nilai"><code>${escapeHtml(JSON.stringify(row.Setting_Value??{}))}</code></td><td data-label="Keterangan">${escapeHtml(row.Description||'-')}</td><td data-label="Diperbarui">${escapeHtml(formatDateTime(row.Updated_At))}</td></tr>`).join(''):'<tr><td colspan="4"><div class="table-empty">Belum ada pengaturan sistem.</div></td></tr>';
+  $$('[data-setting-tab]').forEach(button=>{
+    const active=button.dataset.settingTab===FeatureState.systemSettingTab;button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));
+  });
+  if(FeatureState.systemSettingTab==='access'){
+    body.innerHTML='<div class="system-setting-row"><div><strong>Role dan cakupan SPPG</strong><span>Backend aktif: perubahan role, penambahan, dan penghapusan cakupan diproses pada bagian di bawah dengan konfirmasi dua tahap serta Audit Log.</span></div><span class="badge badge-success">Terhubung</span></div>';
+    return;
+  }
+  const values=new Map((FeatureState.superOverview?.settings||[]).map(row=>[row.Setting_Key,row]));
+  const definitions=SYSTEM_SETTING_DEFINITIONS.filter(item=>item.tab===FeatureState.systemSettingTab);
+  body.innerHTML=definitions.map(item=>{
+    const row=values.get(item.key),enabled=row?.Setting_Value?.enabled??item.enabled;
+    return `<div class="system-setting-row"><div><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.description)}${row?.Updated_At?` · Diperbarui ${escapeHtml(formatDateTime(row.Updated_At))}`:''}</span></div><button type="button" class="setting-toggle ${enabled?'active':''}" role="switch" aria-checked="${enabled}" aria-label="${escapeHtml(item.label)}" data-setting-key="${escapeHtml(item.key)}"></button></div>`;
+  }).join('');
+  body.querySelectorAll('[data-setting-key]').forEach(button=>button.addEventListener('click',()=>toggleSystemSetting(button)));
+}
+
+async function toggleSystemSetting(button){
+  const definition=SYSTEM_SETTING_DEFINITIONS.find(item=>item.key===button.dataset.settingKey);if(!definition)return;
+  const enabled=button.getAttribute('aria-checked')!=='true';
+  const confirmation=await confirmRiskAction({title:'Ubah pengaturan sistem',impact:`${definition.label} akan ${enabled?'diaktifkan':'dinonaktifkan'} untuk aplikasi. Perubahan berlaku lintas SPPG dan dicatat sebelum–sesudah.`});
+  if(!confirmation)return;
+  button.disabled=true;
+  try{
+    const response=await apiCall('manageSystemSettingsV3',{token:AppState.token,mode:'UPDATE',key:definition.key,enabled,description:definition.description,reason:confirmation.reason});
+    const setting=response?.setting;
+    const settings=FeatureState.superOverview?.settings||[],index=settings.findIndex(row=>row.Setting_Key===definition.key);
+    if(index>=0)settings[index]=setting;else settings.push(setting);
+    renderSystemSettings();showAlert('Pengaturan sistem berhasil diperbarui.','success');
+  }catch(error){button.disabled=false;showAlert(error.message||'Pengaturan gagal disimpan.','error');}
 }
 
 async function loadAdminConfiguration(){
@@ -3144,9 +3402,11 @@ function renderConfiguredRoles(accounts=FeatureState.adminConfiguration?.account
 async function handleSaveAdminAccess(){
   const email=$('#config-admin-account').value,sppg=$('#config-admin-sppg').value;
   if(!email||!sppg){showAlert('Pilih akun dan SPPG terlebih dahulu.','warning');return;}
+  const confirmation=await confirmRiskAction({title:'Tambahkan cakupan akses',impact:`Akun ${email} akan memperoleh akses operasional ke SPPG ${sppg}.`});
+  if(!confirmation)return;
   const button=$('#btn-save-admin-access'),original=button.innerHTML;button.disabled=true;button.innerHTML='<span class="spinner" style="width:18px;height:18px;border-width:2px"></span>Menyimpan...';
   try{
-    const result=await apiCall('saveAksesEmail',{token:AppState.token,email,sppg,aktif:true});
+    const result=await apiCall('saveAksesEmail',{token:AppState.token,email,sppg,aktif:true,reason:confirmation.reason});
     showAlert(result?.message||'Akses berhasil ditambahkan.','success');
     await loadAdminConfiguration();
   }catch(error){showAlert(error.message||'Gagal menambahkan akses.','error');}
@@ -3154,10 +3414,12 @@ async function handleSaveAdminAccess(){
 }
 
 async function deleteAdminAccess(id,button){
-  if(!id||!window.confirm('Hapus cakupan SPPG ini dari akun terkait?'))return;
+  if(!id)return;
+  const confirmation=await confirmRiskAction({title:'Hapus cakupan akses',impact:'Mapping SPPG akan dihapus. Akun terkait segera kehilangan akses ke data pada cakupan tersebut.'});
+  if(!confirmation)return;
   const original=button.innerHTML;button.disabled=true;button.innerHTML='<span class="spinner" style="width:16px;height:16px;border-width:2px"></span>';
   try{
-    await apiCall('deleteAksesEmail',{token:AppState.token,idAkses:id});
+    await apiCall('deleteAksesEmail',{token:AppState.token,idAkses:id,reason:confirmation.reason});
     showAlert('Cakupan akses berhasil dihapus.','success');
     await loadAdminConfiguration();
   }catch(error){showAlert(error.message||'Gagal menghapus akses.','error');button.disabled=false;button.innerHTML=original;}
@@ -3166,10 +3428,11 @@ async function deleteAdminAccess(id,button){
 async function changeConfiguredRole(select){
   const idUser=select.dataset.configUser,previous=select.dataset.currentRole,next=select.value;
   if(previous===next)return;
-  if(!window.confirm(`Ubah role akun dari ${previous} menjadi ${next}? Sesi aktif akun tersebut akan diakhiri.`)){select.value=previous;return;}
+  const confirmation=await confirmRiskAction({title:'Ubah role akun',impact:`Role akun akan berubah dari ${previous} menjadi ${next}. Seluruh sesi aktif akun target akan langsung dicabut.`});
+  if(!confirmation){select.value=previous;return;}
   select.disabled=true;
   try{
-    const result=await apiCall('setConfiguredUserRole',{token:AppState.token,idUser,role:next});
+    const result=await apiCall('setConfiguredUserRole',{token:AppState.token,idUser,role:next,reason:confirmation.reason});
     showAlert(result?.message||'Role berhasil diperbarui.','success');
     await loadAdminConfiguration();
   }catch(error){showAlert(error.message||'Gagal memperbarui role.','error');select.value=previous;select.disabled=false;}
@@ -4205,6 +4468,9 @@ async function checkSession(){const st=localStorage.getItem('auth_token'),su=loc
 
 async function initApp(){
   try{await loadPublicConfig();}catch{$('#session-loading').classList.add('hidden');$('#auth-layout').classList.remove('hidden');showAlert('Gagal terhubung ke server. Muat ulang halaman.','error');return;}
+  const globalPanel=$('#super-admin-global-panel'),globalView=$('#view-super-dashboard');
+  if(globalPanel&&globalView)globalView.appendChild(globalPanel);
+  enhanceAccessibility();
 
   setupOtpRow('verify-register-otp-row');
   setupOtpRow('verify-reset-otp-row');
@@ -4288,6 +4554,7 @@ async function initApp(){
   $('#btn-refresh-admin-config')?.addEventListener('click',loadAdminConfiguration);
   $('#btn-refresh-super-dashboard')?.addEventListener('click',loadSuperAdminOverview);
   $('#btn-save-admin-access')?.addEventListener('click',handleSaveAdminAccess);
+  $$('[data-setting-tab]').forEach(button=>button.addEventListener('click',()=>{FeatureState.systemSettingTab=button.dataset.settingTab;renderSystemSettings();}));
   $$('#system-quality-grid [data-quality-key]').forEach(button=>button.addEventListener('click',()=>renderSystemQuality(button.dataset.qualityKey)));
   $('#config-account-search')?.addEventListener('input',()=>renderConfiguredRoles());
   $$('[data-payroll-tab]').forEach(button=>{
@@ -4325,12 +4592,13 @@ async function initApp(){
   // Admin: update user modal
   $('#btn-admin-update-user')?.addEventListener('click', openAdminUpdateUserModal);
   $('#btn-admin-delete-user')?.addEventListener('click', openAdminDeleteUserModal);
+  $('#btn-close-risk')?.addEventListener('click',()=>closeRiskConfirmation(null));
+  $('#btn-cancel-risk')?.addEventListener('click',()=>closeRiskConfirmation(null));
+  $('#btn-risk-next')?.addEventListener('click',advanceRiskConfirmation);
+  $('#btn-risk-confirm')?.addEventListener('click',finishRiskConfirmation);
   $('#btn-close-admin-update-user')?.addEventListener('click',()=>$('#modal-admin-update-user').classList.remove('active'));
   $('#btn-cancel-admin-update-user')?.addEventListener('click',()=>$('#modal-admin-update-user').classList.remove('active'));
   $('#btn-save-admin-update-user')?.addEventListener('click', handleSaveAdminUpdateUser);
-  $('#btn-close-admin-delete-user')?.addEventListener('click',()=>$('#modal-admin-delete-user').classList.remove('active'));
-  $('#btn-cancel-admin-delete-user')?.addEventListener('click',()=>$('#modal-admin-delete-user').classList.remove('active'));
-  $('#btn-confirm-admin-delete-user')?.addEventListener('click', handleConfirmDeleteUser);
   $('#btn-back-from-user-detail')?.addEventListener('click',()=>switchView('admin-users'));
   $('#btn-close-log-detail')?.addEventListener('click',()=>$('#modal-log-detail').classList.remove('active'));
   $('#btn-close-log-detail-footer')?.addEventListener('click',()=>$('#modal-log-detail').classList.remove('active'));
@@ -4344,6 +4612,21 @@ async function initApp(){
   $('#btn-reset-absen-filter')?.addEventListener('click',resetAttendanceFilters);
   $('#users-search')?.addEventListener('input', filterAndRenderUsers);
   $('#users-operational-filter')?.addEventListener('change',filterAndRenderUsers);
+  ['users-role-filter','users-sppg-filter','users-division-filter','users-account-filter'].forEach(id=>document.getElementById(id)?.addEventListener('change',filterAndRenderUsers));
+  $$('[data-user-view]').forEach(button=>button.addEventListener('click',()=>{
+    AdminState.userViewMode=button.dataset.userView;
+    $$('[data-user-view]').forEach(item=>item.classList.toggle('active',item===button));
+    renderUsersGrid();
+  }));
+  $$('[data-validation-tab]').forEach(button=>button.addEventListener('click',()=>{
+    AdminState.attendanceValidationTab=button.dataset.validationTab;
+    $$('[data-validation-tab]').forEach(item=>item.classList.toggle('active',item===button));
+    AdminState.attendanceSelected.clear();AdminState.absenPage=1;loadAdminAbsen();
+  }));
+  $('#absen-select-all')?.addEventListener('change',event=>{
+    $$('.attendance-row-check').forEach(input=>{input.checked=event.target.checked;input.dispatchEvent(new Event('change'));});
+  });
+  $$('[data-attendance-action]').forEach(button=>button.addEventListener('click',()=>validateSelectedAttendance(button.dataset.attendanceAction)));
   $('#log-search')?.addEventListener('input', filterAndRenderLog);
   $$('#audit-filter-grid input,#audit-filter-grid select').forEach(input=>input.addEventListener('change',filterAndRenderLog));
 
