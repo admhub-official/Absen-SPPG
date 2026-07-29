@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "SIM SPPG — Absensi & Payroll",
-  "short_name": "SIM SPPG",
+  "name": "Presence SPPG",
+  "short_name": "Presence SPPG",
   "description": "Aplikasi absensi, payroll, pengaduan, dan administrasi SPPG.",
   "lang": "id-ID",
   "start_url": "./index.html?source=pwa",

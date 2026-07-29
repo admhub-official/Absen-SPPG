@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sim-sppg-shell-v1';
+const CACHE_NAME = 'presence-sppg-shell-v2';
 const APP_SHELL = [
   './',
   './index.html',

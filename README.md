@@ -15,7 +15,7 @@ Logo dan ikon aplikasi disajikan langsung dari bucket publik Supabase Storage `i
 
 ## Instalasi aplikasi (PWA)
 
-SIM SPPG wajib dijalankan sebagai aplikasi terpasang. Saat URL dibuka melalui tab browser, install gate menutup akses login dan dashboard sampai pengguna menginstal aplikasi:
+Presence SPPG wajib dijalankan sebagai aplikasi terpasang. Saat URL dibuka melalui tab browser, install gate menutup akses login dan dashboard sampai pengguna menginstal aplikasi:
 
 - Chrome/Edge desktop dan Android menggunakan prompt instalasi native.
 - iPhone/iPad menampilkan petunjuk **Bagikan → Tambahkan ke Layar Utama**.
