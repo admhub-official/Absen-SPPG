@@ -13,6 +13,17 @@ Frontend tidak mengakses tabel langsung. Edge Function memakai service role di s
 
 Logo dan ikon aplikasi disajikan langsung dari bucket publik Supabase Storage `icon aplikasi`. Aplikasi aktif tidak bergantung pada Google Drive, Google Apps Script, atau Google Spreadsheet.
 
+## Instalasi aplikasi (PWA)
+
+SIM SPPG wajib dijalankan sebagai aplikasi terpasang. Saat URL dibuka melalui tab browser, install gate menutup akses login dan dashboard sampai pengguna menginstal aplikasi:
+
+- Chrome/Edge desktop dan Android menggunakan prompt instalasi native.
+- iPhone/iPad menampilkan petunjuk **Bagikan → Tambahkan ke Layar Utama**.
+- Browser yang tidak mendukung instalasi diarahkan membuka URL melalui Chrome atau Edge.
+- Akses dilepas hanya ketika `display-mode: standalone`, mode web app iOS, atau aplikasi Android terdeteksi.
+
+Manifest berada di `manifest.webmanifest`, sedangkan cache shell dan pembaruan PWA ditangani oleh `service-worker.js`.
+
 ## Hak Akses
 
 - `USER`: dashboard pribadi, absensi, payroll, profil, scan wajah, dan pengaduan.

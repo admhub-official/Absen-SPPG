@@ -4,8 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0f172a">
+  <meta name="application-name" content="SIM SPPG">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SIM SPPG">
+  <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/png" href="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png">
-  <link rel="apple-touch-icon" href="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/app-icon-180.png">
   <title>Sistem Absensi - Login</title>
   <style>
     :root{--primary:#4f46e5;--primary-dark:#4338ca;--primary-light:#eef2ff;--primary-ring:rgba(79,70,229,.18);--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--bg:#f8fafc;--surface:#fff;--text:#0f172a;--text-secondary:#475569;--text-muted:#64748b;--border:#e2e8f0;--radius:0.75rem;--radius-lg:1.25rem;--shadow:0 1px 3px rgb(15 23 42/0.08);--shadow-lg:0 20px 40px -12px rgb(15 23 42/0.18)}
@@ -670,10 +676,34 @@
     .system-setting-list{display:flex;flex-direction:column;gap:.7rem;padding:1rem}.system-setting-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;border:1px solid var(--border);border-radius:var(--radius);padding:.9rem}.system-setting-row span{display:block;color:var(--text-secondary);font-size:.8rem;margin-top:.2rem}
     .setting-toggle{width:48px;height:28px;border:0;border-radius:999px;background:#cbd5e1;padding:3px;cursor:pointer;flex:none}.setting-toggle::after{content:"";display:block;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s}.setting-toggle.active{background:var(--primary)}.setting-toggle.active::after{transform:translateX(20px)}
     .risk-stage{display:none}.risk-stage.active{display:block}.risk-impact{padding:.85rem;border-radius:var(--radius);background:var(--danger-light);color:var(--danger);line-height:1.55}.risk-confirm-word{font-weight:800;letter-spacing:.04em}
+    .install-gate{position:fixed;inset:0;z-index:20000;display:none;overflow:auto;background:radial-gradient(circle at 15% 10%,#312e81 0,#0f172a 48%,#020617 100%);padding:clamp(1rem,4vw,3rem)}
+    .install-gate.active{display:grid;place-items:center}
+    .install-card{width:min(100%,520px);background:#fff;border-radius:1.5rem;padding:clamp(1.3rem,4vw,2.25rem);box-shadow:0 32px 80px rgba(2,6,23,.45)}
+    .install-brand{display:flex;align-items:center;gap:.8rem;color:var(--primary);font-weight:800;margin-bottom:1.4rem}.install-brand img{width:52px;height:52px;border-radius:14px}
+    .install-card h1{font-size:clamp(1.45rem,5vw,2rem);line-height:1.2;margin-bottom:.65rem}.install-lead{color:var(--text-secondary);line-height:1.6;margin-bottom:1.25rem}
+    .install-benefits{display:grid;gap:.65rem;margin:1rem 0 1.4rem}.install-benefit{display:flex;align-items:flex-start;gap:.65rem;color:var(--text-secondary);font-size:.875rem}.install-benefit b{color:var(--text)}.install-check{display:grid;place-items:center;flex:none;width:24px;height:24px;border-radius:50%;background:#d1fae5;color:#047857;font-weight:900}
+    .install-instructions{display:none;margin:1rem 0;padding:1rem;border-radius:var(--radius);background:#f8fafc;border:1px solid var(--border);color:var(--text-secondary);font-size:.875rem;line-height:1.6}.install-instructions.show{display:block}.install-instructions ol{padding-left:1.25rem;margin-top:.5rem}.install-instructions strong{color:var(--text)}
+    .install-status{min-height:1.35rem;margin-top:.8rem;color:var(--text-secondary);font-size:.8rem;text-align:center}.install-browser-note{margin-top:1rem;color:var(--text-muted);font-size:.75rem;text-align:center;line-height:1.5}
     @media(max-width:900px){.user-list-row{grid-template-columns:1fr 1fr}.user-list-identity{grid-column:1/-1}.user-list-row .btn{justify-self:end}.attendance-selection-bar{align-items:flex-start;flex-direction:column}}
   </style>
 </head>
 <body>
+<section class="install-gate" id="install-gate" aria-labelledby="install-title">
+  <div class="install-card">
+    <div class="install-brand"><img src="./icons/app-icon.svg" alt=""><span>SIM SPPG</span></div>
+    <h1 id="install-title">Instal aplikasi untuk melanjutkan</h1>
+    <p class="install-lead">SIM SPPG wajib digunakan sebagai aplikasi terpasang agar absensi, kamera, lokasi, dan notifikasi bekerja lebih stabil.</p>
+    <div class="install-benefits">
+      <div class="install-benefit"><span class="install-check">✓</span><div><b>Akses seperti aplikasi native</b><br>Terbuka dalam jendela khusus tanpa tab browser.</div></div>
+      <div class="install-benefit"><span class="install-check">✓</span><div><b>Lebih cepat dan andal</b><br>Aset utama disimpan untuk pemuatan yang lebih konsisten.</div></div>
+      <div class="install-benefit"><span class="install-check">✓</span><div><b>Tersedia di layar utama</b><br>Mudah dibuka dari desktop, Start Menu, atau homescreen.</div></div>
+    </div>
+    <button class="btn btn-primary btn-block btn-lg" id="btn-install-app" type="button">Instal SIM SPPG</button>
+    <div class="install-instructions" id="install-instructions"></div>
+    <div class="install-status" id="install-status" role="status" aria-live="polite"></div>
+    <p class="install-browser-note" id="install-browser-note">Setelah instalasi selesai, buka SIM SPPG dari ikon aplikasi—bukan dari tab browser.</p>
+  </div>
+</section>
 <div id="session-loading"><div class="session-loading-logo"><div class="session-loading-logo-icon"><img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt=""></div>Sistem Absensi</div><div class="spinner"></div><div class="session-loading-text">Memverifikasi sesi...</div></div>
 <div id="alert-box"></div>
 <div id="auth-layout" class="hidden">
@@ -4466,7 +4496,114 @@ function initCropDragEvents(){
 
 async function checkSession(){const st=localStorage.getItem('auth_token'),su=localStorage.getItem('auth_user');if(st&&su){try{const r=await apiCall('checkSession',{token:st});if(r&&r.valid){AppState.token=st,AppState.user=JSON.parse(su);return true;}}catch {}}localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user');return false;}
 
+let DeferredInstallPrompt=null;
+
+function isInstalledApp(){
+  return window.matchMedia('(display-mode: standalone)').matches
+    || window.matchMedia('(display-mode: window-controls-overlay)').matches
+    || window.navigator.standalone===true
+    || document.referrer.startsWith('android-app://');
+}
+
+function getInstallPlatform(){
+  const ua=navigator.userAgent||'',platform=navigator.platform||'';
+  const ios=/iPhone|iPad|iPod/i.test(ua)||(platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const android=/Android/i.test(ua);
+  const edge=/Edg\//i.test(ua);
+  const chrome=/(Chrome|CriOS)\//i.test(ua)&&!/Edg|OPR\//i.test(ua);
+  const safari=/Safari\//i.test(ua)&&!/(Chrome|CriOS|Edg|OPR|Android)\//i.test(ua);
+  return {ios,android,edge,chrome,safari};
+}
+
+function renderManualInstallInstructions(){
+  const platform=getInstallPlatform(),box=$('#install-instructions'),button=$('#btn-install-app');
+  if(!box||!button)return;
+  if(platform.ios){
+    if(platform.safari){
+      box.innerHTML='<strong>Instal di iPhone/iPad:</strong><ol><li>Tekan tombol <b>Bagikan</b> di Safari.</li><li>Pilih <b>Tambahkan ke Layar Utama</b>.</li><li>Tekan <b>Tambah</b>, lalu buka ikon SIM SPPG.</li></ol>';
+    }else{
+      box.innerHTML='<strong>Gunakan Safari untuk instalasi.</strong><ol><li>Buka halaman ini di Safari.</li><li>Tekan <b>Bagikan</b>.</li><li>Pilih <b>Tambahkan ke Layar Utama</b>.</li></ol>';
+    }
+  }else if(platform.android){
+    box.innerHTML='<strong>Instal di Android:</strong><ol><li>Buka menu browser <b>⋮</b>.</li><li>Pilih <b>Instal aplikasi</b> atau <b>Tambahkan ke layar utama</b>.</li><li>Buka SIM SPPG dari ikon yang dibuat.</li></ol>';
+  }else if(platform.chrome||platform.edge){
+    box.innerHTML='<strong>Instal di komputer:</strong><ol><li>Klik ikon instalasi di sisi kanan address bar.</li><li>Atau buka menu browser dan pilih <b>Instal SIM SPPG</b>.</li><li>Buka aplikasi dari Desktop, Dock, atau Start Menu.</li></ol>';
+  }else{
+    box.innerHTML='<strong>Browser ini tidak mendukung instalasi langsung.</strong><ol><li>Buka halaman ini menggunakan Google Chrome atau Microsoft Edge.</li><li>Pilih <b>Instal SIM SPPG</b> dari address bar atau menu browser.</li></ol>';
+  }
+  box.classList.add('show');
+  button.textContent='Lihat Petunjuk Instalasi';
+}
+
+async function handleInstallApp(){
+  const status=$('#install-status'),button=$('#btn-install-app');
+  if(DeferredInstallPrompt){
+    button.disabled=true;
+    status.textContent='Membuka konfirmasi instalasi...';
+    const prompt=DeferredInstallPrompt;
+    DeferredInstallPrompt=null;
+    await prompt.prompt();
+    const choice=await prompt.userChoice;
+    if(choice.outcome==='accepted'){
+      status.textContent='Instalasi diterima. Setelah selesai, buka SIM SPPG dari ikon aplikasi.';
+    }else{
+      status.textContent='Instalasi dibatalkan. Aplikasi harus diinstal untuk melanjutkan.';
+      renderManualInstallInstructions();
+    }
+    button.disabled=false;
+    return;
+  }
+  renderManualInstallInstructions();
+  status.textContent='Ikuti petunjuk di atas, lalu buka aplikasi dari ikon yang terpasang.';
+}
+
+async function registerPwaServiceWorker(){
+  if(!('serviceWorker' in navigator))return null;
+  try{
+    const registration=await navigator.serviceWorker.register('./service-worker.js',{scope:'./'});
+    registration.update().catch(()=>{});
+    return registration;
+  }catch(error){
+    console.error('Service worker gagal didaftarkan',error);
+    return null;
+  }
+}
+
+async function enforceMandatoryInstall(){
+  await registerPwaServiceWorker();
+  if(isInstalledApp())return true;
+  const gate=$('#install-gate');
+  gate?.classList.add('active');
+  gate?.setAttribute('aria-modal','true');
+  document.body.style.overflow='hidden';
+  $('#session-loading')?.classList.add('hidden');
+  $('#btn-install-app')?.addEventListener('click',handleInstallApp);
+  const platform=getInstallPlatform();
+  if(platform.ios||(!platform.chrome&&!platform.edge&&!platform.android))renderManualInstallInstructions();
+  return false;
+}
+
+window.addEventListener('beforeinstallprompt',event=>{
+  event.preventDefault();
+  DeferredInstallPrompt=event;
+  const button=$('#btn-install-app'),instructions=$('#install-instructions'),status=$('#install-status');
+  if(button){button.disabled=false;button.textContent='Instal SIM SPPG';}
+  instructions?.classList.remove('show');
+  if(status)status.textContent='Aplikasi siap diinstal pada perangkat ini.';
+});
+
+window.addEventListener('appinstalled',()=>{
+  DeferredInstallPrompt=null;
+  const status=$('#install-status');
+  if(status)status.textContent='SIM SPPG berhasil diinstal. Buka dari ikon aplikasi untuk melanjutkan.';
+});
+
+window.matchMedia('(display-mode: standalone)').addEventListener?.('change',event=>{
+  if(event.matches)window.location.reload();
+});
+
 async function initApp(){
+  if(!await enforceMandatoryInstall())return;
   try{await loadPublicConfig();}catch{$('#session-loading').classList.add('hidden');$('#auth-layout').classList.remove('hidden');showAlert('Gagal terhubung ke server. Muat ulang halaman.','error');return;}
   const globalPanel=$('#super-admin-global-panel'),globalView=$('#view-super-dashboard');
   if(globalPanel&&globalView)globalView.appendChild(globalPanel);
