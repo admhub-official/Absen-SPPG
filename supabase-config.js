@@ -88,3 +88,11 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     };
   });
 })();
+
+(() => {
+  const script = document.createElement('script');
+  script.src = 'tahap3-super-admin.js';
+  script.defer = true;
+  script.dataset.module = 'tahap-3-super-admin';
+  document.head.appendChild(script);
+})();
