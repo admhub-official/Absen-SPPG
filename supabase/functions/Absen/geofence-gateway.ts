@@ -57,6 +57,9 @@ function hitungJarakMeter(lat1: number, lng1: number, lat2: number, lng2: number
 interface AuthenticatedUser {
   idUser: string;
   sppg: string;
+  email: string;
+  role: string;
+  token: string;
 }
 
 interface LocationResult {
@@ -87,14 +90,386 @@ async function authenticateUser(token: unknown): Promise<AuthenticatedUser> {
 
   const { data: user, error: userError } = await supabase
     .from("Users")
-    .select("ID_User, SPPG, Status_Aktif")
+    .select("ID_User, SPPG, Email, Role, Status_Aktif")
     .eq("ID_User", session.ID_User)
     .maybeSingle();
   if (userError || !user || !isActive(user.Status_Aktif)) {
     throw new Error("AKUN_NONAKTIF");
   }
 
-  return { idUser: String(user.ID_User), sppg: String(user.SPPG || "") };
+  return {
+    idUser: String(user.ID_User),
+    sppg: String(user.SPPG || ""),
+    email: String(user.Email || ""),
+    role: String(user.Role || "").trim().toUpperCase().replace(/_/g, " "),
+    token: cleanToken,
+  };
+}
+
+async function getScopedAttendanceUsers(auth: AuthenticatedUser): Promise<Array<{
+  ID_User: string;
+  SPPG: string | null;
+}>> {
+  if (!["ADMIN", "SUPER ADMIN", "AKUNTAN"].includes(auth.role)) {
+    throw new Error("Akses ditolak.");
+  }
+
+  let query = supabase.from("Users").select("ID_User, SPPG, Role");
+  if (auth.role !== "SUPER ADMIN") {
+    const { data: accessRows, error: accessError } = await supabase
+      .from("Akses_Email")
+      .select("SPPG, Aktif")
+      .ilike("Email", auth.email);
+    if (accessError) throw new Error("Gagal membaca cakupan akses: " + accessError.message);
+
+    const sppgList = [...new Set((accessRows || [])
+      .filter((row: any) => isActive(row.Aktif))
+      .map((row: any) => String(row.SPPG || "").trim())
+      .filter(Boolean))];
+    if (!sppgList.length) {
+      return [{ ID_User: auth.idUser, SPPG: auth.sppg || null }];
+    }
+    query = query.in("SPPG", sppgList);
+  }
+
+  const { data: users, error } = await query;
+  if (error) throw new Error("Gagal membaca cakupan pengguna: " + error.message);
+  return (users || [])
+    .filter((row: any) => String(row.Role || "").trim().toUpperCase().replace(/_/g, " ") !== "SUPER ADMIN")
+    .map((row: any) => ({ ID_User: String(row.ID_User), SPPG: row.SPPG || null }));
+}
+
+function optionalIsoDate(value: unknown): string | null {
+  const clean = String(value || "").trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(clean) ? clean : null;
+}
+
+async function handleFilteredAttendance(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  const scopedUsers = await getScopedAttendanceUsers(auth);
+  const userIds = scopedUsers.map((row) => row.ID_User);
+  const page = Math.max(1, Number(data.page) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number(data.pageSize) || 20));
+  const sppgOptions = [...new Set(scopedUsers.map((row) => String(row.SPPG || "").trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "id"));
+
+  if (!userIds.length) {
+    return okResult({ absensi: [], total: 0, page, pageSize, filterOptions: { sppg: sppgOptions } });
+  }
+
+  const { data: result, error } = await supabase.rpc("get_absensi_grouped_page_v2", {
+    p_user_ids: userIds,
+    p_page: page,
+    p_page_size: pageSize,
+    p_search: String(data.search || "").trim() || null,
+    p_start_date: optionalIsoDate(data.startDate),
+    p_end_date: optionalIsoDate(data.endDate),
+    p_sppg: String(data.sppg || "").trim() || null,
+    p_status: String(data.status || "").trim() || null,
+    p_source: String(data.source || "").trim() || null,
+  });
+  if (error) throw new Error("Gagal mengambil data absensi: " + error.message);
+
+  return okResult({
+    absensi: (result || []).map((item: any) => item.row_data),
+    total: Number(result?.[0]?.total_count || 0),
+    page,
+    pageSize,
+    filterOptions: { sppg: sppgOptions },
+  });
+}
+
+function jakartaDateString(date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function normalizeTicketStatus(value: unknown): string {
+  return String(value || "").trim().toUpperCase().replace(/\s+/g, "_");
+}
+
+function profileAssessment(user: any): { score: number; missing: string[] } {
+  const requirements: Array<[string, unknown]> = [
+    ["nama", user.Nama_Lengkap],
+    ["email", user.Email],
+    ["nomor WhatsApp", user.No_Whatsapp],
+    ["SPPG", user.SPPG],
+    ["jabatan/divisi", user.Jabatan_Divisi],
+    ["gaji harian", Number(user.Gaji_Harian) > 0],
+    ["bank", user.Nama_Bank],
+    ["nomor rekening", user.Nomor_Rekening],
+    ["atas nama rekening", user.Atas_Nama_Rekening],
+    ["data wajah", user.Face_Descriptor_JSON || user.URL_Foto_Wajah_Ref],
+  ];
+  const missing = requirements.filter(([, value]) => !value).map(([label]) => label);
+  return { score: Math.round(((requirements.length - missing.length) / requirements.length) * 100), missing };
+}
+
+async function getScopedOperationalUsers(auth: AuthenticatedUser): Promise<any[]> {
+  const scoped = await getScopedAttendanceUsers(auth);
+  const ids = scoped.map((row) => row.ID_User);
+  if (!ids.length) return [];
+  const { data, error } = await supabase
+    .from("Users")
+    .select("ID_User, Username, Role, Status_Aktif, Nama_Lengkap, Tempat_Lahir, Tanggal_Lahir, Jenis_Kelamin, Email, No_Whatsapp, SPPG, Yayasan, Tanggal_Mulai_Kerja, Jabatan_Divisi, Gaji_Harian, Nama_Bank, Nomor_Rekening, Atas_Nama_Rekening, ID_Card_Unik, URL_Foto_Profil, URL_Foto_Wajah_Ref, Face_Descriptor_JSON, Setuju_Kebijakan_Data, Created_At, Updated_At")
+    .in("ID_User", ids);
+  if (error) throw new Error("Gagal membaca data operasional pengguna: " + error.message);
+  return data || [];
+}
+
+async function getPresenceMap(userIds: string[]): Promise<Map<string, { online: boolean; lastActivity: string | null }>> {
+  const result = new Map<string, { online: boolean; lastActivity: string | null }>();
+  if (!userIds.length) return result;
+  const { data, error } = await supabase
+    .from("Sessions")
+    .select("ID_User, Last_Activity_At, Client_State, Expires_At")
+    .eq("Type", "user")
+    .in("ID_User", userIds)
+    .order("Last_Activity_At", { ascending: false });
+  if (error) throw new Error("Gagal membaca status online: " + error.message);
+  const onlineThreshold = Date.now() - 2 * 60 * 1000;
+  for (const row of data || []) {
+    const id = String(row.ID_User || "");
+    if (!id || result.has(id)) continue;
+    const lastActivity = row.Last_Activity_At ? String(row.Last_Activity_At) : null;
+    const online = Boolean(
+      lastActivity &&
+      new Date(lastActivity).getTime() >= onlineThreshold &&
+      new Date(row.Expires_At).getTime() > Date.now() &&
+      String(row.Client_State || "ACTIVE") === "ACTIVE"
+    );
+    result.set(id, { online, lastActivity });
+  }
+  return result;
+}
+
+async function handlePresenceHeartbeat(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  const clientState = String(data.clientState || "ACTIVE").toUpperCase() === "HIDDEN" ? "HIDDEN" : "ACTIVE";
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("Sessions")
+    .update({ Last_Activity_At: now, Client_State: clientState })
+    .eq("Token", auth.token);
+  if (error) throw new Error("Gagal memperbarui status online: " + error.message);
+  return okResult({ online: clientState === "ACTIVE", lastActivity: now });
+}
+
+async function handleOperationalUsers(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  const users = await getScopedOperationalUsers(auth);
+  const presence = await getPresenceMap(users.map((user) => String(user.ID_User)));
+  return okResult({
+    users: users.map((user) => {
+      const assessment = profileAssessment(user);
+      const current = presence.get(String(user.ID_User));
+      return {
+        ...user,
+        _online: Boolean(current?.online),
+        _lastActivity: current?.lastActivity || null,
+        _profileScore: assessment.score,
+        _missingProfile: assessment.missing,
+      };
+    }),
+  });
+}
+
+async function handleOperationalDashboard(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  const users = (await getScopedOperationalUsers(auth))
+    .filter((user) => String(user.Role || "").toUpperCase().replace(/_/g, " ") === "USER" && isActive(user.Status_Aktif));
+  const ids = users.map((user) => String(user.ID_User));
+  const today = jakartaDateString();
+  const presence = await getPresenceMap(ids);
+
+  let attendance: any[] = [];
+  let complaints: any[] = [];
+  let pendingSlips: any[] = [];
+  if (ids.length) {
+    const [attendanceResult, complaintResult, slipResult] = await Promise.all([
+      supabase.from("Absensi")
+        .select("ID_User, Jenis_Absen, Waktu_Timestamp")
+        .in("ID_User", ids)
+        .eq("Tanggal", today)
+        .eq("Status_Validasi", "VALID"),
+      supabase.from("Pengaduan")
+        .select("ID_Pengaduan, User, Kategori, Status_Tiket, Prioritas, Timestamp")
+        .in("User", ids)
+        .neq("Status_Tiket", "SELESAI")
+        .order("Timestamp", { ascending: false })
+        .limit(20),
+      supabase.from("Slip_Gaji")
+        .select("ID_Slip, ID_User, Periode_Mulai, Periode_Akhir")
+        .in("ID_User", ids)
+        .eq("Status_Penerbitan", "MENUNGGU_TTD_PENERIMA")
+        .order("Diterbitkan_At", { ascending: false })
+        .limit(20),
+    ]);
+    if (attendanceResult.error) throw new Error("Gagal membaca absensi hari ini: " + attendanceResult.error.message);
+    if (complaintResult.error) throw new Error("Gagal membaca tiket pengaduan: " + complaintResult.error.message);
+    if (slipResult.error) throw new Error("Gagal membaca status payroll: " + slipResult.error.message);
+    attendance = attendanceResult.data || [];
+    complaints = complaintResult.data || [];
+    pendingSlips = slipResult.data || [];
+  }
+
+  const punches = new Map<string, Set<string>>();
+  for (const row of attendance) {
+    const id = String(row.ID_User);
+    if (!punches.has(id)) punches.set(id, new Set());
+    punches.get(id)!.add(String(row.Jenis_Absen || ""));
+  }
+  const userMap = new Map(users.map((user) => [String(user.ID_User), user]));
+  const summaryUser = (user: any) => ({
+    idUser: String(user.ID_User),
+    nama: String(user.Nama_Lengkap || "-"),
+    jabatan: String(user.Jabatan_Divisi || "-"),
+    sppg: String(user.SPPG || "-"),
+  });
+  const belumDatang = users.filter((user) => {
+    const set = punches.get(String(user.ID_User));
+    return !set?.has("DATANG") && !set?.has("PUNCH_TUNGGAL");
+  }).map(summaryUser);
+  const belumPulang = users.filter((user) => {
+    const set = punches.get(String(user.ID_User));
+    return set?.has("DATANG") && !set?.has("PULANG");
+  }).map(summaryUser);
+  const incompleteProfiles = users
+    .map((user) => ({ ...summaryUser(user), ...profileAssessment(user) }))
+    .filter((user) => user.score < 100)
+    .sort((a, b) => a.score - b.score);
+  const onlineCount = ids.filter((id) => presence.get(id)?.online).length;
+
+  return okResult({
+    date: today,
+    totals: {
+      employees: users.length,
+      online: onlineCount,
+      notArrived: belumDatang.length,
+      notDeparted: belumPulang.length,
+      incompleteProfiles: incompleteProfiles.length,
+      openTickets: complaints.length,
+      pendingRecipientSignatures: pendingSlips.length,
+    },
+    exceptions: {
+      belumDatang: belumDatang.slice(0, 10),
+      belumPulang: belumPulang.slice(0, 10),
+      profilBelumLengkap: incompleteProfiles.slice(0, 10),
+      tiketTerbuka: complaints.slice(0, 10).map((row) => ({
+        ...row,
+        nama: userMap.get(String(row.User))?.Nama_Lengkap || "Pengguna",
+      })),
+      slipMenungguTtd: pendingSlips.slice(0, 10).map((row) => ({
+        ...row,
+        nama: userMap.get(String(row.ID_User))?.Nama_Lengkap || "Pengguna",
+      })),
+    },
+  });
+}
+
+async function handleUserNotifications(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  const { data: user, error: userError } = await supabase.from("Users").select("*").eq("ID_User", auth.idUser).maybeSingle();
+  if (userError || !user) throw new Error("Profil pengguna tidak ditemukan.");
+  const [slipsResult, complaintsResult] = await Promise.all([
+    supabase.from("Slip_Gaji")
+      .select("ID_Slip, Periode_Mulai, Periode_Akhir, Status_Penerbitan, Diterbitkan_At")
+      .eq("ID_User", auth.idUser)
+      .eq("Status_Penerbitan", "MENUNGGU_TTD_PENERIMA")
+      .order("Diterbitkan_At", { ascending: false }),
+    supabase.from("Pengaduan")
+      .select("ID_Pengaduan, Kategori, Status_Tiket, Tanggapan_Admin, Waktu_Tanggapan, Timestamp")
+      .eq("User", auth.idUser)
+      .order("Timestamp", { ascending: false })
+      .limit(20),
+  ]);
+  if (slipsResult.error) throw new Error("Gagal membaca notifikasi payroll: " + slipsResult.error.message);
+  if (complaintsResult.error) throw new Error("Gagal membaca notifikasi pengaduan: " + complaintsResult.error.message);
+
+  const items: any[] = [];
+  for (const slip of slipsResult.data || []) {
+    items.push({
+      id: `SLIP:${slip.ID_Slip}`,
+      type: "PAYROLL",
+      title: "Slip gaji menunggu tanda tangan",
+      message: `Periode ${slip.Periode_Mulai} sampai ${slip.Periode_Akhir}`,
+      actionView: "my-payroll",
+      timestamp: slip.Diterbitkan_At,
+      priority: "TINGGI",
+    });
+  }
+  for (const complaint of complaintsResult.data || []) {
+    if (!complaint.Tanggapan_Admin && complaint.Status_Tiket === "BARU") continue;
+    items.push({
+      id: `TIKET:${complaint.ID_Pengaduan}`,
+      type: "PENGADUAN",
+      title: complaint.Tanggapan_Admin ? "Ada perkembangan pengaduan" : "Status pengaduan berubah",
+      message: `${complaint.ID_Pengaduan} · ${complaint.Status_Tiket || "BARU"}`,
+      actionView: "pengaduan",
+      timestamp: complaint.Waktu_Tanggapan || complaint.Timestamp,
+      priority: complaint.Status_Tiket === "MENUNGGU_USER" ? "TINGGI" : "NORMAL",
+    });
+  }
+  const assessment = profileAssessment(user);
+  if (assessment.missing.length) {
+    items.push({
+      id: "PROFIL:BELUM_LENGKAP",
+      type: "PROFIL",
+      title: `Profil ${assessment.score}% lengkap`,
+      message: `Lengkapi ${assessment.missing.slice(0, 3).join(", ")}`,
+      actionView: "profil",
+      timestamp: user.Updated_At || user.Created_At,
+      priority: "NORMAL",
+    });
+  }
+  items.sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+  return okResult({ count: items.length, items: items.slice(0, 20) });
+}
+
+async function handleComplaintTicketUpdate(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  if (!["ADMIN", "SUPER ADMIN", "AKUNTAN"].includes(auth.role)) throw new Error("Akses ditolak.");
+  const id = String(data.idPengaduan || "").trim();
+  const status = normalizeTicketStatus(data.status);
+  const priority = String(data.prioritas || "NORMAL").trim().toUpperCase();
+  if (!id) throw new Error("ID pengaduan wajib diisi.");
+  if (!["BARU", "DIPROSES", "MENUNGGU_USER", "SELESAI"].includes(status)) throw new Error("Status tiket tidak valid.");
+  if (!["RENDAH", "NORMAL", "TINGGI", "MENDESAK"].includes(priority)) throw new Error("Prioritas tiket tidak valid.");
+  const { data: target, error: targetError } = await supabase.from("Pengaduan").select("ID_Pengaduan, User").eq("ID_Pengaduan", id).maybeSingle();
+  if (targetError || !target) throw new Error("Pengaduan tidak ditemukan.");
+  if (auth.role !== "SUPER ADMIN") {
+    const scoped = await getScopedAttendanceUsers(auth);
+    if (!scoped.some((user) => user.ID_User === String(target.User))) throw new Error("Pengaduan di luar cakupan akses.");
+  }
+  const now = new Date().toISOString();
+  const { error } = await supabase.from("Pengaduan").update({
+    Status_Tiket: status,
+    Prioritas: priority,
+    Waktu_Status_At: now,
+    Selesai_At: status === "SELESAI" ? now : null,
+  }).eq("ID_Pengaduan", id);
+  if (error) throw new Error("Gagal memperbarui tiket: " + error.message);
+  await writeAudit("UPDATE_STATUS_TIKET", { idPengaduan: id, status, prioritas: priority }, auth.idUser);
+  return okResult({ idPengaduan: id, status, prioritas: priority });
+}
+
+async function handleCloseMyComplaint(data: Record<string, unknown>): Promise<Response> {
+  const auth = await authenticateUser(data.token);
+  const id = String(data.idPengaduan || "").trim();
+  if (!id) throw new Error("ID pengaduan wajib diisi.");
+  const now = new Date().toISOString();
+  const { data: updated, error } = await supabase.from("Pengaduan").update({
+    Status_Tiket: "SELESAI",
+    Waktu_Status_At: now,
+    Selesai_At: now,
+  }).eq("ID_Pengaduan", id).eq("User", auth.idUser).select("ID_Pengaduan").maybeSingle();
+  if (error || !updated) throw new Error("Tiket tidak ditemukan atau bukan milik akun ini.");
+  await writeAudit("USER_SELESAIKAN_TIKET", { idPengaduan: id }, auth.idUser);
+  return okResult({ idPengaduan: id, status: "SELESAI" });
 }
 
 async function validateLocation(sppg: string, rawLat: unknown, rawLng: unknown): Promise<LocationResult> {
@@ -343,6 +718,27 @@ Deno.serve(async (req: Request) => {
     }
     if (body.function === "recordAbsensiSelf") {
       return await handleRecordAttendance(body);
+    }
+    if (body.function === "getAbsensiGroupedDataV2") {
+      return await handleFilteredAttendance(body.data || {});
+    }
+    if (body.function === "presenceHeartbeat") {
+      return await handlePresenceHeartbeat(body.data || {});
+    }
+    if (body.function === "getOperationalUsersV2") {
+      return await handleOperationalUsers(body.data || {});
+    }
+    if (body.function === "getOperationalDashboardV2") {
+      return await handleOperationalDashboard(body.data || {});
+    }
+    if (body.function === "getUserNotificationsV2") {
+      return await handleUserNotifications(body.data || {});
+    }
+    if (body.function === "updateComplaintTicketV2") {
+      return await handleComplaintTicketUpdate(body.data || {});
+    }
+    if (body.function === "closeMyComplaintTicketV2") {
+      return await handleCloseMyComplaint(body.data || {});
     }
     const payrollWorkflow = await handlePayrollSignatureWorkflow(body.function, body.data || {}, supabase);
     if (payrollWorkflow.handled) {
