@@ -8,7 +8,7 @@
   <link rel="apple-touch-icon" href="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png">
   <title>Sistem Absensi - Login</title>
   <style>
-    :root{--primary:#4f46e5;--primary-dark:#4338ca;--primary-light:#eef2ff;--primary-ring:rgba(79,70,229,.18);--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--bg:#f8fafc;--surface:#fff;--text:#0f172a;--text-secondary:#475569;--text-muted:#94a3b8;--border:#e2e8f0;--radius:0.75rem;--radius-lg:1.25rem;--shadow:0 1px 3px rgb(15 23 42/0.08);--shadow-lg:0 20px 40px -12px rgb(15 23 42/0.18)}
+    :root{--primary:#4f46e5;--primary-dark:#4338ca;--primary-light:#eef2ff;--primary-ring:rgba(79,70,229,.18);--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--bg:#f8fafc;--surface:#fff;--text:#0f172a;--text-secondary:#475569;--text-muted:#64748b;--border:#e2e8f0;--radius:0.75rem;--radius-lg:1.25rem;--shadow:0 1px 3px rgb(15 23 42/0.08);--shadow-lg:0 20px 40px -12px rgb(15 23 42/0.18)}
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Inter',system-ui,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
     #session-loading{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.35s ease,visibility 0.35s ease}
@@ -124,6 +124,17 @@
     .app-topbar-dropdown-item:hover{background:var(--bg)}
     .app-topbar-dropdown-item.active{background:var(--primary-light);color:var(--primary)}
     .app-topbar-dropdown-item.danger{color:var(--danger)}
+    .notification-wrap{position:relative;margin-left:auto;margin-right:.55rem}
+    .notification-button{position:relative;width:42px;height:42px;border:1px solid var(--border);border-radius:50%;background:var(--surface);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .notification-button:hover{background:var(--bg);color:var(--primary)}
+    .notification-count{position:absolute;right:-4px;top:-5px;min-width:19px;height:19px;padding:0 5px;border:2px solid var(--surface);border-radius:999px;background:var(--danger);color:#fff;font-size:.62rem;font-weight:800;display:none;align-items:center;justify-content:center}
+    .notification-panel{position:absolute;right:0;top:calc(100% + .55rem);width:min(380px,calc(100vw - 2rem));max-height:480px;overflow:auto;padding:.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);display:none;z-index:220}
+    .notification-panel.active{display:block}
+    .notification-panel-title{padding:.65rem .75rem;font-size:.82rem;font-weight:800}
+    .notification-item{width:100%;display:block;padding:.75rem;border:0;border-radius:var(--radius);background:transparent;color:var(--text);text-align:left;cursor:pointer}
+    .notification-item:hover{background:var(--bg)}
+    .notification-item strong{display:block;font-size:.82rem}
+    .notification-item span{display:block;margin-top:.2rem;font-size:.74rem;line-height:1.45;color:var(--text-muted)}
     .app-content{flex:1;padding:2rem clamp(1.25rem,3vw,2.5rem);max-width:1100px;width:100%;margin:0 auto}
     .app-bottomnav{display:none}
     .mobile-more-menu{display:none}
@@ -485,6 +496,35 @@
     .payroll-tab-panel[hidden],.payroll-tab-panel.hidden{display:none!important}
     .payroll-history-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}.payroll-download-btn{display:inline-flex;align-items:center;gap:.4rem}
     .slip-period{font-weight:700;color:var(--text)}.slip-issued{font-size:.74rem;color:var(--text-muted);margin-top:.2rem}
+    .absen-filter-card{padding:1rem 1.1rem;margin-bottom:1rem}
+    .absen-filter-grid{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr)) auto;gap:.65rem;align-items:end}
+    .absen-filter-grid .form-group{margin:0}
+    .absen-filter-actions{display:flex;gap:.45rem}
+    .active-filter-summary{display:none;margin-top:.7rem;font-size:.78rem;color:var(--text-secondary)}
+    .active-filter-summary.show{display:block}
+    .operational-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.85rem;margin-bottom:1.25rem}
+    .operational-card{padding:1rem;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow);cursor:pointer}
+    .operational-card:hover{border-color:#c7d2fe}
+    .operational-card-label{font-size:.72rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.035em}
+    .operational-card-value{font-size:1.4rem;font-weight:850;margin-top:.25rem}
+    .operational-card-note{font-size:.72rem;color:var(--text-secondary);margin-top:.2rem}
+    .exception-list{display:flex;flex-direction:column;gap:.55rem}
+    .exception-item{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.7rem .75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg)}
+    .exception-item strong{display:block;font-size:.82rem}
+    .exception-item span{display:block;font-size:.72rem;color:var(--text-muted);margin-top:.15rem}
+    .presence-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#94a3b8;box-shadow:0 0 0 3px #f1f5f9}
+    .presence-dot.online{background:#10b981;box-shadow:0 0 0 3px #d1fae5}
+    .user-card-status{display:flex;align-items:center;justify-content:center;gap:.4rem;margin-top:.55rem;font-size:.7rem;color:var(--text-muted)}
+    .profile-completeness{margin-top:.45rem;width:100%;height:5px;border-radius:99px;background:#e2e8f0;overflow:hidden}
+    .profile-completeness span{display:block;height:100%;background:var(--primary)}
+    .payroll-wizard{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem;margin-bottom:1rem}
+    .payroll-wizard-step{display:flex;align-items:center;gap:.65rem;padding:.75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text-muted)}
+    .payroll-wizard-step-number{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--bg);font-size:.75rem;font-weight:800;flex:none}
+    .payroll-wizard-step strong{display:block;font-size:.78rem;color:inherit}
+    .payroll-wizard-step span:last-child{display:block;font-size:.68rem;margin-top:.1rem}
+    .payroll-wizard-step.active{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
+    .payroll-wizard-step.done{border-color:#86efac;background:#f0fdf4;color:#166534}
+    .ticket-status-select,.ticket-priority-select{min-width:145px!important;flex:0 1 160px!important}
     .mobile-only{display:none}
     @media(max-width:900px){.signature-layout,.signature-approval-grid{grid-template-columns:1fr}.payroll-modal-summary{grid-template-columns:1fr 1fr}}
     @media(max-width:760px){.feature-grid{grid-template-columns:1fr}.feature-card{padding:1rem}.payroll-period-card{padding:.85rem}.feature-toolbar{align-items:stretch}.feature-toolbar .form-input{width:100%}.complaint-head{flex-direction:column}.payroll-modal-summary{grid-template-columns:1fr}.payroll-selection-bar{align-items:stretch}.payroll-selection-bar .btn{width:100%}.payroll-modal-card{max-height:96vh}.modal-footer{flex-wrap:wrap}.modal-footer .btn{flex:1}.signature-canvas-wrap canvas{height:150px}}
@@ -560,6 +600,60 @@
       .payroll-summary-item span{font-size:.48rem}
       .payroll-summary-item strong{font-size:.56rem;line-height:1.2;overflow-wrap:anywhere}
       .payroll-history-head{align-items:center}
+    }
+    @media(max-width:760px){
+      .absen-filter-card{padding:.85rem}
+      .absen-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem}
+      .absen-filter-grid .admin-search{grid-column:1/-1}
+      .absen-filter-actions{grid-column:1/-1}
+      .absen-filter-actions .btn{flex:1;min-height:42px}
+      .absen-filter-grid .form-label{font-size:.7rem}
+      .absen-filter-grid .form-input{font-size:.8rem;min-height:42px}
+
+      #view-admin-payroll .stats-grid{gap:.5rem}
+      #view-admin-payroll .stat-card{padding:.65rem .55rem}
+      #view-admin-payroll .stat-card-label{font-size:.68rem}
+      #view-admin-payroll .stat-card-value{font-size:.95rem}
+      .payroll-command-title strong{font-size:.7rem}
+      .payroll-command .form-label{font-size:.65rem}
+      .payroll-command .form-input,.payroll-command .btn{font-size:.7rem;min-height:34px;height:34px}
+      .payroll-tab{font-size:.72rem}
+      .payroll-selection-count{font-size:.72rem}
+      .payroll-selection-count strong{font-size:.85rem}
+      .payroll-selection-bar .btn{font-size:.7rem;min-height:38px}
+
+      .mobile-card-table{overflow:visible}
+      .mobile-card-table .data-table,
+      .mobile-card-table .data-table tbody{display:block;width:100%}
+      .mobile-card-table .data-table thead{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+      .mobile-card-table .data-table tr{display:block;position:relative;margin:.75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);overflow:hidden}
+      .mobile-card-table .data-table td{display:flex!important;align-items:flex-start;justify-content:space-between;gap:1rem;width:100%!important;padding:.65rem .8rem!important;border:0!important;border-bottom:1px solid var(--border)!important;background:transparent!important;text-align:right!important;font-size:.8125rem!important;line-height:1.4!important;white-space:normal!important;overflow-wrap:anywhere}
+      .mobile-card-table .data-table td:last-child{border-bottom:0!important}
+      .mobile-card-table .data-table td::before{content:attr(data-label);flex:0 0 38%;color:var(--text-muted);font-size:.7rem;font-weight:750;text-align:left;text-transform:uppercase;letter-spacing:.025em}
+      .mobile-card-table .data-table td[data-primary="true"]{display:block!important;text-align:left!important;padding:.8rem!important;background:var(--bg)!important}
+      .mobile-card-table .data-table td[data-primary="true"]::before{display:none}
+      .mobile-card-table .data-table td[data-select="true"]{position:absolute;width:auto!important;padding:.85rem!important;border:0!important;background:transparent!important;z-index:1}
+      .mobile-card-table .data-table td[data-select="true"]::before{display:none}
+      .mobile-card-table .data-table td[data-select="true"]+td[data-primary="true"]{padding-left:3rem!important}
+      .mobile-card-table .data-table td[colspan]{display:block!important;text-align:center!important;padding:1rem!important}
+      .mobile-card-table .data-table td[colspan]::before{display:none}
+      .mobile-card-table .payroll-employee-cell{display:block;min-width:0}
+      .mobile-card-table .payroll-avatar{display:none}
+      .mobile-card-table .payroll-employee-meta{display:block;font-size:.7rem}
+      .mobile-card-table .badge{display:inline-flex;width:auto;padding:.25rem .5rem;font-size:.68rem}
+      .mobile-card-table .btn-sm{display:inline-flex;width:auto;min-height:38px;padding:.55rem .75rem;font-size:.75rem}
+      .mobile-card-table .payroll-money-input,
+      .mobile-card-table .payroll-note-input{width:min(170px,58vw);min-width:0;height:38px;padding:.5rem .6rem;font-size:.8rem;text-align:right}
+      .mobile-card-table .payroll-total{font-size:.85rem}
+      .mobile-card-table .punch-list{justify-content:flex-end;flex-wrap:wrap}
+      .operational-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem}
+      .operational-card{padding:.75rem}
+      .operational-card-value{font-size:1.1rem}
+      .payroll-wizard{gap:.35rem}
+      .payroll-wizard-step{display:block;padding:.55rem;text-align:center}
+      .payroll-wizard-step-number{margin:0 auto .35rem}
+      .payroll-wizard-step span:last-child{display:none}
+      .notification-wrap{margin-right:.35rem}
     }
 
   </style>
@@ -788,6 +882,16 @@
         Sistem Absensi
       </div>
       <div style="flex:1"></div>
+      <div class="notification-wrap" id="notification-wrap">
+        <button class="notification-button" id="btn-notifications" type="button" aria-label="Notifikasi" aria-expanded="false" aria-controls="notification-panel">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+          <span class="notification-count" id="notification-count">0</span>
+        </button>
+        <div class="notification-panel" id="notification-panel">
+          <div class="notification-panel-title">Notifikasi Saya</div>
+          <div id="notification-list"><div class="loading-state">Memuat notifikasi...</div></div>
+        </div>
+      </div>
       <div class="app-topbar-profile-wrap" style="position:relative">
         <div class="app-topbar-profile" id="btn-topbar-profile" role="button" tabindex="0" aria-expanded="false" aria-controls="topbar-dropdown">
           <div class="app-topbar-avatar" id="topbar-avatar">-</div>
@@ -839,6 +943,14 @@
               Absen Sekarang
             </button>
           </div>
+        </div>
+
+        <div class="dash-card" id="dashboard-notification-card" style="margin-bottom:1.5rem">
+          <div class="dash-card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/></svg>
+            Perlu Perhatian
+          </div>
+          <div id="dashboard-notification-list"><div class="belum-absen-empty">Memuat notifikasi...</div></div>
         </div>
 
         <div class="dash-card" style="margin-bottom:1.5rem">
@@ -987,12 +1099,9 @@
             <div><div class="info-item-label">Status Akun</div><div class="info-item-value" id="p-status-akun">-</div></div>
             <div>
               <div class="info-item-label">Password</div>
-              <div class="profile-security-value">
-                <div>
-                  <div class="info-item-value profile-password-mask">xxxxxxxx</div>
-                  <div class="profile-security-note">Password lama tidak pernah disimpan atau ditampilkan dalam bentuk terbaca.</div>
-                </div>
-                <button class="btn btn-secondary btn-sm" id="btn-profile-password-inline" type="button">Verifikasi &amp; Ganti</button>
+              <div>
+                <div class="info-item-value profile-password-mask">xxxxxxxx</div>
+                <div class="profile-security-note">Gunakan tombol Ganti Password di bagian atas profil. Password lama tidak pernah ditampilkan.</div>
               </div>
             </div>
             <div><div class="info-item-label">Data Wajah</div><div class="info-item-value" id="p-status-wajah">-</div></div>
@@ -1015,14 +1124,14 @@
           <div class="stat-card"><div class="stat-card-icon blue">↦</div><div><div class="stat-card-value" id="my-absensi-arrivals">0</div><div class="stat-card-label">Punch Masuk</div></div></div>
           <div class="stat-card"><div class="stat-card-icon amber">↤</div><div><div class="stat-card-value" id="my-absensi-departures">0</div><div class="stat-card-label">Punch Pulang</div></div></div>
         </div>
-        <div class="admin-card"><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Tanggal</th><th>Seluruh Punch</th><th>Status</th><th>Sumber</th></tr></thead><tbody id="my-absensi-body"><tr><td colspan="4"><div class="loading-state"><span class="spinner"></span>Memuat absensi...</div></td></tr></tbody></table></div></div>
+        <div class="admin-card"><div class="data-table-wrap mobile-card-table"><table class="data-table"><thead><tr><th>Tanggal</th><th>Seluruh Punch</th><th>Status</th><th>Sumber</th></tr></thead><tbody id="my-absensi-body"><tr><td colspan="4"><div class="loading-state"><span class="spinner"></span>Memuat absensi...</div></td></tr></tbody></table></div></div>
       </div>
 
       <!-- ===== VIEW: PAYROLL SAYA ===== -->
       <div id="view-my-payroll" class="app-view hidden">
         <div class="page-header"><div class="page-title">Payroll Saya</div><div class="page-subtitle">Slip gaji yang telah diterbitkan untuk Anda</div></div>
         <div class="feature-card" id="my-payroll-profile"></div>
-        <div class="admin-card"><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Periode</th><th>Hari Kerja</th><th>Gaji Harian</th><th>Bonus</th><th>Potongan</th><th>Total Diterima</th><th>Slip PDF</th></tr></thead><tbody id="my-payroll-body"><tr><td colspan="7"><div class="loading-state"><span class="spinner"></span>Memuat payroll...</div></td></tr></tbody></table></div></div>
+        <div class="admin-card"><div class="data-table-wrap mobile-card-table"><table class="data-table"><thead><tr><th>Periode</th><th>Hari Kerja</th><th>Gaji Harian</th><th>Bonus</th><th>Potongan</th><th>Total Diterima</th><th>Slip PDF</th></tr></thead><tbody id="my-payroll-body"><tr><td colspan="7"><div class="loading-state"><span class="spinner"></span>Memuat payroll...</div></td></tr></tbody></table></div></div>
       </div>
 
       <!-- ===== VIEW: AKTIVITAS SAYA ===== -->
@@ -1111,6 +1220,19 @@
           </div>
         </div>
 
+        <div class="operational-grid" id="admin-operational-grid">
+          <button class="operational-card" type="button" data-exception-view="admin-users"><div class="operational-card-label">Sedang Online</div><div class="operational-card-value" id="ops-online-count">0</div><div class="operational-card-note">Aktif dalam 2 menit terakhir</div></button>
+          <button class="operational-card" type="button" data-exception-view="admin-absen"><div class="operational-card-label">Belum Datang</div><div class="operational-card-value" id="ops-not-arrived-count">0</div><div class="operational-card-note">Perlu verifikasi hari ini</div></button>
+          <button class="operational-card" type="button" data-exception-view="admin-absen"><div class="operational-card-label">Belum Pulang</div><div class="operational-card-value" id="ops-not-departed-count">0</div><div class="operational-card-note">Sudah datang, belum ada pulang</div></button>
+          <button class="operational-card" type="button" data-exception-view="admin-users"><div class="operational-card-label">Profil Belum Lengkap</div><div class="operational-card-value" id="ops-profile-count">0</div><div class="operational-card-note">Data payroll/wajah perlu dilengkapi</div></button>
+          <button class="operational-card" type="button" data-exception-view="admin-pengaduan"><div class="operational-card-label">Tiket Terbuka</div><div class="operational-card-value" id="ops-ticket-count">0</div><div class="operational-card-note">Belum berstatus selesai</div></button>
+          <button class="operational-card" type="button" data-exception-view="admin-payroll"><div class="operational-card-label">Menunggu TTD User</div><div class="operational-card-value" id="ops-slip-count">0</div><div class="operational-card-note">Slip belum final</div></button>
+        </div>
+        <div class="dash-section" style="margin-bottom:1.25rem">
+          <div class="dash-card"><div class="dash-card-title">Prioritas Kehadiran Hari Ini</div><div class="exception-list" id="ops-attendance-list"><div class="belum-absen-empty">Memuat prioritas...</div></div></div>
+          <div class="dash-card"><div class="dash-card-title">Kualitas Data Pengguna</div><div class="exception-list" id="ops-profile-list"><div class="belum-absen-empty">Memuat kualitas data...</div></div></div>
+        </div>
+
         <div class="dash-section">
           <div class="dash-card">
             <div class="dash-card-title">
@@ -1146,18 +1268,29 @@
             <span class="realtime-dot"></span> Realtime aktif
           </div>
         </div>
+        <div class="feature-card absen-filter-card">
+          <div class="absen-filter-grid">
+            <div class="admin-search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="search" id="absen-search" placeholder="Cari nama, SPPG, jabatan...">
+            </div>
+            <div class="form-group"><label class="form-label" for="absen-filter-start">Mulai</label><input id="absen-filter-start" type="date" class="form-input"></div>
+            <div class="form-group"><label class="form-label" for="absen-filter-end">Akhir</label><input id="absen-filter-end" type="date" class="form-input"></div>
+            <div class="form-group"><label class="form-label" for="absen-filter-sppg">SPPG</label><select id="absen-filter-sppg" class="form-input"><option value="">Semua SPPG</option></select></div>
+            <div class="form-group"><label class="form-label" for="absen-filter-status">Status</label><select id="absen-filter-status" class="form-input"><option value="">Semua status</option><option value="LENGKAP">Lengkap</option><option value="PUNCH_TUNGGAL">Punch tunggal</option><option value="BELUM_LENGKAP">Belum lengkap</option></select></div>
+            <div class="form-group"><label class="form-label" for="absen-filter-source">Sumber</label><select id="absen-filter-source" class="form-input"><option value="">Semua sumber</option><option value="APLIKASI">Aplikasi</option><option value="IMPORT_MESIN_ABSEN">Mesin absen</option><option value="NOMINATIF_2026">Nominatif 2026</option><option value="REKAP_GAJI_FIX_2025">Rekap gaji 2025</option></select></div>
+            <div class="absen-filter-actions"><button class="btn btn-secondary btn-sm" id="btn-reset-absen-filter" type="button">Reset</button></div>
+          </div>
+          <div class="active-filter-summary" id="absen-active-filter-summary"></div>
+        </div>
         <div class="admin-card">
           <div class="admin-card-header">
             <div class="admin-card-title">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               Semua Absensi
             </div>
-            <div class="admin-search">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="text" id="absen-search" placeholder="Cari nama / SPPG / status...">
-            </div>
           </div>
-          <div class="data-table-wrap">
+          <div class="data-table-wrap mobile-card-table">
             <table class="data-table">
               <thead>
                 <tr>
@@ -1201,6 +1334,11 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input type="text" id="users-search" placeholder="Cari nama / SPPG / jabatan...">
             </div>
+            <select class="form-input" id="users-operational-filter" aria-label="Filter status operasional">
+              <option value="">Semua kondisi</option>
+              <option value="ONLINE">Sedang online</option>
+              <option value="INCOMPLETE">Profil belum lengkap</option>
+            </select>
           </div>
           <div id="users-grid-container" class="users-grid">
             <div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>
@@ -1216,6 +1354,11 @@
           <button class="payroll-tab" id="payroll-tab-history" type="button" role="tab" aria-selected="false" aria-controls="payroll-panel-history" tabindex="-1" data-payroll-tab="history">Riwayat Slip Diterbitkan</button>
         </div>
         <section id="payroll-panel-publish" class="payroll-tab-panel" role="tabpanel" aria-labelledby="payroll-tab-publish">
+        <div class="payroll-wizard" aria-label="Tahapan penerbitan payroll">
+          <div class="payroll-wizard-step active" id="payroll-wizard-step-1"><span class="payroll-wizard-step-number">1</span><div><strong>Tentukan periode</strong><span>Pilih tanggal mulai dan akhir</span></div></div>
+          <div class="payroll-wizard-step" id="payroll-wizard-step-2"><span class="payroll-wizard-step-number">2</span><div><strong>Pilih karyawan</strong><span>Hitung hari kerja dan tinjau subtotal</span></div></div>
+          <div class="payroll-wizard-step" id="payroll-wizard-step-3"><span class="payroll-wizard-step-number">3</span><div><strong>Finalisasi slip</strong><span>Bonus, potongan, dan tanda tangan</span></div></div>
+        </div>
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-card-icon purple">👥</div><div><div class="stat-card-value" id="payroll-employee-count">0</div><div class="stat-card-label">Karyawan Aktif</div></div></div>
           <div class="stat-card"><div class="stat-card-icon green">✓</div><div><div class="stat-card-value" id="payroll-ready-count">0</div><div class="stat-card-label">Data Gaji Siap</div></div></div>
@@ -1240,13 +1383,13 @@
               <button class="btn btn-primary btn-sm" id="btn-open-payroll-publish" type="button" disabled>Atur Bonus & Terbitkan</button>
             </div>
           </div>
-          <div class="data-table-wrap payroll-responsive-table"><table class="data-table payroll-employee-table"><thead><tr><th><input class="payroll-checkbox" id="payroll-select-all" type="checkbox" aria-label="Pilih semua karyawan siap"></th><th><span class="desktop-only">Karyawan</span><span class="mobile-only">User</span></th><th>Jabatan</th><th>SPPG</th><th><span class="desktop-only">Gaji Harian</span><span class="mobile-only">Gaji</span></th><th><span class="desktop-only">Hari Kerja</span><span class="mobile-only">Hari</span></th><th><span class="desktop-only">Subtotal</span><span class="mobile-only">Total</span></th><th>Status</th></tr></thead><tbody id="admin-payroll-body"><tr><td colspan="8"><div class="loading-state"><span class="spinner"></span>Memuat data payroll...</div></td></tr></tbody></table></div>
+          <div class="data-table-wrap payroll-responsive-table mobile-card-table"><table class="data-table payroll-employee-table"><thead><tr><th><input class="payroll-checkbox" id="payroll-select-all" type="checkbox" aria-label="Pilih semua karyawan siap"></th><th><span class="desktop-only">Karyawan</span><span class="mobile-only">User</span></th><th>Jabatan</th><th>SPPG</th><th><span class="desktop-only">Gaji Harian</span><span class="mobile-only">Gaji</span></th><th><span class="desktop-only">Hari Kerja</span><span class="mobile-only">Hari</span></th><th><span class="desktop-only">Subtotal</span><span class="mobile-only">Total</span></th><th>Status</th></tr></thead><tbody id="admin-payroll-body"><tr><td colspan="8"><div class="loading-state"><span class="spinner"></span>Memuat data payroll...</div></td></tr></tbody></table></div>
         </div>
         </section>
         <section id="payroll-panel-history" class="payroll-tab-panel hidden" role="tabpanel" aria-labelledby="payroll-tab-history" hidden>
         <div class="admin-card">
           <div class="admin-card-header payroll-history-head"><div><div class="admin-card-title">Riwayat Slip Diterbitkan</div><div class="helper-text">PDF tersimpan privat dan hanya dapat diunduh melalui tautan sementara</div></div><button class="btn btn-secondary btn-sm" id="btn-refresh-payroll-history" type="button">Muat Ulang</button></div>
-          <div class="data-table-wrap payroll-responsive-table"><table class="data-table payroll-history-table"><thead><tr><th><span class="desktop-only">Karyawan</span><span class="mobile-only">User</span></th><th>Periode</th><th>SPPG</th><th>Total</th><th>Status</th><th>PDF</th></tr></thead><tbody id="admin-payroll-history-body"><tr><td colspan="6"><div class="loading-state"><span class="spinner"></span>Memuat riwayat slip...</div></td></tr></tbody></table></div>
+          <div class="data-table-wrap payroll-responsive-table mobile-card-table"><table class="data-table payroll-history-table"><thead><tr><th><span class="desktop-only">Karyawan</span><span class="mobile-only">User</span></th><th>Periode</th><th>SPPG</th><th>Total</th><th>Status</th><th>PDF</th></tr></thead><tbody id="admin-payroll-history-body"><tr><td colspan="6"><div class="loading-state"><span class="spinner"></span>Memuat riwayat slip...</div></td></tr></tbody></table></div>
         </div>
         </section>
       </div>
@@ -1254,7 +1397,7 @@
       <!-- ===== VIEW: INBOX PENGADUAN ===== -->
       <div id="view-admin-pengaduan" class="app-view hidden">
         <div class="feature-toolbar"><div><div class="page-title">Inbox Pengaduan</div><div class="page-subtitle">Baca, tindak lanjuti, dan balas laporan pengguna</div></div><button class="btn btn-secondary btn-sm" id="btn-refresh-admin-complaints" type="button">Muat Ulang</button></div>
-        <div class="feature-card"><div class="feature-toolbar" style="margin:0"><select id="admin-complaint-status" class="form-input"><option value="">Semua Status</option><option>Belum Dibaca</option><option>Sudah Dibaca</option></select><select id="admin-complaint-category" class="form-input"><option value="">Semua Kategori</option><option>Absensi</option><option>Payroll / Gaji</option><option>Akun dan Profil</option><option>Fasilitas Kerja</option><option>Etika / Perilaku</option><option>Keamanan</option><option>Lainnya</option></select><input id="admin-complaint-search" type="search" class="form-input" placeholder="Cari isi atau pengirim..."></div></div>
+        <div class="feature-card"><div class="feature-toolbar" style="margin:0"><select id="admin-complaint-status" class="form-input"><option value="">Semua Status Tiket</option><option value="BARU">Baru</option><option value="DIPROSES">Diproses</option><option value="MENUNGGU_USER">Menunggu User</option><option value="SELESAI">Selesai</option></select><select id="admin-complaint-category" class="form-input"><option value="">Semua Kategori</option><option>Absensi</option><option>Payroll / Gaji</option><option>Akun dan Profil</option><option>Fasilitas Kerja</option><option>Etika / Perilaku</option><option>Keamanan</option><option>Lainnya</option></select><input id="admin-complaint-search" type="search" class="form-input" placeholder="Cari isi, tiket, atau pengirim..."></div></div>
         <div class="complaint-list" id="admin-complaint-list"><div class="loading-state"><span class="spinner"></span>Memuat inbox...</div></div>
       </div>
 
@@ -1442,7 +1585,7 @@
         <div class="payroll-summary-item"><span>Jumlah Slip</span><strong id="payroll-modal-count">0 karyawan</strong></div>
         <div class="payroll-summary-item"><span>Penerbit</span><strong id="payroll-modal-signer">-</strong></div>
       </div>
-      <div class="data-table-wrap payroll-responsive-table">
+      <div class="data-table-wrap payroll-responsive-table mobile-card-table">
         <table class="data-table payroll-adjustment-table">
           <thead><tr><th><span class="desktop-only">Karyawan</span><span class="mobile-only">User</span></th><th><span class="desktop-only">Hari / Subtotal</span><span class="mobile-only">Hari / Total</span></th><th><span class="desktop-only">Bonus / Tambahan</span><span class="mobile-only">Bonus</span></th><th><span class="desktop-only">Potongan</span><span class="mobile-only">Pot.</span></th><th><span class="desktop-only">Keterangan Potongan</span><span class="mobile-only">Ket.</span></th><th><span class="desktop-only">Total Bersih</span><span class="mobile-only">Bersih</span></th></tr></thead>
           <tbody id="payroll-adjustment-body"></tbody>
@@ -1729,7 +1872,7 @@ let SUPABASE_URL='',SUPABASE_KEY='';
 const CONFIG_ENDPOINT=`${APP_CONFIG.projectUrl.replace(/\/$/,'')}/functions/v1/${encodeURIComponent(APP_CONFIG.functionName)}`;
 const LOGO_BGN_STORAGE_URL=`${APP_CONFIG.projectUrl.replace(/\/$/,'')}/storage/v1/object/public/Logo%20BGN/LOGO_BGN.webp`;
 let BgnLogoPngPromise=null;
-const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppState={token:null,user:null,currentPage:'login',currentView:'dashboard',pendingRegisterEmail:'',pendingResetEmail:'',pendingResetToken:'',profilePasswordEmail:'',profilePasswordResetToken:'',resendTimerRegister:null,resendTimerReset:null,resendTimerProfilePassword:null};
+const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppState={token:null,user:null,currentPage:'login',currentView:'dashboard',pendingRegisterEmail:'',pendingResetEmail:'',pendingResetToken:'',profilePasswordEmail:'',profilePasswordResetToken:'',resendTimerRegister:null,resendTimerReset:null,resendTimerProfilePassword:null,presenceTimer:null,notifications:[]};
 const escapeHtml=(value)=>String(value??'').replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const normalizeRole=(value)=>String(value||'').trim().toUpperCase().replace(/_/g,' ');
 const FACEAPI_CDN_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
@@ -1790,9 +1933,9 @@ function showApp(){
     showUserNav();
     switchView('dashboard');
   }
-  loadDashboardData();
+  startPresenceHeartbeat();
 }
-function showAuth(){$('#app-layout').classList.remove('active'),$('#auth-layout').classList.remove('hidden');}
+function showAuth(){stopPresenceHeartbeat();$('#app-layout').classList.remove('active'),$('#auth-layout').classList.remove('hidden');}
 function closeNavigationMenus(){
   $('#topbar-dropdown')?.classList.remove('active');
   $('#mobile-more-menu')?.classList.remove('active');
@@ -1820,6 +1963,7 @@ function switchView(v){
   if(v==='my-payroll')loadMyPayroll();
   if(v==='my-activity')loadMyActivity();
   if(v==='pengaduan')loadMyComplaints();
+  if(v==='dashboard'||v==='admin-dashboard')loadDashboardData();
   if(v==='absen-scan')openAbsenScan();
 }
 function renderProfilFromUser(){
@@ -1938,17 +2082,68 @@ function renderRiwayatMini(riwayat){
   }).join('');
 }
 
+function startPresenceHeartbeat(){
+  stopPresenceHeartbeat();
+  const send=()=>{if(!AppState.token)return;apiCall('presenceHeartbeat',{token:AppState.token,clientState:document.hidden?'HIDDEN':'ACTIVE'}).catch(error=>console.error('Heartbeat gagal',error));};
+  send();
+  AppState.presenceTimer=setInterval(send,45000);
+}
+function stopPresenceHeartbeat(){if(AppState.presenceTimer){clearInterval(AppState.presenceTimer);AppState.presenceTimer=null;}}
+
+function notificationMarkup(items,compact=false){
+  if(!items.length)return `<div class="belum-absen-empty">${compact?'Tidak ada tindakan mendesak.':'Belum ada notifikasi.'}</div>`;
+  return items.slice(0,compact?4:20).map(item=>`<button class="notification-item" type="button" data-notification-view="${escapeHtml(item.actionView||'dashboard')}"><strong>${escapeHtml(item.title||'Notifikasi')}</strong><span>${escapeHtml(item.message||'')}</span></button>`).join('');
+}
+function bindNotificationActions(container){
+  container?.querySelectorAll('[data-notification-view]').forEach(button=>button.addEventListener('click',()=>{
+    $('#notification-panel')?.classList.remove('active');
+    $('#btn-notifications')?.setAttribute('aria-expanded','false');
+    switchView(button.dataset.notificationView||'dashboard');
+  }));
+}
+async function loadUserNotifications(){
+  if(!AppState.token)return;
+  try{
+    const result=await apiCall('getUserNotificationsV2',{token:AppState.token});
+    AppState.notifications=result?.items||[];
+  }catch(error){
+    console.error('Notifikasi pengguna gagal dimuat',error);
+    AppState.notifications=[];
+  }
+  const count=AppState.notifications.length,badge=$('#notification-count');
+  if(badge){badge.textContent=count>99?'99+':String(count);badge.style.display=count?'inline-flex':'none';}
+  const panelList=$('#notification-list');if(panelList){panelList.innerHTML=notificationMarkup(AppState.notifications);bindNotificationActions(panelList);}
+  const dashboardList=$('#dashboard-notification-list');if(dashboardList){dashboardList.innerHTML=notificationMarkup(AppState.notifications,true);bindNotificationActions(dashboardList);}
+  $('#dashboard-notification-card')?.classList.toggle('hidden',isAdmin());
+}
+
+function renderOperationalDashboard(result){
+  const totals=result?.totals||{},exceptions=result?.exceptions||{};
+  $('#ops-online-count').textContent=totals.online??0;
+  $('#ops-not-arrived-count').textContent=totals.notArrived??0;
+  $('#ops-not-departed-count').textContent=totals.notDeparted??0;
+  $('#ops-profile-count').textContent=totals.incompleteProfiles??0;
+  $('#ops-ticket-count').textContent=totals.openTickets??0;
+  $('#ops-slip-count').textContent=totals.pendingRecipientSignatures??0;
+  $('#dash-admin-total-karyawan').textContent=totals.employees??0;
+  const attendance=[...(exceptions.belumDatang||[]).map(row=>({...row,_status:'Belum datang'})),...(exceptions.belumPulang||[]).map(row=>({...row,_status:'Belum pulang'}))].slice(0,8);
+  const attendanceList=$('#ops-attendance-list');
+  if(attendanceList)attendanceList.innerHTML=attendance.length?attendance.map(row=>`<div class="exception-item"><div><strong>${escapeHtml(row.nama||'-')}</strong><span>${escapeHtml(row.jabatan||'-')} · ${escapeHtml(row.sppg||'-')}</span></div><span class="badge badge-warning">${escapeHtml(row._status)}</span></div>`).join(''):'<div class="belum-absen-empty">Tidak ada pengecualian kehadiran.</div>';
+  const profiles=exceptions.profilBelumLengkap||[],profileList=$('#ops-profile-list');
+  if(profileList)profileList.innerHTML=profiles.length?profiles.map(row=>`<div class="exception-item"><div><strong>${escapeHtml(row.nama||'-')}</strong><span>${escapeHtml((row.missing||[]).slice(0,2).join(', '))}</span></div><span class="badge badge-warning">${Number(row.score)||0}%</span></div>`).join(''):'<div class="belum-absen-empty">Semua profil operasional sudah lengkap.</div>';
+  renderBelumAbsenList(exceptions.belumDatang||[]);
+}
+
 async function loadDashboardData(){
   try{
-    const r=await apiCall('getDashboardData',{token:AppState.token});
+    const r=await apiCall(isAdmin()?'getOperationalDashboardV2':'getDashboardData',{token:AppState.token});
     if(!r)return;
-    if(r.role==='ADMIN'){
-      $('#dash-admin-total-karyawan').textContent=r.totalKaryawan??0;
-      $('#dash-admin-datang-hari-ini').textContent=r.datangHariIni??0;
-      $('#dash-admin-pulang-hari-ini').textContent=r.pulangHariIni??0;
-      $('#dash-admin-payroll-bulan-ini').textContent=r.payrollBulanIni??0;
-      renderTrendChart(r.trend7Hari||[]);
-      renderBelumAbsenList(r.belumAbsen||[]);
+    if(isAdmin()){
+      renderOperationalDashboard(r);
+      $('#dash-admin-datang-hari-ini').textContent=Math.max(0,(r.totals?.employees||0)-(r.totals?.notArrived||0));
+      $('#dash-admin-pulang-hari-ini').textContent=Math.max(0,(r.totals?.employees||0)-(r.totals?.notArrived||0)-(r.totals?.notDeparted||0));
+      $('#dash-admin-payroll-bulan-ini').textContent=r.totals?.pendingRecipientSignatures??0;
+      $('#dash-trend-chart').innerHTML='<div class="belum-absen-empty" style="width:100%">Dashboard kini memprioritaskan pengecualian operasional hari ini.</div>';
     }else{
       $('#dash-total-hari-kerja').textContent=r.totalHariKerja??0;
       $('#dash-total-gaji').textContent=formatRupiah(r.totalGajiDiterima??0);
@@ -1959,6 +2154,7 @@ async function loadDashboardData(){
       if(r.sudahPulang){pillPulang.classList.add('done');statusPulang.textContent='Sudah Absen';}else{pillPulang.classList.remove('done');statusPulang.textContent='Belum Absen';}
       renderRiwayatMini(r.riwayat||[]);
     }
+    loadUserNotifications();
   }catch(e){
     console.error(e);
   }
@@ -2266,21 +2462,66 @@ function stopAbsenRealtime(){
 async function loadAdminAbsen(){
   const tbody = $('#absen-table-body');
   if(!tbody) return;
+  const startDate=$('#absen-filter-start')?.value||'',endDate=$('#absen-filter-end')?.value||'';
+  if(startDate&&endDate&&endDate<startDate){
+    showAlert('Tanggal akhir filter tidak boleh sebelum tanggal mulai.','warning');
+    return;
+  }
   tbody.innerHTML='<tr><td colspan="7"><div class="loading-state"><span class="spinner"></span>Memuat data absensi...</div></td></tr>';
   try {
-    const r = await apiCall('getAbsensiGroupedData', {token: AppState.token,page:AdminState.absenPage,pageSize:AdminState.absenPageSize,search:$('#absen-search')?.value.trim()||''});
+    const r = await apiCall('getAbsensiGroupedDataV2', {
+      token:AppState.token,
+      page:AdminState.absenPage,
+      pageSize:AdminState.absenPageSize,
+      search:$('#absen-search')?.value.trim()||'',
+      startDate:startDate||undefined,
+      endDate:endDate||undefined,
+      sppg:$('#absen-filter-sppg')?.value||undefined,
+      status:$('#absen-filter-status')?.value||undefined,
+      source:$('#absen-filter-source')?.value||undefined,
+    });
     AdminState.allAbsen = r?.absensi || [];
     AdminState.filteredAbsen = AdminState.allAbsen;
     AdminState.absenTotal = Number(r?.total)||0;
+    updateAttendanceFilterOptions(r?.filterOptions);
+    renderAttendanceFilterSummary();
     renderAbsenTable();
   } catch(e) {
     if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="table-empty"><svg class="table-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="table-empty-title">Gagal memuat data</div><div class="table-empty-sub">${e.message}</div></td></tr>`;
   }
 }
 
+function updateAttendanceFilterOptions(options){
+  const select=$('#absen-filter-sppg');if(!select)return;
+  const current=select.value;
+  const rows=Array.isArray(options?.sppg)?options.sppg:[];
+  select.innerHTML='<option value="">Semua SPPG</option>'+rows.map(value=>`<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
+  if(rows.includes(current))select.value=current;
+}
+
+function renderAttendanceFilterSummary(){
+  const summary=$('#absen-active-filter-summary');if(!summary)return;
+  const labels=[];
+  const search=$('#absen-search')?.value.trim();if(search)labels.push(`Pencarian: “${search}”`);
+  const start=$('#absen-filter-start')?.value,end=$('#absen-filter-end')?.value;
+  if(start||end)labels.push(`Tanggal: ${start?formatTanggal(start):'awal'} – ${end?formatTanggal(end):'sekarang'}`);
+  const sppg=$('#absen-filter-sppg')?.value;if(sppg)labels.push(`SPPG: ${sppg}`);
+  const status=$('#absen-filter-status')?.selectedOptions?.[0]?.text;if($('#absen-filter-status')?.value)labels.push(`Status: ${status}`);
+  const source=$('#absen-filter-source')?.selectedOptions?.[0]?.text;if($('#absen-filter-source')?.value)labels.push(`Sumber: ${source}`);
+  summary.textContent=labels.length?`${AdminState.absenTotal} data ditemukan · ${labels.join(' · ')}`:'';
+  summary.classList.toggle('show',labels.length>0);
+}
+
 function filterAndRenderAbsen(){
   AdminState.absenPage = 1;
   loadAdminAbsen();
+}
+
+function resetAttendanceFilters(){
+  ['absen-search','absen-filter-start','absen-filter-end','absen-filter-sppg','absen-filter-status','absen-filter-source'].forEach(id=>{
+    const input=document.getElementById(id);if(input)input.value='';
+  });
+  filterAndRenderAbsen();
 }
 
 function renderAbsenTable(){
@@ -2312,13 +2553,13 @@ function renderAbsenTable(){
     const statusBadge = lengkap ? 'badge-success' : (punchTunggal || row.jamMasuk ? 'badge-warning' : 'badge-danger');
     const keterangan = `${row.punches.length} punch · ${row.sumber.join(', ')}`;
     return `<tr>
-      <td><div style="font-weight:600">${escapeHtml(nama)}</div></td>
-      <td>${escapeHtml(sppg)}</td>
-      <td>${escapeHtml(tgl)}</td>
-      <td>${escapeHtml(masuk)}</td>
-      <td>${escapeHtml(keluar)}</td>
-      <td><span class="badge ${statusBadge}">${statusText}</span></td>
-      <td style="color:var(--text-secondary)">${escapeHtml(keterangan)}</td>
+      <td data-primary="true"><div style="font-weight:700">${escapeHtml(nama)}</div><div class="payroll-employee-meta">${escapeHtml(sppg)}</div></td>
+      <td data-label="SPPG">${escapeHtml(sppg)}</td>
+      <td data-label="Tanggal">${escapeHtml(tgl)}</td>
+      <td data-label="Masuk">${escapeHtml(masuk)}</td>
+      <td data-label="Keluar">${escapeHtml(keluar)}</td>
+      <td data-label="Status"><span class="badge ${statusBadge}">${statusText}</span></td>
+      <td data-label="Keterangan" style="color:var(--text-secondary)">${escapeHtml(keterangan)}</td>
     </tr>`;
   }).join('');
 
@@ -2336,7 +2577,7 @@ async function loadAdminUsers(){
   if(!container) return;
   container.innerHTML = Array(8).fill(`<div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>`).join('');
   try {
-    const r = await apiCall('getAllUsers', {token: AppState.token});
+    const r = await apiCall('getOperationalUsersV2', {token: AppState.token});
     AdminState.allUsers = Array.isArray(r) ? r : (r?.users || []);
     filterAndRenderUsers();
   } catch(e) {
@@ -2346,8 +2587,11 @@ async function loadAdminUsers(){
 
 function filterAndRenderUsers(){
   const q = ($('#users-search')?.value||'').toLowerCase();
+  const operational=$('#users-operational-filter')?.value||'';
   AdminState.filteredUsers = AdminState.allUsers.filter(u => {
-    if(!q) return true;
+    if(operational==='ONLINE'&&!u._online)return false;
+    if(operational==='INCOMPLETE'&&Number(u._profileScore)>=100)return false;
+    if(!q)return true;
     const nama = (u.Nama_Lengkap||u.nama_lengkap||'').toLowerCase();
     const sppg = (u.SPPG||u.sppg||'').toLowerCase();
     const jabatan = (u.Jabatan_Divisi||u.jabatan_divisi||'').toLowerCase();
@@ -2371,13 +2615,15 @@ function renderUsersGrid(){
     const foto = u.URL_Foto_Profil||u.url_foto_profil||'';
     const inisial = nama.trim().charAt(0).toUpperCase();
     const avatarHtml = foto
-      ? `<img src="${foto}" alt="${nama}" onerror="this.parentElement.innerHTML='${inisial}'">`
-      : inisial;
+      ? `<img src="${escapeHtml(foto)}" alt="${escapeHtml(nama)}" onerror="this.remove()">`
+      : escapeHtml(inisial);
     return `<div class="user-card" data-user-index="${i}" onclick="openUserDetail(${i})">
       <div class="user-avatar-wrap">${avatarHtml}</div>
-      <div class="user-card-name">${nama}</div>
-      <div class="user-card-sppg">${sppg}</div>
-      <div class="user-card-jabatan">${jabatan}</div>
+      <div class="user-card-name">${escapeHtml(nama)}</div>
+      <div class="user-card-sppg">${escapeHtml(sppg)}</div>
+      <div class="user-card-jabatan">${escapeHtml(jabatan)}</div>
+      <div class="user-card-status"><span class="presence-dot ${u._online?'online':''}"></span>${u._online?'Online':u._lastActivity?'Terakhir '+escapeHtml(formatDateTime(u._lastActivity)):'Offline'} · Profil ${Number(u._profileScore)||0}%</div>
+      <div class="profile-completeness" title="Kelengkapan profil ${Number(u._profileScore)||0}%"><span style="width:${Math.max(0,Math.min(100,Number(u._profileScore)||0))}%"></span></div>
     </div>`;
   }).join('');
 }
@@ -2850,7 +3096,7 @@ async function loadMyAbsensi(){
       const sources=[...new Set((row.punches||[]).map(p=>p.sumber||'APLIKASI'))];
       const status=row.lengkap?'Lengkap':row.status==='PUNCH_TUNGGAL_VALID'?'Punch tunggal valid':'Belum lengkap';
       const badge=row.lengkap?'badge-success':'badge-warning';
-      return `<tr><td><strong>${escapeHtml(formatTanggal(row.tanggal))}</strong></td><td><div class="punch-list">${punches||'-'}</div></td><td><span class="badge ${badge}">${status}</span></td><td>${escapeHtml(sources.join(', ')||'-')}</td></tr>`;
+      return `<tr><td data-primary="true"><strong>${escapeHtml(formatTanggal(row.tanggal))}</strong></td><td data-label="Seluruh punch"><div class="punch-list">${punches||'-'}</div></td><td data-label="Status"><span class="badge ${badge}">${status}</span></td><td data-label="Sumber">${escapeHtml(sources.join(', ')||'-')}</td></tr>`;
     }).join('');
   }catch(error){body.innerHTML=`<tr><td colspan="4"><div class="empty-state"><strong>Data gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
 }
@@ -2864,13 +3110,13 @@ async function loadMyPayroll(){
     const rows=result?.payroll||[];
     if(!rows.length){body.innerHTML='<tr><td colspan="7"><div class="empty-state"><strong>Belum ada slip gaji</strong>Slip yang telah diterbitkan akan tampil di sini.</div></td></tr>';return;}
     body.innerHTML=rows.map(row=>`<tr>
-      <td><div class="slip-period">${escapeHtml(formatTanggal(row.periodeMulai))} - ${escapeHtml(formatTanggal(row.periodeAkhir))}</div><div class="slip-issued">Terbit ${escapeHtml(formatDateTime(row.diterbitkanAt))}${row.namaPenerbit?' · '+escapeHtml(row.namaPenerbit):''}</div></td>
-      <td>${Number(row.jumlahHariKerja)||0} hari</td>
-      <td>${escapeHtml(formatRupiah(row.gajiHarian))}</td>
-      <td>${escapeHtml(formatRupiah(row.bonus||0))}</td>
-      <td>${escapeHtml(formatRupiah(row.potongan||0))}${row.keteranganPotongan?`<div class="payroll-employee-meta">${escapeHtml(row.keteranganPotongan)}</div>`:''}</td>
-      <td><strong class="payroll-total">${escapeHtml(formatRupiah(row.totalGaji))}</strong></td>
-      <td>${row.perluTandaTangan
+      <td data-primary="true"><div class="slip-period">${escapeHtml(formatTanggal(row.periodeMulai))} - ${escapeHtml(formatTanggal(row.periodeAkhir))}</div><div class="slip-issued">Terbit ${escapeHtml(formatDateTime(row.diterbitkanAt))}${row.namaPenerbit?' · '+escapeHtml(row.namaPenerbit):''}</div></td>
+      <td data-label="Hari kerja">${Number(row.jumlahHariKerja)||0} hari</td>
+      <td data-label="Gaji harian">${escapeHtml(formatRupiah(row.gajiHarian))}</td>
+      <td data-label="Bonus">${escapeHtml(formatRupiah(row.bonus||0))}</td>
+      <td data-label="Potongan">${escapeHtml(formatRupiah(row.potongan||0))}${row.keteranganPotongan?`<div class="payroll-employee-meta">${escapeHtml(row.keteranganPotongan)}</div>`:''}</td>
+      <td data-label="Total diterima"><strong class="payroll-total">${escapeHtml(formatRupiah(row.totalGaji))}</strong></td>
+      <td data-label="Slip PDF">${row.perluTandaTangan
         ?`<button class="btn btn-primary btn-sm payroll-sign-btn" type="button" data-slip-sign="${escapeHtml(row.idSlip)}" data-slip-period="${escapeHtml(`${formatTanggal(row.periodeMulai)} - ${formatTanggal(row.periodeAkhir)}`)}">Tanda Tangani</button><div class="payroll-status-note">PDF menunggu TTD penerima</div>`
         :row.dapatDiunduh
           ?`<button class="btn btn-primary btn-sm payroll-download-btn" type="button" data-slip-download="${escapeHtml(row.idSlip)}">Unduh PDF</button>`
@@ -2888,7 +3134,11 @@ async function loadMyComplaints(){
     const result=await apiCall('getRiwayatPengaduanSaya',{token:AppState.token});
     const rows=result?.pengaduan||[];
     if(!rows.length){list.innerHTML='<div class="feature-card empty-state"><strong>Belum ada pengaduan</strong>Pengaduan yang Anda kirim dan tanggapannya akan tersimpan di sini.</div>';return;}
-    list.innerHTML=rows.map(row=>`<article class="complaint-card ${row.Status_Baca==='Belum Dibaca'?'unread':''}"><div class="complaint-head"><div><div class="complaint-meta"><span class="badge badge-primary">${escapeHtml(row.Kategori||'Lainnya')}</span><span class="badge badge-neutral">${row.Jenis_Pengirim==='Anonymous'?'Anonim':'Dengan identitas'}</span></div><div class="helper-text">${escapeHtml(formatDateTime(row.Timestamp))} · ${escapeHtml(row.ID_Pengaduan)}</div></div><span class="badge ${row.Status_Baca==='Sudah Dibaca'?'badge-success':'badge-warning'}">${escapeHtml(row.Status_Baca||'Belum Dibaca')}</span></div><div class="complaint-content">${escapeHtml(row.Isi_Pengaduan||'')}</div>${row.Tanggapan_Admin?`<div class="complaint-response"><strong>Tanggapan Admin</strong><br>${escapeHtml(row.Tanggapan_Admin)}<div class="helper-text">${escapeHtml(formatDateTime(row.Waktu_Tanggapan))}</div></div>`:''}</article>`).join('');
+    list.innerHTML=rows.map(row=>{
+      const status=String(row.Status_Tiket||'BARU').toUpperCase();
+      return `<article class="complaint-card ${status==='BARU'?'unread':''}" data-my-complaint-id="${escapeHtml(row.ID_Pengaduan)}"><div class="complaint-head"><div><div class="complaint-meta"><span class="badge badge-primary">${escapeHtml(row.Kategori||'Lainnya')}</span><span class="badge badge-neutral">${row.Jenis_Pengirim==='Anonymous'?'Anonim':'Dengan identitas'}</span><span class="badge ${ticketBadgeClass(status)}">${escapeHtml(ticketStatusLabel(status))}</span></div><div class="helper-text">${escapeHtml(formatDateTime(row.Timestamp))} · Tiket ${escapeHtml(row.ID_Pengaduan)}</div></div></div><div class="complaint-content">${escapeHtml(row.Isi_Pengaduan||'')}</div>${row.Tanggapan_Admin?`<div class="complaint-response"><strong>Tanggapan Admin</strong><br>${escapeHtml(row.Tanggapan_Admin)}<div class="helper-text">${escapeHtml(formatDateTime(row.Waktu_Tanggapan))}</div></div>`:''}${status!=='SELESAI'?'<div class="complaint-actions"><button class="btn btn-secondary btn-sm my-complaint-close-btn" type="button">Tandai Selesai</button></div>':''}</article>`;
+    }).join('');
+    list.querySelectorAll('[data-my-complaint-id]').forEach(card=>card.querySelector('.my-complaint-close-btn')?.addEventListener('click',()=>closeMyComplaintTicket(card.dataset.myComplaintId)));
   }catch(error){list.innerHTML=`<div class="feature-card empty-state"><strong>Riwayat gagal dimuat</strong>${escapeHtml(error.message)}</div>`;}
 }
 
@@ -2919,9 +3169,12 @@ async function loadAdminComplaints(){
 
 function filterAdminComplaints(){
   const status=$('#admin-complaint-status')?.value||'',category=$('#admin-complaint-category')?.value||'',query=($('#admin-complaint-search')?.value||'').toLowerCase();
-  FeatureState.filteredAdminComplaints=FeatureState.adminComplaints.filter(row=>(!status||row.Status_Baca===status)&&(!category||row.Kategori===category)&&(!query||`${row.Isi_Pengaduan||''} ${row._namaPengirim||''} ${row.ID_Pengaduan||''}`.toLowerCase().includes(query)));
+  FeatureState.filteredAdminComplaints=FeatureState.adminComplaints.filter(row=>(!status||String(row.Status_Tiket||'BARU')===status)&&(!category||row.Kategori===category)&&(!query||`${row.Isi_Pengaduan||''} ${row._namaPengirim||''} ${row.ID_Pengaduan||''}`.toLowerCase().includes(query)));
   renderAdminComplaints();
 }
+
+function ticketStatusLabel(status){return({BARU:'Baru',DIPROSES:'Diproses',MENUNGGU_USER:'Menunggu User',SELESAI:'Selesai'})[String(status||'').toUpperCase()]||'Baru';}
+function ticketBadgeClass(status){return status==='SELESAI'?'badge-success':status==='MENUNGGU_USER'?'badge-warning':status==='DIPROSES'?'badge-info':'badge-primary';}
 
 function renderAdminComplaints(){
   const list=$('#admin-complaint-list');if(!list)return;const rows=FeatureState.filteredAdminComplaints;
@@ -2929,14 +3182,15 @@ function renderAdminComplaints(){
   const isSuper=normalizeRole(AppState.user?.role||AppState.user?.Role)==='SUPER ADMIN';
   list.innerHTML=rows.map(row=>{
     const anonymous=row.Jenis_Pengirim==='Anonymous';
+    const ticketStatus=String(row.Status_Tiket||'BARU').toUpperCase(),priority=String(row.Prioritas||'NORMAL').toUpperCase();
     const identity=anonymous&&!isSuper?'Anonim':(row._namaPengirim||row.User_Pengirim||'Tidak diketahui');
     const identityDetail=anonymous&&!isSuper?'Identitas disembunyikan':`${row._jabatanPengirim||'-'} · ${row._sppgPengirim||row.SPPG||'-'}${row._emailPengirim?' · '+row._emailPengirim:''}`;
-    return `<article class="complaint-card ${row.Status_Baca==='Belum Dibaca'?'unread':''}" data-complaint-id="${escapeHtml(row.ID_Pengaduan)}"><div class="complaint-head"><div><div class="complaint-meta"><span class="badge badge-primary">${escapeHtml(row.Kategori||'Lainnya')}</span><span class="badge badge-neutral">${anonymous?'Anonim':'Terdaftar'}</span></div><strong>${escapeHtml(identity)}</strong><div class="helper-text">${escapeHtml(identityDetail)}<br>${escapeHtml(formatDateTime(row.Timestamp))} · ${escapeHtml(row.ID_Pengaduan)}</div></div><span class="badge ${row.Status_Baca==='Sudah Dibaca'?'badge-success':'badge-warning'}">${escapeHtml(row.Status_Baca||'Belum Dibaca')}</span></div><div class="complaint-content">${escapeHtml(row.Isi_Pengaduan||'')}</div>${row.Tanggapan_Admin?`<div class="complaint-response"><strong>Tanggapan terakhir</strong><br>${escapeHtml(row.Tanggapan_Admin)}<div class="helper-text">${escapeHtml(formatDateTime(row.Waktu_Tanggapan))}</div></div>`:''}<div class="complaint-actions">${row.Status_Baca!=='Sudah Dibaca'?'<button type="button" class="btn btn-secondary btn-sm complaint-read-btn">Tandai Sudah Dibaca</button>':''}<input class="form-input complaint-response-input" maxlength="4000" placeholder="Ketik tanggapan untuk pengguna..."><button type="button" class="btn btn-primary btn-sm complaint-reply-btn">Kirim Tanggapan</button></div></article>`;
+    return `<article class="complaint-card ${ticketStatus==='BARU'?'unread':''}" data-complaint-id="${escapeHtml(row.ID_Pengaduan)}"><div class="complaint-head"><div><div class="complaint-meta"><span class="badge badge-primary">${escapeHtml(row.Kategori||'Lainnya')}</span><span class="badge badge-neutral">${anonymous?'Anonim':'Terdaftar'}</span><span class="badge ${ticketBadgeClass(ticketStatus)}">${escapeHtml(ticketStatusLabel(ticketStatus))}</span><span class="badge ${priority==='MENDESAK'||priority==='TINGGI'?'badge-danger':'badge-neutral'}">${escapeHtml(priority)}</span></div><strong>${escapeHtml(identity)}</strong><div class="helper-text">${escapeHtml(identityDetail)}<br>${escapeHtml(formatDateTime(row.Timestamp))} · Tiket ${escapeHtml(row.ID_Pengaduan)}</div></div></div><div class="complaint-content">${escapeHtml(row.Isi_Pengaduan||'')}</div>${row.Tanggapan_Admin?`<div class="complaint-response"><strong>Tanggapan terakhir</strong><br>${escapeHtml(row.Tanggapan_Admin)}<div class="helper-text">${escapeHtml(formatDateTime(row.Waktu_Tanggapan))}</div></div>`:''}<div class="complaint-actions"><select class="form-input ticket-status-select" aria-label="Status tiket"><option value="BARU" ${ticketStatus==='BARU'?'selected':''}>Baru</option><option value="DIPROSES" ${ticketStatus==='DIPROSES'?'selected':''}>Diproses</option><option value="MENUNGGU_USER" ${ticketStatus==='MENUNGGU_USER'?'selected':''}>Menunggu User</option><option value="SELESAI" ${ticketStatus==='SELESAI'?'selected':''}>Selesai</option></select><select class="form-input ticket-priority-select" aria-label="Prioritas tiket"><option value="RENDAH" ${priority==='RENDAH'?'selected':''}>Rendah</option><option value="NORMAL" ${priority==='NORMAL'?'selected':''}>Normal</option><option value="TINGGI" ${priority==='TINGGI'?'selected':''}>Tinggi</option><option value="MENDESAK" ${priority==='MENDESAK'?'selected':''}>Mendesak</option></select><button type="button" class="btn btn-secondary btn-sm complaint-status-btn">Simpan Status</button><input class="form-input complaint-response-input" maxlength="4000" placeholder="Ketik tanggapan untuk pengguna..."><button type="button" class="btn btn-primary btn-sm complaint-reply-btn">Kirim Tanggapan</button></div></article>`;
   }).join('');
   list.querySelectorAll('.complaint-card').forEach(card=>{
     const id=card.dataset.complaintId;
-    card.querySelector('.complaint-read-btn')?.addEventListener('click',()=>markComplaintRead(id));
-    card.querySelector('.complaint-reply-btn')?.addEventListener('click',()=>replyComplaint(id,card.querySelector('.complaint-response-input').value));
+    card.querySelector('.complaint-status-btn')?.addEventListener('click',()=>updateComplaintTicket(id,card.querySelector('.ticket-status-select').value,card.querySelector('.ticket-priority-select').value));
+    card.querySelector('.complaint-reply-btn')?.addEventListener('click',()=>replyComplaint(id,card.querySelector('.complaint-response-input').value,card.querySelector('.ticket-priority-select').value));
   });
 }
 
@@ -2945,10 +3199,19 @@ async function markComplaintRead(id){
   catch(error){showAlert(error.message,'error');}
 }
 
-async function replyComplaint(id,response){
+async function replyComplaint(id,response,prioritas='NORMAL'){
   if(!String(response||'').trim()){showAlert('Tanggapan tidak boleh kosong.','warning');return;}
-  try{await apiCall('simpanTanggapanAdmin',{token:AppState.token,idPengaduan:id,tanggapan:String(response).trim()});showAlert('Tanggapan berhasil dikirim.','success');await loadAdminComplaints();}
+  try{await apiCall('simpanTanggapanAdmin',{token:AppState.token,idPengaduan:id,tanggapan:String(response).trim()});await apiCall('updateComplaintTicketV2',{token:AppState.token,idPengaduan:id,status:'MENUNGGU_USER',prioritas});showAlert('Tanggapan dikirim dan tiket menunggu User.','success');await loadAdminComplaints();}
   catch(error){showAlert(error.message,'error');}
+}
+
+async function updateComplaintTicket(id,status,prioritas){
+  try{await apiCall('updateComplaintTicketV2',{token:AppState.token,idPengaduan:id,status,prioritas});showAlert('Status tiket diperbarui.','success');await loadAdminComplaints();await loadDashboardData();}
+  catch(error){showAlert(error.message||'Status tiket gagal diperbarui.','error');}
+}
+async function closeMyComplaintTicket(id){
+  try{await apiCall('closeMyComplaintTicketV2',{token:AppState.token,idPengaduan:id});showAlert('Tiket ditandai selesai.','success');await loadMyComplaints();await loadUserNotifications();}
+  catch(error){showAlert(error.message||'Tiket gagal diselesaikan.','error');}
 }
 
 function setAdminPayrollTab(tab,loadHistory=true){
@@ -3010,25 +3273,42 @@ function renderAdminPayroll(){
     selectAll.checked=selectableRows.length>0&&selectedVisible===selectableRows.length;
     selectAll.indeterminate=selectedVisible>0&&selectedVisible<selectableRows.length;
   }
+  updatePayrollWizard();
   const body=$('#admin-payroll-body');if(!rows.length){body.innerHTML='<tr><td colspan="8"><div class="empty-state"><strong>Tidak ada karyawan</strong>Tidak ada data sesuai pencarian.</div></td></tr>';return;}
   body.innerHTML=rows.map(row=>{
     const ready=Number(row.gajiHarian)>0,id=String(row.idUser),preview=FeatureState.payrollPreview[id],days=preview?.jumlahHariKerja;
     const initials=(row.namaLengkap||'?').trim().split(/\s+/).slice(0,2).map(part=>part.charAt(0)).join('').toUpperCase();
     const subtotal=days===undefined?null:Number(row.gajiHarian)*(Number(days)||0);
     return `<tr>
-      <td><input class="payroll-checkbox payroll-row-check" type="checkbox" data-payroll-id="${escapeHtml(id)}" ${FeatureState.payrollSelected.has(id)?'checked':''} ${ready?'':'disabled'} aria-label="Pilih ${escapeHtml(row.namaLengkap||'karyawan')}"></td>
-      <td><div class="payroll-employee-cell"><div class="payroll-avatar">${escapeHtml(initials||'?')}</div><div><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(id)}</div></div></div></td>
-      <td>${escapeHtml(row.jabatanDivisi||'-')}</td><td>${escapeHtml(row.sppg||'-')}</td>
-      <td>${escapeHtml(formatRupiah(row.gajiHarian))}</td>
-      <td>${days===undefined?'<span class="helper-text">Belum dihitung</span>':`<strong>${Number(days)||0} hari</strong>`}</td>
-      <td>${subtotal===null?'-':escapeHtml(formatRupiah(subtotal))}</td>
-      <td><span class="badge ${ready?'badge-success':'badge-warning'}">${ready?'Siap':'Lengkapi gaji'}</span></td>
+      <td data-select="true"><input class="payroll-checkbox payroll-row-check" type="checkbox" data-payroll-id="${escapeHtml(id)}" ${FeatureState.payrollSelected.has(id)?'checked':''} ${ready?'':'disabled'} aria-label="Pilih ${escapeHtml(row.namaLengkap||'karyawan')}"></td>
+      <td data-primary="true"><div class="payroll-employee-cell"><div class="payroll-avatar">${escapeHtml(initials||'?')}</div><div><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(id)}</div></div></div></td>
+      <td data-label="Jabatan">${escapeHtml(row.jabatanDivisi||'-')}</td><td data-label="SPPG">${escapeHtml(row.sppg||'-')}</td>
+      <td data-label="Gaji harian">${escapeHtml(formatRupiah(row.gajiHarian))}</td>
+      <td data-label="Hari kerja">${days===undefined?'<span class="helper-text">Belum dihitung</span>':`<strong>${Number(days)||0} hari</strong>`}</td>
+      <td data-label="Subtotal">${subtotal===null?'-':escapeHtml(formatRupiah(subtotal))}</td>
+      <td data-label="Status"><span class="badge ${ready?'badge-success':'badge-warning'}">${ready?'Siap':'Lengkapi gaji'}</span></td>
     </tr>`;
   }).join('');
   body.querySelectorAll('.payroll-row-check').forEach(input=>input.addEventListener('change',()=>{
     if(input.checked)FeatureState.payrollSelected.add(input.dataset.payrollId);else FeatureState.payrollSelected.delete(input.dataset.payrollId);
     renderAdminPayroll();
   }));
+}
+
+function updatePayrollWizard(modalOpen=false){
+  const hasPeriod=Boolean($('#payroll-period-start')?.value&&$('#payroll-period-end')?.value);
+  const selected=[...FeatureState.payrollSelected];
+  const previewReady=selected.length>0&&selected.every(id=>FeatureState.payrollPreview[id]);
+  const states=[
+    {active:!hasPeriod,done:hasPeriod},
+    {active:hasPeriod&&!previewReady,done:previewReady},
+    {active:modalOpen||previewReady,done:false},
+  ];
+  states.forEach((state,index)=>{
+    const step=$(`#payroll-wizard-step-${index+1}`);if(!step)return;
+    step.classList.toggle('active',state.active);
+    step.classList.toggle('done',state.done);
+  });
 }
 
 function validatePayrollPeriod(){
@@ -3076,12 +3356,12 @@ async function openPayrollPublishModal(){
   body.innerHTML=selected.map(row=>{
     const id=String(row.idUser),days=Number(FeatureState.payrollPreview[id]?.jumlahHariKerja)||0,subtotal=Number(row.gajiHarian)*days;
     return `<tr data-payroll-adjustment="${escapeHtml(id)}" data-subtotal="${subtotal}">
-      <td><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(row.sppg||'-')}</div></td>
-      <td><strong>${days} hari</strong><div class="payroll-employee-meta">${escapeHtml(formatRupiah(subtotal))}</div></td>
-      <td><input class="form-input payroll-money-input payroll-bonus-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Bonus ${escapeHtml(row.namaLengkap||'')}"></td>
-      <td><input class="form-input payroll-money-input payroll-deduction-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Potongan ${escapeHtml(row.namaLengkap||'')}"></td>
-      <td><input class="form-input payroll-note-input payroll-deduction-note" type="text" maxlength="300" placeholder="Opsional"></td>
-      <td><span class="payroll-total">${escapeHtml(formatRupiah(subtotal))}</span></td>
+      <td data-primary="true"><strong>${escapeHtml(row.namaLengkap||'-')}</strong><div class="payroll-employee-meta">${escapeHtml(row.sppg||'-')}</div></td>
+      <td data-label="Hari / subtotal"><strong>${days} hari</strong><div class="payroll-employee-meta">${escapeHtml(formatRupiah(subtotal))}</div></td>
+      <td data-label="Bonus"><input class="form-input payroll-money-input payroll-bonus-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Bonus ${escapeHtml(row.namaLengkap||'')}"></td>
+      <td data-label="Potongan"><input class="form-input payroll-money-input payroll-deduction-input" type="number" min="0" max="1000000000" step="1000" value="0" inputmode="numeric" aria-label="Potongan ${escapeHtml(row.namaLengkap||'')}"></td>
+      <td data-label="Keterangan"><input class="form-input payroll-note-input payroll-deduction-note" type="text" maxlength="300" placeholder="Opsional"></td>
+      <td data-label="Total bersih"><span class="payroll-total">${escapeHtml(formatRupiah(subtotal))}</span></td>
     </tr>`;
   }).join('');
   body.querySelectorAll('.payroll-money-input').forEach(input=>input.addEventListener('input',updatePayrollAdjustmentTotals));
@@ -3090,6 +3370,7 @@ async function openPayrollPublishModal(){
   $('#payroll-accountant-name').value='';
   $('#payroll-head-name').value='';
   $('#modal-payroll-publish').classList.add('active');
+  updatePayrollWizard(true);
   requestAnimationFrame(()=>{
     initializeSignatureCanvas('payroll-accountant-signature-canvas','accountant',true);
     initializeSignatureCanvas('payroll-head-signature-canvas','head',true);
@@ -3105,6 +3386,7 @@ function updatePayrollAdjustmentTotals(){
 
 function closePayrollPublishModal(){
   $('#modal-payroll-publish')?.classList.remove('active');
+  updatePayrollWizard(false);
 }
 
 function initializeSignatureCanvas(canvasId,stateKey,clear=false){
@@ -3179,11 +3461,11 @@ async function loadAdminPayrollHistory(){
     const rows=FeatureState.payrollHistory.slice(0,30);
     if(!rows.length){body.innerHTML='<tr><td colspan="6"><div class="empty-state"><strong>Belum ada slip diterbitkan</strong>Slip baru akan tampil di sini.</div></td></tr>';return;}
     body.innerHTML=rows.map(row=>`<tr>
-      <td><strong>${escapeHtml(row._namaKaryawan||row.ID_User||'-')}</strong></td>
-      <td><div class="slip-period">${escapeHtml(formatTanggal(row.Periode_Mulai))} - ${escapeHtml(formatTanggal(row.Periode_Akhir))}</div><div class="slip-issued">${escapeHtml(formatDateTime(row.Diterbitkan_At||row.Created_At))}</div></td>
-      <td>${escapeHtml(row._sppgKaryawan||row.SPPG||'-')}</td><td><strong>${escapeHtml(formatRupiah(row.Total_Gaji_Diterima))}</strong></td>
-      <td><span class="badge ${row.Status_Penerbitan==='DITERBITKAN'?'badge-success':'badge-warning'}">${escapeHtml(row.Status_Penerbitan||'DRAFT')}</span></td>
-      <td>${row.PDF_Storage_Path||row.URL_PDF_Slip?`<button class="btn btn-secondary btn-sm payroll-download-btn" type="button" data-slip-download="${escapeHtml(row.ID_Slip)}">Unduh PDF</button>`:'-'}</td>
+      <td data-primary="true"><strong>${escapeHtml(row._namaKaryawan||row.ID_User||'-')}</strong></td>
+      <td data-label="Periode"><div class="slip-period">${escapeHtml(formatTanggal(row.Periode_Mulai))} - ${escapeHtml(formatTanggal(row.Periode_Akhir))}</div><div class="slip-issued">${escapeHtml(formatDateTime(row.Diterbitkan_At||row.Created_At))}</div></td>
+      <td data-label="SPPG">${escapeHtml(row._sppgKaryawan||row.SPPG||'-')}</td><td data-label="Total"><strong>${escapeHtml(formatRupiah(row.Total_Gaji_Diterima))}</strong></td>
+      <td data-label="Status"><span class="badge ${row.Status_Penerbitan==='DITERBITKAN'?'badge-success':'badge-warning'}">${escapeHtml(row.Status_Penerbitan||'DRAFT')}</span></td>
+      <td data-label="PDF">${row.PDF_Storage_Path||row.URL_PDF_Slip?`<button class="btn btn-secondary btn-sm payroll-download-btn" type="button" data-slip-download="${escapeHtml(row.ID_Slip)}">Unduh PDF</button>`:'-'}</td>
     </tr>`).join('');
     body.querySelectorAll('[data-slip-download]').forEach(button=>button.addEventListener('click',()=>downloadPayrollSlip(button.dataset.slipDownload,button)));
   }catch(error){FeatureState.payrollHistoryLoaded=false;body.innerHTML=`<tr><td colspan="6"><div class="empty-state"><strong>Riwayat gagal dimuat</strong>${escapeHtml(error.message)}</div></td></tr>`;}
@@ -3869,6 +4151,14 @@ async function initApp(){
     if(willOpen){dropdown?.classList.add('active');$('#btn-topbar-profile')?.setAttribute('aria-expanded','true');}
   });
   $('#btn-topbar-profile')?.addEventListener('keydown',(ev)=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();ev.currentTarget.click();}});
+  $('#btn-notifications')?.addEventListener('click',(ev)=>{
+    ev.stopPropagation();
+    const panel=$('#notification-panel'),willOpen=!panel?.classList.contains('active');
+    closeNavigationMenus();
+    panel?.classList.toggle('active',willOpen);
+    ev.currentTarget.setAttribute('aria-expanded',String(willOpen));
+    if(willOpen)loadUserNotifications();
+  });
   $('#btn-mobile-more')?.addEventListener('click',(ev)=>{
     ev.stopPropagation();
     const menu=$('#mobile-more-menu'),willOpen=!menu?.classList.contains('active');
@@ -3876,12 +4166,16 @@ async function initApp(){
     if(willOpen){menu?.classList.add('active');$('#btn-mobile-more')?.setAttribute('aria-expanded','true');}
   });
   document.addEventListener('click',(ev)=>{
-    const topbarDropdown=$('#topbar-dropdown'),profileButton=$('#btn-topbar-profile'),moreMenu=$('#mobile-more-menu'),moreButton=$('#btn-mobile-more');
+    const topbarDropdown=$('#topbar-dropdown'),profileButton=$('#btn-topbar-profile'),moreMenu=$('#mobile-more-menu'),moreButton=$('#btn-mobile-more'),notificationPanel=$('#notification-panel'),notificationButton=$('#btn-notifications');
     const insideTopbar=topbarDropdown?.contains(ev.target)||profileButton?.contains(ev.target);
     const insideMore=moreMenu?.contains(ev.target)||moreButton?.contains(ev.target);
+    const insideNotifications=notificationPanel?.contains(ev.target)||notificationButton?.contains(ev.target);
     if(!insideTopbar&&!insideMore)closeNavigationMenus();
+    if(!insideNotifications){notificationPanel?.classList.remove('active');notificationButton?.setAttribute('aria-expanded','false');}
   });
-  document.addEventListener('keydown',(ev)=>{if(ev.key==='Escape')closeNavigationMenus();});
+  document.addEventListener('keydown',(ev)=>{if(ev.key==='Escape'){closeNavigationMenus();$('#notification-panel')?.classList.remove('active');$('#btn-notifications')?.setAttribute('aria-expanded','false');}});
+  document.addEventListener('visibilitychange',()=>{if(AppState.token)apiCall('presenceHeartbeat',{token:AppState.token,clientState:document.hidden?'HIDDEN':'ACTIVE'}).catch(()=>{});});
+  $$('[data-exception-view]').forEach(button=>button.addEventListener('click',()=>switchView(button.dataset.exceptionView)));
   $('#btn-dashboard-absen-cta')?.addEventListener('click',()=>{
     switchView('absen-scan');
   });
@@ -3947,7 +4241,12 @@ async function initApp(){
   // Admin: search input listeners
   let absenSearchTimer;
   $('#absen-search')?.addEventListener('input',()=>{clearTimeout(absenSearchTimer);absenSearchTimer=setTimeout(filterAndRenderAbsen,300);});
+  ['absen-filter-start','absen-filter-end','absen-filter-sppg','absen-filter-status','absen-filter-source'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('change',filterAndRenderAbsen);
+  });
+  $('#btn-reset-absen-filter')?.addEventListener('click',resetAttendanceFilters);
   $('#users-search')?.addEventListener('input', filterAndRenderUsers);
+  $('#users-operational-filter')?.addEventListener('change',filterAndRenderUsers);
   $('#log-search')?.addEventListener('input', filterAndRenderLog);
 
   // Admin: pagination
@@ -3957,7 +4256,7 @@ async function initApp(){
   $('#log-next-btn')?.addEventListener('click',()=>{ AdminState.logPage++; renderLogList(); });
   $('#btn-open-edit-profil').addEventListener('click',openEditProfil);
   $('#btn-open-profile-password').addEventListener('click',openProfilePasswordModal);
-  $('#btn-profile-password-inline').addEventListener('click',openProfilePasswordModal);
+  $('#btn-profile-password-inline')?.addEventListener('click',openProfilePasswordModal);
   $('#btn-close-profile-password').addEventListener('click',closeProfilePasswordModal);
   $('#btn-cancel-profile-password').addEventListener('click',closeProfilePasswordModal);
   $('#btn-request-profile-password-otp').addEventListener('click',()=>requestProfilePasswordOtp(false));
