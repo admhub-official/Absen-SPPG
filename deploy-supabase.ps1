@@ -7,14 +7,29 @@ if (-not (Test-Path -LiteralPath $SupabaseCli)) {
   throw "Supabase CLI tidak ditemukan di $SupabaseCli"
 }
 
-& $SupabaseCli functions deploy Absen `
-  --project-ref $ProjectRef `
-  --no-verify-jwt `
-  --use-api `
-  --yes
-
+Write-Host "Mengaitkan repository ke project Supabase $ProjectRef..."
+& $SupabaseCli link --project-ref $ProjectRef --yes
 if ($LASTEXITCODE -ne 0) {
-  throw "Deployment Edge Function Absen gagal dengan exit code $LASTEXITCODE."
+  throw "Gagal mengaitkan project Supabase dengan exit code $LASTEXITCODE."
 }
 
-Write-Host "Edge Function Absen berhasil di-deploy ke $ProjectRef."
+Write-Host "Menerapkan migration database Sprint 1..."
+& $SupabaseCli db push --linked --yes
+if ($LASTEXITCODE -ne 0) {
+  throw "Migration database gagal dengan exit code $LASTEXITCODE."
+}
+
+foreach ($FunctionName in @("Absen", "AbsenV2")) {
+  Write-Host "Men-deploy Edge Function $FunctionName..."
+  & $SupabaseCli functions deploy $FunctionName `
+    --project-ref $ProjectRef `
+    --no-verify-jwt `
+    --use-api `
+    --yes
+
+  if ($LASTEXITCODE -ne 0) {
+    throw "Deployment Edge Function $FunctionName gagal dengan exit code $LASTEXITCODE."
+  }
+}
+
+Write-Host "Migration dan Edge Function Sprint 1 berhasil di-deploy ke $ProjectRef."
