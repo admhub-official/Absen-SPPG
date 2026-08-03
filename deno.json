@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "fmt": {
+    "lineWidth": 110,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": false
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "tasks": {
+    "check": "deno check supabase/functions/_shared/contracts.ts supabase/functions/_shared/http.ts supabase/functions/_shared/validation.ts supabase/functions/SecurityOps/index.ts tests/shared_validation_test.ts && deno test tests/shared_validation_test.ts"
+  }
+}
