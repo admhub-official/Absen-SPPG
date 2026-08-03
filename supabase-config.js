@@ -1,12 +1,74 @@
 window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   projectUrl: 'https://szwwpnbbsmjsbzzcecyj.supabase.co',
-  functionName: 'AbsenV2'
+  functionName: 'AbsenV2',
+  deviceTrustFunctionName: 'DeviceTrust'
 });
 
 (() => {
   let lastGpsPosition = null;
   let attendanceChallenge = null;
+  let registeredDevice = null;
   const IDEMPOTENT_FUNCTIONS = new Set(['recordAbsensiSelf', 'recordAbsensi']);
+  const DEVICE_KEY_STORAGE = 'absen:device-key:v1';
+
+  function getOrCreateDeviceKey() {
+    try {
+      const existing = localStorage.getItem(DEVICE_KEY_STORAGE);
+      if (existing && existing.length >= 32) return existing;
+      const key = `${crypto.randomUUID()}${crypto.randomUUID()}`.replace(/-/g, '');
+      localStorage.setItem(DEVICE_KEY_STORAGE, key);
+      return key;
+    } catch {
+      return `${crypto.randomUUID()}${crypto.randomUUID()}`.replace(/-/g, '');
+    }
+  }
+
+  const deviceKey = getOrCreateDeviceKey();
+
+  function deviceMetadata() {
+    const ua = navigator.userAgent || '';
+    const platform = navigator.userAgentData?.platform || navigator.platform || 'Unknown';
+    let browser = 'Browser';
+    if (/Edg\//.test(ua)) browser = 'Microsoft Edge';
+    else if (/Chrome\//.test(ua)) browser = 'Google Chrome';
+    else if (/Firefox\//.test(ua)) browser = 'Mozilla Firefox';
+    else if (/Safari\//.test(ua)) browser = 'Safari';
+    return {
+      deviceKey,
+      deviceName: `${platform} · ${browser}`,
+      platform,
+      browser
+    };
+  }
+
+  async function callDeviceTrust(action, payload = {}) {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('Sesi login tidak tersedia.');
+    const response = await fetch(
+      `${window.ABSEN_SUPABASE_CONFIG.projectUrl}/functions/v1/${window.ABSEN_SUPABASE_CONFIG.deviceTrustFunctionName}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, token, ...payload })
+      }
+    );
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok || body?.success === false) {
+      throw new Error(body?.message || 'Gagal memproses identitas perangkat.');
+    }
+    return body?.result;
+  }
+
+  async function ensureDeviceRegistered() {
+    if (registeredDevice) return registeredDevice;
+    registeredDevice = await callDeviceTrust('registerDevice', deviceMetadata());
+    return registeredDevice;
+  }
+
+  window.getMyAttendanceDevices = () => callDeviceTrust('listMyDevices');
+  window.revokeMyAttendanceDevice = (deviceId) => callDeviceTrust('revokeMyDevice', { deviceId });
+  window.reviewAttendanceDevice = (deviceId, status, reason) => callDeviceTrust('reviewDevice', { deviceId, status, reason });
+  window.getAttendanceDeviceReviewQueue = (status = 'PENDING') => callDeviceTrust('listReviewQueue', { status });
 
   function showLocationMessage(message) {
     window.setTimeout(() => {
@@ -46,6 +108,12 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     const originalApiCall = window.apiCall;
     if (typeof originalApiCall === 'function') {
       window.apiCall = async function securityAwareApiCall(functionName, payload = {}) {
+        if (localStorage.getItem('auth_token')) {
+          try { await ensureDeviceRegistered(); } catch (error) { console.warn('Device registration deferred', error); }
+        }
+
+        payload = { ...payload, deviceKey, deviceId: registeredDevice?.Device_ID || registeredDevice?.deviceId || null };
+
         if (functionName === 'recordAbsensiSelf') {
           if (!lastGpsPosition || !attendanceChallenge?.challengeId) {
             throw new Error('Verifikasi lokasi telah kedaluwarsa. Periksa lokasi kembali.');
@@ -65,10 +133,7 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
         }
 
         if (IDEMPOTENT_FUNCTIONS.has(functionName)) {
-          payload = {
-            ...payload,
-            idempotencyKey: getOrCreateIdempotencyKey(functionName)
-          };
+          payload = { ...payload, idempotencyKey: getOrCreateIdempotencyKey(functionName) };
         }
 
         const result = await originalApiCall(functionName, payload);
@@ -76,6 +141,10 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
         if (functionName === 'recordAbsensiSelf') resetAttendanceSecurityState();
         return result;
       };
+    }
+
+    if (localStorage.getItem('auth_token')) {
+      ensureDeviceRegistered().catch((error) => console.warn('Device registration pending', error));
     }
 
     window.getCurrentPositionPromise = function getValidatedAttendancePosition() {
@@ -116,6 +185,11 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
           throw new Error(`Akurasi GPS belum memadai (${coords.accuracy ?? '-'} m). Pindah ke area terbuka dan coba lagi.`);
         }
 
+        const device = await ensureDeviceRegistered();
+        if (device?.Status === 'BLOCKED' || device?.Status === 'REVOKED') {
+          throw new Error('Perangkat ini telah diblokir atau dicabut. Hubungi Admin.');
+        }
+
         const challenge = await window.apiCall('createAttendanceChallenge', {
           token,
           lat: coords.lat,
@@ -136,9 +210,10 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
           : challenge.riskLevel === 'MEDIUM'
             ? ' · akurasi sedang'
             : '';
+        const trustLabel = device?.Status === 'PENDING' ? ' · perangkat menunggu persetujuan' : '';
         const status = document.getElementById('absen-facecam-status');
         if (status) {
-          status.textContent = `Lokasi valid (${distance ?? 0} m dari titik SPPG)${riskLabel}`;
+          status.textContent = `Lokasi valid (${distance ?? 0} m dari titik SPPG)${riskLabel}${trustLabel}`;
         }
         return coords;
       }).catch((error) => {
