@@ -224,3 +224,27 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     };
   });
 })();
+
+(() => {
+  const loadStyle = (href) => {
+    if (document.querySelector(`link[href="${href}"]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  };
+  const loadScript = (src) => new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const script = document.createElement('script');
+    script.src = src;
+    script.defer = true;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+  loadStyle('./security-operations-ui.css');
+  const boot = () => loadScript('./security-ops-client.js')
+    .then(() => loadScript('./security-operations-ui.js'))
+    .catch((error) => console.warn('Security Operations UI gagal dimuat', error));
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', boot) : boot();
+})();
