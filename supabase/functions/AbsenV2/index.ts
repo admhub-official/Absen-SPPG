@@ -15,6 +15,13 @@ const CORS_HEADERS: Record<string, string> = {
 };
 
 type ErrorDescriptor = { status: number; code: string; message: string };
+type StoredIdempotency = {
+  Status: "PROCESSING" | "COMPLETED" | "FAILED";
+  HTTP_Status: number | null;
+  Response_Body: Record<string, unknown> | null;
+  Request_Fingerprint: string;
+  Expires_At: string;
+};
 
 function requestId(): string {
   return `REQ_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
@@ -42,7 +49,7 @@ function normalizeError(raw: unknown): ErrorDescriptor {
   if (text.includes("ATTENDANCE_CHECKOUT_BEFORE_CHECKIN")) return { status: 409, code: "ATTENDANCE_INVALID_STATE", message: "Absen pulang hanya dapat dilakukan setelah absen masuk." };
   if (/tidak ditemukan/i.test(text)) return { status: 404, code: "NOT_FOUND", message: text };
   if (/wajib|tidak valid|invalid|format/i.test(text)) return { status: 422, code: "VALIDATION_ERROR", message: text };
-  return { status: 500, code: "INTERNAL_ERROR", message: text };
+  return { status: 500, code: "INTERNAL_ERROR", message: "Terjadi kesalahan pada server." };
 }
 
 async function sha256(value: string): Promise<string> {
@@ -50,12 +57,33 @@ async function sha256(value: string): Promise<string> {
   return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-async function readStoredIdempotency(key: string) {
-  const { data } = await supabase.from("API_Idempotency")
+async function readStoredIdempotency(key: string): Promise<StoredIdempotency | null> {
+  const { data, error } = await supabase.from("API_Idempotency")
     .select("Status,HTTP_Status,Response_Body,Request_Fingerprint,Expires_At")
     .eq("Idempotency_Key", key)
     .maybeSingle();
-  return data;
+  if (error) throw new Error("Gagal membaca status idempotensi.");
+  return data as StoredIdempotency | null;
+}
+
+function isExpired(record: StoredIdempotency): boolean {
+  return new Date(record.Expires_At).getTime() <= Date.now();
+}
+
+async function releaseExpiredIdempotency(key: string): Promise<void> {
+  const { error } = await supabase.from("API_Idempotency")
+    .delete()
+    .eq("Idempotency_Key", key)
+    .lte("Expires_At", new Date().toISOString());
+  if (error) throw new Error("Gagal membersihkan idempotency key kedaluwarsa.");
+}
+
+function replayStored(record: StoredIdempotency, id: string): Response | null {
+  if (!record.Response_Body) return null;
+  if (record.Status === "COMPLETED" || record.Status === "FAILED") {
+    return json(record.Response_Body, Number(record.HTTP_Status || (record.Status === "FAILED" ? 500 : 200)), id);
+  }
+  return null;
 }
 
 Deno.serve(async (request) => {
@@ -76,7 +104,10 @@ Deno.serve(async (request) => {
   const isIdempotent = IDEMPOTENT_FUNCTIONS.has(functionName);
   const headerKey = request.headers.get("x-idempotency-key") || "";
   const idempotencyKey = String(body.idempotencyKey || headerKey).trim();
-  const fingerprint = await sha256(JSON.stringify({ functionName, body: { ...body, token: body.token ? "[REDACTED]" : undefined } }));
+  const fingerprintBody = { ...body };
+  delete fingerprintBody.token;
+  delete fingerprintBody.idempotencyKey;
+  const fingerprint = await sha256(JSON.stringify({ functionName, body: fingerprintBody }));
 
   if (isIdempotent && !idempotencyKey) {
     return json({ success: false, code: "IDEMPOTENCY_KEY_REQUIRED", message: "Kunci idempotensi wajib tersedia untuk presensi.", requestId: id }, 400, id);
@@ -84,13 +115,14 @@ Deno.serve(async (request) => {
 
   if (isIdempotent) {
     const existing = await readStoredIdempotency(idempotencyKey);
-    if (existing) {
+    if (existing && isExpired(existing)) {
+      await releaseExpiredIdempotency(idempotencyKey);
+    } else if (existing) {
       if (existing.Request_Fingerprint !== fingerprint) {
         return json({ success: false, code: "IDEMPOTENCY_KEY_REUSED", message: "Kunci idempotensi telah digunakan untuk permintaan yang berbeda.", requestId: id }, 409, id);
       }
-      if (existing.Status === "COMPLETED" && existing.Response_Body) {
-        return json(existing.Response_Body, Number(existing.HTTP_Status || 200), id);
-      }
+      const replay = replayStored(existing, id);
+      if (replay) return replay;
       return json({ success: false, code: "REQUEST_IN_PROGRESS", message: "Permintaan presensi sedang diproses.", requestId: id }, 409, id);
     }
 
@@ -102,8 +134,9 @@ Deno.serve(async (request) => {
     });
     if (claimError) {
       const raced = await readStoredIdempotency(idempotencyKey);
-      if (raced?.Status === "COMPLETED" && raced.Response_Body) {
-        return json(raced.Response_Body, Number(raced.HTTP_Status || 200), id);
+      if (raced && !isExpired(raced)) {
+        const replay = replayStored(raced, id);
+        if (replay) return replay;
       }
       return json({ success: false, code: "REQUEST_IN_PROGRESS", message: "Permintaan presensi sedang diproses.", requestId: id }, 409, id);
     }
@@ -133,8 +166,9 @@ Deno.serve(async (request) => {
     }
 
     if (isIdempotent) {
+      const finalState = status >= 500 ? "FAILED" : "COMPLETED";
       await supabase.from("API_Idempotency").update({
-        Status: "COMPLETED",
+        Status: finalState,
         HTTP_Status: status,
         Response_Body: responseBody,
         Completed_At: new Date().toISOString(),
