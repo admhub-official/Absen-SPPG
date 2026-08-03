@@ -1,10 +1,11 @@
 window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   projectUrl: 'https://szwwpnbbsmjsbzzcecyj.supabase.co',
-  functionName: 'Absen'
+  functionName: 'AbsenV2'
 });
 
 (() => {
   let lastGpsPosition = null;
+  const IDEMPOTENT_FUNCTIONS = new Set(['recordAbsensiSelf', 'recordAbsensi']);
 
   function showLocationMessage(message) {
     window.setTimeout(() => {
@@ -14,10 +15,31 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     }, 0);
   }
 
+  function getOrCreateIdempotencyKey(functionName) {
+    const storageKey = `absen:idempotency:${functionName}`;
+    try {
+      const current = JSON.parse(sessionStorage.getItem(storageKey) || 'null');
+      if (current?.key && Number(current.expiresAt) > Date.now()) return current.key;
+      const key = crypto.randomUUID();
+      sessionStorage.setItem(storageKey, JSON.stringify({ key, expiresAt: Date.now() + 2 * 60 * 1000 }));
+      return key;
+    } catch {
+      return crypto.randomUUID();
+    }
+  }
+
+  function clearIdempotencyKey(functionName) {
+    try {
+      sessionStorage.removeItem(`absen:idempotency:${functionName}`);
+    } catch {
+      // Browser dengan storage terbatas tetap dapat melanjutkan operasi.
+    }
+  }
+
   window.addEventListener('DOMContentLoaded', () => {
     const originalApiCall = window.apiCall;
     if (typeof originalApiCall === 'function') {
-      window.apiCall = async function geofenceAwareApiCall(functionName, payload = {}) {
+      window.apiCall = async function integrityAwareApiCall(functionName, payload = {}) {
         if (functionName === 'recordAbsensiSelf' && lastGpsPosition) {
           payload = {
             ...payload,
@@ -26,7 +48,17 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
             accuracy: lastGpsPosition.accuracy
           };
         }
-        return originalApiCall(functionName, payload);
+
+        if (IDEMPOTENT_FUNCTIONS.has(functionName)) {
+          payload = {
+            ...payload,
+            idempotencyKey: getOrCreateIdempotencyKey(functionName)
+          };
+        }
+
+        const result = await originalApiCall(functionName, payload);
+        if (IDEMPOTENT_FUNCTIONS.has(functionName)) clearIdempotencyKey(functionName);
+        return result;
       };
     }
 
