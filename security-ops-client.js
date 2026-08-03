@@ -28,4 +28,10 @@
     exploreAudit: (filters = {}) => callSecurityOps('auditExplorer', filters),
     recordMetric: (service, metric, value, options = {}) => callSecurityOps('recordMetric', { service, metric, value, ...options })
   });
+
+  if (!window.AbsenApp) {
+    import('./src/app/bootstrap.js').catch((error) => {
+      console.warn('Modular frontend tidak dapat dimuat; aplikasi legacy tetap berjalan.', error);
+    });
+  }
 })();
