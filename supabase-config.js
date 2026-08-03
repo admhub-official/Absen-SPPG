@@ -5,6 +5,7 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
 
 (() => {
   let lastGpsPosition = null;
+  let attendanceChallenge = null;
   const IDEMPOTENT_FUNCTIONS = new Set(['recordAbsensiSelf', 'recordAbsensi']);
 
   function showLocationMessage(message) {
@@ -36,16 +37,30 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     }
   }
 
+  function resetAttendanceSecurityState() {
+    lastGpsPosition = null;
+    attendanceChallenge = null;
+  }
+
   window.addEventListener('DOMContentLoaded', () => {
     const originalApiCall = window.apiCall;
     if (typeof originalApiCall === 'function') {
-      window.apiCall = async function integrityAwareApiCall(functionName, payload = {}) {
-        if (functionName === 'recordAbsensiSelf' && lastGpsPosition) {
+      window.apiCall = async function securityAwareApiCall(functionName, payload = {}) {
+        if (functionName === 'recordAbsensiSelf') {
+          if (!lastGpsPosition || !attendanceChallenge?.challengeId) {
+            throw new Error('Verifikasi lokasi telah kedaluwarsa. Periksa lokasi kembali.');
+          }
+          if (new Date(attendanceChallenge.expiresAt).getTime() <= Date.now()) {
+            resetAttendanceSecurityState();
+            throw new Error('Verifikasi lokasi telah kedaluwarsa. Periksa lokasi kembali.');
+          }
           payload = {
             ...payload,
             lat: lastGpsPosition.lat,
             lng: lastGpsPosition.lng,
-            accuracy: lastGpsPosition.accuracy
+            accuracy: lastGpsPosition.accuracy,
+            locationCapturedAt: lastGpsPosition.capturedAt,
+            challengeId: attendanceChallenge.challengeId
           };
         }
 
@@ -58,11 +73,13 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
 
         const result = await originalApiCall(functionName, payload);
         if (IDEMPOTENT_FUNCTIONS.has(functionName)) clearIdempotencyKey(functionName);
+        if (functionName === 'recordAbsensiSelf') resetAttendanceSecurityState();
         return result;
       };
     }
 
     window.getCurrentPositionPromise = function getValidatedAttendancePosition() {
+      resetAttendanceSecurityState();
       return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
           reject(new Error('Perangkat atau browser ini tidak mendukung layanan lokasi.'));
@@ -75,7 +92,8 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
             lng: position.coords.longitude,
             accuracy: Number.isFinite(position.coords.accuracy)
               ? Math.round(position.coords.accuracy)
-              : null
+              : null,
+            capturedAt: new Date(position.timestamp || Date.now()).toISOString()
           }),
           (error) => {
             const message = error?.code === 1
@@ -94,26 +112,37 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
         if (!token || typeof window.apiCall !== 'function') {
           throw new Error('Sesi login tidak tersedia. Silakan login kembali.');
         }
+        if (!Number.isFinite(coords.accuracy) || coords.accuracy > 60) {
+          throw new Error(`Akurasi GPS belum memadai (${coords.accuracy ?? '-'} m). Pindah ke area terbuka dan coba lagi.`);
+        }
 
-        const validation = await window.apiCall('checkAttendanceLocation', {
+        const challenge = await window.apiCall('createAttendanceChallenge', {
           token,
           lat: coords.lat,
           lng: coords.lng,
-          accuracy: coords.accuracy
+          accuracy: coords.accuracy,
+          locationCapturedAt: coords.capturedAt
         });
 
-        if (!validation?.valid) {
-          throw new Error(validation?.message || 'Lokasi Anda tidak memenuhi radius absensi.');
+        if (!challenge?.challengeId) {
+          throw new Error('Challenge presensi gagal dibuat. Periksa lokasi kembali.');
         }
 
         lastGpsPosition = coords;
+        attendanceChallenge = challenge;
+        const distance = challenge.location?.distance;
+        const riskLabel = challenge.riskLevel === 'HIGH'
+          ? ' · perlu peninjauan'
+          : challenge.riskLevel === 'MEDIUM'
+            ? ' · akurasi sedang'
+            : '';
         const status = document.getElementById('absen-facecam-status');
         if (status) {
-          status.textContent = `Lokasi valid (${validation.jarak ?? 0} m dari titik SPPG)`;
+          status.textContent = `Lokasi valid (${distance ?? 0} m dari titik SPPG)${riskLabel}`;
         }
         return coords;
       }).catch((error) => {
-        lastGpsPosition = null;
+        resetAttendanceSecurityState();
         showLocationMessage(error?.message || 'Lokasi tidak dapat divalidasi.');
         throw error;
       });
