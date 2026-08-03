@@ -13,13 +13,13 @@ if ($LASTEXITCODE -ne 0) {
   throw "Gagal mengaitkan project Supabase dengan exit code $LASTEXITCODE."
 }
 
-Write-Host "Menerapkan migration database Sprint 1..."
+Write-Host "Menerapkan seluruh migration database..."
 & $SupabaseCli db push --linked --yes
 if ($LASTEXITCODE -ne 0) {
   throw "Migration database gagal dengan exit code $LASTEXITCODE."
 }
 
-foreach ($FunctionName in @("Absen", "AbsenV2")) {
+foreach ($FunctionName in @("Absen", "AbsenV2", "DeviceTrust")) {
   Write-Host "Men-deploy Edge Function $FunctionName..."
   & $SupabaseCli functions deploy $FunctionName `
     --project-ref $ProjectRef `
@@ -32,4 +32,4 @@ foreach ($FunctionName in @("Absen", "AbsenV2")) {
   }
 }
 
-Write-Host "Migration dan Edge Function Sprint 1 berhasil di-deploy ke $ProjectRef."
+Write-Host "Migration dan seluruh Edge Function berhasil di-deploy ke $ProjectRef."
