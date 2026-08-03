@@ -19,7 +19,7 @@ if ($LASTEXITCODE -ne 0) {
   throw "Migration database gagal dengan exit code $LASTEXITCODE."
 }
 
-foreach ($FunctionName in @("Absen", "AbsenV2", "DeviceTrust")) {
+foreach ($FunctionName in @("Absen", "AbsenV2", "DeviceTrust", "SecurityOps")) {
   Write-Host "Men-deploy Edge Function $FunctionName..."
   & $SupabaseCli functions deploy $FunctionName `
     --project-ref $ProjectRef `
