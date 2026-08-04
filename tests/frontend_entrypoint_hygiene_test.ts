@@ -26,7 +26,11 @@ Deno.test("PWA has one stable registration owner", async () => {
   const bootstrap = await read("src/app/bootstrap.js");
   const runtime = await read("pwa-runtime.js");
 
-  for (const [path, source] of [["index.html", index], ["supabase-config.js", config]]) {
+  const entrypoints: Array<readonly [path: string, source: string]> = [
+    ["index.html", index],
+    ["supabase-config.js", config],
+  ];
+  for (const [path, source] of entrypoints) {
     if (source.includes("serviceWorker.register")) {
       throw new Error(`${path} must not register the service worker directly`);
     }
