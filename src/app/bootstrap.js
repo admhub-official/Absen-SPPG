@@ -4,6 +4,7 @@ import { createFeatureRegistry } from './feature-registry.js';
 import { renderAttendanceProgress, showAttendanceReceipt, renderCorrectionWorkspace, openCorrectionForm } from '../pages/attendance/attendance-experience.js';
 import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js';
 import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js';
+import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js';
 
 const loadStyle=(href)=>{if(document.querySelector(`link[href="${href}"]`))return;const link=document.createElement('link');link.rel='stylesheet';link.href=href;document.head.appendChild(link);};
 const loadScript=(src)=>new Promise((resolve,reject)=>{if(document.querySelector(`script[src="${src}"]`)){resolve();return;}const script=document.createElement('script');script.src=src;script.defer=true;script.onload=resolve;script.onerror=reject;document.head.appendChild(script);});
@@ -19,14 +20,17 @@ export async function bootstrapApp(){
   const attendanceExperience=Object.freeze({renderProgress:renderAttendanceProgress,showReceipt:showAttendanceReceipt,renderCorrections:renderCorrectionWorkspace,openCorrectionForm});
   const releaseOperations=Object.freeze({render:renderReleaseOperationsPage});
   const workforceOperations=Object.freeze({render:renderWorkforceOperationsPage});
-  window.AbsenApp=Object.freeze({store,router,features,attendanceExperience,releaseOperations,workforceOperations,version:'19.0.0'});
+  const platformOperations=Object.freeze({render:renderPlatformOperationsPage});
+  window.AbsenApp=Object.freeze({store,router,features,attendanceExperience,releaseOperations,workforceOperations,platformOperations,version:'22.0.0'});
   window.AbsenFeatures=features;
   window.AttendanceExperience=attendanceExperience;
   window.ReleaseOperations=releaseOperations;
   window.WorkforceOperations=workforceOperations;
+  window.PlatformOperations=platformOperations;
+  await loadScript('./pwa-runtime.js');
   await loadScript('./security-ops-client.js');
   await loadScript('./security-operations-ui.js');
-  window.dispatchEvent(new CustomEvent('absen:app-ready',{detail:{version:'19.0.0',features:features.names()}}));
+  window.dispatchEvent(new CustomEvent('absen:app-ready',{detail:{version:'22.0.0',features:features.names()}}));
 }
 
 bootstrapApp().catch((error)=>console.warn('Modular frontend bootstrap gagal; legacy app tetap aktif.',error));
