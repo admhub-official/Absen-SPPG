@@ -1,17 +1,17 @@
-import { createRouter } from './router.js?v=23.2.0';
-import { createAppStore } from '../stores/app-store.js?v=23.2.0';
-import { createFeatureRegistry } from './feature-registry.js?v=23.2.0';
+import { createRouter } from './router.js?v=24.0.0';
+import { createAppStore } from '../stores/app-store.js?v=24.0.0';
+import { createFeatureRegistry } from './feature-registry.js?v=24.0.0';
 import {
   renderAttendanceProgress,
   showAttendanceReceipt,
   renderCorrectionWorkspace,
   openCorrectionForm
-} from '../pages/attendance/attendance-experience.js?v=23.2.0';
-import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=23.2.0';
-import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=23.2.0';
-import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=23.2.0';
+} from '../pages/attendance/attendance-experience.js?v=24.0.0';
+import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=24.0.0';
+import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=24.0.0';
+import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=24.0.0';
 
-const VERSION = '23.2.0';
+const VERSION = '24.0.0';
 const loadedAssets = new Map();
 
 function canonicalPath(value) {
@@ -21,7 +21,6 @@ function canonicalPath(value) {
 function loadStyle(path) {
   const key = `style:${canonicalPath(path)}`;
   if (loadedAssets.has(key)) return loadedAssets.get(key);
-
   const existing = [...document.querySelectorAll('link[rel="stylesheet"][href]')]
     .find((node) => canonicalPath(node.href) === canonicalPath(path));
   if (existing) {
@@ -29,7 +28,6 @@ function loadStyle(path) {
     loadedAssets.set(key, ready);
     return ready;
   }
-
   const ready = new Promise((resolve, reject) => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -45,7 +43,6 @@ function loadStyle(path) {
 function loadScript(path) {
   const key = `script:${canonicalPath(path)}`;
   if (loadedAssets.has(key)) return loadedAssets.get(key);
-
   const existing = [...document.querySelectorAll('script[src]')]
     .find((node) => canonicalPath(node.src) === canonicalPath(path));
   if (existing) {
@@ -53,7 +50,6 @@ function loadScript(path) {
     loadedAssets.set(key, ready);
     return ready;
   }
-
   const ready = new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = path;
@@ -68,21 +64,16 @@ function loadScript(path) {
 
 export async function bootstrapApp() {
   if (window.AbsenApp) return window.AbsenApp;
-
   await Promise.all([
     loadStyle(`./src/styles/app-system.css?v=${VERSION}`),
     loadStyle(`./src/styles/feature-pages.css?v=${VERSION}`),
     loadStyle(`./src/styles/attendance-experience.css?v=${VERSION}`),
     loadStyle(`./security-operations-ui.css?v=${VERSION}`),
-    loadStyle(`./src/styles/mobile-compact-hotfix.css?v=${VERSION}`)
+    loadStyle(`./src/styles/responsive-overrides.css?v=${VERSION}`)
   ]);
-
-  const store = createAppStore({
-    route: window.location.hash.replace(/^#\/?/, '') || 'dashboard'
-  });
+  const store = createAppStore({ route: window.location.hash.replace(/^#\/?/, '') || 'dashboard' });
   const router = createRouter({ onRoute: (route) => store.setState({ route }) });
   const features = createFeatureRegistry();
-
   const attendanceExperience = Object.freeze({
     renderProgress: renderAttendanceProgress,
     showReceipt: showAttendanceReceipt,
@@ -92,7 +83,6 @@ export async function bootstrapApp() {
   const releaseOperations = Object.freeze({ render: renderReleaseOperationsPage });
   const workforceOperations = Object.freeze({ render: renderWorkforceOperationsPage });
   const platformOperations = Object.freeze({ render: renderPlatformOperationsPage });
-
   const app = Object.freeze({
     store,
     router,
@@ -103,19 +93,16 @@ export async function bootstrapApp() {
     platformOperations,
     version: VERSION
   });
-
   window.AbsenApp = app;
   window.AbsenFeatures = features;
   window.AttendanceExperience = attendanceExperience;
   window.ReleaseOperations = releaseOperations;
   window.WorkforceOperations = workforceOperations;
   window.PlatformOperations = platformOperations;
-
   await loadScript(`./pwa-runtime.js?v=${VERSION}`);
-  await loadScript(`./src/app/mobile-compact-hotfix.js?v=${VERSION}`);
+  await loadScript(`./src/app/layout-enhancements.js?v=${VERSION}`);
   await loadScript(`./security-ops-client.js?v=${VERSION}`);
   await loadScript(`./security-operations-ui.js?v=${VERSION}`);
-
   window.dispatchEvent(new CustomEvent('absen:app-ready', {
     detail: { version: VERSION, features: features.names() }
   }));
