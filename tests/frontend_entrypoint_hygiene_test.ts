@@ -20,24 +20,35 @@ Deno.test("index keeps one application configuration entrypoint", async () => {
   }
 });
 
-Deno.test("PWA has one stable registration owner", async () => {
+Deno.test("PWA uses one implementation with a controlled legacy shim", async () => {
   const index = await read("index.html");
   const config = await read("supabase-config.js");
   const bootstrap = await read("src/app/bootstrap.js");
   const runtime = await read("pwa-runtime.js");
+  const legacyWorker = await read("service-worker.js");
 
-  const entrypoints: Array<readonly [path: string, source: string]> = [
-    ["index.html", index],
-    ["supabase-config.js", config],
-  ];
-  for (const [path, source] of entrypoints) {
-    if (source.includes("serviceWorker.register")) {
-      throw new Error(`${path} must not register the service worker directly`);
-    }
+  if (config.includes("serviceWorker.register")) {
+    throw new Error("supabase-config.js must not register the service worker directly");
   }
-  if (!bootstrap.includes("pwa-runtime.js")) throw new Error("bootstrap must load the PWA runtime");
+  if (!bootstrap.includes("pwa-runtime.js")) {
+    throw new Error("bootstrap must load the PWA runtime");
+  }
   if (!runtime.includes("serviceWorker.register('./sw.js'")) {
     throw new Error("PWA runtime must own the stable sw.js registration");
+  }
+
+  const legacyRegistrations = index.match(/serviceWorker\.register\(['"]\.\/service-worker\.js['"]/g) ?? [];
+  const allRegistrations = index.match(/serviceWorker\.register\(/g) ?? [];
+  if (legacyRegistrations.length !== 1 || allRegistrations.length !== 1) {
+    throw new Error("index.html may only keep the single transitional service-worker.js registration");
+  }
+  if (!legacyWorker.includes("importScripts('./sw.js')")) {
+    throw new Error("legacy service-worker.js must delegate entirely to sw.js");
+  }
+  for (const forbidden of ["addEventListener('install'", "addEventListener('activate'", "addEventListener('fetch'"]) {
+    if (legacyWorker.includes(forbidden)) {
+      throw new Error(`legacy service-worker.js must not duplicate worker logic: ${forbidden}`);
+    }
   }
 });
 
