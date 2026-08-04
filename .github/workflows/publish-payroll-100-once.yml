@@ -1,13 +1,13 @@
 name: Publish Payroll 100 Once
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
   push:
     paths:
-      - '.github/payroll-run-100.trigger'
+      - '.github/workflows/publish-payroll-100-once.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: publish-payroll-100-once
@@ -22,25 +22,24 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Validate required secrets
+      - name: Validate secrets
         shell: bash
         run: |
           test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL belum tersedia'; exit 1; }
           test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY belum tersedia'; exit 1; }
 
-      - name: Install runtime dependencies
+      - name: Install dependencies
         run: npm install --no-save @supabase/supabase-js@2 pdf-lib@1.17.1
 
-      - name: Publish 100 slips in 2 batches
+      - name: Publish and verify 100 slips
         shell: bash
-        run: node <<'NODE'
+        run: |
+          node <<'NODE'
           const { createClient } = require('@supabase/supabase-js');
           const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
           const crypto = require('crypto');
@@ -55,34 +54,39 @@ jobs:
           const ACCOUNTANT = 'Resi Rosanti, S. Ak';
           const HEAD = 'S Abdulah Nasir, S. Ap';
           const TARGET = 100;
-          const BATCH_SIZE = 50;
-          const runStartedAt = new Date();
+          const BATCH = 50;
+          const startedAt = new Date();
+          const uploaded = [];
+          const changed = [];
 
-          const clean = (v) => String(v ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e]/g, '?');
-          const safe = (v) => clean(v).replace(/[^A-Za-z0-9._-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'data';
-          const money = (v) => `Rp ${Math.round(Number(v) || 0).toLocaleString('id-ID')}`;
-          const dateOnly = (v) => String(v || '').split('T')[0];
-          const idDate = (v) => new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(`${dateOnly(v)}T00:00:00+07:00`));
-          const idDateTime = (v) => new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(v).replace(/\./g, ':') + ' WIB';
-          const textPath = (v) => `text://${encodeURIComponent(String(v))}`;
+          const clean = v => String(v ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e]/g, '?');
+          const safe = v => clean(v).replace(/[^A-Za-z0-9._-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'data';
+          const dateOnly = v => String(v || '').split('T')[0];
+          const money = v => `Rp ${Math.round(Number(v) || 0).toLocaleString('id-ID')}`;
+          const textPath = v => `text://${encodeURIComponent(String(v))}`;
+          const idDate = v => new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(`${dateOnly(v)}T00:00:00+07:00`));
+          const idDateTime = v => new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(v).replace(/\./g, ':') + ' WIB';
 
-          async function must(query, label) {
-            const result = await query;
+          async function must(promise, label) {
+            const result = await promise;
             if (result.error) throw new Error(`${label}: ${result.error.message}`);
             return result;
           }
 
-          async function makePdf(s, p, u, issuedAt, logoBytes) {
+          async function makePdf(s, u, issuedAt, logoBytes) {
             const doc = await PDFDocument.create();
             const page = doc.addPage([595.28, 841.89]);
             const regular = await doc.embedFont(StandardFonts.Helvetica);
             const bold = await doc.embedFont(StandardFonts.HelveticaBold);
             const logo = await doc.embedPng(logoBytes);
-            const navy = rgb(.06, .12, .24), muted = rgb(.36, .4, .48), border = rgb(.86, .89, .93), pale = rgb(.96, .97, .99), green = rgb(.05, .45, .28);
+            const navy = rgb(.06, .12, .24);
+            const muted = rgb(.36, .4, .48);
+            const pale = rgb(.96, .97, .99);
+            const green = rgb(.05, .45, .28);
             const L = 42, R = 553, W = R - L;
+
             doc.setTitle(clean(`Slip Gaji ${u.Nama_Lengkap}`));
             doc.setAuthor(PUBLISHER);
-            doc.setSubject('Slip gaji resmi SPPG dengan logo BGN gambar');
             doc.setCreationDate(issuedAt);
 
             const logoWidth = 68;
@@ -95,8 +99,13 @@ jobs:
             page.drawText(`No. ${clean(s.ID_Slip)}`, { x: L, y: 704, size: 8.5, font: regular, color: muted });
             page.drawText(`Diterbitkan: ${idDateTime(issuedAt)}`, { x: 355, y: 704, size: 8.5, font: regular, color: muted });
 
-            page.drawRectangle({ x: L, y: 614, width: W, height: 70, color: pale, borderColor: border, borderWidth: 1 });
-            [['Nama', clean(u.Nama_Lengkap || '-')], ['Jabatan / Divisi', clean(u.Jabatan_Divisi || '-')], ['Periode', `${idDate(s.Periode_Mulai)} s.d. ${idDate(s.Periode_Akhir)}`]].forEach((row, i) => {
+            page.drawRectangle({ x: L, y: 614, width: W, height: 70, color: pale });
+            const info = [
+              ['Nama', clean(u.Nama_Lengkap || '-')],
+              ['Jabatan / Divisi', clean(u.Jabatan_Divisi || '-')],
+              ['Periode', `${idDate(s.Periode_Mulai)} s.d. ${idDate(s.Periode_Akhir)}`]
+            ];
+            info.forEach((row, i) => {
               const y = 662 - i * 20;
               page.drawText(row[0], { x: L + 14, y, size: 9, font: bold, color: muted });
               page.drawText(':', { x: L + 112, y, size: 9, font: regular, color: muted });
@@ -104,169 +113,186 @@ jobs:
             });
 
             page.drawText('RINCIAN PENGHASILAN', { x: L, y: 581, size: 10, font: bold, color: navy });
-            page.drawRectangle({ x: L, y: 544, width: W, height: 27, color: navy });
-            page.drawText('KOMPONEN', { x: L + 14, y: 554, size: 9, font: bold, color: rgb(1, 1, 1) });
-            page.drawText('PERHITUNGAN', { x: L + 238, y: 554, size: 9, font: bold, color: rgb(1, 1, 1) });
-            page.drawText('NOMINAL', { x: R - 76, y: 554, size: 9, font: bold, color: rgb(1, 1, 1) });
-
             const rows = [
               ['Gaji pokok', `${money(s.Gaji_Harian)} x ${Number(s.Jumlah_Hari_Kerja) || 0} hari`, Number(s.Subtotal_Gaji) || 0],
               ['Lembur', 'Sesuai rekap', Number(s.Lembur_Nominal) || 0],
               ['Bonus / Tambahan', 'Sesuai rekap', Number(s.Bonus) || 0],
               ['Potongan', clean(s.Keterangan_Potongan || 'Tidak ada keterangan'), -(Number(s.Potongan) || 0)]
             ];
-            let y = 512;
-            for (let i = 0; i < rows.length; i++) {
-              const row = rows[i];
-              if (i % 2) page.drawRectangle({ x: L, y: y - 12, width: W, height: 36, color: pale });
+            let y = 530;
+            for (const row of rows) {
               page.drawText(row[0], { x: L + 14, y, size: 10, font: bold, color: navy });
               page.drawText(String(row[1]).slice(0, 38), { x: L + 238, y, size: 9, font: regular, color: muted });
               const nominal = row[2] < 0 ? `- ${money(Math.abs(row[2]))}` : money(row[2]);
               page.drawText(nominal, { x: R - 14 - regular.widthOfTextAtSize(nominal, 9), y, size: 9, font: regular, color: navy });
-              page.drawLine({ start: { x: L, y: y - 13 }, end: { x: R, y: y - 13 }, thickness: .7, color: border });
               y -= 36;
             }
 
-            page.drawRectangle({ x: L, y: 338, width: W, height: 54, color: rgb(.92, .98, .95), borderColor: rgb(.65, .89, .76), borderWidth: 1 });
+            page.drawRectangle({ x: L, y: 338, width: W, height: 54, color: rgb(.92, .98, .95) });
             page.drawText('TOTAL GAJI DITERIMA', { x: L + 16, y: 359, size: 11, font: bold, color: green });
             const total = money(s.Total_Gaji_Diterima);
             page.drawText(total, { x: R - 16 - bold.widthOfTextAtSize(total, 16), y: 355, size: 16, font: bold, color: green });
 
-            const signs = [['Mengetahui,', ACCOUNTANT, 'AKUNTAN'], ['Menyetujui,', HEAD, 'KEPALA SPPG'], ['Penerima,', u.Nama_Lengkap || u.ID_User, 'PENERIMA']];
-            const gap = 12, cellWidth = (W - gap * 2) / 3;
+            const signs = [
+              ['Mengetahui,', ACCOUNTANT, 'AKUNTAN'],
+              ['Menyetujui,', HEAD, 'KEPALA SPPG'],
+              ['Penerima,', u.Nama_Lengkap || u.ID_User, 'PENERIMA']
+            ];
+            const gap = 12, cell = (W - gap * 2) / 3;
             signs.forEach((q, i) => {
-              const x = L + i * (cellWidth + gap);
+              const x = L + i * (cell + gap);
               page.drawText(q[0], { x, y: 278, size: 8.5, font: regular, color: navy });
               const name = clean(q[1]).slice(0, 28);
-              page.drawText(name, { x: x + Math.max(0, (cellWidth - bold.widthOfTextAtSize(name, 9)) / 2), y: 222, size: 9, font: bold, color: navy });
-              page.drawLine({ start: { x, y: 210 }, end: { x: x + cellWidth, y: 210 }, thickness: .8, color: muted });
-              page.drawText(q[2], { x: x + (cellWidth - regular.widthOfTextAtSize(q[2], 7.5)) / 2, y: 194, size: 7.5, font: regular, color: muted });
+              page.drawText(name, { x: x + Math.max(0, (cell - bold.widthOfTextAtSize(name, 9)) / 2), y: 222, size: 9, font: bold, color: navy });
+              page.drawLine({ start: { x, y: 210 }, end: { x: x + cell, y: 210 }, thickness: .8, color: muted });
+              page.drawText(q[2], { x: x + (cell - regular.widthOfTextAtSize(q[2], 7.5)) / 2, y: 194, size: 7.5, font: regular, color: muted });
             });
-            page.drawText('Logo BGN di atas merupakan gambar resmi dari LOGO_BGN.png.', { x: L, y: 72, size: 8, font: regular, color: muted });
             return Buffer.from(await doc.save({ useObjectStreams: false }));
           }
 
-          async function publishBatch(batchRows, batchNo, logoBytes, payrollMap, userMap) {
-            console.log(`Memulai batch ${batchNo}: ${batchRows.length} slip`);
-            if (batchRows.length !== BATCH_SIZE) throw new Error(`Batch ${batchNo} tidak berisi tepat 50 slip`);
-            const issuedAt = new Date();
-            const completed = [];
-            for (const s of batchRows) {
-              let storagePath = null;
-              try {
-                if (!s.ID_User) throw new Error('ID_User kosong');
-                const p = payrollMap.get(String(s.ID_Payroll));
-                const u = userMap.get(String(s.ID_User));
-                if (!p || !u) throw new Error('Relasi Payroll/User tidak lengkap');
-                const bytes = await makePdf(s, p, u, issuedAt, logoBytes);
-                if (!bytes.includes(Buffer.from('/Subtype /Image'))) throw new Error('PDF tidak memiliki objek gambar');
-                storagePath = `${dateOnly(s.Periode_Mulai).slice(0, 4)}/${s.ID_Payroll}/${safe(u.Nama_Lengkap)}-${s.ID_Slip}.pdf`;
-                const upload = await db.storage.from('slip-gaji').upload(storagePath, bytes, { contentType: 'application/pdf', upsert: false });
-                if (upload.error) throw new Error(`Upload gagal: ${upload.error.message}`);
-                const sha = crypto.createHash('sha256').update(bytes).digest('hex');
-                const update = await db.from('Slip_Gaji').update({
-                  Status_Penerbitan: 'DITERBITKAN',
-                  Diterbitkan_At: issuedAt.toISOString(),
-                  Diterbitkan_Oleh: ACTOR,
-                  Nama_Penerbit: PUBLISHER,
-                  TTD_Penerima_Path: textPath(u.Nama_Lengkap),
-                  Ditandatangani_Penerima_At: issuedAt.toISOString(),
-                  PDF_Storage_Path: storagePath,
-                  PDF_SHA256: sha,
-                  Dicetak_At: issuedAt.toISOString()
-                }).eq('ID_Slip', s.ID_Slip).eq('Status_Penerbitan', 'DRAFT').select('ID_Slip');
-                if (update.error || !update.data?.length) {
-                  await db.storage.from('slip-gaji').remove([storagePath]);
-                  throw new Error(update.error?.message || 'Update slip tidak mengubah baris');
-                }
-                completed.push(s.ID_Slip);
-              } catch (error) {
-                throw new Error(`Batch ${batchNo}, slip ${s.ID_Slip}: ${error.message}`);
+          async function rollback() {
+            if (uploaded.length) {
+              for (let i = 0; i < uploaded.length; i += 100) {
+                await db.storage.from('slip-gaji').remove(uploaded.slice(i, i + 100));
               }
             }
-            console.log(`Batch ${batchNo} selesai: ${completed.length} slip`);
+            if (changed.length) {
+              await db.from('Slip_Gaji').update({
+                Status_Penerbitan: 'DRAFT', Diterbitkan_At: null, Diterbitkan_Oleh: null,
+                Nama_Penerbit: 'Hasbi Himatudin/ Admin', TTD_Penerima_Path: null,
+                Ditandatangani_Penerima_At: null, PDF_Storage_Path: null,
+                PDF_SHA256: null, Dicetak_At: null
+              }).in('ID_Slip', changed);
+            }
           }
 
           (async () => {
-            const statusBefore = await must(db.from('Slip_Gaji').select('ID_Slip,Status_Penerbitan'), 'Membaca status awal');
-            const publishedBefore = statusBefore.data.filter(x => x.Status_Penerbitan === 'DITERBITKAN').length;
-            const draftBefore = statusBefore.data.filter(x => x.Status_Penerbitan === 'DRAFT').length;
-            if (publishedBefore !== 250 || draftBefore !== 1647) throw new Error(`Kondisi awal berubah: DITERBITKAN=${publishedBefore}, DRAFT=${draftBefore}`);
+            const initial = await must(db.from('Slip_Gaji').select('ID_Slip,Status_Penerbitan'), 'Status awal');
+            const beforePublished = initial.data.filter(x => x.Status_Penerbitan === 'DITERBITKAN').length;
+            const beforeDraft = initial.data.filter(x => x.Status_Penerbitan === 'DRAFT').length;
+            if (beforePublished !== 250 || beforeDraft !== 1647) {
+              throw new Error(`Kondisi awal berubah: ${beforePublished}/${beforeDraft}`);
+            }
 
-            const selected = await must(db.from('Slip_Gaji').select('*').eq('Status_Penerbitan', 'DRAFT').order('Created_At', { ascending: true }).order('ID_Slip', { ascending: true }).limit(TARGET), 'Memilih 100 DRAFT awal');
-            if (selected.data.length !== TARGET) throw new Error(`Hanya menemukan ${selected.data.length} DRAFT`);
-            if (selected.data.some(x => !x.ID_User)) throw new Error('100 slip terpilih mengandung ID_User kosong');
+            const selected = await must(
+              db.from('Slip_Gaji').select('*').eq('Status_Penerbitan', 'DRAFT')
+                .order('Created_At', { ascending: true }).order('ID_Slip', { ascending: true }).limit(TARGET),
+              'Memilih slip'
+            );
+            if (selected.data.length !== TARGET) throw new Error('Jumlah DRAFT terpilih bukan 100');
+            if (selected.data.some(x => !x.ID_User)) throw new Error('Terdapat ID_User kosong pada pilihan');
 
             const payrollIds = [...new Set(selected.data.map(x => x.ID_Payroll))];
             const userIds = [...new Set(selected.data.map(x => x.ID_User))];
-            const payrolls = await must(db.from('Payroll').select('*').in('ID_Payroll', payrollIds), 'Membaca Payroll');
-            const users = await must(db.from('Users').select('ID_User,Nama_Lengkap,Jabatan_Divisi,SPPG').in('ID_User', userIds), 'Membaca Users');
+            const payrolls = await must(db.from('Payroll').select('*').in('ID_Payroll', payrollIds), 'Payroll');
+            const users = await must(db.from('Users').select('ID_User,Nama_Lengkap,Jabatan_Divisi,SPPG').in('ID_User', userIds), 'Users');
             const payrollMap = new Map(payrolls.data.map(x => [String(x.ID_Payroll), x]));
             const userMap = new Map(users.data.map(x => [String(x.ID_User), x]));
+            if (selected.data.some(x => !payrollMap.has(String(x.ID_Payroll)) || !userMap.has(String(x.ID_User)))) {
+              throw new Error('Relasi Payroll/User tidak lengkap');
+            }
 
-            const logoDownload = await db.storage.from('Logo BGN').download('LOGO_BGN.png');
-            if (logoDownload.error || !logoDownload.data) throw new Error(`Logo gagal diunduh: ${logoDownload.error?.message || 'kosong'}`);
-            const logoBytes = Buffer.from(await logoDownload.data.arrayBuffer());
+            const logoResult = await db.storage.from('Logo BGN').download('LOGO_BGN.png');
+            if (logoResult.error || !logoResult.data) throw new Error(`Logo gagal: ${logoResult.error?.message || 'kosong'}`);
+            const logoBytes = Buffer.from(await logoResult.data.arrayBuffer());
             if (logoBytes.length < 10000 || logoBytes.length > 200000) throw new Error(`Ukuran logo tidak sesuai: ${logoBytes.length}`);
 
-            await publishBatch(selected.data.slice(0, 50), 1, logoBytes, payrollMap, userMap);
-            await publishBatch(selected.data.slice(50, 100), 2, logoBytes, payrollMap, userMap);
-
-            for (const payrollId of payrollIds) {
-              const remaining = await must(db.from('Slip_Gaji').select('ID_Slip', { count: 'exact', head: true }).eq('ID_Payroll', payrollId).neq('Status_Penerbitan', 'DITERBITKAN'), `Memeriksa payroll ${payrollId}`);
-              if ((remaining.count || 0) === 0) {
-                await must(db.from('Payroll').update({
-                  Status_Penerbitan: 'DITERBITKAN', Diterbitkan_At: new Date().toISOString(), Diterbitkan_Oleh: ACTOR,
-                  Nama_Penerbit: PUBLISHER, Nama_Akuntan: ACCOUNTANT, TTD_Akuntan_Path: textPath(ACCOUNTANT),
-                  Nama_Kepala_SPPG: HEAD, TTD_Kepala_SPPG_Path: textPath(HEAD), Logo_BGN_Path: 'Logo BGN/LOGO_BGN.png',
-                  Tanda_Tangan_Digital_URL: textPath(PUBLISHER)
-                }).eq('ID_Payroll', payrollId), `Memperbarui Payroll ${payrollId}`);
+            for (let batchNo = 0; batchNo < 2; batchNo++) {
+              const rows = selected.data.slice(batchNo * BATCH, (batchNo + 1) * BATCH);
+              const issuedAt = new Date();
+              console.log(`Batch ${batchNo + 1}: ${rows.length} slip`);
+              for (const s of rows) {
+                const p = payrollMap.get(String(s.ID_Payroll));
+                const u = userMap.get(String(s.ID_User));
+                const bytes = await makePdf(s, u, issuedAt, logoBytes);
+                if (!bytes.includes(Buffer.from('/Subtype /Image'))) throw new Error(`Logo gambar tidak ditemukan: ${s.ID_Slip}`);
+                const path = `${dateOnly(s.Periode_Mulai).slice(0, 4)}/${s.ID_Payroll}/${safe(u.Nama_Lengkap)}-${s.ID_Slip}.pdf`;
+                const upload = await db.storage.from('slip-gaji').upload(path, bytes, { contentType: 'application/pdf', upsert: false });
+                if (upload.error) throw new Error(`Upload ${s.ID_Slip}: ${upload.error.message}`);
+                uploaded.push(path);
+                const sha = crypto.createHash('sha256').update(bytes).digest('hex');
+                const update = await db.from('Slip_Gaji').update({
+                  Status_Penerbitan: 'DITERBITKAN', Diterbitkan_At: issuedAt.toISOString(),
+                  Diterbitkan_Oleh: ACTOR, Nama_Penerbit: PUBLISHER,
+                  TTD_Penerima_Path: textPath(u.Nama_Lengkap),
+                  Ditandatangani_Penerima_At: issuedAt.toISOString(),
+                  PDF_Storage_Path: path, PDF_SHA256: sha, Dicetak_At: issuedAt.toISOString()
+                }).eq('ID_Slip', s.ID_Slip).eq('Status_Penerbitan', 'DRAFT').select('ID_Slip');
+                if (update.error || !update.data?.length) throw new Error(`Update gagal: ${s.ID_Slip}`);
+                changed.push(s.ID_Slip);
               }
             }
 
-            const ids = selected.data.map(x => x.ID_Slip);
-            const verified = await must(db.from('Slip_Gaji').select('ID_Slip,ID_Payroll,ID_User,Periode_Mulai,Periode_Akhir,Status_Penerbitan,PDF_Storage_Path,PDF_SHA256,TTD_Penerima_Path,Diterbitkan_Oleh,Nama_Penerbit').in('ID_Slip', ids), 'Verifikasi 100 slip');
-            const bad = verified.data.filter(x => x.Status_Penerbitan !== 'DITERBITKAN' || !x.ID_User || !x.PDF_Storage_Path || !x.PDF_SHA256 || !x.TTD_Penerima_Path || x.Diterbitkan_Oleh !== ACTOR || x.Nama_Penerbit !== PUBLISHER);
-            if (bad.length) throw new Error(`Verifikasi metadata gagal pada ${bad.length} slip`);
+            for (const pid of payrollIds) {
+              const remaining = await must(
+                db.from('Slip_Gaji').select('ID_Slip', { count: 'exact', head: true })
+                  .eq('ID_Payroll', pid).neq('Status_Penerbitan', 'DITERBITKAN'),
+                `Cek Payroll ${pid}`
+              );
+              if ((remaining.count || 0) === 0) {
+                await must(db.from('Payroll').update({
+                  Status_Penerbitan: 'DITERBITKAN', Diterbitkan_At: new Date().toISOString(),
+                  Diterbitkan_Oleh: ACTOR, Nama_Penerbit: PUBLISHER,
+                  Nama_Akuntan: ACCOUNTANT, TTD_Akuntan_Path: textPath(ACCOUNTANT),
+                  Nama_Kepala_SPPG: HEAD, TTD_Kepala_SPPG_Path: textPath(HEAD),
+                  Logo_BGN_Path: 'Logo BGN/LOGO_BGN.png',
+                  Tanda_Tangan_Digital_URL: textPath(PUBLISHER)
+                }).eq('ID_Payroll', pid), `Update Payroll ${pid}`);
+              }
+            }
 
-            const logoFailures = [];
+            const verified = await must(
+              db.from('Slip_Gaji').select('ID_Slip,ID_Payroll,ID_User,Periode_Mulai,Periode_Akhir,PDF_Storage_Path,PDF_SHA256,TTD_Penerima_Path')
+                .in('ID_Slip', changed),
+              'Verifikasi 100 baru'
+            );
+            if (verified.data.length !== 100 || verified.data.some(x => !x.ID_User || !x.PDF_Storage_Path || !x.PDF_SHA256 || !x.TTD_Penerima_Path)) {
+              throw new Error('Verifikasi metadata 100 slip gagal');
+            }
+
             for (const row of verified.data) {
-              const dl = await db.storage.from('slip-gaji').download(row.PDF_Storage_Path);
-              if (dl.error || !dl.data) { logoFailures.push({ ID_Slip: row.ID_Slip, error: dl.error?.message || 'file kosong' }); continue; }
-              const bytes = Buffer.from(await dl.data.arrayBuffer());
-              if (!bytes.includes(Buffer.from('/Subtype /Image'))) logoFailures.push({ ID_Slip: row.ID_Slip, error: 'objek gambar tidak ditemukan' });
+              const file = await db.storage.from('slip-gaji').download(row.PDF_Storage_Path);
+              if (file.error || !file.data) throw new Error(`Unduh verifikasi gagal: ${row.ID_Slip}`);
+              const bytes = Buffer.from(await file.data.arrayBuffer());
+              if (!bytes.includes(Buffer.from('/Subtype /Image'))) throw new Error(`Objek gambar hilang: ${row.ID_Slip}`);
               const sha = crypto.createHash('sha256').update(bytes).digest('hex');
-              if (sha !== row.PDF_SHA256) logoFailures.push({ ID_Slip: row.ID_Slip, error: 'SHA256 tidak cocok' });
-            }
-            if (logoFailures.length) throw new Error(`Verifikasi PDF/logo gagal pada ${logoFailures.length} slip`);
-
-            const statusAfter = await must(db.from('Slip_Gaji').select('ID_Slip,Status_Penerbitan,PDF_Storage_Path,PDF_SHA256,ID_User'), 'Membaca status akhir');
-            const publishedAfter = statusAfter.data.filter(x => x.Status_Penerbitan === 'DITERBITKAN').length;
-            const draftAfter = statusAfter.data.filter(x => x.Status_Penerbitan === 'DRAFT').length;
-            const publishedComplete = statusAfter.data.filter(x => x.Status_Penerbitan === 'DITERBITKAN' && x.PDF_Storage_Path && x.PDF_SHA256).length;
-            const noUser = statusAfter.data.filter(x => !x.ID_User).length;
-            if (publishedAfter !== 350 || draftAfter !== 1547 || publishedComplete !== 350 || noUser !== 0) {
-              throw new Error(`Target akhir gagal: terbit=${publishedAfter}, draft=${draftAfter}, lengkap=${publishedComplete}, tanpaUser=${noUser}`);
+              if (sha !== row.PDF_SHA256) throw new Error(`SHA berbeda: ${row.ID_Slip}`);
             }
 
-            const distributionMap = new Map();
+            const final = await must(db.from('Slip_Gaji').select('ID_Slip,Status_Penerbitan,PDF_Storage_Path,PDF_SHA256,ID_User'), 'Status akhir');
+            const afterPublished = final.data.filter(x => x.Status_Penerbitan === 'DITERBITKAN').length;
+            const afterDraft = final.data.filter(x => x.Status_Penerbitan === 'DRAFT').length;
+            const complete = final.data.filter(x => x.Status_Penerbitan === 'DITERBITKAN' && x.PDF_Storage_Path && x.PDF_SHA256).length;
+            const noUser = final.data.filter(x => !x.ID_User).length;
+            if (afterPublished !== 350 || afterDraft !== 1547 || complete !== 350 || noUser !== 0) {
+              throw new Error(`Target gagal: ${afterPublished}/${afterDraft}/${complete}/${noUser}`);
+            }
+
+            const distribution = {};
             for (const row of verified.data) {
               const key = `${row.ID_Payroll}|${dateOnly(row.Periode_Mulai)}|${dateOnly(row.Periode_Akhir)}`;
-              distributionMap.set(key, (distributionMap.get(key) || 0) + 1);
+              distribution[key] = (distribution[key] || 0) + 1;
             }
-            const distribution = [...distributionMap.entries()].map(([key, jumlah]) => {
-              const [ID_Payroll, Periode_Mulai, Periode_Akhir] = key.split('|');
-              return { ID_Payroll, Periode_Mulai, Periode_Akhir, jumlah };
-            });
             const report = {
-              success: true, runStartedAt: runStartedAt.toISOString(), runFinishedAt: new Date().toISOString(),
-              publishedBefore, draftBefore, newlyPublished: TARGET, publishedAfter, draftAfter,
-              publishedWithPdfAndSha: publishedComplete, slipsWithoutUser: noUser,
-              uploadFailures: 0, logoImageFailures: 0, distribution
+              success: true,
+              startedAt: startedAt.toISOString(),
+              finishedAt: new Date().toISOString(),
+              beforePublished, beforeDraft,
+              newlyPublished: 100,
+              afterPublished, afterDraft,
+              publishedWithPdfAndSha: complete,
+              slipsWithoutUser: noUser,
+              uploadFailures: 0,
+              logoImageFailures: 0,
+              distribution
             };
             fs.writeFileSync('payroll-100-report.json', JSON.stringify(report, null, 2));
             console.log(JSON.stringify(report, null, 2));
-          })().catch(error => { console.error(error); process.exit(1); });
+          })().catch(async error => {
+            console.error(error);
+            try { await rollback(); } catch (rollbackError) { console.error('ROLLBACK ERROR', rollbackError); }
+            process.exit(1);
+          });
           NODE
 
       - name: Upload verification report
@@ -275,15 +301,3 @@ jobs:
           name: payroll-100-verification
           path: payroll-100-report.json
           retention-days: 7
-
-      - name: Disable one-time workflow
-        if: success()
-        shell: bash
-        run: |
-          rm -f .github/payroll-run-100.trigger
-          rm -f .github/workflows/publish-payroll-100-once.yml
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'chore: disable completed one-time payroll publisher'
-          git push
