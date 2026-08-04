@@ -1,0 +1,33 @@
+name: Staging Release Validation
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type check and unit tests
+        run: deno task check
+      - name: Validate consolidated migration contracts
+        run: deno test -A tests/release_sprint_11_15_test.ts
+      - name: Verify required functions
+        shell: bash
+        run: |
+          test -f supabase/functions/OperationsV2/index.ts
+          test -f supabase/functions/AbsenV2/index.ts
+          test -f supabase/functions/AttendanceCorrections/index.ts
+      - name: Produce staging checklist
+        run: |
+          mkdir -p artifacts
+          printf 'commit=%s\nstatus=validated\n' "${GITHUB_SHA}" > artifacts/staging-check.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: staging-validation
+          path: artifacts/staging-check.txt
