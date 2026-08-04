@@ -109,10 +109,18 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     if (typeof originalApiCall === 'function') {
       window.apiCall = async function securityAwareApiCall(functionName, payload = {}) {
         if (localStorage.getItem('auth_token')) {
-          try { await ensureDeviceRegistered(); } catch (error) { console.warn('Device registration deferred', error); }
+          try {
+            await ensureDeviceRegistered();
+          } catch (error) {
+            console.warn('Device registration deferred', error);
+          }
         }
 
-        payload = { ...payload, deviceKey, deviceId: registeredDevice?.Device_ID || registeredDevice?.deviceId || null };
+        payload = {
+          ...payload,
+          deviceKey,
+          deviceId: registeredDevice?.Device_ID || registeredDevice?.deviceId || null
+        };
 
         if (functionName === 'recordAbsensiSelf') {
           if (!lastGpsPosition || !attendanceChallenge?.challengeId) {
@@ -225,26 +233,7 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   });
 })();
 
-(() => {
-  const loadStyle = (href) => {
-    if (document.querySelector(`link[href="${href}"]`)) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = href;
-    document.head.appendChild(link);
-  };
-  const loadScript = (src) => new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-    const script = document.createElement('script');
-    script.src = src;
-    script.defer = true;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-  loadStyle('./security-operations-ui.css');
-  const boot = () => loadScript('./security-ops-client.js')
-    .then(() => loadScript('./security-operations-ui.js'))
-    .catch((error) => console.warn('Security Operations UI gagal dimuat', error));
-  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', boot) : boot();
-})();
+// Satu-satunya entrypoint frontend modular. Asset turunan dikelola oleh bootstrap.
+import('./src/app/bootstrap.js?v=23.2.0').catch((error) => {
+  console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
+});
