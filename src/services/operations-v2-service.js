@@ -1,6 +1,18 @@
-import { apiCall } from './api-client.js';
+import { ApiClientError } from './api-client.js';
 
-const call = (action, payload = {}) => apiCall('OperationsV2', { action, ...payload });
+async function call(action, payload = {}) {
+  const config = window.ABSEN_SUPABASE_CONFIG || {};
+  const token = localStorage.getItem('auth_token');
+  if (!token) throw new ApiClientError('Sesi login tidak tersedia.', { code: 'SESSION_REQUIRED' });
+  const response = await fetch(`${config.projectUrl}/functions/v1/OperationsV2`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, token, ...payload })
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok || body?.success === false) throw new ApiClientError(body?.message || 'Layanan operasi tidak tersedia.', { code: body?.code, requestId: body?.requestId, status: response.status, details: body?.details });
+  return body.result;
+}
 
 export const releaseOperationsService = Object.freeze({
   listFeatureFlags: () => call('listFeatureFlags'),
