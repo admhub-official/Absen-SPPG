@@ -5,24 +5,10 @@ const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
 
-function normalizeName(value = '') {
-  return value.toUpperCase().normalize('NFKD').replace(/[^A-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
-}
-function normalizeDepartment(value = '') {
-  const n = normalizeName(value);
-  if (n === 'ASLAP') return 'ASISTEN LAPANGAN';
-  return n.replace(/^DIVISI\s+/, '');
-}
-function parseTimeCell(value: unknown): string[] {
-  if (value == null || value === '') return [];
-  return String(value).split(/\r?\n|,|;/).map((v) => v.trim()).filter((v) => /^([01]\d|2[0-3]):[0-5]\d$/.test(v));
-}
-function excelDateToISO(value: unknown, year: number, month: number): string | null {
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-  const day = Number(value);
-  if (!Number.isInteger(day) || day < 1 || day > 31) return null;
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-}
+function normalizeName(value = '') { return value.toUpperCase().normalize('NFKD').replace(/[^A-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(); }
+function normalizeDepartment(value = '') { const n = normalizeName(value); if (n === 'ASLAP') return 'ASISTEN LAPANGAN'; return n.replace(/^DIVISI\s+/, ''); }
+function parseTimeCell(value: unknown): string[] { if (value == null || value === '') return []; return String(value).split(/\r?\n|,|;/).map((v) => v.trim()).filter((v) => /^([01]\d|2[0-3]):[0-5]\d$/.test(v)); }
+function excelDateToISO(value: unknown, year: number, month: number): string | null { if (value instanceof Date) return value.toISOString().slice(0, 10); const day = Number(value); if (!Number.isInteger(day) || day < 1 || day > 31) return null; return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`; }
 function parsePeriod(rows: unknown[][]) {
   const text = rows.slice(0, 5).flat().map(String).join(' ');
   const match = text.match(/(\d{1,2})\s+Juli\s*[–-]\s*(\d{1,2})\s+Agustus\s+(20\d{2})/i);
@@ -54,30 +40,31 @@ function parseWorkbook(base64: string) {
   return { period, rows: parsed };
 }
 async function requireSession(token: string) {
-  const { data: session } = await db.from('Sessions').select('ID_User,Role,Expires_At').eq('Token', token).gt('Expires_At', new Date().toISOString()).maybeSingle();
+  const { data: session, error: sessionError } = await db.from('Sessions').select('ID_User,Role,Expires_At').eq('Token', token).gt('Expires_At', new Date().toISOString()).maybeSingle();
+  if (sessionError) throw sessionError;
   if (!session) throw new Error('Sesi tidak valid atau telah berakhir.');
-  const { data: user } = await db.from('Users').select('ID_User,Nama_Lengkap,Role,SPPG,Yayasan,Status_Aktif').eq('ID_User', session.ID_User).single();
+  const { data: user, error: userError } = await db.from('Users').select('ID_User,Nama_Lengkap,Role,SPPG,Yayasan,Status_Aktif').eq('ID_User', session.ID_User).single();
+  if (userError) throw userError;
+  user.Role = normalizeName(user.Role);
   if (!user?.Status_Aktif || user.Role === 'USER') throw new Error('Akses upload absensi tidak tersedia.');
-  const { data: roleConfig } = await db.from('Attendance_Import_Role_Config').select('*').eq('Role', user.Role).maybeSingle();
+  const { data: roleConfig, error: roleError } = await db.from('Attendance_Import_Role_Config').select('*').eq('Role', user.Role).maybeSingle();
+  if (roleError) throw roleError;
   if (!roleConfig?.Menu_Enabled || !roleConfig?.Can_Upload) throw new Error('Role belum diizinkan mengunggah data absensi.');
   return { user, roleConfig };
 }
 async function allowedScopes(user: any) {
   if (user.Role === 'SUPER ADMIN') {
-    const { data } = await db.from('Users').select('SPPG,Yayasan').not('SPPG', 'is', null);
+    const { data, error } = await db.from('Users').select('SPPG,Yayasan').not('SPPG', 'is', null);
+    if (error) throw error;
     return [...new Map((data || []).filter((x) => x.SPPG).map((x) => [x.SPPG, x])).values()];
   }
-  const { data } = await db.from('Admin_Access').select('SPPG,Yayasan').eq('ID_User_Admin', user.ID_User).eq('Aktif', true);
+  const { data, error } = await db.from('Admin_Access').select('SPPG,Yayasan').eq('ID_User_Admin', user.ID_User).eq('Aktif', true);
+  if (error) throw error;
   const scopes = [...(data || [])];
   if (user.SPPG && !scopes.some((x) => x.SPPG === user.SPPG)) scopes.push({ SPPG: user.SPPG, Yayasan: user.Yayasan });
   return scopes;
 }
-function confidence(source: string, target: string) {
-  const a = new Set(normalizeName(source).split(' '));
-  const b = new Set(normalizeName(target).split(' '));
-  const intersection = [...a].filter((x) => b.has(x)).length;
-  return intersection / Math.max(a.size, b.size, 1);
-}
+function confidence(source: string, target: string) { const a = new Set(normalizeName(source).split(' ')); const b = new Set(normalizeName(target).split(' ')); const intersection = [...a].filter((x) => b.has(x)).length; return intersection / Math.max(a.size, b.size, 1); }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
@@ -89,7 +76,7 @@ Deno.serve(async (req) => {
     if (body.action === 'config') return json({ success: true, result: { roleConfig, scopes } });
     if (body.action === 'updateRoleConfig') {
       if (user.Role !== 'SUPER ADMIN') throw new Error('Hanya SUPER ADMIN yang dapat mengatur role.');
-      const role = String(body.role || '').toUpperCase();
+      const role = normalizeName(String(body.role || ''));
       if (role === 'USER') body.config = { Menu_Enabled: false, Can_Upload: false, Can_Save_Mapping: false, Can_Force_Duplicate: false };
       const payload = { Role: role, ...body.config, Updated_By: user.ID_User, Updated_At: new Date().toISOString() };
       const { error } = await db.from('Attendance_Import_Role_Config').upsert(payload);
@@ -100,8 +87,10 @@ Deno.serve(async (req) => {
     if (!scopeNames.includes(sppg)) throw new Error('SPPG berada di luar cakupan akun.');
     if (body.action === 'preview') {
       const parsed = parseWorkbook(String(body.fileBase64 || ''));
-      const { data: users } = await db.from('Users').select('ID_User,Nama_Lengkap,Jabatan_Divisi,SPPG').eq('SPPG', sppg).eq('Status_Aktif', true);
-      const { data: mappings } = await db.from('Attendance_Name_Mappings').select('*').eq('SPPG', sppg).eq('Is_Active', true);
+      const { data: users, error: usersError } = await db.from('Users').select('ID_User,Nama_Lengkap,Jabatan_Divisi,SPPG').eq('SPPG', sppg).eq('Status_Aktif', true).order('Nama_Lengkap');
+      if (usersError) throw usersError;
+      const { data: mappings, error: mappingError } = await db.from('Attendance_Name_Mappings').select('*').eq('SPPG', sppg).eq('Is_Active', true);
+      if (mappingError) throw mappingError;
       const grouped = new Map<string, any>();
       for (const row of parsed.rows) {
         const key = `${row.machineId}|${normalizeName(row.sourceName)}`;
@@ -113,12 +102,16 @@ Deno.serve(async (req) => {
         const suggestions = (users || []).map((u: any) => ({ ...u, confidence: confidence(employee.sourceName, u.Nama_Lengkap || '') })).filter((u: any) => u.confidence >= 0.34).sort((a:any,b:any) => b.confidence-a.confidence).slice(0,5);
         return { ...employee, mappingMode: saved?.Mapping_Mode || 'SINGLE', targetUserIds: saved?.Target_User_IDs || (suggestions[0]?.confidence >= 0.66 ? [suggestions[0].ID_User] : []), suggestions, needsReview: !saved && !(suggestions[0]?.confidence >= 0.66) };
       });
-      return json({ success: true, result: { period: parsed.period, employees, summary: { employees: employees.length, scans: parsed.rows.reduce((n,r)=>n+r.scans.length,0), needsReview: employees.filter((e)=>e.needsReview).length } } });
+      const accounts = (users || []).map((u: any) => ({ ID_User: u.ID_User, Nama_Lengkap: u.Nama_Lengkap, Jabatan_Divisi: u.Jabatan_Divisi }));
+      return json({ success: true, result: { period: parsed.period, employees, accounts, summary: { employees: employees.length, scans: parsed.rows.reduce((n,r)=>n+r.scans.length,0), needsReview: employees.filter((e)=>e.needsReview).length } } });
     }
     if (body.action === 'commit') {
       const employees = Array.isArray(body.employees) ? body.employees : [];
+      const invalidMulti = employees.some((e: any) => e.mappingMode === 'COPY_TO_MULTIPLE' && (e.targetUserIds || []).length < 2);
+      if (invalidMulti) throw new Error('Pemetaan beberapa akun wajib memilih minimal dua akun tujuan.');
       const allIds = [...new Set(employees.flatMap((e:any) => e.targetUserIds || []))];
-      const { data: validUsers } = await db.from('Users').select('ID_User,SPPG,Yayasan').in('ID_User', allIds).eq('SPPG', sppg).eq('Status_Aktif', true);
+      const { data: validUsers, error: validUsersError } = await db.from('Users').select('ID_User,SPPG,Yayasan').in('ID_User', allIds).eq('SPPG', sppg).eq('Status_Aktif', true);
+      if (validUsersError) throw validUsersError;
       const valid = new Map((validUsers || []).map((u:any) => [u.ID_User,u]));
       if (allIds.some((id) => !valid.has(id))) throw new Error('Terdapat akun tujuan di luar cakupan SPPG.');
       const { data: job, error: jobError } = await db.from('Attendance_Import_Jobs').insert({ File_Name: body.fileName || 'upload.xlsx', File_Hash: body.fileHash || null, SPPG: sppg, Yayasan: scopes.find((x:any)=>x.SPPG===sppg)?.Yayasan || user.Yayasan, Period_Start: body.period?.start || null, Period_End: body.period?.end || null, Uploaded_By: user.ID_User, Status: 'PROCESSING', Total_Source_Employees: employees.length, Total_Target_Accounts: allIds.length, Import_Settings_JSON: { duplicatePolicy: body.duplicatePolicy || 'SKIP' } }).select().single();
@@ -129,7 +122,8 @@ Deno.serve(async (req) => {
         if (!employee.targetUserIds?.length) { errors++; continue; }
         for (const day of employee.attendance || []) {
           const scans = day.scans || []; scansRead += scans.length;
-          const { data: importRow } = await db.from('Attendance_Import_Rows').insert({ ID_Import: job.ID_Import, Machine_Employee_ID: employee.machineId, Source_Name: employee.sourceName, Source_Department: employee.department, Attendance_Date: day.date, Parsed_Scans_JSON: scans, Target_User_IDs: employee.targetUserIds, Validation_Status: 'VALID' }).select().single();
+          const { data: importRow, error: rowError } = await db.from('Attendance_Import_Rows').insert({ ID_Import: job.ID_Import, Machine_Employee_ID: employee.machineId, Source_Name: employee.sourceName, Source_Department: employee.department, Attendance_Date: day.date, Parsed_Scans_JSON: scans, Target_User_IDs: employee.targetUserIds, Validation_Status: 'VALID' }).select().single();
+          if (rowError) { errors++; continue; }
           for (const userId of employee.targetUserIds) for (let i=0;i<scans.length;i++) {
             const kind = scans.length === 1 ? 'PUNCH_TUNGGAL' : i === 0 ? 'DATANG' : i === scans.length - 1 ? 'PULANG' : 'PUNCH_TAMBAHAN';
             const stamp = `${day.date}T${scans[i]}:00+07:00`;
@@ -138,7 +132,10 @@ Deno.serve(async (req) => {
             if (error?.code === '23505') skipped++; else if (error) errors++; else inserted++;
           }
         }
-        if (body.saveMappings && roleConfig.Can_Save_Mapping) await db.from('Attendance_Name_Mappings').upsert({ SPPG: sppg, Source_Name_Normalized: normalizeName(employee.sourceName), Source_Machine_ID: employee.machineId || null, Source_Department: employee.department, Mapping_Mode: employee.mappingMode, Target_User_IDs: employee.targetUserIds, Is_Active: true, Created_By: user.ID_User, Updated_At: new Date().toISOString() }, { onConflict: 'SPPG,Source_Name_Normalized,Source_Machine_ID' });
+        if (body.saveMappings && roleConfig.Can_Save_Mapping) {
+          const { error } = await db.from('Attendance_Name_Mappings').upsert({ SPPG: sppg, Source_Name_Normalized: normalizeName(employee.sourceName), Source_Machine_ID: employee.machineId || null, Source_Department: employee.department, Mapping_Mode: employee.mappingMode, Target_User_IDs: employee.targetUserIds, Is_Active: true, Created_By: user.ID_User, Updated_At: new Date().toISOString() }, { onConflict: 'SPPG,Source_Name_Normalized,Source_Machine_ID' });
+          if (error) errors++;
+        }
       }
       const status = errors ? (inserted ? 'PARTIAL' : 'FAILED') : 'COMPLETED';
       await db.from('Attendance_Import_Jobs').update({ Status: status, Total_Scans_Read: scansRead, Total_Scans_Inserted: inserted, Total_Scans_Skipped: skipped, Total_Errors: errors, Completed_At: new Date().toISOString() }).eq('ID_Import', job.ID_Import);
