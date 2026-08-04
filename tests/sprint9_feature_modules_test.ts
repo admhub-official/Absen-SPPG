@@ -1,0 +1,7 @@
+import {assert,assertStringIncludes} from "jsr:@std/assert";
+const read=(path:string)=>Deno.readTextFile(path);
+Deno.test('Sprint 9 menyediakan API client dan domain services',async()=>{const api=await read('src/services/api-client.js');const domain=await read('src/services/domain-services.js');assertStringIncludes(api,'ApiClientError');for(const name of ['attendanceService','userService','deviceService','complaintService','payrollService'])assertStringIncludes(domain,name);});
+Deno.test('feature registry memuat profil perangkat pengaduan payroll',async()=>{const text=await read('src/app/feature-registry.js');for(const name of ['profile','devices','complaints','payroll'])assertStringIncludes(text,`'${name}'`);});
+Deno.test('halaman modular menggunakan UI state dan responsive list',async()=>{for(const path of ['src/pages/profile/profile-page.js','src/pages/devices/device-page.js','src/pages/complaints/complaint-page.js','src/pages/payroll/payroll-page.js']){const text=await read(path);assert(text.includes('renderLoading')||text.includes('renderResponsiveDataList'));}});
+Deno.test('bootstrap mengekspor feature registry versi 9',async()=>{const text=await read('src/app/bootstrap.js');assertStringIncludes(text,'createFeatureRegistry');assertStringIncludes(text,"version:'9.0.0'");assertStringIncludes(text,'window.AbsenFeatures');});
+Deno.test('anonimitas pengaduan tetap dikendalikan backend',async()=>{const text=await read('src/pages/complaints/complaint-page.js');assertStringIncludes(text,'otorisasi backend');assert(!text.includes('ID_Pelapor_Asli'));});
