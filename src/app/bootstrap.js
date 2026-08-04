@@ -67,6 +67,7 @@ export async function bootstrapApp() {
   await Promise.all([
     loadStyle(`./src/styles/app-system.css?v=${VERSION}`),
     loadStyle(`./src/styles/feature-pages.css?v=${VERSION}`),
+    loadStyle(`./src/styles/device-trust-policy.css?v=${VERSION}`),
     loadStyle(`./src/styles/attendance-experience.css?v=${VERSION}`),
     loadStyle(`./security-operations-ui.css?v=${VERSION}`),
     loadStyle(`./src/styles/responsive-overrides.css?v=${VERSION}`)
