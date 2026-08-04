@@ -1,0 +1,53 @@
+name: Publish Payroll 100 Node22
+
+on:
+  push:
+    paths:
+      - '.github/workflows/publish-payroll-100-node22.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-payroll-100-once
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate secrets
+        shell: bash
+        run: |
+          test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL belum tersedia'; exit 1; }
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY belum tersedia'; exit 1; }
+
+      - name: Install dependencies
+        run: npm install --no-save @supabase/supabase-js@2 pdf-lib@1.17.1
+
+      - name: Extract and run publisher script
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC='.github/workflows/publish-payroll-100-once.yml'
+          awk '/^[[:space:]]*node <<'"'"'NODE'"'"'/{flag=1;next} /^[[:space:]]*NODE[[:space:]]*$/{flag=0} flag{sub(/^          /,""); print}' "$SRC" > payroll-publisher.js
+          test -s payroll-publisher.js
+          node payroll-publisher.js
+
+      - name: Upload verification report
+        uses: actions/upload-artifact@v4
+        with:
+          name: payroll-100-verification-node22
+          path: payroll-100-report.json
+          retention-days: 7
