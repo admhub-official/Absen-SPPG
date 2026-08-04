@@ -13,7 +13,7 @@ Write-Host "Menerapkan seluruh migration database..."
 & $SupabaseCli db push --linked --yes
 if ($LASTEXITCODE -ne 0) { throw "Migration database gagal dengan exit code $LASTEXITCODE." }
 
-foreach ($FunctionName in @("Absen", "AbsenV2", "DeviceTrust", "SecurityOps", "ProductionReadiness", "AttendanceCorrections", "OperationsV2")) {
+foreach ($FunctionName in @("Absen", "AbsenV2", "DeviceTrust", "SecurityOps", "ProductionReadiness", "AttendanceCorrections", "OperationsV2", "WorkforceOps")) {
   Write-Host "Men-deploy Edge Function $FunctionName..."
   & $SupabaseCli functions deploy $FunctionName --project-ref $ProjectRef --no-verify-jwt --use-api --yes
   if ($LASTEXITCODE -ne 0) { throw "Deployment Edge Function $FunctionName gagal dengan exit code $LASTEXITCODE." }

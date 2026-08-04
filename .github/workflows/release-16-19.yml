@@ -1,0 +1,24 @@
+name: Release 16-19 Validation
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Shared quality gate
+        run: deno task check
+      - name: Validate release contracts
+        run: deno test -A tests/release_sprint_16_19_test.ts
+      - name: Verify required assets
+        run: |
+          test -f supabase/functions/WorkforceOps/index.ts
+          test -f supabase/migrations/20260804090000_release_sprint_16_19.sql
+          test -f src/pages/workforce/workforce-operations-page.js
