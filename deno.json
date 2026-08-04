@@ -16,6 +16,6 @@
     }
   },
   "tasks": {
-    "check": "deno check supabase/functions/_shared/contracts.ts supabase/functions/_shared/http.ts supabase/functions/_shared/validation.ts supabase/functions/SecurityOps/index.ts tests/shared_validation_test.ts tests/codebase_hygiene_test.ts && deno test tests/shared_validation_test.ts tests/codebase_hygiene_test.ts"
+    "check": "deno check supabase/functions/_shared/contracts.ts supabase/functions/_shared/http.ts supabase/functions/_shared/validation.ts supabase/functions/SecurityOps/index.ts tests/shared_validation_test.ts tests/codebase_hygiene_test.ts && deno test --allow-read tests/shared_validation_test.ts tests/codebase_hygiene_test.ts"
   }
 }
