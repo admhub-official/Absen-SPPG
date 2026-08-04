@@ -1,0 +1,7 @@
+import {assertEquals,assertStringIncludes} from 'jsr:@std/assert';
+const read=(p:string)=>Deno.readTextFile(p);
+Deno.test('correction migration defines workflow and guarded apply RPC',async()=>{const s=await read('supabase/migrations/20260804070000_sprint10_attendance_corrections.sql');assertStringIncludes(s,'Attendance_Corrections');assertStringIncludes(s,'apply_attendance_correction');assertStringIncludes(s,'CORRECTION_ALREADY_FINAL');});
+Deno.test('shift policy supports cross midnight work date',async()=>{const s=await read('supabase/migrations/20260804071000_sprint10_shift_policies.sql');assertStringIncludes(s,'Crosses_Midnight');assertStringIncludes(s,'resolve_attendance_work_date');});
+Deno.test('correction API supports create list and review',async()=>{const s=await read('supabase/functions/AttendanceCorrections/index.ts');for(const action of ["action==='create'","action==='listMine'","action==='listQueue'","action==='review'"])assertStringIncludes(s,action);});
+Deno.test('attendance experience exposes progress receipt and correction',async()=>{const s=await read('src/pages/attendance/attendance-experience.js');for(const name of ['renderAttendanceProgress','showAttendanceReceipt','renderCorrectionWorkspace','openCorrectionForm'])assertStringIncludes(s,name);});
+Deno.test('bootstrap publishes version 10 experience',async()=>{const s=await read('src/app/bootstrap.js');assertStringIncludes(s,"version:'10.0.0'");assertStringIncludes(s,'window.AttendanceExperience');assertEquals(s.includes('document.write'),false);});
