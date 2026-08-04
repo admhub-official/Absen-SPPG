@@ -1,17 +1,17 @@
-import { createRouter } from './router.js?v=25.0.0';
-import { createAppStore } from '../stores/app-store.js?v=25.0.0';
-import { createFeatureRegistry } from './feature-registry.js?v=25.0.0';
+import { createRouter } from './router.js?v=25.1.0';
+import { createAppStore } from '../stores/app-store.js?v=25.1.0';
+import { createFeatureRegistry } from './feature-registry.js?v=25.1.0';
 import {
   renderAttendanceProgress,
   showAttendanceReceipt,
   renderCorrectionWorkspace,
   openCorrectionForm
-} from '../pages/attendance/attendance-experience.js?v=25.0.0';
-import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=25.0.0';
-import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=25.0.0';
-import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=25.0.0';
+} from '../pages/attendance/attendance-experience.js?v=25.1.0';
+import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=25.1.0';
+import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=25.1.0';
+import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=25.1.0';
 
-const VERSION = '25.0.0';
+const VERSION = '25.1.0';
 const loadedAssets = new Map();
 
 function canonicalPath(value) {
