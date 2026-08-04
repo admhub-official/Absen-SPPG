@@ -1,17 +1,17 @@
-import { createRouter } from './router.js?v=24.0.0';
-import { createAppStore } from '../stores/app-store.js?v=24.0.0';
-import { createFeatureRegistry } from './feature-registry.js?v=24.0.0';
+import { createRouter } from './router.js?v=25.0.0';
+import { createAppStore } from '../stores/app-store.js?v=25.0.0';
+import { createFeatureRegistry } from './feature-registry.js?v=25.0.0';
 import {
   renderAttendanceProgress,
   showAttendanceReceipt,
   renderCorrectionWorkspace,
   openCorrectionForm
-} from '../pages/attendance/attendance-experience.js?v=24.0.0';
-import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=24.0.0';
-import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=24.0.0';
-import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=24.0.0';
+} from '../pages/attendance/attendance-experience.js?v=25.0.0';
+import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=25.0.0';
+import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=25.0.0';
+import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=25.0.0';
 
-const VERSION = '24.0.0';
+const VERSION = '25.0.0';
 const loadedAssets = new Map();
 
 function canonicalPath(value) {
@@ -70,7 +70,8 @@ export async function bootstrapApp() {
     loadStyle(`./src/styles/device-trust-policy.css?v=${VERSION}`),
     loadStyle(`./src/styles/attendance-experience.css?v=${VERSION}`),
     loadStyle(`./security-operations-ui.css?v=${VERSION}`),
-    loadStyle(`./src/styles/responsive-overrides.css?v=${VERSION}`)
+    loadStyle(`./src/styles/responsive-overrides.css?v=${VERSION}`),
+    loadStyle(`./src/styles/mobile-ui-refresh.css?v=${VERSION}`)
   ]);
   const store = createAppStore({ route: window.location.hash.replace(/^#\/?/, '') || 'dashboard' });
   const router = createRouter({ onRoute: (route) => store.setState({ route }) });
@@ -102,6 +103,7 @@ export async function bootstrapApp() {
   window.PlatformOperations = platformOperations;
   await loadScript(`./pwa-runtime.js?v=${VERSION}`);
   await loadScript(`./src/app/layout-enhancements.js?v=${VERSION}`);
+  await loadScript(`./src/app/mobile-ui-refresh.js?v=${VERSION}`);
   await loadScript(`./security-ops-client.js?v=${VERSION}`);
   await loadScript(`./security-operations-ui.js?v=${VERSION}`);
   window.dispatchEvent(new CustomEvent('absen:app-ready', {
