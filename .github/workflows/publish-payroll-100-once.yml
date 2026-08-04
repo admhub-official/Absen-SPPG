@@ -1,7 +1,7 @@
 name: Publish Payroll 100 Once
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: 
   push:
     paths:
       - '.github/payroll-run-100.trigger'
