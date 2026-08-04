@@ -33,3 +33,43 @@ Deno.test("security client is idempotent", async () => {
     throw new Error("security client must prevent duplicate global initialization");
   }
 });
+
+Deno.test("pull requests use one consolidated quality workflow", async () => {
+  const quality = await read(".github/workflows/quality.yml");
+  const staging = await read(".github/workflows/staging-release.yml");
+  if (!quality.includes("deno task ci")) throw new Error("quality workflow must run consolidated CI");
+  if (staging.includes("pull_request:")) throw new Error("staging workflow must not duplicate PR checks");
+
+  for (const obsolete of [
+    ".github/workflows/release-16-19.yml",
+    ".github/workflows/release-20-22.yml",
+  ]) {
+    try {
+      await Deno.stat(obsolete);
+      throw new Error(`obsolete workflow still exists: ${obsolete}`);
+    } catch (error) {
+      if (!(error instanceof Deno.errors.NotFound)) throw error;
+    }
+  }
+});
+
+Deno.test("operations edge functions use shared session authentication", async () => {
+  const sharedAuth = await read("supabase/functions/_shared/auth.ts");
+  for (const token of ["authenticateUserSession", "requireOperationalRole", "requireSuperAdminRole"]) {
+    if (!sharedAuth.includes(token)) throw new Error(`shared auth missing ${token}`);
+  }
+
+  for (const path of [
+    "supabase/functions/OperationsV2/index.ts",
+    "supabase/functions/WorkforceOps/index.ts",
+    "supabase/functions/PlatformOps/index.ts",
+  ]) {
+    const source = await read(path);
+    if (!source.includes("authenticateUserSession")) {
+      throw new Error(`${path} does not use shared authentication`);
+    }
+    if (source.includes('from("Sessions").select')) {
+      throw new Error(`${path} still duplicates session authentication`);
+    }
+  }
+});
