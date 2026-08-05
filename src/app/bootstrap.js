@@ -1,17 +1,17 @@
-import { createRouter } from './router.js?v=26.1.8';
-import { createAppStore } from '../stores/app-store.js?v=26.1.8';
-import { createFeatureRegistry } from './feature-registry.js?v=26.1.8';
+import { createRouter } from './router.js?v=26.1.9';
+import { createAppStore } from '../stores/app-store.js?v=26.1.9';
+import { createFeatureRegistry } from './feature-registry.js?v=26.1.9';
 import {
   renderAttendanceProgress,
   showAttendanceReceipt,
   renderCorrectionWorkspace,
   openCorrectionForm
-} from '../pages/attendance/attendance-experience.js?v=26.1.8';
-import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.1.8';
-import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.1.8';
-import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.1.8';
+} from '../pages/attendance/attendance-experience.js?v=26.1.9';
+import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.1.9';
+import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.1.9';
+import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.1.9';
 
-const VERSION = '26.1.8';
+const VERSION = '26.1.9';
 const loadedAssets = new Map();
 
 function canonicalPath(value) {
@@ -103,6 +103,7 @@ export async function bootstrapApp() {
   await loadScript(`./src/app/attendance-import-search-fix.js?v=${VERSION}`);
   await loadScript(`./src/app/config-center.js?v=${VERSION}`);
   await loadScript(`./src/features/payroll/legacy-payroll-pagination.js?v=${VERSION}`);
+  await loadScript(`./src/features/payroll/pending-signature-counts.js?v=${VERSION}`);
   window.dispatchEvent(new CustomEvent('absen:app-ready', { detail: { version: VERSION, features: features.names() } }));
   return app;
 }
