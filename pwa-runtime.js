@@ -6,7 +6,7 @@
     online:()=>navigator.onLine,
     async register(){
       if(!('serviceWorker' in navigator))return{supported:false};
-      const registration=await navigator.serviceWorker.register(`./sw.js?v=${VERSION}`,{
+      const registration=await navigator.serviceWorker.register('./sw.js',{
         scope:'./',
         updateViaCache:'none'
       });
