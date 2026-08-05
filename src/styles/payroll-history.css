@@ -1,0 +1,11 @@
+#view-admin-payroll .payroll-history-table td:first-child,#view-admin-payroll .payroll-history-table th:first-child{width:58px;text-align:center}
+#view-admin-payroll .payroll-history-table td:nth-child(2) strong{display:block}
+#view-admin-payroll .payroll-history-table td:nth-child(2) small{display:block;color:var(--text-muted);margin-top:.2rem}
+#view-admin-payroll .pagination{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:1rem;flex-wrap:wrap;border-top:1px solid var(--border)}
+#view-admin-payroll .pagination-info{font-size:.78rem;color:var(--text-muted)}
+#view-admin-payroll .pagination-btns{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap}
+#view-admin-payroll .pagination-btn{min-width:36px;height:36px;padding:0 .65rem;border:1px solid var(--border);background:var(--surface);border-radius:.55rem;color:var(--text);cursor:pointer;font-weight:600}
+#view-admin-payroll .pagination-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+#view-admin-payroll .pagination-btn:disabled{opacity:.45;cursor:not-allowed}
+#view-admin-payroll .status-waiting-recipient{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
+@media(max-width:760px){#view-admin-payroll .pagination{align-items:stretch}#view-admin-payroll .pagination-info{width:100%;text-align:center}#view-admin-payroll .pagination-btns{justify-content:center}#view-admin-payroll .payroll-history-table th,#view-admin-payroll .payroll-history-table td{font-size:.65rem;padding:.48rem .35rem}#view-admin-payroll .payroll-history-table td:first-child,#view-admin-payroll .payroll-history-table th:first-child{width:36px}}
