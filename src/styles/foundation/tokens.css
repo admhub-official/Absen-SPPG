@@ -1,0 +1,84 @@
+:root {
+  /* Brand and semantic colors */
+  --ui-primary-50: #eef2ff;
+  --ui-primary-100: #e0e7ff;
+  --ui-primary-600: #4f46e5;
+  --ui-primary-700: #4338ca;
+  --ui-success-50: #ecfdf5;
+  --ui-success-600: #059669;
+  --ui-warning-50: #fffbeb;
+  --ui-warning-500: #f59e0b;
+  --ui-danger-50: #fef2f2;
+  --ui-danger-600: #dc2626;
+  --ui-info-50: #eff6ff;
+  --ui-info-600: #2563eb;
+
+  /* Neutral surfaces and text */
+  --ui-bg: #f8fafc;
+  --ui-surface: #ffffff;
+  --ui-surface-subtle: #f8fafc;
+  --ui-text: #0f172a;
+  --ui-text-secondary: #475569;
+  --ui-text-muted: #64748b;
+  --ui-border: #e2e8f0;
+  --ui-border-strong: #cbd5e1;
+
+  /* Spacing scale */
+  --ui-space-1: 0.25rem;
+  --ui-space-2: 0.5rem;
+  --ui-space-3: 0.75rem;
+  --ui-space-4: 1rem;
+  --ui-space-5: 1.25rem;
+  --ui-space-6: 1.5rem;
+  --ui-space-8: 2rem;
+  --ui-space-10: 2.5rem;
+
+  /* Typography */
+  --ui-text-xs: 0.6875rem;
+  --ui-text-sm: 0.8125rem;
+  --ui-text-md: 0.9375rem;
+  --ui-text-lg: 1.125rem;
+  --ui-text-xl: 1.5rem;
+  --ui-leading-tight: 1.25;
+  --ui-leading-normal: 1.5;
+  --ui-leading-relaxed: 1.65;
+
+  /* Shape */
+  --ui-radius-sm: 0.375rem;
+  --ui-radius-md: 0.625rem;
+  --ui-radius-lg: 1rem;
+  --ui-radius-xl: 1.25rem;
+  --ui-radius-pill: 999px;
+
+  /* Elevation */
+  --ui-shadow-1: 0 1px 2px rgb(15 23 42 / 0.05);
+  --ui-shadow-2: 0 6px 18px rgb(15 23 42 / 0.08);
+  --ui-shadow-3: 0 20px 45px rgb(15 23 42 / 0.16);
+
+  /* Interaction and layout */
+  --ui-focus-ring: 0 0 0 3px rgb(79 70 229 / 0.22);
+  --ui-control-height: 2.5rem;
+  --ui-touch-height: 2.75rem;
+  --ui-sidebar-width: 15rem;
+  --ui-topbar-height: 4rem;
+  --ui-content-max: 90rem;
+
+  /* Backward-compatible aliases for legacy styles */
+  --primary: var(--ui-primary-600);
+  --primary-dark: var(--ui-primary-700);
+  --primary-light: var(--ui-primary-50);
+  --primary-ring: rgb(79 70 229 / 0.18);
+  --success: var(--ui-success-600);
+  --danger: var(--ui-danger-600);
+  --warning: var(--ui-warning-500);
+  --bg: var(--ui-bg);
+  --surface: var(--ui-surface);
+  --text: var(--ui-text);
+  --text-secondary: var(--ui-text-secondary);
+  --text-muted: var(--ui-text-muted);
+  --border: var(--ui-border);
+  --radius: var(--ui-radius-md);
+  --radius-lg: var(--ui-radius-lg);
+  --shadow: var(--ui-shadow-1);
+  --shadow-lg: var(--ui-shadow-3);
+}
