@@ -19,14 +19,80 @@ if ($LASTEXITCODE -ne 0) {
   throw "Migration database gagal dengan exit code $LASTEXITCODE."
 }
 
+# Fungsi payroll sekali pakai yang tidak lagi menjadi bagian aplikasi.
+# Penghapusan dibuat idempotent: fungsi yang sudah tidak ada tidak menghentikan deployment.
+$ObsoleteFunctions = @(
+  "BulkPublishPayroll",
+  "RebuildPayroll100",
+  "PrepareLogoBGN",
+  "PublishPayroll100Logo",
+  "TrimPublishedTo100",
+  "PublishPayroll50Logo",
+  "PublishPayroll200Once",
+  "PublishPayroll2000Once",
+  "PublishPayroll100Direct",
+  "PublishPayroll100DirectV2",
+  "PublishPayroll100DirectV3",
+  "PublishPayrollNext100",
+  "PublishPayroll550",
+  "PublishPayroll650",
+  "PublishPayroll750",
+  "PublishPayroll850",
+  "RunPublishPayroll850",
+  "RunP850B1x7k2",
+  "RunP850B2q9m4",
+  "VerifyPayroll850PDF",
+  "PublishPayroll950",
+  "RunP950B1",
+  "RunP950B2",
+  "VerifyPayroll950PDF",
+  "PublishPayroll1050",
+  "RunP1050B1",
+  "RunP1050B2",
+  "VerifyPayroll1050PDF",
+  "PublishPayroll1150",
+  "RunP1150B1",
+  "VerifyPayroll1150PDF",
+  "PublishPayroll1250",
+  "RunP1250",
+  "VerifyPayroll1250PDF",
+  "PublishPayroll1350",
+  "RunP1350",
+  "VerifyPayroll1350PDF",
+  "PublishPayroll1450",
+  "RunP1450",
+  "VerifyPayroll1450PDF",
+  "PublishPayroll1550",
+  "RunP1550",
+  "VerifyPayroll1550PDF",
+  "PublishPayroll1650",
+  "RunP1650",
+  "VerifyPayroll1650PDF",
+  "PublishPayroll1750",
+  "RunP1750",
+  "VerifyPayroll1750PDF",
+  "PublishPayrollFinal1897",
+  "RunPFinal1897",
+  "RunPFinal1897B2",
+  "RunPFinal1897B3",
+  "VerifyPayrollFinal1897PDF",
+  "CleanupOrphanPayrollPDFs",
+  "RunCleanupOrphanPayrollPDFs",
+  "PayrollTTDMassal",
+  "SyncPayrollSignatureLogo",
+  "PendingSignatureCounts"
+)
+
+foreach ($FunctionName in $ObsoleteFunctions) {
+  Write-Host "Menghapus Edge Function lama $FunctionName..."
+  & $SupabaseCli functions delete $FunctionName --project-ref $ProjectRef --yes
+  if ($LASTEXITCODE -ne 0) {
+    Write-Warning "Fungsi $FunctionName tidak ditemukan atau sudah dihapus."
+  }
+}
+
 # Production allowlist. Fungsi runner, verifier, rebuild, dan payroll sekali pakai
-# tidak boleh ditambahkan ke daftar ini. Fungsi sementara harus dinonaktifkan
-# setelah pekerjaan selesai dan tidak menjadi bagian deployment reguler.
-#
-# Urutan penting:
-# 1. AbsenCore menyediakan implementasi bisnis legacy yang dipanggil oleh Absen.
-# 2. Absen menjadi gateway publik kompatibel untuk API aplikasi lama.
-# 3. AbsenV2 membungkus operasi presensi sensitif dengan challenge dan idempotensi.
+# tidak boleh ditambahkan ke daftar ini.
 $FunctionNames = @(
   "AbsenCore",
   "Absen",
@@ -60,4 +126,4 @@ foreach ($FunctionName in $FunctionNames) {
   }
 }
 
-Write-Host "Migration dan seluruh Edge Function production berhasil di-deploy ke $ProjectRef."
+Write-Host "Migration, pembersihan fungsi lama, dan deployment production selesai untuk $ProjectRef."
