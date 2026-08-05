@@ -1,4 +1,4 @@
-const CACHE = 'absen-sppg-shell-v31';
+const CACHE = 'absen-sppg-shell-v32';
 const SHELL = [
   './',
   './index.html',
@@ -7,7 +7,8 @@ const SHELL = [
   './src/app/bootstrap.js',
   './src/styles/app-system.css',
   './src/styles/responsive-overrides.css',
-  './src/styles/mobile-ui-refresh.css'
+  './src/styles/mobile-ui-refresh.css',
+  './src/styles/payroll-history.css'
 ];
 
 self.addEventListener('install', (event) => {
