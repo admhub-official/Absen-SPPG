@@ -8,11 +8,91 @@
 
 .mobile-card-list table,.mobile-card-list tbody{display:block}.mobile-card-list thead{display:none}.mobile-card-list tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;margin:0 0 8px;padding:11px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}.mobile-card-list td{display:grid;gap:2px;min-width:0;padding:0!important;border:0!important;font-size:.78rem;overflow-wrap:anywhere}.mobile-card-list td::before{content:attr(data-label);font-size:.65rem;font-weight:700;color:#64748b}.mobile-card-list td[data-label=""]::before{display:none}.mobile-card-list td:first-child{grid-column:1/-1;font-weight:700}
 
-@media(max-width:767px){html.mobile-ui-active .app-topbar{min-height:var(--mobile-header-height)!important;padding:7px 12px!important}html.mobile-ui-active .app-content,html.mobile-ui-active .page-content,html.mobile-ui-active .content-wrapper,html.mobile-ui-active .app-main-content{padding-left:var(--mobile-page-padding)!important;padding-right:var(--mobile-page-padding)!important;padding-bottom:82px!important}html.mobile-ui-active .feature-page,html.mobile-ui-active .app-feature-page{gap:8px!important}html.mobile-ui-active .feature-header,html.mobile-ui-active .feature-page__header{gap:4px!important}html.mobile-ui-active .feature-tabs,html.mobile-ui-active .app-tabs{margin:0!important}html.mobile-ui-active .feature-form input,html.mobile-ui-active .feature-form select,html.mobile-ui-active .feature-form textarea,html.mobile-ui-active .feature-form button{min-height:var(--mobile-control-height)}html.mobile-ui-active .feature-actions,html.mobile-ui-active .app-actions{gap:6px!important}html.mobile-ui-active .floating-device-button,html.mobile-ui-active #btn-my-devices-float,html.mobile-ui-active [data-device-launcher="floating"]{display:none!important}html.mobile-ui-active .mobile-bottom-nav{min-height:62px!important}html.mobile-ui-active .mobile-bottom-nav button,html.mobile-ui-active .mobile-bottom-nav a{padding:5px 3px!important;font-size:.68rem!important}
-html.mobile-ui-active .app-topbar-brand{gap:8px!important;min-width:0!important}html.mobile-ui-active .app-topbar-brand img{width:38px!important;height:38px!important}html.mobile-ui-active .app-topbar-brand span{font-size:1rem!important;white-space:nowrap!important}html.mobile-ui-active .app-topbar-profile{gap:8px!important;min-width:0!important;padding:2px 0!important}html.mobile-ui-active .app-topbar-avatar{width:40px!important;height:40px!important}html.mobile-ui-active .app-topbar-profile-info{min-width:0!important;max-width:260px!important}html.mobile-ui-active .app-topbar-profile-name{font-size:.82rem!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-html.mobile-ui-active .dash-card{padding:16px!important;border-radius:18px!important;margin-bottom:12px!important}html.mobile-ui-active .dash-card-title{font-size:1rem!important;margin-bottom:12px!important}html.mobile-ui-active .absen-today-card{gap:8px!important}html.mobile-ui-active .absen-today-pill{min-width:0!important;padding:13px 8px!important;border-radius:13px!important}html.mobile-ui-active .absen-today-pill-label{font-size:.72rem!important}html.mobile-ui-active .absen-today-pill-status{font-size:.9rem!important;white-space:nowrap!important}
-html.mobile-ui-active .stats-grid:has(#dash-total-slip){grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin-bottom:12px!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card{min-width:0!important;padding:12px 10px!important;gap:8px!important;border-radius:16px!important;overflow:hidden!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card>div:last-child{min-width:0!important;overflow:hidden!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-icon{width:38px!important;height:38px!important;border-radius:11px!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-value{font-size:clamp(.95rem,3.4vw,1.35rem)!important;line-height:1.08!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-label{font-size:.68rem!important;line-height:1.25!important;overflow-wrap:anywhere!important}html.mobile-ui-active .recent-list-item,html.mobile-ui-active .riwayat-item{padding:10px 0!important}html.mobile-ui-active .page-header{margin-bottom:12px!important}}
+@media(max-width:767px){
+html.mobile-ui-active .app-topbar{min-height:var(--mobile-header-height)!important;padding:7px 12px!important}
+html.mobile-ui-active .app-content,html.mobile-ui-active .page-content,html.mobile-ui-active .content-wrapper,html.mobile-ui-active .app-main-content{padding-left:var(--mobile-page-padding)!important;padding-right:var(--mobile-page-padding)!important;padding-bottom:82px!important}
+html.mobile-ui-active .feature-page,html.mobile-ui-active .app-feature-page{gap:8px!important}
+html.mobile-ui-active .feature-header,html.mobile-ui-active .feature-page__header{gap:4px!important}
+html.mobile-ui-active .feature-tabs,html.mobile-ui-active .app-tabs{margin:0!important}
+html.mobile-ui-active .feature-form input,html.mobile-ui-active .feature-form select,html.mobile-ui-active .feature-form textarea,html.mobile-ui-active .feature-form button{min-height:var(--mobile-control-height)}
+html.mobile-ui-active .feature-actions,html.mobile-ui-active .app-actions{gap:6px!important}
+html.mobile-ui-active .floating-device-button,html.mobile-ui-active #btn-my-devices-float,html.mobile-ui-active [data-device-launcher="floating"]{display:none!important}
+html.mobile-ui-active .mobile-bottom-nav{min-height:62px!important}
+html.mobile-ui-active .mobile-bottom-nav button,html.mobile-ui-active .mobile-bottom-nav a{padding:5px 3px!important;font-size:.68rem!important}
+html.mobile-ui-active .app-topbar-brand{gap:8px!important;min-width:0!important}
+html.mobile-ui-active .app-topbar-brand img{width:38px!important;height:38px!important}
+html.mobile-ui-active .app-topbar-brand span{font-size:1rem!important;white-space:nowrap!important}
+html.mobile-ui-active .app-topbar-profile{gap:8px!important;min-width:0!important;padding:2px 0!important}
+html.mobile-ui-active .app-topbar-avatar{width:40px!important;height:40px!important}
+html.mobile-ui-active .app-topbar-profile-info{min-width:0!important;max-width:260px!important}
+html.mobile-ui-active .app-topbar-profile-name{font-size:.82rem!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+html.mobile-ui-active .dash-card{padding:16px!important;border-radius:18px!important;margin-bottom:12px!important}
+html.mobile-ui-active .dash-card-title{font-size:1rem!important;margin-bottom:12px!important}
+html.mobile-ui-active .absen-today-card{gap:8px!important}
+html.mobile-ui-active .absen-today-pill{min-width:0!important;padding:13px 8px!important;border-radius:13px!important}
+html.mobile-ui-active .absen-today-pill-label{font-size:.72rem!important}
+html.mobile-ui-active .absen-today-pill-status{font-size:.9rem!important;white-space:nowrap!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip){grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin-bottom:12px!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card{min-width:0!important;padding:12px 10px!important;gap:8px!important;border-radius:16px!important;overflow:hidden!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card>div:last-child{min-width:0!important;overflow:hidden!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-icon{width:38px!important;height:38px!important;border-radius:11px!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-value{font-size:clamp(.95rem,3.4vw,1.35rem)!important;line-height:1.08!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-label{font-size:.68rem!important;line-height:1.25!important;overflow-wrap:anywhere!important}
+html.mobile-ui-active .recent-list-item,html.mobile-ui-active .riwayat-item{padding:10px 0!important}
+html.mobile-ui-active .page-header{margin-bottom:12px!important}
 
-@media(max-width:520px){html.mobile-ui-active .app-topbar{padding:6px 10px!important}html.mobile-ui-active .app-topbar-brand span{font-size:.92rem!important}html.mobile-ui-active .app-topbar-profile-info{max-width:190px!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip){gap:6px!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card{flex-direction:column!important;align-items:flex-start!important;padding:10px 8px!important;gap:6px!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-icon{width:34px!important;height:34px!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-value{font-size:.98rem!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-label{font-size:.61rem!important}html.mobile-ui-active .dash-card{padding:14px!important}}
+/* Dashboard global SUPER ADMIN: terisolasi dari grid dashboard user. */
+html.mobile-ui-active #view-super-dashboard{overflow-x:hidden!important}
+html.mobile-ui-active #view-super-dashboard #super-admin-global-panel{width:100%!important;min-width:0!important}
+html.mobile-ui-active #view-super-dashboard .feature-toolbar{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:10px!important;align-items:start!important;margin-bottom:14px!important}
+html.mobile-ui-active #view-super-dashboard .feature-toolbar>div{min-width:0!important}
+html.mobile-ui-active #view-super-dashboard .page-title{font-size:clamp(1.45rem,6vw,2rem)!important;line-height:1.08!important;letter-spacing:-.035em!important;overflow-wrap:anywhere!important}
+html.mobile-ui-active #view-super-dashboard .page-subtitle{font-size:.84rem!important;line-height:1.42!important;margin-top:6px!important}
+html.mobile-ui-active #view-super-dashboard #btn-refresh-super-dashboard{justify-self:start!important;min-height:42px!important;padding:8px 16px!important}
+html.mobile-ui-active #view-super-dashboard .stats-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;margin:0 0 18px!important}
+html.mobile-ui-active #view-super-dashboard .stats-grid .stat-card{min-width:0!important;min-height:118px!important;padding:16px!important;align-items:flex-start!important;border-radius:16px!important;overflow:hidden!important}
+html.mobile-ui-active #view-super-dashboard .stats-grid .stat-card>div{min-width:0!important;width:100%!important}
+html.mobile-ui-active #view-super-dashboard .stats-grid .stat-card-value{font-size:clamp(1.35rem,6vw,1.9rem)!important;line-height:1.08!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;font-variant-numeric:tabular-nums}
+html.mobile-ui-active #view-super-dashboard .stats-grid .stat-card-label{font-size:.78rem!important;line-height:1.32!important;margin-top:8px!important;overflow-wrap:anywhere!important}
+html.mobile-ui-active #view-super-dashboard #super-payroll-total{font-size:clamp(1.15rem,5.4vw,1.7rem)!important}
+html.mobile-ui-active #view-super-dashboard .admin-card{border-radius:16px!important;overflow:hidden!important}
+html.mobile-ui-active #view-super-dashboard .admin-card-header{padding:15px!important;gap:6px!important}
+html.mobile-ui-active #view-super-dashboard .admin-card-title{font-size:1rem!important;line-height:1.25!important}
+html.mobile-ui-active #view-super-dashboard .helper-text{font-size:.76rem!important;line-height:1.42!important}
+html.mobile-ui-active #view-super-dashboard .data-table-wrap,html.mobile-ui-active #view-super-dashboard .global-comparison-grid{min-width:0!important;max-width:100%!important;overflow-x:auto!important}
+}
 
-@media(max-width:420px){.mobile-filter-panel__body>#users-filter-grid,.mobile-filter-panel__body>#audit-filter-grid,.mobile-filter-panel__body>#absen-filter-grid{grid-template-columns:1fr!important}.mobile-kpi-strip{grid-auto-columns:minmax(126px,68vw)!important}.mobile-card-list tr{grid-template-columns:1fr 1fr}html.mobile-ui-active{--mobile-page-padding:10px}html.mobile-ui-active .app-topbar-profile-info{max-width:145px!important}html.mobile-ui-active .app-topbar-profile-name{font-size:.75rem!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card{padding:9px 6px!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-icon{width:30px!important;height:30px!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-value{font-size:.88rem!important}html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-label{font-size:.56rem!important}}
+@media(max-width:520px){
+html.mobile-ui-active .app-topbar{padding:6px 10px!important}
+html.mobile-ui-active .app-topbar-brand span{font-size:.92rem!important}
+html.mobile-ui-active .app-topbar-profile-info{max-width:190px!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip){gap:6px!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card{flex-direction:column!important;align-items:flex-start!important;padding:10px 8px!important;gap:6px!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-icon{width:34px!important;height:34px!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-value{font-size:.98rem!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-label{font-size:.61rem!important}
+html.mobile-ui-active .dash-card{padding:14px!important}
+html.mobile-ui-active #view-super-dashboard .stats-grid .stat-card{min-height:108px!important;padding:14px 12px!important}
+html.mobile-ui-active #view-super-dashboard .stats-grid .stat-card-value{font-size:1.35rem!important}
+html.mobile-ui-active #view-super-dashboard #super-payroll-total{font-size:1.12rem!important}
+}
+
+@media(max-width:420px){
+.mobile-filter-panel__body>#users-filter-grid,.mobile-filter-panel__body>#audit-filter-grid,.mobile-filter-panel__body>#absen-filter-grid{grid-template-columns:1fr!important}
+.mobile-kpi-strip{grid-auto-columns:minmax(126px,68vw)!important}
+.mobile-card-list tr{grid-template-columns:1fr 1fr}
+html.mobile-ui-active{--mobile-page-padding:10px}
+html.mobile-ui-active .app-topbar-profile-info{max-width:145px!important}
+html.mobile-ui-active .app-topbar-profile-name{font-size:.75rem!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card{padding:9px 6px!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-icon{width:30px!important;height:30px!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-value{font-size:.88rem!important}
+html.mobile-ui-active .stats-grid:has(#dash-total-slip) .stat-card-label{font-size:.56rem!important}
+html.mobile-ui-active #view-super-dashboard .feature-toolbar{gap:8px!important}
+html.mobile-ui-active #view-super-dashboard .page-title{font-size:1.42rem!important}
+html.mobile-ui-active #view-super-dashboard .stats-grid{gap:8px!important}
+html.mobile-ui-active #view-super-dashboard .stats-grid .stat-card{min-height:102px!important;padding:12px 10px!important}
+html.mobile-ui-active #view-super-dashboard .stats-grid .stat-card-value{font-size:1.18rem!important}
+html.mobile-ui-active #view-super-dashboard #super-payroll-total{font-size:1rem!important}
+html.mobile-ui-active #view-super-dashboard .stats-grid .stat-card-label{font-size:.7rem!important;margin-top:6px!important}
+}
