@@ -1,14 +1,15 @@
 (() => {
-  const endpoint = 'https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/PendingSignatureCounts';
+  const projectUrl = window.APP_CONFIG?.projectUrl || window.ABSEN_SUPABASE_CONFIG?.projectUrl || 'https://szwwpnbbsmjsbzzcecyj.supabase.co';
+  const endpoint = `${String(projectUrl).replace(/\/$/, '')}/functions/v1/PendingSignatureCounts`;
+  const refreshIntervalMs = 30000;
   let timer = null;
   let inFlight = false;
-  let latestUserCount = null;
-  let latestAdminCount = null;
-  let applying = false;
+  let started = false;
+  let lastExactCount = 0;
 
   function token() {
     try {
-      if (typeof AppState !== 'undefined' && AppState?.token) return AppState.token;
+      if (window.AppState?.token) return window.AppState.token;
     } catch {}
     return localStorage.getItem('auth_token') || '';
   }
@@ -17,34 +18,35 @@
     const badge = document.getElementById('notification-count');
     if (!badge) return;
     const value = Math.max(0, Number(count) || 0);
-    applying = true;
+    lastExactCount = value;
     badge.textContent = value > 99 ? '99+' : String(value);
     badge.style.display = value ? 'inline-flex' : 'none';
+    badge.dataset.exactPayrollCount = String(value);
     badge.setAttribute('aria-label', `${value} slip menunggu tanda tangan penerima`);
     badge.title = `${value} slip menunggu tanda tangan penerima`;
-    applying = false;
+  }
+
+  function protectBadge() {
+    const badge = document.getElementById('notification-count');
+    if (!badge || !badge.dataset.exactPayrollCount) return;
+    const value = Math.max(lastExactCount, Number(badge.dataset.exactPayrollCount) || 0);
+    const expected = value > 99 ? '99+' : String(value);
+    if (badge.textContent !== expected) badge.textContent = expected;
+    if (value) badge.style.display = 'inline-flex';
   }
 
   function setAdminCount(count) {
     const value = Math.max(0, Number(count) || 0);
     const target = document.getElementById('ops-slip-count');
-    applying = true;
     if (target) target.textContent = String(value);
     document.querySelectorAll('[data-pending-signature-count]').forEach((node) => {
       node.textContent = String(value);
     });
-    applying = false;
-  }
-
-  function reapplyExactCounts() {
-    if (applying) return;
-    if (latestUserCount !== null) setBadge(latestUserCount);
-    if (latestAdminCount !== null) setAdminCount(latestAdminCount);
   }
 
   async function refresh() {
     const authToken = token();
-    if (!authToken || inFlight) return;
+    if (!authToken || inFlight || document.visibilityState === 'hidden') return;
     inFlight = true;
     try {
       const response = await fetch(endpoint, {
@@ -56,15 +58,8 @@
       const result = await response.json().catch(() => ({}));
       if (!response.ok || result.success === false) throw new Error(result.error || `HTTP ${response.status}`);
       const role = String(result.role || '').toUpperCase();
-      if (role === 'USER') {
-        latestAdminCount = null;
-        latestUserCount = Number(result.ownCount ?? result.count ?? 0);
-        setBadge(latestUserCount);
-      } else {
-        latestUserCount = null;
-        latestAdminCount = Number(result.count ?? 0);
-        setAdminCount(latestAdminCount);
-      }
+      if (role === 'USER') setBadge(result.ownCount ?? result.count ?? 0);
+      else setAdminCount(result.count ?? 0);
     } catch (error) {
       console.warn('Hitungan TTD penerima gagal diperbarui', error);
     } finally {
@@ -73,18 +68,26 @@
   }
 
   function start() {
+    if (started) return;
+    started = true;
     refresh();
-    if (timer) clearInterval(timer);
-    timer = setInterval(refresh, 30000);
+    timer = window.setInterval(() => {
+      refresh();
+      protectBadge();
+    }, refreshIntervalMs);
   }
 
-  const observer = new MutationObserver(() => queueMicrotask(reapplyExactCounts));
-  observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+  function stop() {
+    if (timer) window.clearInterval(timer);
+    timer = null;
+    started = false;
+  }
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') refresh();
   });
   window.addEventListener('focus', refresh);
+  window.addEventListener('beforeunload', stop, { once: true });
   window.addEventListener('absen:app-ready', start, { once: true });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();
