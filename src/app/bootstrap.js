@@ -6,146 +6,65 @@ if (LEGACY_HOSTS.has(window.location.hostname.toLowerCase())) {
   throw new Error('Redirecting to canonical domain');
 }
 
-import { createRouter } from './router.js?v=26.11.0';
-import { createAppStore } from '../stores/app-store.js?v=26.11.0';
-import { createFeatureRegistry } from './feature-registry.js?v=26.11.0';
+import { createRouter } from './router.js?v=26.11.1';
+import { createAppStore } from '../stores/app-store.js?v=26.11.1';
+import { createFeatureRegistry } from './feature-registry.js?v=26.11.1';
 import {
   renderAttendanceProgress,
   showAttendanceReceipt,
   renderCorrectionWorkspace,
   openCorrectionForm
-} from '../pages/attendance/attendance-experience.js?v=26.11.0';
-import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.11.0';
-import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.11.0';
-import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.11.0';
+} from '../pages/attendance/attendance-experience.js?v=26.11.1';
+import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.11.1';
+import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.11.1';
+import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.11.1';
 
-const VERSION = '26.11.0';
+const VERSION = '26.11.1';
 const loadedAssets = new Map();
 
-function canonicalPath(value) {
-  return new URL(value, document.baseURI).pathname;
-}
-
+function canonicalPath(value) { return new URL(value, document.baseURI).pathname; }
 function loadStyle(path) {
   const key = `style:${canonicalPath(path)}`;
   if (loadedAssets.has(key)) return loadedAssets.get(key);
-  const existing = [...document.querySelectorAll('link[rel="stylesheet"][href]')]
-    .find((node) => canonicalPath(node.href) === canonicalPath(path));
-  if (existing) {
-    const ready = Promise.resolve(existing);
-    loadedAssets.set(key, ready);
-    return ready;
-  }
+  const existing = [...document.querySelectorAll('link[rel="stylesheet"][href]')].find((node) => canonicalPath(node.href) === canonicalPath(path));
+  if (existing) { const ready = Promise.resolve(existing); loadedAssets.set(key, ready); return ready; }
   const ready = new Promise((resolve, reject) => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = path;
-    link.onload = () => resolve(link);
-    link.onerror = () => reject(new Error(`Gagal memuat stylesheet: ${path}`));
+    const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = path;
+    link.onload = () => resolve(link); link.onerror = () => reject(new Error(`Gagal memuat stylesheet: ${path}`));
     document.head.appendChild(link);
   });
-  loadedAssets.set(key, ready);
-  return ready;
+  loadedAssets.set(key, ready); return ready;
 }
-
 function loadScript(path) {
   const key = `script:${canonicalPath(path)}`;
   if (loadedAssets.has(key)) return loadedAssets.get(key);
-  const existing = [...document.querySelectorAll('script[src]')]
-    .find((node) => canonicalPath(node.src) === canonicalPath(path));
-  if (existing) {
-    const ready = Promise.resolve(existing);
-    loadedAssets.set(key, ready);
-    return ready;
-  }
+  const existing = [...document.querySelectorAll('script[src]')].find((node) => canonicalPath(node.src) === canonicalPath(path));
+  if (existing) { const ready = Promise.resolve(existing); loadedAssets.set(key, ready); return ready; }
   const ready = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = path;
-    script.defer = true;
-    script.onload = () => resolve(script);
-    script.onerror = () => reject(new Error(`Gagal memuat script: ${path}`));
+    const script = document.createElement('script'); script.src = path; script.defer = true;
+    script.onload = () => resolve(script); script.onerror = () => reject(new Error(`Gagal memuat script: ${path}`));
     document.head.appendChild(script);
   });
-  loadedAssets.set(key, ready);
-  return ready;
+  loadedAssets.set(key, ready); return ready;
 }
 
 export async function bootstrapApp() {
   if (window.AbsenApp) return window.AbsenApp;
   await Promise.all([
-    loadStyle(`./src/styles/foundation/tokens.css?v=${VERSION}`),
-    loadStyle(`./src/styles/foundation/reset.css?v=${VERSION}`),
-    loadStyle(`./src/styles/app-system.css?v=${VERSION}`),
-    loadStyle(`./src/styles/feature-pages.css?v=${VERSION}`),
-    loadStyle(`./src/styles/device-trust-policy.css?v=${VERSION}`),
-    loadStyle(`./src/styles/attendance-experience.css?v=${VERSION}`),
-    loadStyle(`./src/styles/attendance-import.css?v=${VERSION}`),
-    loadStyle(`./src/styles/config-center.css?v=${VERSION}`),
-    loadStyle(`./src/styles/payroll-history.css?v=${VERSION}`),
-    loadStyle(`./src/styles/app-announcements.css?v=${VERSION}`),
-    loadStyle(`./src/styles/notification-mobile.css?v=${VERSION}`),
-    loadStyle(`./src/styles/components/operational-notifications.css?v=${VERSION}`),
-    loadStyle(`./security-operations-ui.css?v=${VERSION}`),
-    loadStyle(`./src/styles/responsive-overrides.css?v=${VERSION}`),
-    loadStyle(`./src/styles/mobile-ui-refresh.css?v=${VERSION}`),
-    loadStyle(`./src/styles/foundation/components.css?v=${VERSION}`),
-    loadStyle(`./src/styles/foundation/motion-accessibility.css?v=${VERSION}`),
-    loadStyle(`./src/styles/layout/app-shell.css?v=${VERSION}`),
-    loadStyle(`./src/styles/pages/dashboard-bento.css?v=${VERSION}`),
-    loadStyle(`./src/styles/components/toolbar-system.css?v=${VERSION}`),
-    loadStyle(`./src/styles/components/responsive-tables.css?v=${VERSION}`),
-    loadStyle(`./src/styles/pages/payroll-refresh.css?v=${VERSION}`),
-    loadStyle(`./src/styles/pages/profile-forms-modals.css?v=${VERSION}`),
-    loadStyle(`./src/styles/pages/complaints-activity.css?v=${VERSION}`),
-    loadStyle(`./src/styles/pages/settings-user-management.css?v=${VERSION}`),
-    loadStyle(`./src/styles/foundation/quality-accessibility.css?v=${VERSION}`)
-  ]);
+    './src/styles/foundation/tokens.css','./src/styles/foundation/reset.css','./src/styles/app-system.css','./src/styles/feature-pages.css','./src/styles/device-trust-policy.css','./src/styles/attendance-experience.css','./src/styles/attendance-import.css','./src/styles/config-center.css','./src/styles/payroll-history.css','./src/styles/app-announcements.css','./src/styles/notification-mobile.css','./src/styles/components/operational-notifications.css','./security-operations-ui.css','./src/styles/responsive-overrides.css','./src/styles/mobile-ui-refresh.css','./src/styles/foundation/components.css','./src/styles/foundation/motion-accessibility.css','./src/styles/layout/app-shell.css','./src/styles/pages/dashboard-bento.css','./src/styles/components/toolbar-system.css','./src/styles/components/responsive-tables.css','./src/styles/pages/payroll-refresh.css','./src/styles/pages/profile-forms-modals.css','./src/styles/pages/complaints-activity.css','./src/styles/pages/settings-user-management.css','./src/styles/foundation/quality-accessibility.css'
+  ].map((path) => loadStyle(`${path}?v=${VERSION}`)));
   const store = createAppStore({ route: window.location.hash.replace(/^#\/?/, '') || 'dashboard' });
   const router = createRouter({ onRoute: (route) => store.setState({ route }) });
   const features = createFeatureRegistry();
-  const attendanceExperience = Object.freeze({
-    renderProgress: renderAttendanceProgress,
-    showReceipt: showAttendanceReceipt,
-    renderCorrections: renderCorrectionWorkspace,
-    openCorrectionForm
-  });
+  const attendanceExperience = Object.freeze({ renderProgress: renderAttendanceProgress, showReceipt: showAttendanceReceipt, renderCorrections: renderCorrectionWorkspace, openCorrectionForm });
   const releaseOperations = Object.freeze({ render: renderReleaseOperationsPage });
   const workforceOperations = Object.freeze({ render: renderWorkforceOperationsPage });
   const platformOperations = Object.freeze({ render: renderPlatformOperationsPage });
   const app = Object.freeze({ store, router, features, attendanceExperience, releaseOperations, workforceOperations, platformOperations, version: VERSION });
-  window.AbsenApp = app;
-  window.AbsenFeatures = features;
-  window.AttendanceExperience = attendanceExperience;
-  window.ReleaseOperations = releaseOperations;
-  window.WorkforceOperations = workforceOperations;
-  window.PlatformOperations = platformOperations;
-  await loadScript(`./src/app/remove-legacy-notifications.js?v=${VERSION}`);
-  await loadScript(`./pwa-runtime.js?v=${VERSION}`);
-  await loadScript(`./src/app/layout-enhancements.js?v=${VERSION}`);
-  await loadScript(`./src/app/mobile-ui-refresh.js?v=${VERSION}`);
-  await loadScript(`./src/app/dashboard-bento.js?v=${VERSION}`);
-  await loadScript(`./src/app/dashboard-priority.js?v=${VERSION}`);
-  await loadScript(`./src/app/toolbar-system.js?v=${VERSION}`);
-  await loadScript(`./src/app/responsive-tables.js?v=${VERSION}`);
-  await loadScript(`./src/app/payroll-refresh.js?v=${VERSION}`);
-  await loadScript(`./src/app/profile-forms-modals.js?v=${VERSION}`);
-  await loadScript(`./src/app/complaints-activity.js?v=${VERSION}`);
-  await loadScript(`./src/app/settings-user-management.js?v=${VERSION}`);
-  await loadScript(`./src/app/quality-accessibility.js?v=${VERSION}`);
-  await loadScript(`./security-ops-client.js?v=${VERSION}`);
-  await loadScript(`./security-operations-ui.js?v=${VERSION}`);
-  await loadScript(`./src/app/attendance-import.js?v=${VERSION}`);
-  await loadScript(`./src/app/attendance-import-search-fix.js?v=${VERSION}`);
-  await loadScript(`./src/app/config-center.js?v=${VERSION}`);
-  await loadScript(`./src/app/operational-notifications.js?v=${VERSION}`);
-  await loadScript(`./src/features/payroll/payroll-history.js?v=${VERSION}`);
-  await loadScript(`./src/features/notifications/app-announcements.js?v=${VERSION}`);
+  Object.assign(window, { AbsenApp: app, AbsenFeatures: features, AttendanceExperience: attendanceExperience, ReleaseOperations: releaseOperations, WorkforceOperations: workforceOperations, PlatformOperations: platformOperations });
+  const scripts = ['./src/app/remove-legacy-notifications.js','./pwa-runtime.js','./src/app/layout-enhancements.js','./src/app/mobile-ui-refresh.js','./src/app/dashboard-bento.js','./src/app/dashboard-priority.js','./src/app/toolbar-system.js','./src/app/responsive-tables.js','./src/app/payroll-refresh.js','./src/app/profile-forms-modals.js','./src/app/complaints-activity.js','./src/app/settings-user-management.js','./src/app/quality-accessibility.js','./security-ops-client.js','./security-operations-ui.js','./src/app/attendance-import.js','./src/app/attendance-import-search-fix.js','./src/app/config-center.js','./src/app/operational-notifications.js','./src/features/payroll/payroll-history.js','./src/features/notifications/app-announcements.js'];
+  for (const path of scripts) await loadScript(`${path}?v=${VERSION}`);
   window.dispatchEvent(new CustomEvent('absen:app-ready', { detail: { version: VERSION, features: features.names() } }));
   return app;
 }
-
-bootstrapApp().catch((error) => {
-  if (error?.message !== 'Redirecting to canonical domain') {
-    console.warn('Frontend modular gagal dimuat; aplikasi utama tetap aktif.', error);
-  }
-});
+bootstrapApp().catch((error) => { if (error?.message !== 'Redirecting to canonical domain') console.warn('Frontend modular gagal dimuat; aplikasi utama tetap aktif.', error); });
