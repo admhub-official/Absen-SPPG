@@ -1,0 +1,61 @@
+/* UI/UX Stage 3: responsive Bento dashboard without changing dashboard data contracts. */
+#view-dashboard{
+  display:grid;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  gap:var(--space-4,1rem);
+  align-items:start;
+}
+#view-dashboard.hidden{display:none!important}
+#view-dashboard>.welcome-card{grid-column:span 8;min-height:156px;margin:0!important}
+#view-dashboard>#dashboard-notification-card{grid-column:span 4;grid-row:1/span 2;margin:0!important;height:100%}
+#view-dashboard>.dash-card:not(#dashboard-notification-card){grid-column:span 8;margin:0!important}
+#view-dashboard>.stats-grid{grid-column:span 8;margin:0!important;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-3,.75rem)}
+#view-dashboard>.stats-grid .stat-card{min-width:0;height:100%;padding:var(--space-4,1rem);border-radius:var(--radius-lg,16px);box-shadow:var(--shadow-1,0 1px 2px rgb(15 23 42/.05))}
+#view-dashboard>.welcome-card,#view-dashboard>.dash-card,#view-dashboard>.stats-grid .stat-card{border:1px solid var(--border,#e2e8f0)}
+#view-dashboard>.welcome-card{position:relative;overflow:hidden;padding:clamp(1.15rem,2vw,1.6rem);border-radius:var(--radius-lg,16px);box-shadow:var(--shadow-1,0 1px 2px rgb(15 23 42/.05))}
+#view-dashboard>.welcome-card:after{content:"";position:absolute;right:-52px;bottom:-72px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(79,70,229,.14),transparent 70%);pointer-events:none}
+#view-dashboard .welcome-card-body{position:relative;z-index:1;max-width:620px}
+#view-dashboard .welcome-card-body h2{font-size:clamp(1.35rem,2.4vw,2rem);line-height:1.15;letter-spacing:-.025em}
+#view-dashboard .welcome-card-body p{margin-top:.4rem;line-height:1.5}
+#view-dashboard .welcome-card-cta{position:relative;z-index:1;align-self:center}
+#view-dashboard .welcome-card-cta .btn{min-height:46px;white-space:nowrap}
+#view-dashboard .dash-card{padding:var(--space-5,1.25rem);border-radius:var(--radius-lg,16px);box-shadow:var(--shadow-1,0 1px 2px rgb(15 23 42/.05))}
+#view-dashboard .dash-card-title{display:flex;align-items:center;gap:.55rem;margin-bottom:var(--space-4,1rem);font-size:var(--text-md,.9375rem);font-weight:800}
+#view-dashboard .absen-today-card{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3,.75rem)}
+#view-dashboard .absen-today-pill{min-width:0;padding:var(--space-4,1rem);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius-md,10px);background:var(--surface-muted,#f8fafc)}
+#view-dashboard .stat-card-value{font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+#view-dashboard #dashboard-notification-card.dashboard-card-empty{display:none!important}
+#view-dashboard #dashboard-notification-card:not(.dashboard-card-empty){display:block}
+#view-dashboard .riwayat-mini-list{max-height:360px;overflow:auto;overscroll-behavior:contain}
+
+@media(min-width:1280px){
+  #view-dashboard>.dash-card:last-child{grid-column:span 8}
+}
+@media(min-width:768px) and (max-width:1100px){
+  #view-dashboard{grid-template-columns:repeat(6,minmax(0,1fr))}
+  #view-dashboard>.welcome-card{grid-column:1/-1}
+  #view-dashboard>#dashboard-notification-card{grid-column:span 3;grid-row:auto;height:auto}
+  #view-dashboard>.dash-card:not(#dashboard-notification-card){grid-column:span 3}
+  #view-dashboard>.stats-grid{grid-column:1/-1}
+  #view-dashboard>.dash-card:last-child{grid-column:1/-1}
+}
+@media(max-width:767px){
+  #view-dashboard{display:flex;flex-direction:column;gap:12px}
+  #view-dashboard>.welcome-card,#view-dashboard>.dash-card,#view-dashboard>.stats-grid{width:100%;margin:0!important}
+  #view-dashboard>.welcome-card{order:1;display:grid;grid-template-columns:1fr;gap:14px;min-height:0;padding:16px}
+  #view-dashboard>.dash-card:not(#dashboard-notification-card){order:2}
+  #view-dashboard>.stats-grid{order:3;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #view-dashboard>.stats-grid>.stat-card:last-child:nth-child(odd){grid-column:1/-1}
+  #view-dashboard>#dashboard-notification-card{order:4}
+  #view-dashboard>.dash-card:last-child{order:5}
+  #view-dashboard .welcome-card-cta,.welcome-card-cta .btn{width:100%}
+  #view-dashboard .welcome-card-cta .btn{min-height:48px}
+  #view-dashboard .dash-card{padding:16px}
+  #view-dashboard .stats-grid .stat-card{padding:14px}
+  #view-dashboard .riwayat-mini-list{max-height:none}
+}
+@media(max-width:420px){
+  #view-dashboard>.stats-grid{gap:8px}
+  #view-dashboard .stats-grid .stat-card{padding:12px 10px}
+  #view-dashboard .absen-today-pill{padding:12px 9px}
+}

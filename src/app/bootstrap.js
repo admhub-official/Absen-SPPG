@@ -105,6 +105,14 @@ export async function bootstrapApp() {
   await loadScript(`./pwa-runtime.js?v=${VERSION}`);
   await loadScript(`./src/app/layout-enhancements.js?v=${VERSION}`);
   await loadScript(`./src/app/mobile-ui-refresh.js?v=${VERSION}`);
+  await loadScript(`./src/app/dashboard-bento.js?v=${VERSION}`);
+  await loadScript(`./src/app/toolbar-system.js?v=${VERSION}`);
+  await loadScript(`./src/app/responsive-tables.js?v=${VERSION}`);
+  await loadScript(`./src/app/payroll-refresh.js?v=${VERSION}`);
+  await loadScript(`./src/app/profile-forms-modals.js?v=${VERSION}`);
+  await loadScript(`./src/app/complaints-activity.js?v=${VERSION}`);
+  await loadScript(`./src/app/settings-user-management.js?v=${VERSION}`);
+  await loadScript(`./src/app/quality-accessibility.js?v=${VERSION}`);
   await loadScript(`./security-ops-client.js?v=${VERSION}`);
   await loadScript(`./security-operations-ui.js?v=${VERSION}`);
   await loadScript(`./src/app/attendance-import.js?v=${VERSION}`);
