@@ -6,20 +6,20 @@ if (LEGACY_HOSTS.has(window.location.hostname.toLowerCase())) {
   throw new Error('Redirecting to canonical domain');
 }
 
-import { createRouter } from './router.js?v=26.10.6';
-import { createAppStore } from '../stores/app-store.js?v=26.10.6';
-import { createFeatureRegistry } from './feature-registry.js?v=26.10.6';
+import { createRouter } from './router.js?v=26.11.0';
+import { createAppStore } from '../stores/app-store.js?v=26.11.0';
+import { createFeatureRegistry } from './feature-registry.js?v=26.11.0';
 import {
   renderAttendanceProgress,
   showAttendanceReceipt,
   renderCorrectionWorkspace,
   openCorrectionForm
-} from '../pages/attendance/attendance-experience.js?v=26.10.6';
-import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.10.6';
-import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.10.6';
-import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.10.6';
+} from '../pages/attendance/attendance-experience.js?v=26.11.0';
+import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.11.0';
+import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.11.0';
+import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.11.0';
 
-const VERSION = '26.10.6';
+const VERSION = '26.11.0';
 const loadedAssets = new Map();
 
 function canonicalPath(value) {
@@ -84,6 +84,7 @@ export async function bootstrapApp() {
     loadStyle(`./src/styles/payroll-history.css?v=${VERSION}`),
     loadStyle(`./src/styles/app-announcements.css?v=${VERSION}`),
     loadStyle(`./src/styles/notification-mobile.css?v=${VERSION}`),
+    loadStyle(`./src/styles/components/operational-notifications.css?v=${VERSION}`),
     loadStyle(`./security-operations-ui.css?v=${VERSION}`),
     loadStyle(`./src/styles/responsive-overrides.css?v=${VERSION}`),
     loadStyle(`./src/styles/mobile-ui-refresh.css?v=${VERSION}`),
@@ -123,6 +124,7 @@ export async function bootstrapApp() {
   await loadScript(`./src/app/layout-enhancements.js?v=${VERSION}`);
   await loadScript(`./src/app/mobile-ui-refresh.js?v=${VERSION}`);
   await loadScript(`./src/app/dashboard-bento.js?v=${VERSION}`);
+  await loadScript(`./src/app/dashboard-priority.js?v=${VERSION}`);
   await loadScript(`./src/app/toolbar-system.js?v=${VERSION}`);
   await loadScript(`./src/app/responsive-tables.js?v=${VERSION}`);
   await loadScript(`./src/app/payroll-refresh.js?v=${VERSION}`);
@@ -135,6 +137,7 @@ export async function bootstrapApp() {
   await loadScript(`./src/app/attendance-import.js?v=${VERSION}`);
   await loadScript(`./src/app/attendance-import-search-fix.js?v=${VERSION}`);
   await loadScript(`./src/app/config-center.js?v=${VERSION}`);
+  await loadScript(`./src/app/operational-notifications.js?v=${VERSION}`);
   await loadScript(`./src/features/payroll/payroll-history.js?v=${VERSION}`);
   await loadScript(`./src/features/notifications/app-announcements.js?v=${VERSION}`);
   window.dispatchEvent(new CustomEvent('absen:app-ready', { detail: { version: VERSION, features: features.names() } }));
