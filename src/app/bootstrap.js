@@ -1,17 +1,17 @@
-import { createRouter } from './router.js?v=26.1.10';
-import { createAppStore } from '../stores/app-store.js?v=26.1.10';
-import { createFeatureRegistry } from './feature-registry.js?v=26.1.10';
+import { createRouter } from './router.js?v=26.1.11';
+import { createAppStore } from '../stores/app-store.js?v=26.1.11';
+import { createFeatureRegistry } from './feature-registry.js?v=26.1.11';
 import {
   renderAttendanceProgress,
   showAttendanceReceipt,
   renderCorrectionWorkspace,
   openCorrectionForm
-} from '../pages/attendance/attendance-experience.js?v=26.1.10';
-import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.1.10';
-import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.1.10';
-import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.1.10';
+} from '../pages/attendance/attendance-experience.js?v=26.1.11';
+import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.1.11';
+import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.1.11';
+import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.1.11';
 
-const VERSION = '26.1.10';
+const VERSION = '26.1.11';
 const loadedAssets = new Map();
 
 function canonicalPath(value) {
@@ -71,6 +71,7 @@ export async function bootstrapApp() {
     loadStyle(`./src/styles/attendance-experience.css?v=${VERSION}`),
     loadStyle(`./src/styles/attendance-import.css?v=${VERSION}`),
     loadStyle(`./src/styles/config-center.css?v=${VERSION}`),
+    loadStyle(`./src/styles/payroll-history.css?v=${VERSION}`),
     loadStyle(`./security-operations-ui.css?v=${VERSION}`),
     loadStyle(`./src/styles/responsive-overrides.css?v=${VERSION}`),
     loadStyle(`./src/styles/mobile-ui-refresh.css?v=${VERSION}`)
@@ -102,7 +103,7 @@ export async function bootstrapApp() {
   await loadScript(`./src/app/attendance-import.js?v=${VERSION}`);
   await loadScript(`./src/app/attendance-import-search-fix.js?v=${VERSION}`);
   await loadScript(`./src/app/config-center.js?v=${VERSION}`);
-  await loadScript(`./src/features/payroll/legacy-payroll-pagination.js?v=${VERSION}`);
+  await loadScript(`./src/features/payroll/payroll-history.js?v=${VERSION}`);
   await loadScript(`./src/features/payroll/pending-signature-counts.js?v=${VERSION}`);
   window.dispatchEvent(new CustomEvent('absen:app-ready', { detail: { version: VERSION, features: features.names() } }));
   return app;
