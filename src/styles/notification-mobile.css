@@ -1,3 +1,13 @@
+/* Kontrol notifikasi hanya boleh tampil setelah pengguna masuk ke aplikasi. */
+#app-layout:not(.active) #notification-wrap,
+#app-layout:not(.active) #btn-notifications,
+#app-layout:not(.active) #notification-panel,
+#auth-layout:not(.hidden) ~ #app-layout #notification-wrap {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 @media (max-width: 767px) {
   #notification-panel.notification-panel {
     position: fixed !important;
