@@ -10,57 +10,98 @@
   function visible(node) {
     if (!(node instanceof HTMLElement)) return false;
     const style = getComputedStyle(node);
-    return style.display !== 'none' && style.visibility !== 'hidden';
+    return style.display !== 'none' && style.visibility !== 'hidden' && node.getClientRects().length > 0;
   }
 
-  function findDashboardRoot() {
-    const candidates = [...document.querySelectorAll('.app-view,[data-view],main,.main-content')]
+  function labelCount(node) {
+    const content = text(node);
+    return KPI_LABELS.filter((label) => content.includes(label)).length;
+  }
+
+  function findLabel(label) {
+    return [...document.querySelectorAll('#app-layout.active *')]
       .filter(visible)
-      .filter((node) => /dashboard/i.test(node.id || '') || /dashboard/i.test(node.dataset?.view || '') || node.querySelector('h1,h2')?.textContent?.toLowerCase().includes('dashboard'));
-    return candidates[0] || document.querySelector('.main-content');
+      .find((node) => text(node) === label) || null;
   }
 
-  function closestCard(node) {
-    return node.closest('.dashboard-kpi-card,.kpi-card,.stat-card,.metric-card,.dashboard-card,.card') || node.parentElement;
+  function findCard(labelNode) {
+    if (!labelNode) return null;
+    const known = labelNode.closest(
+      '.dashboard-kpi-card,.kpi-card,.stat-card,.metric-card,.summary-card,.dashboard-stat,.dashboard-card,.card'
+    );
+    if (known && labelCount(known) === 1) return known;
+
+    let current = labelNode.parentElement;
+    let candidate = current;
+    while (current && current.id !== 'app-layout') {
+      if (labelCount(current) > 1) break;
+      candidate = current;
+      const parent = current.parentElement;
+      if (!parent || labelCount(parent) > 1) break;
+      current = parent;
+    }
+    return candidate;
   }
 
-  function commonParent(cards) {
-    if (!cards.length) return null;
-    let parent = cards[0].parentElement;
-    while (parent && !cards.every((card) => parent.contains(card))) parent = parent.parentElement;
-    return parent;
+  function activeDashboard(cards) {
+    const first = cards[0];
+    if (!first) return null;
+    return first.closest('.app-view:not(.hidden),[data-view]:not(.hidden),main,.main-content,.app-content') ||
+      document.querySelector('#app-layout.active .main-content,#app-layout.active .app-content');
+  }
+
+  function insertionPoint(root) {
+    const heading = [...root.querySelectorAll('h1,h2')].find((node) => /dashboard|ringkasan|beranda/i.test(text(node)));
+    const header = heading?.closest('header,.page-header,.dashboard-header,.section-header') || heading?.parentElement;
+    if (header && header.parentElement === root) return { mode: 'after', node: header };
+
+    const attendance = [...root.querySelectorAll('section,article,div')]
+      .filter(visible)
+      .find((node) => {
+        const value = text(node);
+        return value.includes('datang') && value.includes('pulang') && labelCount(node) === 0;
+      });
+    if (attendance?.parentElement === root) return { mode: 'before', node: attendance };
+    return { mode: 'prepend', node: root };
   }
 
   function moveKpisUp() {
-    const root = findDashboardRoot();
-    if (!root) return;
+    const cards = KPI_LABELS.map((label) => findCard(findLabel(label))).filter(Boolean);
+    const uniqueCards = [...new Set(cards)];
+    if (uniqueCards.length < 2) return false;
 
-    const cards = KPI_LABELS.map((label) => {
-      const labelNode = [...root.querySelectorAll('*')].find((node) => text(node) === label);
-      return labelNode ? closestCard(labelNode) : null;
-    }).filter(Boolean);
-    if (cards.length < 2) return;
+    const root = activeDashboard(uniqueCards);
+    if (!root || !visible(root)) return false;
 
-    const container = commonParent(cards);
-    if (!container || container === root || container.dataset.dashboardPriority === 'done') return;
+    let container = root.querySelector(':scope > #dashboard-kpi-priority');
+    if (!container) {
+      container = document.createElement('section');
+      container.id = 'dashboard-kpi-priority';
+      container.className = 'dashboard-kpi-priority';
+      container.setAttribute('aria-label', 'Ringkasan kehadiran dan gaji');
+      const point = insertionPoint(root);
+      if (point.mode === 'after') point.node.insertAdjacentElement('afterend', container);
+      else if (point.mode === 'before') point.node.insertAdjacentElement('beforebegin', container);
+      else root.prepend(container);
+    }
 
-    const heading = [...root.querySelectorAll('h1,h2')].find((node) => /dashboard/i.test(text(node)));
-    const headerBlock = heading?.closest('header,.page-header,.dashboard-header') || heading?.parentElement;
-    if (!headerBlock || !headerBlock.parentElement) return;
+    uniqueCards.forEach((card) => container.appendChild(card));
+    return true;
+  }
 
-    headerBlock.insertAdjacentElement('afterend', container);
-    container.dataset.dashboardPriority = 'done';
-    container.classList.add('dashboard-kpi-priority');
+  function schedule() {
+    [0, 80, 250, 600, 1200].forEach((delay) => window.setTimeout(moveKpisUp, delay));
   }
 
   function init() {
-    moveKpisUp();
-    const app = document.getElementById('app-layout') || document.querySelector('.app-main');
-    if (!app) return;
+    schedule();
+    const app = document.getElementById('app-layout') || document.body;
     const observer = new MutationObserver(() => window.requestAnimationFrame(moveKpisUp));
     observer.observe(app, { childList: true, subtree: true });
+    window.addEventListener('hashchange', schedule);
+    window.addEventListener('absen:app-ready', schedule);
+    window.addEventListener('absen:session-changed', schedule);
     window.addEventListener('beforeunload', () => observer.disconnect(), { once: true });
-    window.addEventListener('hashchange', () => window.setTimeout(moveKpisUp, 50));
   }
 
   window.AbsenDashboardPriority = Object.freeze({ init, refresh: moveKpisUp });
