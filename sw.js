@@ -1,4 +1,4 @@
-const CACHE = 'absen-sppg-shell-v25';
+const CACHE = 'absen-sppg-shell-v26';
 const SHELL = [
   './',
   './index.html',
