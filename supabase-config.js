@@ -234,6 +234,6 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
 })();
 
 // Satu-satunya entrypoint frontend modular. Asset turunan dikelola oleh bootstrap.
-import('./src/app/bootstrap.js?v=23.2.0').catch((error) => {
+import('./src/app/bootstrap.js?v=26.10.4').catch((error) => {
   console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
 });
