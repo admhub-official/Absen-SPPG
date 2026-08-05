@@ -7,7 +7,12 @@
 .notification-wrap,
 .notification-button,
 .notification-panel,
-.notification-count {
+.notification-count,
+[data-cc-bell],
+.cc-bell,
+.cc-notification-panel,
+[data-cc-banner],
+.cc-banner {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
