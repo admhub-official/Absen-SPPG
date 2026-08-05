@@ -1,5 +1,5 @@
-const CACHE = 'absen-sppg-shell-v38';
-const APP_VERSION = '26.10.5';
+const CACHE = 'absen-sppg-shell-v39';
+const APP_VERSION = '26.10.6';
 const CANONICAL_ORIGIN = 'https://hadirly.org';
 const LEGACY_HOSTS = new Set(['absen-sppg.pages.dev']);
 const SHELL = [
@@ -13,9 +13,7 @@ const SHELL = [
   './src/styles/responsive-overrides.css',
   './src/styles/mobile-ui-refresh.css',
   './src/styles/payroll-history.css',
-  './src/styles/app-announcements.css',
-  './src/styles/notification-mobile.css',
-  './src/features/notifications/app-announcements.js'
+  './src/styles/notification-mobile.css'
 ];
 
 self.addEventListener('install', (event) => {
@@ -73,6 +71,7 @@ self.addEventListener('fetch', (event) => {
     ['script', 'style', 'worker'].includes(request.destination) ||
     url.pathname.endsWith('.js') ||
     url.pathname.endsWith('.css');
+
   if (networkFirst) {
     event.respondWith(
       fetch(request, { cache: 'no-store' })
@@ -87,6 +86,7 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
+
   event.respondWith(
     caches.match(request).then((cached) => cached || fetch(request).then((response) => {
       if (response.ok && ['image', 'font'].includes(request.destination)) {
