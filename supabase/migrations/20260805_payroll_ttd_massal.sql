@@ -24,5 +24,11 @@ create table if not exists public."Payroll_TTD_Massal_Item" (
   primary key ("ID_Job", "ID_Slip")
 );
 
+alter table public."Slip_Gaji" add column if not exists "TTD_Massal_At" timestamptz;
+alter table public."Slip_Gaji" add column if not exists "TTD_Massal_Job_ID" text;
+alter table public."Slip_Gaji" add column if not exists "TTD_Massal_Oleh" text;
+
 create index if not exists payroll_ttd_massal_item_status_idx
   on public."Payroll_TTD_Massal_Item" ("ID_Job", "Status");
+create index if not exists slip_gaji_ttd_massal_pending_idx
+  on public."Slip_Gaji" ("Status_Penerbitan", "TTD_Massal_At");
