@@ -44,7 +44,7 @@ function loadScript(path) {
   const key = `script:${canonicalPath(path)}`;
   if (loadedAssets.has(key)) return loadedAssets.get(key);
   const existing = [...document.querySelectorAll('script[src]')]
-    .find((node) => canonicalPath(node.href) === canonicalPath(path));
+    .find((node) => canonicalPath(node.src) === canonicalPath(path));
   if (existing) {
     const ready = Promise.resolve(existing);
     loadedAssets.set(key, ready);
