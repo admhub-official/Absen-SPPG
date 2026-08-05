@@ -1,0 +1,38 @@
+.app-view {
+  animation: none;
+}
+
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 0;
+  box-shadow: var(--ui-focus-ring);
+}
+
+:where(button, [role="button"], a):not([aria-disabled="true"]) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 639px) {
+  .feature-card,
+  .dash-card,
+  .stat-card,
+  .info-section,
+  .complaint-card,
+  .operational-card {
+    border-radius: var(--ui-radius-lg);
+  }
+}
