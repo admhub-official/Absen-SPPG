@@ -1,17 +1,17 @@
-import { createRouter } from './router.js?v=26.1.3';
-import { createAppStore } from '../stores/app-store.js?v=26.1.3';
-import { createFeatureRegistry } from './feature-registry.js?v=26.1.3';
+import { createRouter } from './router.js?v=26.1.4';
+import { createAppStore } from '../stores/app-store.js?v=26.1.4';
+import { createFeatureRegistry } from './feature-registry.js?v=26.1.4';
 import {
   renderAttendanceProgress,
   showAttendanceReceipt,
   renderCorrectionWorkspace,
   openCorrectionForm
-} from '../pages/attendance/attendance-experience.js?v=26.1.3';
-import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.1.3';
-import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.1.3';
-import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.1.3';
+} from '../pages/attendance/attendance-experience.js?v=26.1.4';
+import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.1.4';
+import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.1.4';
+import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.1.4';
 
-const VERSION = '26.1.3';
+const VERSION = '26.1.4';
 const loadedAssets = new Map();
 
 function canonicalPath(value) {
@@ -44,7 +44,7 @@ function loadScript(path) {
   const key = `script:${canonicalPath(path)}`;
   if (loadedAssets.has(key)) return loadedAssets.get(key);
   const existing = [...document.querySelectorAll('script[src]')]
-    .find((node) => canonicalPath(node.src) === canonicalPath(path));
+    .find((node) => canonicalPath(node.href) === canonicalPath(path));
   if (existing) {
     const ready = Promise.resolve(existing);
     loadedAssets.set(key, ready);
