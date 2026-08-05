@@ -54,3 +54,62 @@ Deno.test("temporary frontend artifacts are removed", async () => {
   if (apiClient.includes("export const apiCall")) throw new Error("unused apiCall compatibility export still exists");
   if (!pwa.includes("./sw.js") || pwa.includes("sw-v22.js")) throw new Error("PWA runtime must use stable service worker entrypoint");
 });
+
+Deno.test("database hardening protects operational tables and privileged RPCs", async () => {
+  const migration = await read("supabase/migrations/20260805144500_security_hardening_exposed_tables_and_payroll_rpcs.sql");
+  for (const table of [
+    "Payroll_TTD_Massal_Job",
+    "Payroll_TTD_Massal_Item",
+    "Attendance_Import_Jobs",
+    "Attendance_Name_Mappings",
+    "Attendance_Import_Rows",
+    "Attendance_Import_Role_Config",
+    "Face_Attendance_Policy",
+    "App_Notifications",
+    "App_Notification_Read",
+    "Push_Subscriptions"
+  ]) {
+    if (!migration.includes(`public.\"${table}\" enable row level security`)) {
+      throw new Error(`RLS hardening missing for ${table}`);
+    }
+  }
+  for (const routine of [
+    "bulk_publish_payroll_tick",
+    "invoke_bulk_publish_payroll",
+    "import_payroll_2026_batch",
+    "import_payroll_2026_compact",
+    "import_weekly_payroll_draft",
+    "enforce_face_attendance_policy"
+  ]) {
+    if (!migration.includes(`function public.${routine}`)) throw new Error(`RPC hardening missing for ${routine}`);
+  }
+  if (!migration.includes("from public, anon, authenticated")) {
+    throw new Error("privileged RPC execute grants must be revoked from public API roles");
+  }
+});
+
+Deno.test("Supabase deployment uses a production-only function allowlist", async () => {
+  const deployment = await read("deploy-supabase.ps1");
+  for (const required of [
+    "AbsenCore",
+    "Absen",
+    "AbsenV2",
+    "DeviceTrust",
+    "SecurityOps",
+    "ProductionReadiness",
+    "AttendanceCorrections",
+    "AttendanceImport",
+    "OperationsV2",
+    "WorkforceOps",
+    "PlatformOps"
+  ]) {
+    if (!deployment.includes(`\"${required}\"`)) throw new Error(`production function missing from allowlist: ${required}`);
+  }
+  if (!deployment.includes("TemporaryFunctionPattern") || !deployment.includes("Source Edge Function tidak ditemukan")) {
+    throw new Error("deployment must reject temporary functions and missing source directories");
+  }
+  const allowlistBlock = deployment.match(/\$FunctionNames\s*=\s*@\(([\s\S]*?)\n\)/)?.[1] ?? "";
+  for (const forbidden of ["RunP", "VerifyPayroll", "PublishPayrollFinal", "RebuildPayroll", "TrimPublished", "PrepareLogo"] ) {
+    if (allowlistBlock.includes(forbidden)) throw new Error(`temporary function leaked into production allowlist: ${forbidden}`);
+  }
+});
