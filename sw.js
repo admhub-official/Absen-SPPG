@@ -1,4 +1,4 @@
-const CACHE = 'absen-sppg-shell-v32';
+const CACHE = 'absen-sppg-shell-v33';
 const SHELL = [
   './',
   './index.html',
@@ -34,15 +34,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
-
   const networkFirst = request.mode === 'navigate' ||
     ['script', 'style', 'worker'].includes(request.destination) ||
     url.pathname.endsWith('.js') ||
     url.pathname.endsWith('.css');
-
   if (networkFirst) {
     event.respondWith(
       fetch(request, { cache: 'no-store' })
@@ -57,7 +54,6 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-
   event.respondWith(
     caches.match(request).then((cached) => cached || fetch(request).then((response) => {
       if (response.ok && ['image', 'font'].includes(request.destination)) {
