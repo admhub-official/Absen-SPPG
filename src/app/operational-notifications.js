@@ -5,10 +5,23 @@
   const state = { items: [], unread: 0, loading: false };
 
   const token = () => localStorage.getItem('auth_token');
-  const appActive = () => document.getElementById('app-layout')?.classList.contains('active');
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[char]));
+
+  function profileNode() {
+    return [
+      '.app-topbar-profile',
+      '#topbar-profile',
+      '[data-profile-trigger]',
+      '.topbar-profile',
+      '.app-header-profile'
+    ].map((selector) => document.querySelector(selector)).find((node) => node instanceof HTMLElement && node.getClientRects().length > 0) || null;
+  }
+
+  function appActive() {
+    return Boolean(token() && profileNode());
+  }
 
   async function call(action, payload = {}) {
     const response = await fetch(endpoint, {
@@ -41,15 +54,24 @@
     return '🔔';
   }
 
+  function removeUi() {
+    document.getElementById('operational-notification-root')?.remove();
+  }
+
   function ensureUi() {
-    if (!token() || !appActive()) {
-      document.getElementById('operational-notification-root')?.remove();
+    if (!appActive()) {
+      removeUi();
       return null;
     }
+
+    const profile = profileNode();
+    const host = profile?.parentElement;
+    if (!profile || !host) return null;
+
     let root = document.getElementById('operational-notification-root');
+    if (root && root.parentElement !== host) root.remove();
+    root = document.getElementById('operational-notification-root');
     if (root) return root;
-    const topbar = document.querySelector('.app-topbar');
-    if (!topbar) return null;
 
     root = document.createElement('div');
     root.id = 'operational-notification-root';
@@ -67,9 +89,7 @@
         <div class="operational-notification-list"></div>
       </section>`;
 
-    const profile = topbar.querySelector('.app-topbar-profile');
-    if (profile) topbar.insertBefore(root, profile);
-    else topbar.appendChild(root);
+    host.insertBefore(root, profile);
 
     const button = root.querySelector('.operational-notification-button');
     const panel = root.querySelector('.operational-notification-panel');
@@ -85,6 +105,7 @@
   function render() {
     const root = ensureUi();
     if (!root) return;
+
     const badge = root.querySelector('.operational-notification-badge');
     badge.textContent = state.unread > 99 ? '99+' : String(state.unread);
     badge.hidden = state.unread < 1;
@@ -98,21 +119,23 @@
       list.innerHTML = '<div class="operational-notification-empty">Tidak ada notifikasi baru.</div>';
       return;
     }
+
     list.innerHTML = state.items.map((item) => {
       const kind = kindOf(item);
-      return `<button type="button" class="operational-notification-item ${item.Read ? '' : 'unread'}" data-id="${escapeHtml(item.ID_Notification)}" data-kind="${kind}">
+      return `<button type="button" class="operational-notification-item ${item.Read ? '' : 'unread'}" data-id="${escapeHtml(item.ID_Notification)}">
         <span class="operational-notification-item-icon">${iconFor(kind)}</span>
         <span class="operational-notification-copy"><strong>${escapeHtml(item.Title)}</strong><p>${escapeHtml(item.Message)}</p></span>
         <span><span class="operational-notification-time">${escapeHtml(formatTime(item.Created_At))}</span><span class="operational-notification-dot"></span></span>
       </button>`;
     }).join('');
+
     list.querySelectorAll('.operational-notification-item').forEach((button) => {
       button.addEventListener('click', () => openItem(button.dataset.id));
     });
   }
 
   async function load() {
-    if (!token() || state.loading) return;
+    if (!appActive() || state.loading) return;
     state.loading = true;
     render();
     try {
@@ -139,17 +162,13 @@
   }
 
   async function markAllRead() {
-    const unread = state.items.filter((item) => !item.Read);
-    await Promise.all(unread.map((item) => markRead(item)));
+    await Promise.all(state.items.filter((item) => !item.Read).map((item) => markRead(item)));
   }
 
   function clickView(view) {
     const selectors = [
-      `[data-view="${view}"]`,
-      `[data-route="${view}"]`,
-      `[data-target-view="${view}"]`,
-      `#nav-${view}`,
-      `#btn-${view}`
+      `[data-view="${view}"]`, `[data-route="${view}"]`, `[data-target-view="${view}"]`,
+      `#nav-${view}`, `#btn-${view}`
     ];
     for (const selector of selectors) {
       const target = document.querySelector(selector);
@@ -179,12 +198,14 @@
     if (!handled) window.location.hash = `#/${aliases[0]}`;
 
     window.setTimeout(() => {
-      const id = CSS.escape(String(item.Entity_ID || ''));
+      const rawId = String(item.Entity_ID || '');
+      if (!rawId) return;
+      const id = window.CSS?.escape ? CSS.escape(rawId) : rawId.replace(/[^a-zA-Z0-9_-]/g, '');
       const entity = document.querySelector(`[data-id="${id}"],[data-slip-id="${id}"],[data-pengaduan-id="${id}"],#${id}`);
       entity?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       entity?.classList.add('notification-target-highlight');
       window.setTimeout(() => entity?.classList.remove('notification-target-highlight'), 2200);
-    }, 500);
+    }, 600);
   }
 
   async function openItem(id) {
@@ -196,9 +217,11 @@
     navigate(item);
   }
 
-  function sync() {
-    ensureUi();
-    if (token() && appActive()) load();
+  function schedule() {
+    [0, 100, 300, 700, 1400].forEach((delay) => window.setTimeout(() => {
+      ensureUi();
+      if (appActive()) load();
+    }, delay));
   }
 
   document.addEventListener('click', (event) => {
@@ -209,11 +232,18 @@
     }
   });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
-  window.addEventListener('absen:app-ready', sync);
-  window.addEventListener('absen:session-changed', sync);
-  window.setInterval(() => { if (!document.hidden) load(); }, 60000);
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync, { once: true });
-  else sync();
+  window.addEventListener('absen:app-ready', schedule);
+  window.addEventListener('absen:session-changed', schedule);
+  window.addEventListener('hashchange', schedule);
 
-  window.AbsenOperationalNotifications = Object.freeze({ load, sync });
+  const app = document.getElementById('app-layout') || document.body;
+  const observer = new MutationObserver(() => window.requestAnimationFrame(ensureUi));
+  observer.observe(app, { childList: true, subtree: true });
+  window.addEventListener('beforeunload', () => observer.disconnect(), { once: true });
+  window.setInterval(() => { if (!document.hidden) load(); }, 60000);
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule, { once: true });
+  else schedule();
+
+  window.AbsenOperationalNotifications = Object.freeze({ load, sync: schedule });
 })();
