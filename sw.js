@@ -1,5 +1,7 @@
-const CACHE = 'absen-sppg-shell-v36';
-const APP_VERSION = '26.10.2';
+const CACHE = 'absen-sppg-shell-v37';
+const APP_VERSION = '26.10.4';
+const CANONICAL_ORIGIN = 'https://hadirly.org';
+const LEGACY_HOSTS = new Set(['absen-sppg.pages.dev']);
 const SHELL = [
   './',
   './index.html',
@@ -41,8 +43,12 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
 
-  // Bootstrap lama pernah tersimpan dengan query versi lama. Selalu arahkan
-  // permintaan apa pun untuk bootstrap ke versi aplikasi terbaru.
+  if (request.mode === 'navigate' && LEGACY_HOSTS.has(url.hostname.toLowerCase())) {
+    const target = new URL(url.pathname + url.search + url.hash, CANONICAL_ORIGIN);
+    event.respondWith(Response.redirect(target.href, 308));
+    return;
+  }
+
   if (url.pathname.endsWith('/src/app/bootstrap.js')) {
     const freshBootstrap = new Request(`./src/app/bootstrap.js?v=${APP_VERSION}`, {
       cache: 'reload',
