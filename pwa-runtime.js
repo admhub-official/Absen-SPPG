@@ -1,12 +1,12 @@
 (()=>{
   if(window.AbsenPWA)return;
-  const VERSION='26.10.2';
+  const VERSION='26.10.4';
   const api=Object.freeze({
     version:VERSION,
     online:()=>navigator.onLine,
     async register(){
       if(!('serviceWorker' in navigator))return{supported:false};
-      const registration=await navigator.serviceWorker.register('./sw.js?v=26.10.2',{
+      const registration=await navigator.serviceWorker.register(`./sw.js?v=${VERSION}`,{
         scope:'./',
         updateViaCache:'none'
       });
@@ -23,8 +23,9 @@
         window.dispatchEvent(new CustomEvent('absen:pwa-update-available'));
       });
       navigator.serviceWorker?.addEventListener?.('controllerchange',()=>{
-        if(sessionStorage.getItem('absen-sw-reloaded')==='1')return;
-        sessionStorage.setItem('absen-sw-reloaded','1');
+        const key=`absen-sw-reloaded:${VERSION}`;
+        if(sessionStorage.getItem(key)==='1')return;
+        sessionStorage.setItem(key,'1');
         location.reload();
       });
     }
