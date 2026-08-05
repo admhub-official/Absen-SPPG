@@ -1,4 +1,4 @@
-const CACHE = 'absen-sppg-shell-v34';
+const CACHE = 'absen-sppg-shell-v35';
 const SHELL = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const SHELL = [
   './src/styles/mobile-ui-refresh.css',
   './src/styles/payroll-history.css',
   './src/styles/app-announcements.css',
+  './src/styles/notification-mobile.css',
   './src/features/notifications/app-announcements.js'
 ];
 
