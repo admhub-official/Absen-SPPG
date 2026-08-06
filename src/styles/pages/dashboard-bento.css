@@ -67,6 +67,20 @@
 #view-dashboard .riwayat-mini-list{max-height:420px;overflow:auto;overscroll-behavior:contain;padding-right:4px}
 #view-dashboard #dashboard-notification-card.dashboard-card-empty{display:none!important}
 
+@media(min-width:901px){
+  #view-dashboard>.welcome-card{
+    grid-template-columns:auto minmax(0,1fr);
+    justify-content:start;
+    column-gap:clamp(22px,2.5vw,38px);
+  }
+  #view-dashboard .welcome-card-body{
+    justify-self:start;
+    max-width:none;
+    text-align:left;
+  }
+  #view-dashboard .welcome-card-cta{display:none!important}
+}
+
 @media(min-width:1180px){
   #view-dashboard>.dash-card.dashboard-half,
   #view-dashboard>#dashboard-notification-card:not(.dashboard-card-empty){grid-column:span 6}
