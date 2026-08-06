@@ -1,16 +1,17 @@
 name: Remove Legacy Session Loader
 
 on:
-  push:
+  pull_request:
+    types:
+      - opened
     branches:
-      - fix/remove-session-loader
+      - main
 
 permissions:
   contents: write
 
 jobs:
   cleanup:
-    if: ${{ !contains(github.event.head_commit.message, 'chore: remove legacy session loader') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout cleanup branch
