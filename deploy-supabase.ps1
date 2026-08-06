@@ -92,9 +92,10 @@ foreach ($FunctionName in $ObsoleteFunctions) {
 }
 
 # Production allowlist. Fungsi runner, verifier, rebuild, dan payroll sekali pakai
-# tidak boleh ditambahkan ke daftar ini.
+# tidak boleh ditambahkan ke daftar ini. Urutan fungsi absensi bersifat dependency order.
 $FunctionNames = @(
   "AbsenCore",
+  "AttendanceLocation",
   "Absen",
   "AbsenV2",
   "DeviceTrust",
