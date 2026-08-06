@@ -1,5 +1,5 @@
-const CACHE = 'absen-sppg-shell-v53';
-const APP_VERSION = '26.11.13';
+const CACHE = 'absen-sppg-shell-v54';
+const APP_VERSION = '26.11.14';
 const CANONICAL_ORIGIN = 'https://hadirly.org';
 const LEGACY_HOSTS = new Set(['absen-sppg.pages.dev']);
 const SHELL = [
@@ -9,6 +9,8 @@ const SHELL = [
   `./src/app/remove-legacy-notifications.js?v=${APP_VERSION}`,
   `./src/app/operational-notifications.js?v=${APP_VERSION}`,
   `./src/app/dashboard-priority.js?v=${APP_VERSION}`,
+  `./src/app/super-admin-dashboard.js?v=${APP_VERSION}`,
+  `./src/styles/pages/super-admin-dashboard.css?v=${APP_VERSION}`,
   './src/styles/app-system.css','./src/styles/responsive-overrides.css','./src/styles/mobile-ui-refresh.css','./src/styles/payroll-history.css','./src/styles/notification-mobile.css','./src/styles/components/operational-notifications.css'
 ];
 self.addEventListener('install',(event)=>{event.waitUntil(caches.open(CACHE).then((cache)=>cache.addAll(SHELL.map((path)=>new Request(path,{cache:'reload'})))).then(()=>self.skipWaiting()));});
