@@ -1,61 +1,101 @@
-/* UI/UX Stage 3: responsive Bento dashboard without changing dashboard data contracts. */
+/* Clean dashboard layout: no DOM reordering, no runtime size injection. */
 #view-dashboard{
   display:grid;
   grid-template-columns:repeat(12,minmax(0,1fr));
-  gap:var(--space-4,1rem);
+  gap:clamp(14px,1.4vw,22px);
   align-items:start;
+  width:100%;
+  min-width:0;
 }
 #view-dashboard.hidden{display:none!important}
-#view-dashboard>.welcome-card{grid-column:span 8;min-height:156px;margin:0!important}
-#view-dashboard>#dashboard-notification-card{grid-column:span 4;grid-row:1/span 2;margin:0!important;height:100%}
-#view-dashboard>.dash-card:not(#dashboard-notification-card){grid-column:span 8;margin:0!important}
-#view-dashboard>.stats-grid{grid-column:span 8;margin:0!important;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-3,.75rem)}
-#view-dashboard>.stats-grid .stat-card{min-width:0;height:100%;padding:var(--space-4,1rem);border-radius:var(--radius-lg,16px);box-shadow:var(--shadow-1,0 1px 2px rgb(15 23 42/.05))}
-#view-dashboard>.welcome-card,#view-dashboard>.dash-card,#view-dashboard>.stats-grid .stat-card{border:1px solid var(--border,#e2e8f0)}
-#view-dashboard>.welcome-card{position:relative;overflow:hidden;padding:clamp(1.15rem,2vw,1.6rem);border-radius:var(--radius-lg,16px);box-shadow:var(--shadow-1,0 1px 2px rgb(15 23 42/.05))}
-#view-dashboard>.welcome-card:after{content:"";position:absolute;right:-52px;bottom:-72px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(79,70,229,.14),transparent 70%);pointer-events:none}
-#view-dashboard .welcome-card-body{position:relative;z-index:1;max-width:620px}
-#view-dashboard .welcome-card-body h2{font-size:clamp(1.35rem,2.4vw,2rem);line-height:1.15;letter-spacing:-.025em}
-#view-dashboard .welcome-card-body p{margin-top:.4rem;line-height:1.5}
-#view-dashboard .welcome-card-cta{position:relative;z-index:1;align-self:center}
-#view-dashboard .welcome-card-cta .btn{min-height:46px;white-space:nowrap}
-#view-dashboard .dash-card{padding:var(--space-5,1.25rem);border-radius:var(--radius-lg,16px);box-shadow:var(--shadow-1,0 1px 2px rgb(15 23 42/.05))}
-#view-dashboard .dash-card-title{display:flex;align-items:center;gap:.55rem;margin-bottom:var(--space-4,1rem);font-size:var(--text-md,.9375rem);font-weight:800}
-#view-dashboard .absen-today-card{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3,.75rem)}
-#view-dashboard .absen-today-pill{min-width:0;padding:var(--space-4,1rem);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius-md,10px);background:var(--surface-muted,#f8fafc)}
-#view-dashboard .stat-card-value{font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-#view-dashboard #dashboard-notification-card.dashboard-card-empty{display:none!important}
-#view-dashboard #dashboard-notification-card:not(.dashboard-card-empty){display:block}
-#view-dashboard .riwayat-mini-list{max-height:360px;overflow:auto;overscroll-behavior:contain}
+#view-dashboard>*{min-width:0;max-width:none!important;margin:0!important}
 
-@media(min-width:1280px){
-  #view-dashboard>.dash-card:last-child{grid-column:span 8}
+#view-dashboard>.welcome-card,
+#view-dashboard>.stats-grid,
+#view-dashboard>.dash-card,
+#view-dashboard>#dashboard-notification-card{grid-column:1/-1;width:100%}
+
+#view-dashboard>.welcome-card{
+  min-height:180px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:24px;
+  padding:clamp(24px,3vw,42px);
+  border:1px solid rgb(255 255 255 / .08);
+  border-radius:22px;
+  overflow:hidden;
+  box-shadow:0 18px 42px -24px rgb(15 23 42 / .5);
 }
-@media(min-width:768px) and (max-width:1100px){
-  #view-dashboard{grid-template-columns:repeat(6,minmax(0,1fr))}
-  #view-dashboard>.welcome-card{grid-column:1/-1}
-  #view-dashboard>#dashboard-notification-card{grid-column:span 3;grid-row:auto;height:auto}
-  #view-dashboard>.dash-card:not(#dashboard-notification-card){grid-column:span 3}
-  #view-dashboard>.stats-grid{grid-column:1/-1}
-  #view-dashboard>.dash-card:last-child{grid-column:1/-1}
+#view-dashboard .welcome-card-body{min-width:0;max-width:760px}
+#view-dashboard .welcome-card-body h2{font-size:clamp(28px,3vw,42px);line-height:1.08;letter-spacing:-.035em}
+#view-dashboard .welcome-card-body p{margin-top:8px;font-size:clamp(14px,1.2vw,18px);line-height:1.5}
+#view-dashboard .welcome-card-cta{justify-self:end}
+#view-dashboard .welcome-card-cta .btn{min-height:48px;padding-inline:22px;white-space:nowrap}
+
+#view-dashboard>.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(12px,1.2vw,18px);
 }
-@media(max-width:767px){
-  #view-dashboard{display:flex;flex-direction:column;gap:12px}
-  #view-dashboard>.welcome-card,#view-dashboard>.dash-card,#view-dashboard>.stats-grid{width:100%;margin:0!important}
-  #view-dashboard>.welcome-card{order:1;display:grid;grid-template-columns:1fr;gap:14px;min-height:0;padding:16px}
-  #view-dashboard>.dash-card:not(#dashboard-notification-card){order:2}
-  #view-dashboard>.stats-grid{order:3;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#view-dashboard>.stats-grid .stat-card{
+  min-height:126px;
+  height:100%;
+  display:grid;
+  grid-template-columns:58px minmax(0,1fr);
+  align-items:center;
+  gap:16px;
+  padding:20px;
+  border:1px solid var(--border,#e2e8f0);
+  border-radius:18px;
+  background:var(--surface,#fff);
+  box-shadow:0 8px 26px -20px rgb(15 23 42 / .28);
+}
+#view-dashboard .stat-card-value{font-size:clamp(26px,2.2vw,34px);line-height:1.05;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+
+#view-dashboard>.dash-card,
+#view-dashboard>#dashboard-notification-card{
+  padding:clamp(18px,2vw,26px);
+  border:1px solid var(--border,#e2e8f0);
+  border-radius:20px;
+  background:var(--surface,#fff);
+  box-shadow:0 8px 28px -22px rgb(15 23 42 / .25);
+}
+#view-dashboard .dash-card-title{display:flex;align-items:center;gap:9px;margin-bottom:18px;font-size:17px;font-weight:800}
+#view-dashboard .absen-today-card{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+#view-dashboard .absen-today-pill{min-width:0;padding:20px;border:1px solid var(--border,#e2e8f0);border-radius:14px;background:var(--surface-muted,#f8fafc);text-align:center}
+#view-dashboard .riwayat-mini-list{max-height:420px;overflow:auto;overscroll-behavior:contain;padding-right:4px}
+#view-dashboard #dashboard-notification-card.dashboard-card-empty{display:none!important}
+
+@media(min-width:1180px){
+  #view-dashboard>.dash-card.dashboard-half,
+  #view-dashboard>#dashboard-notification-card:not(.dashboard-card-empty){grid-column:span 6}
+}
+
+@media(max-width:900px){
+  #view-dashboard{gap:14px}
+  #view-dashboard>.welcome-card{min-height:0;grid-template-columns:1fr;gap:18px;padding:22px;border-radius:18px}
+  #view-dashboard .welcome-card-body h2{font-size:clamp(25px,6vw,34px)}
+  #view-dashboard .welcome-card-cta{justify-self:stretch;width:100%}
+  #view-dashboard .welcome-card-cta .btn{width:100%;min-height:48px}
+  #view-dashboard>.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
   #view-dashboard>.stats-grid>.stat-card:last-child:nth-child(odd){grid-column:1/-1}
-  #view-dashboard>#dashboard-notification-card{order:4}
-  #view-dashboard>.dash-card:last-child{order:5}
-  #view-dashboard .welcome-card-cta,.welcome-card-cta .btn{width:100%}
-  #view-dashboard .welcome-card-cta .btn{min-height:48px}
-  #view-dashboard .dash-card{padding:16px}
-  #view-dashboard .stats-grid .stat-card{padding:14px}
+  #view-dashboard>.stats-grid .stat-card{min-height:112px;grid-template-columns:52px minmax(0,1fr);gap:13px;padding:17px;border-radius:16px}
+  #view-dashboard>.dash-card,#view-dashboard>#dashboard-notification-card{padding:18px;border-radius:17px}
   #view-dashboard .riwayat-mini-list{max-height:none}
 }
-@media(max-width:420px){
-  #view-dashboard>.stats-grid{gap:8px}
-  #view-dashboard .stats-grid .stat-card{padding:12px 10px}
-  #view-dashboard .absen-today-pill{padding:12px 9px}
+
+@media(max-width:560px){
+  #view-dashboard{display:flex;flex-direction:column;gap:12px}
+  #view-dashboard>*{width:100%}
+  #view-dashboard>.welcome-card{padding:18px 16px}
+  #view-dashboard .welcome-card-body h2{font-size:27px}
+  #view-dashboard .welcome-card-body p{font-size:14px}
+  #view-dashboard>.stats-grid{grid-template-columns:1fr;gap:10px}
+  #view-dashboard>.stats-grid>.stat-card:last-child:nth-child(odd){grid-column:auto}
+  #view-dashboard>.stats-grid .stat-card{min-height:96px;grid-template-columns:48px minmax(0,1fr);padding:14px}
+  #view-dashboard .stat-card-value{font-size:25px}
+  #view-dashboard .absen-today-card{grid-template-columns:1fr;gap:10px}
+  #view-dashboard .absen-today-pill{padding:15px}
+  #view-dashboard>.dash-card,#view-dashboard>#dashboard-notification-card{padding:16px}
 }
