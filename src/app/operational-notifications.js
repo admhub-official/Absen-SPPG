@@ -18,6 +18,34 @@
     if (!response.ok || body.success === false) throw new Error(body.message || 'Gagal memuat notifikasi.');
     return body.result;
   }
+  async function loadActionableNotifications() {
+    if (typeof window.apiCall !== 'function') return [];
+    try {
+      const result = await window.apiCall('getUserNotificationsV2', { token: token() });
+      return (result?.items || []).map((item, index) => ({
+        ID_Notification: String(item.ID_Notification || item.id || `actionable:${item.actionView || 'dashboard'}:${index}:${item.title || ''}`),
+        Title: item.Title || item.title || 'Perlu tindakan',
+        Message: item.Message || item.message || '',
+        Created_At: item.Created_At || item.createdAt || item.created_at || new Date().toISOString(),
+        Action_View: item.Action_View || item.actionView || 'dashboard',
+        Entity_ID: item.Entity_ID || item.entityId || item.entity_id || '',
+        Read: false,
+        _actionable: true
+      }));
+    } catch (error) {
+      console.warn('Pengingat tindakan pengguna gagal dimuat', error);
+      return [];
+    }
+  }
+  function mergeNotifications(serverItems, actionableItems) {
+    const seen = new Set();
+    return [...actionableItems, ...serverItems].filter((item) => {
+      const key = String(item.ID_Notification || `${item.Title || ''}|${item.Message || ''}|${item.Action_View || ''}`).toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
   function formatTime(value) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '';
@@ -81,7 +109,7 @@
   function render() {
     const root = ensureUi();
     if (!root) return;
-    const actionable = Math.max(Number(state.unread || 0), state.items.filter((item) => !item.Read).length);
+    const actionable = state.items.filter((item) => !item.Read).length;
     const badge = root.querySelector('.operational-notification-badge');
     badge.textContent = actionable > 99 ? '99+' : String(actionable);
     badge.hidden = actionable < 1;
@@ -99,13 +127,27 @@
   async function load() {
     if (!appActive() || state.loading) return;
     state.loading = true; render();
-    try { const result = await call('getNotifications'); state.items = result.items || []; state.unread = Number(result.unread || 0); }
-    catch (error) { console.warn('Notifikasi gagal dimuat', error); state.items = []; state.unread = 0; }
-    finally { state.loading = false; render(); }
+    try {
+      const [serverResult, actionableItems] = await Promise.all([
+        call('getNotifications').catch((error) => { console.warn('Notifikasi operasional gagal dimuat', error); return { items: [], unread: 0 }; }),
+        loadActionableNotifications()
+      ]);
+      const serverItems = serverResult?.items || [];
+      state.items = mergeNotifications(serverItems, actionableItems);
+      state.unread = state.items.filter((item) => !item.Read).length;
+    } catch (error) {
+      console.warn('Notifikasi gagal dimuat', error);
+      state.items = [];
+      state.unread = 0;
+    } finally {
+      state.loading = false;
+      render();
+    }
   }
   async function markRead(item) {
     if (!item || item.Read) return;
     item.Read = true; state.unread = Math.max(0, state.unread - 1); render();
+    if (item._actionable) return;
     try { await call('markRead', { id: item.ID_Notification }); } catch (error) { console.warn('Status baca notifikasi gagal disimpan', error); }
   }
   async function markAllRead() { await Promise.all(state.items.filter((item) => !item.Read).map((item) => markRead(item))); }
@@ -116,7 +158,7 @@
   }
   function navigate(item) {
     const view = String(item.Action_View || 'dashboard');
-    const aliases = view === 'payroll-saya' ? ['payroll-saya','payroll','slip-gaji'] : view === 'pengaduan' ? ['pengaduan','aduan'] : [view];
+    const aliases = view === 'payroll-saya' || view === 'my-payroll' ? ['my-payroll','payroll-saya','payroll','slip-gaji'] : view === 'pengaduan' ? ['pengaduan','aduan'] : [view];
     let handled = false;
     for (const alias of aliases) { if (typeof window.showView === 'function') { try { window.showView(alias); handled = true; break; } catch {} } if (clickView(alias)) { handled = true; break; } }
     if (!handled) window.location.hash = `#/${aliases[0]}`;
