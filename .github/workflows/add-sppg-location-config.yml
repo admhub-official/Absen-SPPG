@@ -1,16 +1,19 @@
 name: Add SPPG Location Configuration
 
 on:
-  push:
+  pull_request:
+    types:
+      - opened
+      - synchronize
     branches:
-      - feat/super-admin-sppg-location-config
+      - main
 
 permissions:
   contents: write
 
 jobs:
   wire-feature:
-    if: ${{ !contains(github.event.head_commit.message, 'feat: wire SUPER ADMIN SPPG location configuration') }}
+    if: ${{ github.head_ref == 'feat/super-admin-sppg-location-config' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout feature branch
