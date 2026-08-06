@@ -152,7 +152,7 @@
 
   function publisherMarkup() {
     const item = state.notifications.find((row) => String(row.ID_Notification) === state.editingId) || null;
-    const mode = item?.Target_Mode || 'ALL';
+    const mode = item?.Target_Mode || (globalAnnouncementEnabled() ? 'ALL' : 'ROLES');
     const globalEnabled = globalAnnouncementEnabled();
     return `<form class="sna-publisher" id="sna-notification-form">
       <div class="sna-form-head"><div><h3>${item ? 'Edit Notifikasi' : 'Terbitkan Notifikasi'}</h3><p>Menu ini ditempatkan di Pusat Pengaturan → Sistem → Penerbitan Notifikasi.</p></div>${item ? '<span class="badge badge-info">Mode edit</span>' : ''}</div>
@@ -188,6 +188,7 @@
     root.innerHTML = `<div class="sna-head"><div><span class="sa-settings-eyebrow">SISTEM & KOMUNIKASI</span><h2>Kebijakan dan Penerbitan Notifikasi</h2><p>Pengaturan tersimpan pada System_Settings. Penerbitan tersimpan pada App_Notifications.</p></div><button type="button" class="btn btn-secondary btn-sm" data-sna-refresh>Muat Ulang</button></div>
       <div class="sna-tabs" role="tablist" aria-label="Pengaturan sistem dan notifikasi"><button type="button" role="tab" data-sna-section="policy" class="${state.section === 'policy' ? 'active' : ''}" aria-selected="${state.section === 'policy'}">Kebijakan Sistem</button><button type="button" role="tab" data-sna-section="publisher" class="${state.section === 'publisher' ? 'active' : ''}" aria-selected="${state.section === 'publisher'}">Penerbitan Notifikasi</button><button type="button" role="tab" data-sna-section="history" class="${state.section === 'history' ? 'active' : ''}" aria-selected="${state.section === 'history'}">Riwayat & Kelola <span>${state.notifications.length}</span></button></div>
       <div class="sna-body" aria-busy="${state.loading}">${state.loading ? '<div class="loading-state"><span class="spinner"></span>Memuat data backend...</div>' : state.section === 'policy' ? policyMarkup() : state.section === 'publisher' ? publisherMarkup() : historyMarkup()}</div>`;
+    root.dataset.snaRendered = 'true';
     bindDynamic(root);
   }
 
@@ -257,6 +258,12 @@
     };
   }
 
+  function notifyChanged() {
+    window.dispatchEvent(new CustomEvent('absen:notifications-changed'));
+    window.AbsenOperationalNotifications?.load?.();
+    window.AppAnnouncements?.refresh?.();
+  }
+
   async function toggleSetting(input) {
     const key = input.dataset.snaSetting;
     const previous = !input.checked;
@@ -290,8 +297,7 @@
     try {
       const payload = formPayload(status);
       if (!payload.title || !payload.message) throw new Error('Judul dan isi notifikasi wajib diisi.');
-      const isPublish = status === 'PUBLISHED';
-      if (isPublish) {
+      if (status === 'PUBLISHED') {
         const approved = await window.appConfirm?.({
           title: state.editingId ? 'Simpan perubahan dan terbitkan?' : 'Terbitkan notifikasi?',
           message: `Notifikasi akan dikirim ke target ${payload.targetMode}.`,
@@ -306,9 +312,9 @@
       const verified = state.notifications.find((item) => item.ID_Notification === saved.ID_Notification);
       if (!verified || verified.Status !== status) throw new Error('Notifikasi tersimpan tetapi verifikasi backend belum sesuai.');
       state.editingId = '';
-      state.section = status === 'DRAFT' ? 'history' : 'history';
+      state.section = 'history';
       window.showAlert?.(status === 'DRAFT' ? 'Draft notifikasi berhasil disimpan.' : 'Notifikasi berhasil diterbitkan.', 'success');
-      window.dispatchEvent(new CustomEvent('absen:notifications-changed'));
+      notifyChanged();
       render();
     } catch (error) {
       window.showAlert?.(error.message, 'error');
@@ -326,7 +332,7 @@
       state.notifications = list?.items || [];
       if (state.notifications.find((row) => row.ID_Notification === id)?.Status !== 'CANCELLED') throw new Error('Status pembatalan belum tersinkron.');
       window.showAlert?.('Notifikasi berhasil dibatalkan.', 'success');
-      window.dispatchEvent(new CustomEvent('absen:notifications-changed'));
+      notifyChanged();
       render();
     } catch (error) { window.showAlert?.(error.message, 'error'); }
   }
@@ -343,7 +349,7 @@
       if (state.notifications.some((row) => row.ID_Notification === id)) throw new Error('Notifikasi masih ditemukan setelah penghapusan.');
       if (state.editingId === id) state.editingId = '';
       window.showAlert?.('Notifikasi berhasil dihapus.', 'success');
-      window.dispatchEvent(new CustomEvent('absen:notifications-changed'));
+      notifyChanged();
       render();
     } catch (error) { window.showAlert?.(error.message, 'error'); }
   }
@@ -409,6 +415,7 @@
 
   function schedule() {
     if (!isSuper()) return;
+    const existed = Boolean(document.getElementById('settings-notification-admin-root'));
     const root = ensureRoot();
     if (!root) return;
     if (!state.bound) {
@@ -417,11 +424,13 @@
       document.addEventListener('change', handleChange);
     }
     if (!state.settings.length && !state.loading) load();
-    else render();
+    else if (!existed || root.dataset.snaRendered !== 'true') render();
   }
 
   window.SettingsNotificationAdmin = Object.freeze({ openSection, refresh: () => load(false) });
-  new MutationObserver(() => requestAnimationFrame(schedule)).observe(document.documentElement, { childList: true, subtree: true });
+  new MutationObserver(() => {
+    if (isSuper() && !document.getElementById('settings-notification-admin-root')) requestAnimationFrame(schedule);
+  }).observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener('absen:app-ready', schedule);
   window.addEventListener('absen:session-changed', schedule);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule, { once: true });
