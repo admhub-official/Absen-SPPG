@@ -1,0 +1,131 @@
+name: Add Refresh Boot Loader
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  update-loader:
+    if: ${{ github.head_ref == 'fix/refresh-boot-loader' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout loader branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/refresh-boot-loader
+          fetch-depth: 0
+
+      - name: Add current-brand refresh loader
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          index_path = Path('index.html')
+          index = index_path.read_text(encoding='utf-8')
+
+          loader_id = 'id="app-boot-loader"'
+          if loader_id not in index:
+              css_anchor = "    html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Inter',system-ui,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}\n"
+              loader_css = """    #app-boot-loader{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:linear-gradient(135deg,#0f172a 0%,#111827 52%,#1e1b4b 100%);transition:opacity .22s ease,visibility .22s ease}\n    #app-boot-loader.hidden{opacity:0;visibility:hidden;pointer-events:none}\n    .app-boot-loader__visual{position:relative;width:96px;height:96px;display:grid;place-items:center}\n    .app-boot-loader__ring{position:absolute;inset:0;border:3px solid rgba(255,255,255,.12);border-top-color:#38bdf8;border-right-color:#818cf8;border-radius:50%;animation:appBootSpin .9s linear infinite}\n    .app-boot-loader__icon{width:56px;height:56px;display:block;object-fit:contain;filter:drop-shadow(0 10px 24px rgba(14,165,233,.28));animation:appBootPulse 1.2s ease-in-out infinite}\n    @keyframes appBootSpin{to{transform:rotate(360deg)}}\n    @keyframes appBootPulse{0%,100%{transform:scale(.94);opacity:.82}50%{transform:scale(1);opacity:1}}\n    @media(prefers-reduced-motion:reduce){.app-boot-loader__ring,.app-boot-loader__icon{animation:none}}\n"""
+              if index.count(css_anchor) != 1:
+                  raise SystemExit('CSS anchor for refresh loader was not found exactly once')
+              index = index.replace(css_anchor, css_anchor + loader_css, 1)
+
+              markup_anchor = '<div id="alert-box"></div>'
+              loader_markup = """<div id="app-boot-loader" role="status" aria-label="Memuat aplikasi Hadirly">\n  <div class="app-boot-loader__visual" aria-hidden="true">\n    <span class="app-boot-loader__ring"></span>\n    <img class="app-boot-loader__icon" src="./icons/app-icon.svg" alt="">\n  </div>\n</div>\n"""
+              if index.count(markup_anchor) != 1:
+                  raise SystemExit('Markup anchor for refresh loader was not found exactly once')
+              index = index.replace(markup_anchor, loader_markup + markup_anchor, 1)
+
+              init_anchor = 'async function initApp(){'
+              helper = """function hideAppBootLoader(){\n  const loader=$('#app-boot-loader');\n  if(!loader)return;\n  loader.classList.add('hidden');\n  window.setTimeout(()=>loader.remove(),220);\n}\n\n"""
+              if index.count(init_anchor) != 1:
+                  raise SystemExit('initApp anchor was not found exactly once')
+              index = index.replace(init_anchor, helper + init_anchor, 1)
+
+              install_guard = '  if(!await enforceMandatoryInstall())return;'
+              install_guard_new = "  if(!await enforceMandatoryInstall()){hideAppBootLoader();return;}"
+              if index.count(install_guard) != 1:
+                  raise SystemExit('Mandatory install guard was not found exactly once')
+              index = index.replace(install_guard, install_guard_new, 1)
+
+              config_catch = "  try{await loadPublicConfig();}catch{$('#auth-layout').classList.remove('hidden');showAlert('Gagal terhubung ke server. Muat ulang halaman.','error');return;}"
+              config_catch_new = "  try{await loadPublicConfig();}catch{hideAppBootLoader();$('#auth-layout').classList.remove('hidden');showAlert('Gagal terhubung ke server. Muat ulang halaman.','error');return;}"
+              if index.count(config_catch) != 1:
+                  raise SystemExit('Public config error handler was not found exactly once')
+              index = index.replace(config_catch, config_catch_new, 1)
+
+              session_block = """  const hs=await checkSession();\n  if(hs){showApp(),loadProfilLengkap();}else{$('#auth-layout').classList.remove('hidden'),navigateTo('login');}\n}\n"""
+              session_block_new = """  const hs=await checkSession();\n  if(hs){showApp(),loadProfilLengkap();}else{$('#auth-layout').classList.remove('hidden'),navigateTo('login');}\n  hideAppBootLoader();\n}\n"""
+              if index.count(session_block) != 1:
+                  raise SystemExit('Session completion block was not found exactly once')
+              index = index.replace(session_block, session_block_new, 1)
+
+              index_path.write_text(index, encoding='utf-8')
+
+          index = index_path.read_text(encoding='utf-8')
+          if index.count(loader_id) != 1:
+              raise SystemExit('Refresh loader markup is missing or duplicated')
+          if index.count("src=\"./icons/app-icon.svg\"") < 1:
+              raise SystemExit('Current Hadirly application icon is not used by the refresh loader')
+          if index.count('function hideAppBootLoader()') != 1:
+              raise SystemExit('Refresh loader cleanup helper is missing or duplicated')
+          if "setTimeout(()=>{\n    $('#session-loading')" in index:
+              raise SystemExit('Legacy delayed session loader returned unexpectedly')
+
+          bootstrap_path = Path('src/app/bootstrap.js')
+          bootstrap = bootstrap_path.read_text(encoding='utf-8')
+          bootstrap, count = re.subn(
+              r"const VERSION = '26\.11\.\d+';",
+              "const VERSION = '26.11.23';",
+              bootstrap,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit('Frontend version constant was not updated')
+          bootstrap_path.write_text(bootstrap, encoding='utf-8')
+
+          sw_path = Path('sw.js')
+          sw = sw_path.read_text(encoding='utf-8')
+          sw, cache_count = re.subn(
+              r"const CACHE = 'absen-sppg-hadirly-v\d+';",
+              "const CACHE = 'absen-sppg-hadirly-v64';",
+              sw,
+              count=1,
+          )
+          sw, version_count = re.subn(
+              r"const APP_VERSION = '26\.11\.\d+';",
+              "const APP_VERSION = '26.11.23';",
+              sw,
+              count=1,
+          )
+          if cache_count != 1 or version_count != 1:
+              raise SystemExit('PWA cache/version constants were not updated')
+          sw_path.write_text(sw, encoding='utf-8')
+          PY
+
+          git grep -n "app-boot-loader\|hideAppBootLoader" -- index.html
+          if git grep -n "session-loading\|Memverifikasi sesi" -- index.html src; then
+            echo "Legacy session loader code must remain removed."
+            exit 1
+          fi
+
+      - name: Commit loader implementation
+        run: |
+          if git diff --quiet; then
+            echo "Refresh loader already applied."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html src/app/bootstrap.js sw.js
+          git commit -m "feat(ui): add current-icon refresh loader"
+          git push origin HEAD:fix/refresh-boot-loader
