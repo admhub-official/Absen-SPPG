@@ -2,6 +2,7 @@
   if (window.AbsenDashboardPriority) return;
 
   const KPI_LABELS = ['hari kerja lengkap', 'total gaji diterima', 'slip gaji diterbitkan'];
+  const COLLAPSE_KEY = 'absen_sidebar_collapsed';
 
   function text(node) {
     return String(node?.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -26,11 +27,8 @@
 
   function findCard(labelNode) {
     if (!labelNode) return null;
-    const known = labelNode.closest(
-      '.dashboard-kpi-card,.kpi-card,.stat-card,.metric-card,.summary-card,.dashboard-stat,.dashboard-card,.card'
-    );
+    const known = labelNode.closest('.dashboard-kpi-card,.kpi-card,.stat-card,.metric-card,.summary-card,.dashboard-stat,.dashboard-card,.card');
     if (known && labelCount(known) === 1) return known;
-
     let current = labelNode.parentElement;
     let candidate = current;
     while (current && current.id !== 'app-layout') {
@@ -54,7 +52,6 @@
     const heading = [...root.querySelectorAll('h1,h2')].find((node) => /dashboard|ringkasan|beranda/i.test(text(node)));
     const header = heading?.closest('header,.page-header,.dashboard-header,.section-header') || heading?.parentElement;
     if (header && header.parentElement === root) return { mode: 'after', node: header };
-
     const attendance = [...root.querySelectorAll('section,article,div')]
       .filter(visible)
       .find((node) => {
@@ -79,10 +76,8 @@
     const cards = KPI_LABELS.map((label) => findCard(findLabel(label))).filter(Boolean);
     const uniqueCards = [...new Set(cards)];
     if (uniqueCards.length < 2) return false;
-
     const root = activeDashboard(uniqueCards);
     if (!root || !visible(root)) return false;
-
     let container = root.querySelector(':scope > #dashboard-kpi-priority');
     if (!container) {
       container = document.createElement('section');
@@ -94,7 +89,6 @@
       else if (point.mode === 'before') point.node.insertAdjacentElement('beforebegin', container);
       else root.prepend(container);
     }
-
     uniqueCards.forEach((card) => {
       card.classList.add('dashboard-kpi-priority-card');
       markIcon(card);
@@ -103,22 +97,98 @@
     return true;
   }
 
+  function labelNavigationItems(sidebar) {
+    sidebar.querySelectorAll('.app-nav-item,.sidebar-absen-btn').forEach((item) => {
+      const label = String(item.textContent || '').replace(/\s+/g, ' ').trim();
+      if (label && !item.getAttribute('aria-label')) item.setAttribute('aria-label', label);
+      if (label && !item.getAttribute('title')) item.setAttribute('title', label);
+    });
+  }
+
+  function ensureBackdrop() {
+    let backdrop = document.querySelector('.sidebar-mobile-backdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.className = 'sidebar-mobile-backdrop';
+      backdrop.addEventListener('click', closeMobileSidebar);
+      document.body.appendChild(backdrop);
+    }
+    return backdrop;
+  }
+
+  function closeMobileSidebar() {
+    const sidebar = document.querySelector('#app-layout .app-sidebar');
+    sidebar?.classList.remove('sidebar-mobile-open');
+    document.querySelector('.sidebar-mobile-backdrop')?.classList.remove('active');
+    document.querySelector('.sidebar-toggle-button')?.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleSidebar() {
+    const sidebar = document.querySelector('#app-layout .app-sidebar');
+    if (!sidebar) return;
+    const mobile = matchMedia('(max-width: 900px)').matches;
+    if (mobile) {
+      const open = sidebar.classList.toggle('sidebar-mobile-open');
+      ensureBackdrop().classList.toggle('active', open);
+      document.querySelector('.sidebar-toggle-button')?.setAttribute('aria-expanded', String(open));
+      return;
+    }
+    const collapsed = sidebar.classList.toggle('sidebar-collapsed');
+    localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
+    document.querySelector('.sidebar-toggle-button')?.setAttribute('aria-expanded', String(!collapsed));
+    window.dispatchEvent(new Event('resize'));
+  }
+
+  function ensureSidebarToggle() {
+    const app = document.getElementById('app-layout');
+    const sidebar = app?.querySelector('.app-sidebar');
+    const topbar = app?.querySelector('.app-topbar');
+    if (!sidebar || !topbar) return false;
+    labelNavigationItems(sidebar);
+    if (!matchMedia('(max-width: 900px)').matches && localStorage.getItem(COLLAPSE_KEY) === '1') {
+      sidebar.classList.add('sidebar-collapsed');
+    }
+    let button = topbar.querySelector('.sidebar-toggle-button');
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'sidebar-toggle-button';
+      button.setAttribute('aria-label', 'Tampilkan atau ciutkan sidebar');
+      button.setAttribute('aria-expanded', String(!sidebar.classList.contains('sidebar-collapsed')));
+      button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
+      button.addEventListener('click', toggleSidebar);
+      topbar.prepend(button);
+    }
+    ensureBackdrop();
+    return true;
+  }
+
   function schedule() {
-    [0, 80, 250, 600, 1200].forEach((delay) => window.setTimeout(moveKpisUp, delay));
+    [0, 80, 250, 600, 1200].forEach((delay) => window.setTimeout(() => {
+      moveKpisUp();
+      ensureSidebarToggle();
+    }, delay));
   }
 
   function init() {
     schedule();
     const app = document.getElementById('app-layout') || document.body;
-    const observer = new MutationObserver(() => window.requestAnimationFrame(moveKpisUp));
+    const observer = new MutationObserver(() => window.requestAnimationFrame(() => {
+      moveKpisUp();
+      ensureSidebarToggle();
+    }));
     observer.observe(app, { childList: true, subtree: true });
-    window.addEventListener('hashchange', schedule);
+    window.addEventListener('hashchange', () => { closeMobileSidebar(); schedule(); });
+    window.addEventListener('resize', () => {
+      if (!matchMedia('(max-width: 900px)').matches) closeMobileSidebar();
+      ensureSidebarToggle();
+    });
     window.addEventListener('absen:app-ready', schedule);
     window.addEventListener('absen:session-changed', schedule);
     window.addEventListener('beforeunload', () => observer.disconnect(), { once: true });
   }
 
-  window.AbsenDashboardPriority = Object.freeze({ init, refresh: moveKpisUp });
+  window.AbsenDashboardPriority = Object.freeze({ init, refresh: moveKpisUp, toggleSidebar });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();
 })();
