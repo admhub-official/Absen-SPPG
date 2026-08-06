@@ -34,30 +34,18 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     else if (/Chrome\//.test(ua)) browser = 'Google Chrome';
     else if (/Firefox\//.test(ua)) browser = 'Mozilla Firefox';
     else if (/Safari\//.test(ua)) browser = 'Safari';
-    return {
-      deviceKey,
-      deviceName: `${platform} · ${browser}`,
-      platform,
-      browser
-    };
+    return { deviceKey, deviceName: `${platform} · ${browser}`, platform, browser };
   }
 
   async function callDeviceTrust(action, payload = {}) {
     const token = localStorage.getItem('auth_token');
     if (!token) throw new Error('Sesi login tidak tersedia.');
-
     const response = await fetch(
       `${window.ABSEN_SUPABASE_CONFIG.projectUrl}/functions/v1/${window.ABSEN_SUPABASE_CONFIG.deviceTrustFunctionName}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, token, ...payload })
-      }
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, token, ...payload }) }
     );
     const body = await response.json().catch(() => ({}));
-    if (!response.ok || body?.success === false) {
-      throw new Error(body?.message || 'Gagal memproses identitas perangkat.');
-    }
+    if (!response.ok || body?.success === false) throw new Error(body?.message || 'Gagal memproses identitas perangkat.');
     return body?.result;
   }
 
@@ -75,17 +63,11 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
       const key = crypto.randomUUID();
       sessionStorage.setItem(storageKey, JSON.stringify({ key, expiresAt: Date.now() + 2 * 60 * 1000 }));
       return key;
-    } catch {
-      return crypto.randomUUID();
-    }
+    } catch { return crypto.randomUUID(); }
   }
 
   function clearIdempotencyKey(functionName) {
-    try {
-      sessionStorage.removeItem(`absen:idempotency:${functionName}`);
-    } catch {
-      // Browser dengan storage terbatas tetap dapat melanjutkan operasi.
-    }
+    try { sessionStorage.removeItem(`absen:idempotency:${functionName}`); } catch {}
   }
 
   window.getMyAttendanceDevices = () => callDeviceTrust('listMyDevices');
@@ -99,35 +81,23 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
       window.__ABSEN_API_WRAPPED__ = true;
       window.apiCall = async function securityAwareApiCall(functionName, payload = {}) {
         if (localStorage.getItem('auth_token')) {
-          try {
-            await ensureDeviceRegistered();
-          } catch (error) {
-            console.warn('Device registration deferred', error);
-          }
+          try { await ensureDeviceRegistered(); } catch (error) { console.warn('Device registration deferred', error); }
         }
-
         const securedPayload = {
           ...payload,
           deviceKey,
           deviceId: registeredDevice?.Device_ID || registeredDevice?.deviceId || null,
-          ...(IDEMPOTENT_FUNCTIONS.has(functionName)
-            ? { idempotencyKey: payload.idempotencyKey || getOrCreateIdempotencyKey(functionName) }
-            : {})
+          ...(IDEMPOTENT_FUNCTIONS.has(functionName) ? { idempotencyKey: payload.idempotencyKey || getOrCreateIdempotencyKey(functionName) } : {})
         };
-
         const result = await originalApiCall(functionName, securedPayload);
         if (IDEMPOTENT_FUNCTIONS.has(functionName)) clearIdempotencyKey(functionName);
         return result;
       };
     }
-
-    if (localStorage.getItem('auth_token')) {
-      ensureDeviceRegistered().catch((error) => console.warn('Device registration pending', error));
-    }
+    if (localStorage.getItem('auth_token')) ensureDeviceRegistered().catch((error) => console.warn('Device registration pending', error));
   });
 })();
 
-// Satu-satunya entrypoint frontend modular. Asset turunan dikelola oleh bootstrap.
-import('./src/app/bootstrap.js?v=26.11.19').catch((error) => {
+import('./src/app/bootstrap.js?v=26.11.20').catch((error) => {
   console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
 });
