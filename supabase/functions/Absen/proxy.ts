@@ -3,7 +3,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const db = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
-const LEGACY_URL = `${SUPABASE_URL}/functions/v1/AbsenLegacy`;
+const LEGACY_CORE_URL = `${SUPABASE_URL}/functions/v1/AbsenCore`;
 const ATTENDANCE_LOCATION_URL = `${SUPABASE_URL}/functions/v1/AttendanceLocation`;
 
 const headers = {
@@ -282,7 +282,7 @@ Deno.serve(async (request) => {
 
     if (body.function === 'getUserNotificationsV2') {
       const user = await authenticate(body.data?.token);
-      const legacy = await forward(LEGACY_URL, body, request);
+      const legacy = await forward(LEGACY_CORE_URL, body, request);
       const base = legacy.payload?.result || {};
       const nonGenerated = (Array.isArray(base.items) ? base.items : [])
         .filter((item: any) => item?.type !== 'PAYROLL' && item?.type !== 'PENGUMUMAN');
@@ -310,7 +310,7 @@ Deno.serve(async (request) => {
     if (body.function === 'getOperationalDashboardV2') {
       const user = await authenticate(body.data?.token);
       const ids = await scopedUserIds(user);
-      const legacy = await forward(LEGACY_URL, body, request);
+      const legacy = await forward(LEGACY_CORE_URL, body, request);
       if (!legacy.payload) return new Response(legacy.text, { status: legacy.status, headers });
       let count = 0;
       if (ids.length) {
@@ -325,7 +325,7 @@ Deno.serve(async (request) => {
       return json(legacy.payload, legacy.status);
     }
 
-    const legacy = await forward(LEGACY_URL, body, request);
+    const legacy = await forward(LEGACY_CORE_URL, body, request);
     return new Response(legacy.text, { status: legacy.status, headers });
   } catch (error) {
     return json({ success: false, error: error instanceof Error ? error.message : String(error) }, 400);

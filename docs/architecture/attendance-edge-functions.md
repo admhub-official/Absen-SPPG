@@ -6,7 +6,7 @@ Dokumen ini menetapkan tanggung jawab dan batas akses Edge Function presensi aga
 
 - Menyediakan implementasi bisnis legacy yang dipin ke commit stabil.
 - Bukan endpoint frontend.
-- Digunakan oleh jalur kompatibilitas untuk operasi yang belum dimigrasikan.
+- Menjadi satu-satunya target operasi legacy yang belum dimigrasikan.
 - Harus dideploy sebelum gateway lain.
 - Tidak boleh ditambahkan ke konfigurasi endpoint frontend.
 - Koordinat dan radius hardcoded di dalam implementasi lama **bukan** sumber lokasi produksi untuk `recordAbsensiSelf`.
@@ -31,8 +31,9 @@ Dokumen ini menetapkan tanggung jawab dan batas akses Edge Function presensi aga
 ## Absen
 
 - Gateway publik kompatibel untuk fungsi aplikasi.
+- Entry point langsung memuat `proxy.ts`; tidak memakai wrapper perantara.
 - Merutekan `getAttendanceLocationPolicy`, `checkAttendanceLocation`, dan `recordAbsensiSelf` ke `AttendanceLocation`.
-- Meneruskan operasi nonlokasi yang belum dimigrasikan ke jalur legacy.
+- Meneruskan operasi nonlokasi yang belum dimigrasikan langsung ke `AbsenCore`.
 - Tidak menyimpan koordinat, radius, atau fungsi kompatibilitas titik lokasi.
 - Tetap dipertahankan selama frontend legacy masih menggunakan `window.apiCall`.
 
@@ -43,6 +44,14 @@ Dokumen ini menetapkan tanggung jawab dan batas akses Edge Function presensi aga
 - Meneruskan request ke `Absen`.
 - Tidak menyimpan konfigurasi lokasi.
 
+## Artefak yang tidak boleh digunakan kembali
+
+- `AbsenLegacy`: alias runtime lama yang memuat source dari branch `main` tanpa pin commit.
+- `AbsenProxy`: alias duplikat untuk proxy yang sama.
+- `supabase/functions/Absen/geofence-gateway.ts`: wrapper tanpa logika yang sebelumnya hanya mengimpor `proxy.ts`.
+
+Ketiga artefak tersebut bukan bagian arsitektur produksi. Script deployment memasukkan alias Edge Function lama ke daftar penghapusan idempotent.
+
 ## Alur resmi
 
 ```text
@@ -50,7 +59,7 @@ Menu SUPER ADMIN ─> SppgLocationConfig ─> Lokasi_SPPG
                                               │
 Frontend absensi ─> AttendanceLocation <──────┘
 
-Frontend legacy ───────────────> Absen ─────────> jalur legacy / AbsenCore
+Frontend legacy ───────────────> Absen ─────────> AbsenCore
 Frontend presensi terproteksi ─> AbsenV2 ───────> Absen ─────> AttendanceLocation
 ```
 

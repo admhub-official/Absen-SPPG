@@ -92,6 +92,7 @@ Deno.test("Supabase deployment uses a production-only function allowlist", async
   const deployment = await read("deploy-supabase.ps1");
   for (const required of [
     "AbsenCore",
+    "AttendanceLocation",
     "Absen",
     "AbsenV2",
     "DeviceTrust",
@@ -111,5 +112,9 @@ Deno.test("Supabase deployment uses a production-only function allowlist", async
   const allowlistBlock = deployment.match(/\$FunctionNames\s*=\s*@\(([\s\S]*?)\n\)/)?.[1] ?? "";
   for (const forbidden of ["RunP", "VerifyPayroll", "PublishPayrollFinal", "RebuildPayroll", "TrimPublished", "PrepareLogo"] ) {
     if (allowlistBlock.includes(forbidden)) throw new Error(`temporary function leaked into production allowlist: ${forbidden}`);
+  }
+  const obsoleteBlock = deployment.match(/\$ObsoleteFunctions\s*=\s*@\(([\s\S]*?)\n\)/)?.[1] ?? "";
+  for (const obsolete of ["AbsenLegacy", "AbsenProxy"]) {
+    if (!obsoleteBlock.includes(`\"${obsolete}\"`)) throw new Error(`obsolete function missing from cleanup list: ${obsolete}`);
   }
 });

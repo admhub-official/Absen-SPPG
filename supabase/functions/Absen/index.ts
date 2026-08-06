@@ -1,4 +1,4 @@
 // Entry point publik untuk seluruh API aplikasi Absen-SPPG.
-// Gateway memvalidasi sesi dan geofence absensi sebelum meneruskan fungsi
-// bisnis lainnya ke AbsenCore yang dipin agar alur lama tetap stabil.
-import "./geofence-gateway.ts";
+// Operasi lokasi diarahkan ke AttendanceLocation, sedangkan operasi legacy
+// diteruskan ke AbsenCore yang dipin melalui proxy kanonis.
+import './proxy.ts';
