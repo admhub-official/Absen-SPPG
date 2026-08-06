@@ -1,12 +1,69 @@
-html[data-brand="hadirly"] .hadirly-brand{display:flex;align-items:center;gap:.7rem}
-html[data-brand="hadirly"] .hadirly-brand>img{width:42px;height:42px;object-fit:contain;border-radius:22%;flex:0 0 auto}
-html[data-brand="hadirly"] .hadirly-brand__text{display:flex;min-width:0;flex-direction:column;line-height:1.05}
-html[data-brand="hadirly"] .hadirly-brand__text strong{color:inherit;font-size:1.05rem;font-weight:800;letter-spacing:-.025em;text-transform:none}
-html[data-brand="hadirly"] .hadirly-brand__text smally{margin-top:.25rem;color:var(--text-muted,#7d91b6);font-size:.6rem;font-weight:600;letter-spacing:.015em;white-space:nowrap}
-html[data-brand="hadirly"] .app-sidebar-brand .hadirly-brand__text small{color:rgba(255,255,255,.55)}
+html[data-brand="hadirly"] .hadirly-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+html[data-brand="hadirly"] .hadirly-brand > img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  border-radius: 22%;
+  flex: 0 0 auto;
+}
+
+html[data-brand="hadirly"] .hadirly-brand__text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.05;
+}
+
+html[data-brand="hadirly"] .hadirly-brand__text strong {
+  color: inherit;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  text-transform: none;
+}
+
+html[data-brand="hadirly"] .hadirly-brand__text small {
+  margin-top: 0.25rem;
+  color: var(--text-muted, #7d91b6);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  white-space: nowrap;
+}
+
+html[data-brand="hadirly"] .app-sidebar-brand .hadirly-brand__text small {
+  color: rgba(255, 255, 255, 0.55);
+}
+
 html[data-brand="hadirly"] .session-loading-logo .hadirly-brand__text small,
-html[data-brand="hadirly"] .auth-brand-mark .hadirly-brand__text small{color:rgba(255,255,255,.68)}
-html[data-brand="hadirly"] .app-topbar-brand .hadirly-brand__text small{display:none}
-html[data-brand="hadirly"] .auth-logo-mobile .hadirly-brand__text strong{color:#079fe7}
-html[data-brand="hadirly"] .auth-logo-mobile .hadirly-brand__text small{color:#7d91b6}
-@media(max-width:760px){html[data-brand="hadirly"] .app-topbar-brand .hadirly-brand__text strong{font-size:1rem}}html[data-brand="hadirly"] .app-topbar-brand>img{width:38px;height:38px}
+html[data-brand="hadirly"] .auth-brand-mark .hadirly-brand__text small {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+html[data-brand="hadirly"] .app-topbar-brand .hadirly-brand__text small {
+  display: none;
+}
+
+html[data-brand="hadirly"] .auth-logo-mobile .hadirly-brand__text strong {
+  color: #079fe7;
+}
+
+html[data-brand="hadirly"] .auth-logo-mobile .hadirly-brand__text small {
+  color: #7d91b6;
+}
+
+@media (max-width: 760px) {
+  html[data-brand="hadirly"] .app-topbar-brand .hadirly-brand__text strong {
+    font-size: 1rem;
+  }
+
+  html[data-brand="hadirly"] .app-topbar-brand > img {
+    width: 38px;
+    height: 38px;
+  }
+}
