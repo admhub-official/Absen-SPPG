@@ -62,9 +62,21 @@
     });
   }
 
+  function flattenActionsHost(actions) {
+    actions.querySelectorAll(':scope > .topbar-user-actions').forEach((nested) => {
+      while (nested.firstChild) actions.appendChild(nested.firstChild);
+      nested.remove();
+    });
+    return actions;
+  }
+
   function ensureActionsHost(profile) {
     const parent = profile.parentElement;
     if (!parent) return null;
+
+    if (parent.classList.contains('topbar-user-actions')) {
+      return flattenActionsHost(parent);
+    }
 
     let actions = parent.querySelector(':scope > .topbar-user-actions');
     if (!actions) {
@@ -73,6 +85,7 @@
       parent.insertBefore(actions, profile);
     }
 
+    flattenActionsHost(actions);
     if (profile.parentElement !== actions) actions.appendChild(profile);
     return actions;
   }
@@ -91,7 +104,10 @@
     let root = document.getElementById('operational-notification-root');
     if (root && root.parentElement !== actions) root.remove();
     root = document.getElementById('operational-notification-root');
-    if (root) return root;
+    if (root) {
+      if (root.nextElementSibling !== profile) actions.insertBefore(root, profile);
+      return root;
+    }
 
     root = document.createElement('div');
     root.id = 'operational-notification-root';
