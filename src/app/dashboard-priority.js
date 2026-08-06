@@ -3,6 +3,32 @@
 
   const KPI_LABELS = ['hari kerja lengkap', 'total gaji diterima', 'slip gaji diterbitkan'];
   const COLLAPSE_KEY = 'absen_sidebar_collapsed';
+  const DESKTOP_QUERY = '(min-width: 901px)';
+
+  function ensureLayoutStyles() {
+    if (document.getElementById('dashboard-fluid-overrides')) return;
+    const style = document.createElement('style');
+    style.id = 'dashboard-fluid-overrides';
+    style.textContent = `
+      #app-layout.active .dashboard-fluid-root{width:100%!important;max-width:none!important;display:block!important;min-width:0!important}
+      #app-layout.active .dashboard-fluid-root>*{width:100%!important;max-width:none!important;min-width:0!important}
+      #app-layout.active .dashboard-fluid-root>:first-child:not(#dashboard-kpi-priority){max-width:900px!important}
+      #app-layout.active .dashboard-fluid-root #dashboard-kpi-priority{width:100%!important;max-width:none!important}
+      #app-layout.active .dashboard-fluid-root #dashboard-kpi-priority~*{width:100%!important;max-width:none!important}
+      #app-layout.active .dashboard-fluid-root section,#app-layout.active .dashboard-fluid-root article{max-width:none!important}
+      @media(min-width:901px){
+        #app-layout.active .app-main>.app-content,#app-layout.active .app-main>.main-content,#app-layout.active .app-main main{width:100%!important;max-width:1380px!important;margin-inline:auto!important}
+      }
+      @media(max-width:900px){
+        #app-layout.active .app-sidebar,.sidebar-toggle-button,.sidebar-mobile-backdrop{display:none!important}
+        #app-layout.active .app-main{width:100%!important;max-width:none!important;margin:0!important}
+        #app-layout.active .app-topbar{padding-inline:1rem!important}
+        #app-layout.active .dashboard-fluid-root>:first-child:not(#dashboard-kpi-priority){max-width:none!important}
+        #app-layout.active .dashboard-fluid-root{padding-bottom:5.5rem!important}
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   function text(node) {
     return String(node?.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -20,9 +46,7 @@
   }
 
   function findLabel(label) {
-    return [...document.querySelectorAll('#app-layout.active *')]
-      .filter(visible)
-      .find((node) => text(node) === label) || null;
+    return [...document.querySelectorAll('#app-layout.active *')].filter(visible).find((node) => text(node) === label) || null;
   }
 
   function findCard(labelNode) {
@@ -52,12 +76,10 @@
     const heading = [...root.querySelectorAll('h1,h2')].find((node) => /dashboard|ringkasan|beranda/i.test(text(node)));
     const header = heading?.closest('header,.page-header,.dashboard-header,.section-header') || heading?.parentElement;
     if (header && header.parentElement === root) return { mode: 'after', node: header };
-    const attendance = [...root.querySelectorAll('section,article,div')]
-      .filter(visible)
-      .find((node) => {
-        const value = text(node);
-        return value.includes('datang') && value.includes('pulang') && labelCount(node) === 0;
-      });
+    const attendance = [...root.querySelectorAll('section,article,div')].filter(visible).find((node) => {
+      const value = text(node);
+      return value.includes('datang') && value.includes('pulang') && labelCount(node) === 0;
+    });
     if (attendance?.parentElement === root) return { mode: 'before', node: attendance };
     return { mode: 'prepend', node: root };
   }
@@ -66,18 +88,19 @@
     card.querySelectorAll(':scope > .dashboard-kpi-priority-icon').forEach((node) => node.classList.remove('dashboard-kpi-priority-icon'));
     const icon = [...card.children].find((child) => {
       if (!(child instanceof HTMLElement)) return false;
-      const hasGraphic = Boolean(child.querySelector('svg,img') || child.matches('.kpi-icon,.stat-icon,.metric-icon,.dashboard-kpi-icon'));
-      return hasGraphic && text(child).length <= 3;
+      return Boolean(child.querySelector('svg,img') || child.matches('.kpi-icon,.stat-icon,.metric-icon,.dashboard-kpi-icon')) && text(child).length <= 3;
     });
     icon?.classList.add('dashboard-kpi-priority-icon');
   }
 
   function moveKpisUp() {
+    ensureLayoutStyles();
     const cards = KPI_LABELS.map((label) => findCard(findLabel(label))).filter(Boolean);
     const uniqueCards = [...new Set(cards)];
     if (uniqueCards.length < 2) return false;
     const root = activeDashboard(uniqueCards);
     if (!root || !visible(root)) return false;
+    root.classList.add('dashboard-fluid-root');
     let container = root.querySelector(':scope > #dashboard-kpi-priority');
     if (!container) {
       container = document.createElement('section');
@@ -105,34 +128,16 @@
     });
   }
 
-  function ensureBackdrop() {
-    let backdrop = document.querySelector('.sidebar-mobile-backdrop');
-    if (!backdrop) {
-      backdrop = document.createElement('div');
-      backdrop.className = 'sidebar-mobile-backdrop';
-      backdrop.addEventListener('click', closeMobileSidebar);
-      document.body.appendChild(backdrop);
-    }
-    return backdrop;
-  }
-
-  function closeMobileSidebar() {
+  function removeMobileSidebarUi() {
+    document.querySelectorAll('.sidebar-toggle-button,.sidebar-mobile-backdrop').forEach((node) => node.remove());
     const sidebar = document.querySelector('#app-layout .app-sidebar');
-    sidebar?.classList.remove('sidebar-mobile-open');
-    document.querySelector('.sidebar-mobile-backdrop')?.classList.remove('active');
-    document.querySelector('.sidebar-toggle-button')?.setAttribute('aria-expanded', 'false');
+    sidebar?.classList.remove('sidebar-mobile-open', 'sidebar-collapsed');
   }
 
   function toggleSidebar() {
+    if (!matchMedia(DESKTOP_QUERY).matches) return;
     const sidebar = document.querySelector('#app-layout .app-sidebar');
     if (!sidebar) return;
-    const mobile = matchMedia('(max-width: 900px)').matches;
-    if (mobile) {
-      const open = sidebar.classList.toggle('sidebar-mobile-open');
-      ensureBackdrop().classList.toggle('active', open);
-      document.querySelector('.sidebar-toggle-button')?.setAttribute('aria-expanded', String(open));
-      return;
-    }
     const collapsed = sidebar.classList.toggle('sidebar-collapsed');
     localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
     document.querySelector('.sidebar-toggle-button')?.setAttribute('aria-expanded', String(!collapsed));
@@ -140,30 +145,33 @@
   }
 
   function ensureSidebarToggle() {
+    ensureLayoutStyles();
+    if (!matchMedia(DESKTOP_QUERY).matches) {
+      removeMobileSidebarUi();
+      return false;
+    }
     const app = document.getElementById('app-layout');
     const sidebar = app?.querySelector('.app-sidebar');
     const topbar = app?.querySelector('.app-topbar');
     if (!sidebar || !topbar) return false;
     labelNavigationItems(sidebar);
-    if (!matchMedia('(max-width: 900px)').matches && localStorage.getItem(COLLAPSE_KEY) === '1') {
-      sidebar.classList.add('sidebar-collapsed');
-    }
+    if (localStorage.getItem(COLLAPSE_KEY) === '1') sidebar.classList.add('sidebar-collapsed');
     let button = topbar.querySelector('.sidebar-toggle-button');
     if (!button) {
       button = document.createElement('button');
       button.type = 'button';
       button.className = 'sidebar-toggle-button';
-      button.setAttribute('aria-label', 'Tampilkan atau ciutkan sidebar');
-      button.setAttribute('aria-expanded', String(!sidebar.classList.contains('sidebar-collapsed')));
+      button.setAttribute('aria-label', 'Ciutkan atau tampilkan sidebar');
       button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
       button.addEventListener('click', toggleSidebar);
       topbar.prepend(button);
     }
-    ensureBackdrop();
+    button.setAttribute('aria-expanded', String(!sidebar.classList.contains('sidebar-collapsed')));
     return true;
   }
 
   function schedule() {
+    ensureLayoutStyles();
     [0, 80, 250, 600, 1200].forEach((delay) => window.setTimeout(() => {
       moveKpisUp();
       ensureSidebarToggle();
@@ -171,6 +179,7 @@
   }
 
   function init() {
+    ensureLayoutStyles();
     schedule();
     const app = document.getElementById('app-layout') || document.body;
     const observer = new MutationObserver(() => window.requestAnimationFrame(() => {
@@ -178,11 +187,8 @@
       ensureSidebarToggle();
     }));
     observer.observe(app, { childList: true, subtree: true });
-    window.addEventListener('hashchange', () => { closeMobileSidebar(); schedule(); });
-    window.addEventListener('resize', () => {
-      if (!matchMedia('(max-width: 900px)').matches) closeMobileSidebar();
-      ensureSidebarToggle();
-    });
+    window.addEventListener('hashchange', schedule);
+    window.addEventListener('resize', ensureSidebarToggle);
     window.addEventListener('absen:app-ready', schedule);
     window.addEventListener('absen:session-changed', schedule);
     window.addEventListener('beforeunload', () => observer.disconnect(), { once: true });
