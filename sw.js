@@ -1,5 +1,5 @@
-const CACHE = 'absen-sppg-hadirly-v71';
-const APP_VERSION = '26.11.30';
+const CACHE = 'absen-sppg-hadirly-v72';
+const APP_VERSION = '26.11.31';
 const CANONICAL_ORIGIN = 'https://hadirly.org';
 const LEGACY_HOSTS = new Set(['absen-sppg.pages.dev']);
 const SHELL = [
@@ -11,6 +11,7 @@ const SHELL = [
   './icons/app-icon-maskable.svg',
   './icons/hadirly-logo-horizontal.svg',
   `./src/app/bootstrap.js?v=${APP_VERSION}`,
+  `./src/app/attendance-location-flow.js?v=${APP_VERSION}`,
   `./src/app/in-app-confirm.js?v=${APP_VERSION}`,
   `./src/app/super-admin-settings-hub.js?v=${APP_VERSION}`,
   `./src/app/system-settings.js?v=${APP_VERSION}`,

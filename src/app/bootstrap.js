@@ -19,7 +19,7 @@ import { renderReleaseOperationsPage } from '../pages/release/release-operations
 import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js';
 import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js';
 
-const VERSION = '26.11.30';
+const VERSION = '26.11.31';
 const loadedAssets = new Map();
 
 function canonicalPath(value) { return new URL(value, document.baseURI).pathname; }

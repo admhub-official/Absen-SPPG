@@ -1,10 +1,10 @@
 (() => {
-  if (window.__ABSEN_LOCATION_FLOW_INSTALLED__) return;
+  if (window.__ABSEN_LOCATION_FLOW_V2__) return;
+  window.__ABSEN_LOCATION_FLOW_V2__ = true;
 
-  const MAX_GPS_ACCURACY_METER = 100;
   const GPS_TIMEOUT_MS = 25000;
-  const GPS_STABILIZE_MS = 2500;
-  let verifiedPosition = null;
+  let verifiedContext = null;
+  let installTimer = null;
 
   function status(message) {
     const node = document.getElementById('absen-facecam-status');
@@ -18,68 +18,98 @@
     return error?.message || 'Gagal membaca lokasi GPS.';
   }
 
-  function normalizePosition(position) {
-    return {
-      lat: Number(position.coords.latitude),
-      lng: Number(position.coords.longitude),
-      accuracy: Number.isFinite(position.coords.accuracy) ? Math.round(position.coords.accuracy) : null,
-      capturedAt: new Date(position.timestamp || Date.now()).toISOString()
-    };
+  function endpoint() {
+    const config = window.ABSEN_SUPABASE_CONFIG || {};
+    const projectUrl = String(config.projectUrl || '').replace(/\/$/, '');
+    const functionName = String(config.attendanceLocationFunctionName || 'AttendanceLocation');
+    if (!projectUrl) throw new Error('Konfigurasi backend lokasi belum tersedia.');
+    return `${projectUrl}/functions/v1/${functionName}`;
   }
 
-  function acquireBestPosition() {
+  async function locationCall(action, payload = {}) {
+    const token = payload.token || localStorage.getItem('auth_token');
+    if (!token) throw new Error('Sesi login tidak tersedia.');
+    const response = await fetch(endpoint(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, action, token }),
+      cache: 'no-store',
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok || body?.success === false) {
+      throw new Error(body?.message || body?.error || 'Backend lokasi absensi tidak tersedia.');
+    }
+    return body?.result;
+  }
+
+  function acquirePosition() {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
         reject(new Error('Perangkat atau browser ini tidak mendukung layanan lokasi.'));
         return;
       }
-
-      let best = null;
-      let watchId = null;
-      let settled = false;
-      const startedAt = Date.now();
-
-      const cleanup = () => {
-        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-        clearTimeout(timeoutId);
-      };
-      const finish = (callback, value) => {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        callback(value);
-      };
-
-      const timeoutId = setTimeout(() => {
-        if (best && Number.isFinite(best.accuracy) && best.accuracy <= MAX_GPS_ACCURACY_METER) {
-          finish(resolve, best);
-          return;
-        }
-        finish(reject, new Error(
-          `Akurasi GPS belum memadai (${best?.accuracy ?? '-'} m, maksimal ${MAX_GPS_ACCURACY_METER} m). ` +
-          'Gunakan ponsel dengan lokasi presisi aktif atau pindah ke area terbuka.'
-        ));
-      }, GPS_TIMEOUT_MS);
-
-      status('Mengunci lokasi GPS…');
-      watchId = navigator.geolocation.watchPosition(
+      status('Membaca lokasi GPS perangkat…');
+      navigator.geolocation.getCurrentPosition(
         (position) => {
-          const sample = normalizePosition(position);
-          if (!Number.isFinite(sample.lat) || !Number.isFinite(sample.lng)) return;
-          if (!best || (Number.isFinite(sample.accuracy) && sample.accuracy < best.accuracy)) best = sample;
-          status(`Mengunci lokasi GPS… akurasi terbaik ${best?.accuracy ?? '-'} m`);
-          if (
-            Number.isFinite(best?.accuracy) &&
-            best.accuracy <= MAX_GPS_ACCURACY_METER &&
-            Date.now() - startedAt >= GPS_STABILIZE_MS
-          ) {
-            finish(resolve, best);
+          const latitude = Number(position.coords.latitude);
+          const longitude = Number(position.coords.longitude);
+          if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+            reject(new Error('Koordinat GPS perangkat tidak valid.'));
+            return;
           }
+          resolve({
+            lat: latitude,
+            lng: longitude,
+            accuracy: Number.isFinite(position.coords.accuracy) ? Math.round(position.coords.accuracy) : null,
+            capturedAt: new Date(position.timestamp || Date.now()).toISOString(),
+          });
         },
-        (error) => finish(reject, new Error(locationErrorMessage(error))),
-        { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 }
+        (error) => reject(new Error(locationErrorMessage(error))),
+        { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 },
       );
     });
+  }
+
+  async function prepareLocation() {
+    verifiedContext = null;
+    const policy = await locationCall('policy');
+    if (policy?.required === false) {
+      verifiedContext = {
+        lat: null,
+        lng: null,
+        accuracy: null,
+        capturedAt: new Date().toISOString(),
+        geofenceRequired: false,
+        referenceName: policy.referenceName || 'Geofence dinonaktifkan',
+        radius: null,
+      };
+      status(policy.message || 'Geofence dinonaktifkan oleh SUPER ADMIN.');
+      return verifiedContext;
+    }
+    if (policy?.configured === false) {
+      throw new Error(policy.message || 'Lokasi SPPG belum dikonfigurasi oleh SUPER ADMIN.');
+    }
+
+    const coords = await acquirePosition();
+    const check = await locationCall('check', {
+      lat: coords.lat,
+      lng: coords.lng,
+      accuracy: coords.accuracy,
+      locationCapturedAt: coords.capturedAt,
+    });
+    if (check?.valid === false) {
+      throw new Error(check.message || `Anda berada di luar radius lokasi SPPG (${check.jarak ?? '-'} m).`);
+    }
+
+    verifiedContext = {
+      ...coords,
+      geofenceRequired: true,
+      referenceName: check?.referenceName || check?.titikReferensi || policy.referenceName,
+      radius: check?.radius ?? policy.radius ?? null,
+      distance: check?.distance ?? check?.jarak ?? null,
+    };
+    status(`Lokasi valid · jarak ${verifiedContext.distance ?? 0} m · radius ${verifiedContext.radius ?? '-'} m`);
+    return verifiedContext;
   }
 
   function installFlow() {
@@ -88,50 +118,59 @@
     if (typeof sharedApiCall !== 'function') return false;
 
     window.__ABSEN_LOCATION_FLOW_INSTALLED__ = true;
-
-    window.getCurrentPositionPromise = async function getValidatedAttendancePosition() {
-      verifiedPosition = null;
+    window.getCurrentPositionPromise = async function getBackendValidatedAttendancePosition() {
       try {
-        const coords = await acquireBestPosition();
-        const check = await sharedApiCall('checkAttendanceLocation', {
-          lat: coords.lat,
-          lng: coords.lng,
-          accuracy: coords.accuracy,
-          locationCapturedAt: coords.capturedAt
-        });
-        if (check?.valid === false) {
-          throw new Error(check.message || `Anda berada di luar radius lokasi SPPG (${check.jarak ?? '-'} m).`);
-        }
-        verifiedPosition = coords;
-        status(`Lokasi valid · jarak ${check?.jarak ?? 0} m · akurasi ${coords.accuracy ?? '-'} m`);
-        return coords;
+        return await prepareLocation();
       } catch (error) {
-        verifiedPosition = null;
+        verifiedContext = null;
         status(error?.message || 'Lokasi tidak dapat divalidasi.');
         throw error;
       }
     };
 
-    window.apiCall = async function attendanceAwareApiCall(functionName, payload = {}) {
+    window.apiCall = async function backendLocationAwareApiCall(functionName, payload = {}) {
       if (functionName !== 'recordAbsensiSelf') return sharedApiCall(functionName, payload);
-      if (!verifiedPosition) throw new Error('Lokasi belum diverifikasi. Buka ulang pemindaian absensi.');
 
       try {
-        return await sharedApiCall(functionName, {
+        if (!verifiedContext) {
+          const policy = await locationCall('policy', { token: payload.token });
+          if (policy?.required !== false) {
+            throw new Error('Lokasi belum diverifikasi. Buka ulang pemindaian absensi.');
+          }
+          verifiedContext = {
+            lat: null,
+            lng: null,
+            accuracy: null,
+            capturedAt: new Date().toISOString(),
+            geofenceRequired: false,
+          };
+        }
+
+        return await locationCall('record', {
           ...payload,
-          lat: verifiedPosition.lat,
-          lng: verifiedPosition.lng,
-          accuracy: verifiedPosition.accuracy,
-          locationCapturedAt: verifiedPosition.capturedAt
+          lat: verifiedContext.lat,
+          lng: verifiedContext.lng,
+          accuracy: verifiedContext.accuracy,
+          locationCapturedAt: verifiedContext.capturedAt,
         });
       } finally {
-        verifiedPosition = null;
+        verifiedContext = null;
       }
     };
     return true;
   }
 
-  if (!installFlow()) {
-    window.addEventListener('load', installFlow, { once: true });
+  function scheduleInstall() {
+    clearTimeout(installTimer);
+    installTimer = window.setTimeout(() => {
+      if (!installFlow()) scheduleInstall();
+    }, 120);
   }
+
+  if (!installFlow()) scheduleInstall();
+  window.addEventListener('absen:app-ready', scheduleInstall);
+  window.addEventListener('absen:session-changed', () => {
+    verifiedContext = null;
+    scheduleInstall();
+  });
 })();
