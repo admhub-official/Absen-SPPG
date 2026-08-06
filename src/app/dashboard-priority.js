@@ -27,7 +27,7 @@
   function findCard(labelNode) {
     if (!labelNode) return null;
     const known = labelNode.closest(
-      '.dashboard-kpi-priority-card,.dashboard-kpi-card,.kpi-card,.stat-card,.metric-card,.summary-card,.dashboard-stat,.dashboard-card,.card'
+      '.dashboard-kpi-card,.kpi-card,.stat-card,.metric-card,.summary-card,.dashboard-stat,.dashboard-card,.card'
     );
     if (known && labelCount(known) === 1) return known;
 
@@ -45,38 +45,34 @@
 
   function activeDashboard(cards) {
     const first = cards[0];
-    return first?.closest('.app-view:not(.hidden),[data-view]:not(.hidden),main,.main-content,.app-content') ||
+    if (!first) return null;
+    return first.closest('.app-view:not(.hidden),[data-view]:not(.hidden),main,.main-content,.app-content') ||
       document.querySelector('#app-layout.active .main-content,#app-layout.active .app-content');
   }
 
-  function findHero(root) {
-    const heading = [...root.querySelectorAll('h1,h2,h3')]
-      .filter(visible)
-      .find((node) => /selamat datang|dashboard|ringkasan|beranda/i.test(text(node)));
-    return heading?.closest('.dashboard-hero,.welcome-card,.hero-card,.dashboard-card,.card,header,.page-header,.dashboard-header') || heading?.parentElement || null;
-  }
+  function insertionPoint(root) {
+    const heading = [...root.querySelectorAll('h1,h2')].find((node) => /dashboard|ringkasan|beranda/i.test(text(node)));
+    const header = heading?.closest('header,.page-header,.dashboard-header,.section-header') || heading?.parentElement;
+    if (header && header.parentElement === root) return { mode: 'after', node: header };
 
-  function findAttendance(root) {
-    return [...root.querySelectorAll('section,article,div')]
+    const attendance = [...root.querySelectorAll('section,article,div')]
       .filter(visible)
       .find((node) => {
         const value = text(node);
-        return value.includes('status absen hari ini') || (value.includes('datang') && value.includes('pulang') && labelCount(node) === 0);
-      }) || null;
+        return value.includes('datang') && value.includes('pulang') && labelCount(node) === 0;
+      });
+    if (attendance?.parentElement === root) return { mode: 'before', node: attendance };
+    return { mode: 'prepend', node: root };
   }
 
-  function placeContainer(root, container) {
-    const hero = findHero(root);
-    if (hero?.parentElement) {
-      hero.insertAdjacentElement('afterend', container);
-      return;
-    }
-    const attendance = findAttendance(root);
-    if (attendance?.parentElement) {
-      attendance.insertAdjacentElement('beforebegin', container);
-      return;
-    }
-    root.prepend(container);
+  function markIcon(card) {
+    card.querySelectorAll(':scope > .dashboard-kpi-priority-icon').forEach((node) => node.classList.remove('dashboard-kpi-priority-icon'));
+    const icon = [...card.children].find((child) => {
+      if (!(child instanceof HTMLElement)) return false;
+      const hasGraphic = Boolean(child.querySelector('svg,img') || child.matches('.kpi-icon,.stat-icon,.metric-icon,.dashboard-kpi-icon'));
+      return hasGraphic && text(child).length <= 3;
+    });
+    icon?.classList.add('dashboard-kpi-priority-icon');
   }
 
   function moveKpisUp() {
@@ -87,20 +83,23 @@
     const root = activeDashboard(uniqueCards);
     if (!root || !visible(root)) return false;
 
-    let container = root.querySelector('#dashboard-kpi-priority');
+    let container = root.querySelector(':scope > #dashboard-kpi-priority');
     if (!container) {
       container = document.createElement('section');
       container.id = 'dashboard-kpi-priority';
       container.className = 'dashboard-kpi-priority';
       container.setAttribute('aria-label', 'Ringkasan kehadiran dan gaji');
+      const point = insertionPoint(root);
+      if (point.mode === 'after') point.node.insertAdjacentElement('afterend', container);
+      else if (point.mode === 'before') point.node.insertAdjacentElement('beforebegin', container);
+      else root.prepend(container);
     }
 
     uniqueCards.forEach((card) => {
       card.classList.add('dashboard-kpi-priority-card');
+      markIcon(card);
       container.appendChild(card);
     });
-
-    placeContainer(root, container);
     return true;
   }
 
