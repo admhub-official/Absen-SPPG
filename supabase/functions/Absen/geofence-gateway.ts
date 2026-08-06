@@ -8,7 +8,7 @@ const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROL
 });
 
 const CORE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/AbsenCore`;
-const MAX_RADIUS_METER = 50;
+const MAX_RADIUS_METER = 100;
 const DEFAULT_LOCATION_KEY = "DEFAULT";
 
 const CORS_HEADERS: Record<string, string> = {
