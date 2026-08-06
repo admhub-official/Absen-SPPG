@@ -45,6 +45,11 @@ html[data-brand="hadirly"] .auth-brand-mark .hadirly-brand__text small {
   color: rgba(255, 255, 255, 0.68);
 }
 
+/* Sidebar adalah satu-satunya branding aplikasi saat layout desktop/tablet aktif. */
+html[data-brand="hadirly"] .app-topbar-brand {
+  display: none;
+}
+
 html[data-brand="hadirly"] .app-topbar-brand .hadirly-brand__text small {
   display: none;
 }
@@ -57,7 +62,12 @@ html[data-brand="hadirly"] .auth-logo-mobile .hadirly-brand__text small {
   color: #7d91b6;
 }
 
-@media (max-width: 760px) {
+/* Di layar ponsel sidebar tidak tersedia, sehingga satu branding dipindahkan ke topbar. */
+@media (max-width: 767px) {
+  html[data-brand="hadirly"] .app-topbar-brand {
+    display: flex;
+  }
+
   html[data-brand="hadirly"] .app-topbar-brand .hadirly-brand__text strong {
     font-size: 1rem;
   }
