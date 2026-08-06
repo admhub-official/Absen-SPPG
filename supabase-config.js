@@ -8,6 +8,7 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   let lastGpsPosition = null;
   let attendanceChallenge = null;
   let registeredDevice = null;
+  const MAX_GPS_ACCURACY_METER = 100;
   const IDEMPOTENT_FUNCTIONS = new Set(['recordAbsensiSelf', 'recordAbsensi']);
   const DEVICE_KEY_STORAGE = 'absen:device-key:v1';
 
@@ -189,8 +190,8 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
         if (!token || typeof window.apiCall !== 'function') {
           throw new Error('Sesi login tidak tersedia. Silakan login kembali.');
         }
-        if (!Number.isFinite(coords.accuracy) || coords.accuracy > 60) {
-          throw new Error(`Akurasi GPS belum memadai (${coords.accuracy ?? '-'} m). Pindah ke area terbuka dan coba lagi.`);
+        if (!Number.isFinite(coords.accuracy) || coords.accuracy > MAX_GPS_ACCURACY_METER) {
+          throw new Error(`Akurasi GPS belum memadai (${coords.accuracy ?? '-'} m, maksimal ${MAX_GPS_ACCURACY_METER} m). Pindah ke area terbuka dan coba lagi.`);
         }
 
         const device = await ensureDeviceRegistered();
@@ -234,6 +235,6 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
 })();
 
 // Satu-satunya entrypoint frontend modular. Asset turunan dikelola oleh bootstrap.
-import('./src/app/bootstrap.js?v=26.10.4').catch((error) => {
+import('./src/app/bootstrap.js?v=26.11.9').catch((error) => {
   console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
 });
