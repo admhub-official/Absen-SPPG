@@ -1,0 +1,1 @@
+Trigger the temporary workflow that wires the SUPER ADMIN SPPG location configuration branch.
