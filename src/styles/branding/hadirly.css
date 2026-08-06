@@ -40,7 +40,6 @@ html[data-brand="hadirly"] .app-sidebar-brand .hadirly-brand__text small {
   color: rgba(255, 255, 255, 0.55);
 }
 
-html[data-brand="hadirly"] .session-loading-logo .hadirly-brand__text small,
 html[data-brand="hadirly"] .auth-brand-mark .hadirly-brand__text small {
   color: rgba(255, 255, 255, 0.68);
 }
