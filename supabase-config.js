@@ -4,7 +4,8 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   deviceTrustFunctionName: 'DeviceTrust',
   attendanceLocationFunctionName: 'AttendanceLocation',
   payrollUserFunctionName: 'PayrollUser',
-  complaintsFunctionName: 'Complaints'
+  complaintsFunctionName: 'Complaints',
+  digitalIdentityFunctionName: 'DigitalIdentity'
 });
 
 (() => {
@@ -28,6 +29,11 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     'simpanTanggapanAdmin',
     'updateComplaintTicketV2',
     'closeMyComplaintTicketV2'
+  ]);
+  const DIGITAL_IDENTITY_WORKFLOW_FUNCTIONS = new Set([
+    'getMyDigitalIdentity',
+    'generateMyDigitalIdentity',
+    'regenerateMyDigitalIdentity'
   ]);
   const DEVICE_KEY_STORAGE = 'absen:device-key:v1';
 
@@ -118,6 +124,27 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     return body?.result;
   }
 
+  async function callDigitalIdentityWorkflow(functionName, payload = {}) {
+    const token = payload.token || localStorage.getItem('auth_token');
+    if (!token) throw new Error('Sesi login tidak tersedia.');
+    const functionSlug = window.ABSEN_SUPABASE_CONFIG.digitalIdentityFunctionName || 'DigitalIdentity';
+    const response = await fetch(
+      `${window.ABSEN_SUPABASE_CONFIG.projectUrl}/functions/v1/${functionSlug}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ function: functionName, data: { ...payload, token } }),
+        cache: 'no-store'
+      }
+    );
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok || body?.success === false) {
+      const requestHint = body?.requestId ? ` (${body.requestId})` : '';
+      throw new Error(`${body?.error || body?.message || 'Layanan QR dan ID Card tidak tersedia.'}${requestHint}`);
+    }
+    return body?.result;
+  }
+
   async function ensureDeviceRegistered() {
     if (registeredDevice) return registeredDevice;
     registeredDevice = await callDeviceTrust('registerDevice', deviceMetadata());
@@ -149,6 +176,9 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     if (typeof originalApiCall === 'function' && !window.__ABSEN_API_WRAPPED__) {
       window.__ABSEN_API_WRAPPED__ = true;
       window.apiCall = async function securityAwareApiCall(functionName, payload = {}) {
+        if (DIGITAL_IDENTITY_WORKFLOW_FUNCTIONS.has(functionName)) {
+          return callDigitalIdentityWorkflow(functionName, payload);
+        }
         if (COMPLAINT_WORKFLOW_FUNCTIONS.has(functionName)) {
           return callComplaintWorkflow(functionName, payload);
         }
@@ -173,6 +203,6 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   });
 })();
 
-import('./src/app/bootstrap.js?v=26.11.33').catch((error) => {
+import('./src/app/bootstrap.js?v=26.11.34').catch((error) => {
   console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
 });

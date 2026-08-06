@@ -108,6 +108,7 @@ $FunctionNames = @(
   "AttendanceImport",
   "OperationsV2",
   "Complaints",
+  "DigitalIdentity",
   "WorkforceOps",
   "PlatformOps"
 )
