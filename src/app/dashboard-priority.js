@@ -5,6 +5,31 @@
   const COLLAPSE_KEY = 'absen_sidebar_collapsed';
   const DESKTOP_QUERY = '(min-width: 901px)';
 
+  function ensureLayoutStyles() {
+    if (document.getElementById('dashboard-fluid-overrides')) return;
+    const style = document.createElement('style');
+    style.id = 'dashboard-fluid-overrides';
+    style.textContent = `
+      #app-layout.active .dashboard-fluid-root{width:100%!important;max-width:none!important;display:block!important;min-width:0!important}
+      #app-layout.active .dashboard-fluid-root>*{width:100%!important;max-width:none!important;min-width:0!important}
+      #app-layout.active .dashboard-fluid-root>:first-child:not(#dashboard-kpi-priority){max-width:900px!important}
+      #app-layout.active .dashboard-fluid-root #dashboard-kpi-priority{width:100%!important;max-width:none!important}
+      #app-layout.active .dashboard-fluid-root #dashboard-kpi-priority~*{width:100%!important;max-width:none!important}
+      #app-layout.active .dashboard-fluid-root section,#app-layout.active .dashboard-fluid-root article{max-width:none!important}
+      @media(min-width:901px){
+        #app-layout.active .app-main>.app-content,#app-layout.active .app-main>.main-content,#app-layout.active .app-main main{width:100%!important;max-width:1380px!important;margin-inline:auto!important}
+      }
+      @media(max-width:900px){
+        #app-layout.active .app-sidebar,.sidebar-toggle-button,.sidebar-mobile-backdrop{display:none!important}
+        #app-layout.active .app-main{width:100%!important;max-width:none!important;margin:0!important}
+        #app-layout.active .app-topbar{padding-inline:1rem!important}
+        #app-layout.active .dashboard-fluid-root>:first-child:not(#dashboard-kpi-priority){max-width:none!important}
+        #app-layout.active .dashboard-fluid-root{padding-bottom:5.5rem!important}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function text(node) {
     return String(node?.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
   }
@@ -69,6 +94,7 @@
   }
 
   function moveKpisUp() {
+    ensureLayoutStyles();
     const cards = KPI_LABELS.map((label) => findCard(findLabel(label))).filter(Boolean);
     const uniqueCards = [...new Set(cards)];
     if (uniqueCards.length < 2) return false;
@@ -119,6 +145,7 @@
   }
 
   function ensureSidebarToggle() {
+    ensureLayoutStyles();
     if (!matchMedia(DESKTOP_QUERY).matches) {
       removeMobileSidebarUi();
       return false;
@@ -144,6 +171,7 @@
   }
 
   function schedule() {
+    ensureLayoutStyles();
     [0, 80, 250, 600, 1200].forEach((delay) => window.setTimeout(() => {
       moveKpisUp();
       ensureSidebarToggle();
@@ -151,6 +179,7 @@
   }
 
   function init() {
+    ensureLayoutStyles();
     schedule();
     const app = document.getElementById('app-layout') || document.body;
     const observer = new MutationObserver(() => window.requestAnimationFrame(() => {
