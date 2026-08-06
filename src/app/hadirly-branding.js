@@ -42,7 +42,7 @@
       const src = String(img.getAttribute('src') || '');
       const alt = String(img.getAttribute('alt') || '');
       const isBrand = /icon%20aplikasi|icon aplikasi|app-icon|presence\s*sppg/i.test(`${src} ${alt}`) ||
-        img.closest('.session-loading-logo-icon,.auth-brand-mark,.auth-logo-mobile,.app-sidebar-brand,.app-topbar-brand');
+        img.closest('.auth-brand-mark,.auth-logo-mobile,.app-sidebar-brand,.app-topbar-brand');
       if (isBrand) {
         img.src = ICON;
         img.alt = APP_NAME;
@@ -66,7 +66,7 @@
 
   function decorateBrandBlocks() {
     document.querySelectorAll(
-      '.session-loading-logo,.auth-brand-mark,.auth-logo-mobile,.app-sidebar-brand,.app-topbar-brand'
+      '.auth-brand-mark,.auth-logo-mobile,.app-sidebar-brand,.app-topbar-brand'
     ).forEach((block) => {
       block.classList.add('hadirly-brand');
 
