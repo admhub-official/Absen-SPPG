@@ -6,20 +6,20 @@ if (LEGACY_HOSTS.has(window.location.hostname.toLowerCase())) {
   throw new Error('Redirecting to canonical domain');
 }
 
-import { createRouter } from './router.js?v=26.11.5';
-import { createAppStore } from '../stores/app-store.js?v=26.11.5';
-import { createFeatureRegistry } from './feature-registry.js?v=26.11.5';
+import { createRouter } from './router.js?v=26.11.6';
+import { createAppStore } from '../stores/app-store.js?v=26.11.6';
+import { createFeatureRegistry } from './feature-registry.js?v=26.11.6';
 import {
   renderAttendanceProgress,
   showAttendanceReceipt,
   renderCorrectionWorkspace,
   openCorrectionForm
-} from '../pages/attendance/attendance-experience.js?v=26.11.5';
-import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.11.5';
-import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.11.5';
-import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.11.5';
+} from '../pages/attendance/attendance-experience.js?v=26.11.6';
+import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.11.6';
+import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.11.6';
+import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.11.6';
 
-const VERSION = '26.11.5';
+const VERSION = '26.11.6';
 const loadedAssets = new Map();
 
 function canonicalPath(value) { return new URL(value, document.baseURI).pathname; }
