@@ -1,10 +1,11 @@
-const CACHE = 'absen-sppg-shell-v50';
-const APP_VERSION = '26.11.10';
+const CACHE = 'absen-sppg-shell-v51';
+const APP_VERSION = '26.11.11';
 const CANONICAL_ORIGIN = 'https://hadirly.org';
 const LEGACY_HOSTS = new Set(['absen-sppg.pages.dev']);
 const SHELL = [
   './','./index.html','./supabase-config.js','./security-ops-client.js',
   `./src/app/bootstrap.js?v=${APP_VERSION}`,
+  `./src/app/attendance-location-flow.js?v=${APP_VERSION}`,
   `./src/app/remove-legacy-notifications.js?v=${APP_VERSION}`,
   `./src/app/operational-notifications.js?v=${APP_VERSION}`,
   `./src/app/dashboard-priority.js?v=${APP_VERSION}`,
