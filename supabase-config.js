@@ -1,7 +1,8 @@
 window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   projectUrl: 'https://szwwpnbbsmjsbzzcecyj.supabase.co',
   functionName: 'AbsenV2',
-  deviceTrustFunctionName: 'DeviceTrust'
+  deviceTrustFunctionName: 'DeviceTrust',
+  attendanceLocationFunctionName: 'AttendanceLocation'
 });
 
 (() => {
@@ -98,6 +99,6 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   });
 })();
 
-import('./src/app/bootstrap.js?v=26.11.30').catch((error) => {
+import('./src/app/bootstrap.js?v=26.11.31').catch((error) => {
   console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
 });
