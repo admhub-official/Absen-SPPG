@@ -10,21 +10,33 @@
     const style = document.createElement('style');
     style.id = 'dashboard-fluid-overrides';
     style.textContent = `
-      #app-layout.active .dashboard-fluid-root{width:100%!important;max-width:none!important;display:block!important;min-width:0!important}
+      #app-layout.active{width:100%!important}
+      #app-layout.active .app-main{flex:1 1 auto!important;width:auto!important;min-width:0!important;max-width:none!important}
+      #app-layout.active .app-main>.app-content,
+      #app-layout.active .app-main>.main-content,
+      #app-layout.active .app-main>main{width:100%!important;max-width:none!important;margin:0!important;padding-inline:clamp(1rem,2.2vw,2.25rem)!important}
+      #app-layout.active .dashboard-fluid-root{width:100%!important;max-width:none!important;min-width:0!important}
+      #app-layout.active .dashboard-fluid-root.hidden,
+      #app-layout.active .app-view.hidden,
+      #app-layout.active [data-view].hidden{display:none!important}
       #app-layout.active .dashboard-fluid-root>*{width:100%!important;max-width:none!important;min-width:0!important}
-      #app-layout.active .dashboard-fluid-root>:first-child:not(#dashboard-kpi-priority){max-width:900px!important}
-      #app-layout.active .dashboard-fluid-root #dashboard-kpi-priority{width:100%!important;max-width:none!important}
-      #app-layout.active .dashboard-fluid-root #dashboard-kpi-priority~*{width:100%!important;max-width:none!important}
-      #app-layout.active .dashboard-fluid-root section,#app-layout.active .dashboard-fluid-root article{max-width:none!important}
-      @media(min-width:901px){
-        #app-layout.active .app-main>.app-content,#app-layout.active .app-main>.main-content,#app-layout.active .app-main main{width:100%!important;max-width:1380px!important;margin-inline:auto!important}
-      }
+      #app-layout.active .dashboard-fluid-root #dashboard-kpi-priority,
+      #app-layout.active .dashboard-fluid-root #dashboard-kpi-priority~*,
+      #app-layout.active .dashboard-fluid-root section,
+      #app-layout.active .dashboard-fluid-root article{width:100%!important;max-width:none!important}
+      #app-layout.active .dashboard-fluid-root>:first-child:not(#dashboard-kpi-priority){width:100%!important;max-width:none!important}
+      #app-layout.active .app-sidebar.sidebar-collapsed~.app-main,
+      #app-layout.active .app-sidebar.sidebar-collapsed+.app-main{flex:1 1 calc(100% - 78px)!important;width:calc(100% - 78px)!important;max-width:none!important}
+      #app-layout.active .app-sidebar:not(.sidebar-collapsed)~.app-main,
+      #app-layout.active .app-sidebar:not(.sidebar-collapsed)+.app-main{flex:1 1 calc(100% - 248px)!important;width:calc(100% - 248px)!important;max-width:none!important}
       @media(max-width:900px){
         #app-layout.active .app-sidebar,.sidebar-toggle-button,.sidebar-mobile-backdrop{display:none!important}
         #app-layout.active .app-main{width:100%!important;max-width:none!important;margin:0!important}
         #app-layout.active .app-topbar{padding-inline:1rem!important}
-        #app-layout.active .dashboard-fluid-root>:first-child:not(#dashboard-kpi-priority){max-width:none!important}
         #app-layout.active .dashboard-fluid-root{padding-bottom:5.5rem!important}
+        #app-layout.active .app-main>.app-content,
+        #app-layout.active .app-main>.main-content,
+        #app-layout.active .app-main>main{padding-inline:1rem!important}
       }
     `;
     document.head.appendChild(style);
@@ -141,7 +153,7 @@
     const collapsed = sidebar.classList.toggle('sidebar-collapsed');
     localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
     document.querySelector('.sidebar-toggle-button')?.setAttribute('aria-expanded', String(!collapsed));
-    window.dispatchEvent(new Event('resize'));
+    window.requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
   }
 
   function ensureSidebarToggle() {
