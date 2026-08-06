@@ -1,0 +1,141 @@
+name: Add SPPG Location Configuration
+
+on:
+  push:
+    branches:
+      - feat/super-admin-sppg-location-config
+
+permissions:
+  contents: write
+
+jobs:
+  wire-feature:
+    if: ${{ !contains(github.event.head_commit.message, 'feat: wire SUPER ADMIN SPPG location configuration') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/super-admin-sppg-location-config
+          fetch-depth: 0
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Wire API and frontend
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          gateway_path = Path('supabase/functions/Absen/geofence-gateway.ts')
+          gateway = gateway_path.read_text(encoding='utf-8')
+          import_line = 'import { handleSppgLocationConfiguration } from "./sppg-location-configuration.ts";\n'
+          if import_line not in gateway:
+              anchor = 'import { handlePayrollSignatureWorkflow } from "./payroll-signature-workflow.ts";\n'
+              if gateway.count(anchor) != 1:
+                  raise SystemExit('Gateway import anchor not found exactly once')
+              gateway = gateway.replace(anchor, anchor + import_line, 1)
+
+          dispatch_block = '''    const locationConfiguration = await handleSppgLocationConfiguration(
+              body.function,
+              body.data || {},
+              supabase,
+            );
+            if (locationConfiguration.handled) {
+              return okResult(locationConfiguration.result);
+            }
+'''
+          if 'const locationConfiguration = await handleSppgLocationConfiguration(' not in gateway:
+              anchor = '    const payrollWorkflow = await handlePayrollSignatureWorkflow(body.function, body.data || {}, supabase);\n'
+              if gateway.count(anchor) != 1:
+                  raise SystemExit('Gateway dispatch anchor not found exactly once')
+              gateway = gateway.replace(anchor, dispatch_block + anchor, 1)
+          gateway_path.write_text(gateway, encoding='utf-8')
+
+          index_path = Path('index.html')
+          index = index_path.read_text(encoding='utf-8')
+          load_anchor = '    renderAdminConfiguration();\n    await loadSuperAdminOverview();\n'
+          load_replacement = '    renderAdminConfiguration();\n    await window.SppgLocationConfig?.load();\n    await loadSuperAdminOverview();\n'
+          if 'await window.SppgLocationConfig?.load();' not in index:
+              if index.count(load_anchor) != 1:
+                  raise SystemExit('Admin configuration load anchor not found exactly once')
+              index = index.replace(load_anchor, load_replacement, 1)
+
+          script_tag = '<script src="./src/features/sppg-location-config.js?v=26.11.24"></script>\n'
+          if script_tag not in index:
+              close_anchor = '</script>\n</body>'
+              if index.count(close_anchor) != 1:
+                  raise SystemExit('Index closing script anchor not found exactly once')
+              index = index.replace(close_anchor, '</script>\n' + script_tag + '</body>', 1)
+          index_path.write_text(index, encoding='utf-8')
+
+          bootstrap_path = Path('src/app/bootstrap.js')
+          bootstrap = bootstrap_path.read_text(encoding='utf-8')
+          bootstrap, count = re.subn(
+              r"const VERSION = '26\.11\.\d+';",
+              "const VERSION = '26.11.24';",
+              bootstrap,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit('Frontend version constant was not updated')
+          bootstrap_path.write_text(bootstrap, encoding='utf-8')
+
+          sw_path = Path('sw.js')
+          sw = sw_path.read_text(encoding='utf-8')
+          sw, cache_count = re.subn(
+              r"const CACHE = 'absen-sppg-hadirly-v\d+';",
+              "const CACHE = 'absen-sppg-hadirly-v65';",
+              sw,
+              count=1,
+          )
+          sw, version_count = re.subn(
+              r"const APP_VERSION = '26\.11\.\d+';",
+              "const APP_VERSION = '26.11.24';",
+              sw,
+              count=1,
+          )
+          shell_anchor = '  `./src/app/bootstrap.js?v=${APP_VERSION}`\n];'
+          shell_replacement = '  `./src/app/bootstrap.js?v=${APP_VERSION}`,\n  `./src/features/sppg-location-config.js?v=${APP_VERSION}`\n];'
+          if 'src/features/sppg-location-config.js' not in sw:
+              if sw.count(shell_anchor) != 1:
+                  raise SystemExit('Service worker shell anchor not found exactly once')
+              sw = sw.replace(shell_anchor, shell_replacement, 1)
+          if cache_count != 1 or version_count != 1:
+              raise SystemExit('PWA cache/version constants were not updated')
+          sw_path.write_text(sw, encoding='utf-8')
+          PY
+
+          deno fmt \
+            supabase/functions/Absen/geofence-gateway.ts \
+            supabase/functions/Absen/sppg-location-configuration.ts \
+            src/features/sppg-location-config.js \
+            src/app/bootstrap.js \
+            sw.js
+
+          grep -q 'handleSppgLocationConfiguration' supabase/functions/Absen/geofence-gateway.ts
+          grep -q 'getSppgLocationConfiguration' supabase/functions/Absen/sppg-location-configuration.ts
+          grep -q 'SppgLocationConfig?.load' index.html
+          grep -q 'sppg-location-config.js?v=26.11.24' index.html
+          grep -q 'absen-sppg-hadirly-v65' sw.js
+
+      - name: Commit wired feature
+        run: |
+          if git diff --quiet; then
+            echo "SPPG location configuration already wired."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            index.html \
+            src/app/bootstrap.js \
+            src/features/sppg-location-config.js \
+            supabase/functions/Absen/geofence-gateway.ts \
+            supabase/functions/Absen/sppg-location-configuration.ts \
+            sw.js
+          git commit -m "feat: wire SUPER ADMIN SPPG location configuration"
+          git push origin HEAD:feat/super-admin-sppg-location-config
