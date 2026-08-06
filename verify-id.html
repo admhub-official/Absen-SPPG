@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Verifikasi ID Card · Hadirly</title>
+  <style>
+    :root{color-scheme:light;--navy:#0f172a;--blue:#2563eb;--muted:#64748b;--border:#e2e8f0;--bg:#f8fafc;--success:#047857;--danger:#b91c1c}
+    *{box-sizing:border-box}html,body{min-height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#dbeafe 0,#f8fafc 42%,#eef2ff 100%);color:var(--navy)}
+    body{display:grid;place-items:center;padding:24px}.shell{width:min(520px,100%)}.brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:18px}.brand img{width:44px;height:44px;border-radius:12px}.brand span{display:flex;flex-direction:column}.brand strong{font-size:1.15rem}.brand small{color:var(--muted);font-size:.7rem;font-weight:700;letter-spacing:.05em}
+    .card{overflow:hidden;border:1px solid rgba(148,163,184,.35);border-radius:24px;background:#fff;box-shadow:0 28px 70px rgba(15,23,42,.16)}.hero{padding:24px;background:var(--navy);color:#fff;text-align:center}.hero-icon{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 12px;border-radius:50%;background:rgba(255,255,255,.1)}.hero h1{margin:0;font-size:1.35rem}.hero p{margin:7px 0 0;color:#bfdbfe;font-size:.84rem;line-height:1.5}
+    .body{padding:24px}.loading{display:flex;align-items:center;justify-content:center;gap:10px;min-height:220px;color:var(--muted)}.spinner{width:24px;height:24px;border:3px solid #dbeafe;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    .result[hidden]{display:none}.status{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px}.status.valid{background:#ecfdf5;color:var(--success)}.status.invalid{background:#fef2f2;color:var(--danger)}.status svg{flex:none}.status strong{display:block}.status span{display:block;margin-top:3px;font-size:.76rem;line-height:1.4}.details{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.details div{min-width:0;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--bg)}.details dt{color:var(--muted);font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}.details dd{margin:6px 0 0;overflow-wrap:anywhere;font-size:.88rem;font-weight:750}.details .wide{grid-column:1/-1}.privacy{margin:17px 0 0;padding-top:15px;border-top:1px solid var(--border);color:var(--muted);font-size:.72rem;line-height:1.55;text-align:center}.footer{margin-top:14px;color:var(--muted);font-size:.68rem;text-align:center}
+    @media(max-width:420px){body{padding:14px}.card{border-radius:20px}.hero,.body{padding:20px}.details{grid-template-columns:1fr}.details .wide{grid-column:auto}}
+    @media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="brand"><img src="./icons/app-icon.svg" alt=""><span><strong>Hadirly</strong><small>ABSENSI &amp; PAYROLL DIGITAL</small></span></div>
+    <section class="card" aria-labelledby="page-title">
+      <header class="hero">
+        <div class="hero-icon" aria-hidden="true">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <h1 id="page-title">Verifikasi ID Card</h1>
+        <p>Memeriksa keaslian dan status kartu langsung dari sistem Hadirly.</p>
+      </header>
+      <div class="body">
+        <div class="loading" id="loading"><span class="spinner"></span><span>Memverifikasi kartu...</span></div>
+        <div class="result" id="result" hidden></div>
+      </div>
+    </section>
+    <p class="footer">Halaman ini hanya menampilkan data identitas kerja yang tercetak pada kartu.</p>
+  </main>
+  <script>
+    (() => {
+      const endpoint = 'https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/DigitalIdentity';
+      const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+      const loading = document.querySelector('#loading');
+      const result = document.querySelector('#result');
+      const token = new URLSearchParams(location.search).get('t') || '';
+
+      function showInvalid(message) {
+        loading.hidden = true;
+        result.hidden = false;
+        result.innerHTML = `<div class="status invalid"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg><div><strong>Kartu tidak valid</strong><span>${esc(message)}</span></div></div><p class="privacy">Jangan gunakan kartu ini sebagai bukti identitas. Minta pemegang kartu membuat versi baru melalui menu Profil Hadirly.</p>`;
+      }
+
+      async function verify() {
+        if (token.length < 40) { showInvalid('Token verifikasi tidak lengkap atau tautan telah rusak.'); return; }
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({action:'verifyDigitalIdentity',token}),
+            cache: 'no-store'
+          });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok || body.success === false || !body.result?.valid) {
+            showInvalid(body.result?.status === 'INACTIVE' ? 'Akun pemegang kartu sudah tidak aktif.' : 'QR Code tidak dikenal, sudah diganti, atau telah dinonaktifkan.');
+            return;
+          }
+          const card = body.result.card;
+          loading.hidden = true;
+          result.hidden = false;
+          result.innerHTML = `<div class="status valid"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg><div><strong>Kartu aktif dan valid</strong><span>Data berikut sesuai dengan registri identitas digital Hadirly.</span></div></div><dl class="details"><div class="wide"><dt>Nama</dt><dd>${esc(card.name)}</dd></div><div><dt>ID Card</dt><dd>${esc(card.idCardCode)}</dd></div><div><dt>Versi</dt><dd>${Number(card.version)}</dd></div><div><dt>Role</dt><dd>${esc(card.role)}</dd></div><div><dt>Jabatan</dt><dd>${esc(card.position)}</dd></div><div class="wide"><dt>SPPG</dt><dd>${esc(card.sppg)}</dd></div><div class="wide"><dt>Diterbitkan</dt><dd>${esc(card.generatedAtLabel)}</dd></div></dl><p class="privacy">Verifikasi dilakukan secara langsung. QR Code tidak memberi akses login dan tidak memuat password, nomor rekening, ataupun data biometrik.</p>`;
+        } catch (error) {
+          showInvalid('Layanan verifikasi sedang tidak tersedia. Silakan coba kembali.');
+        }
+      }
+      verify();
+    })();
+  </script>
+</body>
+</html>
