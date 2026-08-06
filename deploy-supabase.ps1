@@ -100,6 +100,7 @@ $FunctionNames = @(
   "AttendanceLocation",
   "Absen",
   "AbsenV2",
+  "PayrollUser",
   "DeviceTrust",
   "SecurityOps",
   "ProductionReadiness",

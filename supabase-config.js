@@ -2,7 +2,8 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   projectUrl: 'https://szwwpnbbsmjsbzzcecyj.supabase.co',
   functionName: 'AbsenV2',
   deviceTrustFunctionName: 'DeviceTrust',
-  attendanceLocationFunctionName: 'AttendanceLocation'
+  attendanceLocationFunctionName: 'AttendanceLocation',
+  payrollUserFunctionName: 'PayrollUser'
 });
 
 (() => {
@@ -11,6 +12,12 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
 
   let registeredDevice = null;
   const IDEMPOTENT_FUNCTIONS = new Set(['recordAbsensiSelf', 'recordAbsensi']);
+  const PAYROLL_WORKFLOW_FUNCTIONS = new Set([
+    'prosesPayroll',
+    'getMyPayroll',
+    'getSlipDownloadUrl',
+    'signPayrollReceipt'
+  ]);
   const DEVICE_KEY_STORAGE = 'absen:device-key:v1';
 
   function getOrCreateDeviceKey() {
@@ -50,6 +57,26 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     return body?.result;
   }
 
+  async function callPayrollWorkflow(functionName, payload = {}) {
+    const token = payload.token || localStorage.getItem('auth_token');
+    if (!token) throw new Error('Sesi login tidak tersedia.');
+    const functionSlug = window.ABSEN_SUPABASE_CONFIG.payrollUserFunctionName || 'PayrollUser';
+    const response = await fetch(
+      `${window.ABSEN_SUPABASE_CONFIG.projectUrl}/functions/v1/${functionSlug}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ function: functionName, data: { ...payload, token } }),
+        cache: 'no-store'
+      }
+    );
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok || body?.success === false) {
+      throw new Error(body?.error || body?.message || 'Workflow payroll tidak tersedia.');
+    }
+    return body?.result;
+  }
+
   async function ensureDeviceRegistered() {
     if (registeredDevice) return registeredDevice;
     registeredDevice = await callDeviceTrust('registerDevice', deviceMetadata());
@@ -81,6 +108,9 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     if (typeof originalApiCall === 'function' && !window.__ABSEN_API_WRAPPED__) {
       window.__ABSEN_API_WRAPPED__ = true;
       window.apiCall = async function securityAwareApiCall(functionName, payload = {}) {
+        if (PAYROLL_WORKFLOW_FUNCTIONS.has(functionName)) {
+          return callPayrollWorkflow(functionName, payload);
+        }
         if (localStorage.getItem('auth_token')) {
           try { await ensureDeviceRegistered(); } catch (error) { console.warn('Device registration deferred', error); }
         }
@@ -99,6 +129,6 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   });
 })();
 
-import('./src/app/bootstrap.js?v=26.11.31').catch((error) => {
+import('./src/app/bootstrap.js?v=26.11.32').catch((error) => {
   console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
 });
