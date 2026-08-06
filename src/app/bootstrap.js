@@ -6,20 +6,20 @@ if (LEGACY_HOSTS.has(window.location.hostname.toLowerCase())) {
   throw new Error('Redirecting to canonical domain');
 }
 
-import { createRouter } from './router.js?v=26.11.4';
-import { createAppStore } from '../stores/app-store.js?v=26.11.4';
-import { createFeatureRegistry } from './feature-registry.js?v=26.11.4';
+import { createRouter } from './router.js?v=26.11.5';
+import { createAppStore } from '../stores/app-store.js?v=26.11.5';
+import { createFeatureRegistry } from './feature-registry.js?v=26.11.5';
 import {
   renderAttendanceProgress,
   showAttendanceReceipt,
   renderCorrectionWorkspace,
   openCorrectionForm
-} from '../pages/attendance/attendance-experience.js?v=26.11.4';
-import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.11.4';
-import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.11.4';
-import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.11.4';
+} from '../pages/attendance/attendance-experience.js?v=26.11.5';
+import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js?v=26.11.5';
+import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js?v=26.11.5';
+import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js?v=26.11.5';
 
-const VERSION = '26.11.4';
+const VERSION = '26.11.5';
 const loadedAssets = new Map();
 
 function canonicalPath(value) { return new URL(value, document.baseURI).pathname; }
@@ -51,7 +51,7 @@ function loadScript(path) {
 export async function bootstrapApp() {
   if (window.AbsenApp) return window.AbsenApp;
   await Promise.all([
-    './src/styles/foundation/tokens.css','./src/styles/foundation/reset.css','./src/styles/app-system.css','./src/styles/feature-pages.css','./src/styles/device-trust-policy.css','./src/styles/attendance-experience.css','./src/styles/attendance-import.css','./src/styles/config-center.css','./src/styles/payroll-history.css','./src/styles/app-announcements.css','./src/styles/notification-mobile.css','./src/styles/components/operational-notifications.css','./security-operations-ui.css','./src/styles/responsive-overrides.css','./src/styles/mobile-ui-refresh.css','./src/styles/foundation/components.css','./src/styles/foundation/motion-accessibility.css','./src/styles/layout/app-shell.css','./src/styles/pages/dashboard-bento.css','./src/styles/components/toolbar-system.css','./src/styles/components/responsive-tables.css','./src/styles/pages/payroll-refresh.css','./src/styles/pages/profile-forms-modals.css','./src/styles/pages/complaints-activity.css','./src/styles/pages/settings-user-management.css','./src/styles/foundation/quality-accessibility.css'
+    './src/styles/foundation/tokens.css','./src/styles/foundation/reset.css','./src/styles/app-system.css','./src/styles/feature-pages.css','./src/styles/device-trust-policy.css','./src/styles/attendance-experience.css','./src/styles/attendance-import.css','./src/styles/config-center.css','./src/styles/payroll-history.css','./src/styles/app-announcements.css','./src/styles/notification-mobile.css','./src/styles/components/operational-notifications.css','./security-operations-ui.css','./src/styles/responsive-overrides.css','./src/styles/mobile-ui-refresh.css','./src/styles/foundation/components.css','./src/styles/foundation/motion-accessibility.css','./src/styles/layout/app-shell.css','./src/styles/pages/dashboard-bento.css','./src/styles/components/toolbar-system.css','./src/styles/components/responsive-tables.css','./src/styles/pages/payroll-refresh.css','./src/styles/pages/profile-forms-modals.css','./src/styles/pages/complaints-activity.css','./src/styles/pages/settings-user-management.css','./src/styles/foundation/quality-accessibility.css','./src/styles/pages/dashboard-mobile-polish.css'
   ].map((path) => loadStyle(`${path}?v=${VERSION}`)));
   const store = createAppStore({ route: window.location.hash.replace(/^#\/?/, '') || 'dashboard' });
   const router = createRouter({ onRoute: (route) => store.setState({ route }) });
