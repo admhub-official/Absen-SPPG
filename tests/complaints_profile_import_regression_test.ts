@@ -62,9 +62,10 @@ Deno.test("profile update modal owns a real bounded scroll container", async () 
   if (!controller.includes("centerControlInModal")) {
     throw new Error("focused profile fields must be kept inside the modal viewport");
   }
-  if (!controller.includes("data-modal-viewport")) {
+  if (!controller.includes("dataset.modalViewport")) {
     throw new Error("profile modal overlays must be explicitly enhanced");
   }
+  new Function(controller);
 });
 
 Deno.test("attendance import dialog provides accessible staged responsive UX", async () => {
@@ -93,4 +94,5 @@ Deno.test("attendance import dialog provides accessible staged responsive UX", a
   ]) {
     if (!css.includes(rule)) throw new Error(`attendance import CSS missing ${rule}`);
   }
+  new Function(controller);
 });
