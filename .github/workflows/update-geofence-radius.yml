@@ -1,0 +1,56 @@
+name: Apply geofence radius update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/update-geofence-radius.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-radius:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Update maximum attendance radius
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('supabase/functions/Absen/geofence-gateway.ts')
+          source = path.read_text(encoding='utf-8')
+          old = 'const MAX_RADIUS_METER = 50;'
+          new = 'const MAX_RADIUS_METER = 100;'
+          count = source.count(old)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one radius constant, found {count}')
+          path.write_text(source.replace(old, new), encoding='utf-8')
+          PY
+
+          grep -Fq 'const MAX_RADIUS_METER = 100;' supabase/functions/Absen/geofence-gateway.ts
+          ! grep -Fq 'const MAX_RADIUS_METER = 50;' supabase/functions/Absen/geofence-gateway.ts
+
+      - name: Check geofence source
+        shell: bash
+        run: |
+          if command -v deno >/dev/null 2>&1; then
+            deno check --node-modules-dir=auto supabase/functions/Absen/geofence-gateway.ts
+          fi
+
+      - name: Remove one-time workflow and commit
+        shell: bash
+        run: |
+          rm .github/workflows/update-geofence-radius.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add supabase/functions/Absen/geofence-gateway.ts .github/workflows/update-geofence-radius.yml
+          git commit -m 'fix(attendance): allow configured geofence up to 100 meters'
+          git push origin main
