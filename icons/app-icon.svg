@@ -1,12 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Hadirly</title>
   <defs>
-    <linearGradient id="g" x1="64" y1="32" x2="448" y2="480" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#6366f1"/>
-      <stop offset="1" stop-color="#312e81"/>
+    <linearGradient id="bg" x1="56" y1="26" x2="452" y2="486" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#12A8EC"/>
+      <stop offset="1" stop-color="#0798E2"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#g)"/>
-  <path fill="#fff" d="M151 126h210a32 32 0 0 1 32 32v196a32 32 0 0 1-32 32H151a32 32 0 0 1-32-32V158a32 32 0 0 1 32-32Zm0 80v148h210V206H151Z"/>
-  <path fill="#fff" d="M182 96a16 16 0 0 1 16 16v56a16 16 0 1 1-32 0v-56a16 16 0 0 1 16-16Zm148 0a16 16 0 0 1 16 16v56a16 16 0 1 1-32 0v-56a16 16 0 0 1 16-16Z"/>
-  <path fill="#a7f3d0" d="m213 293 30 30 62-70a18 18 0 0 1 27 24l-75 84a18 18 0 0 1-26 1l-44-44a18 18 0 1 1 26-25Z"/>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="194" r="68" fill="none" stroke="#fff" stroke-width="24"/>
+  <path d="M151 365c0-83 47-134 105-134s105 51 105 134" fill="none" stroke="#fff" stroke-width="24" stroke-linecap="round"/>
+  <path d="M324 139l31-31" fill="none" stroke="#fff" stroke-width="18" stroke-linecap="square"/>
+  <circle cx="371" cy="92" r="21" fill="#FFB522"/>
 </svg>
