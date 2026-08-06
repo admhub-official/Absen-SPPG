@@ -1,0 +1,13 @@
+.app-confirm-backdrop{position:fixed;inset:0;z-index:20000;display:grid;place-items:center;padding:1rem;background:rgba(15,23,42,.62);backdrop-filter:blur(4px)}
+.app-confirm-dialog{width:min(430px,100%);display:grid;grid-template-columns:auto 1fr;gap:1rem;padding:1.25rem;background:var(--surface,#fff);color:var(--text,#0f172a);border:1px solid var(--border,#e2e8f0);border-radius:1rem;box-shadow:0 24px 70px rgba(15,23,42,.3);animation:appConfirmIn .16s ease-out}
+.app-confirm-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:999px;background:#eef2ff;color:#4338ca;font-size:1.1rem;font-weight:900}
+.app-confirm-dialog.tone-danger .app-confirm-icon{background:#fef2f2;color:#dc2626}
+.app-confirm-content h2{margin:0;font-size:1.05rem;line-height:1.35}
+.app-confirm-content p{margin:.45rem 0 0;color:var(--text-secondary,#475569);font-size:.9rem;line-height:1.55}
+.app-confirm-detail{margin-top:.75rem;padding:.7rem .8rem;border:1px solid var(--border,#e2e8f0);border-radius:.65rem;background:var(--bg,#f8fafc);font-size:.8rem;color:var(--text-secondary,#475569);line-height:1.45}
+.app-confirm-actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:.65rem;margin-top:.25rem}
+.app-confirm-actions .btn{min-width:112px}
+.btn-danger{background:#dc2626;color:#fff}.btn-danger:hover{background:#b91c1c}
+@keyframes appConfirmIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@media(max-width:520px){.app-confirm-backdrop{align-items:end;padding:.65rem}.app-confirm-dialog{grid-template-columns:1fr;border-radius:1rem 1rem .75rem .75rem}.app-confirm-icon{width:40px;height:40px}.app-confirm-actions{display:grid;grid-template-columns:1fr 1fr}.app-confirm-actions .btn{width:100%;min-width:0}}
+@media(prefers-reduced-motion:reduce){.app-confirm-dialog{animation:none}}
