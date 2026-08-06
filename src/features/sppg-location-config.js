@@ -7,6 +7,8 @@
     locations: [],
     maxRadiusMeter: 100,
     selectedKey: '',
+    loading: false,
+    loaded: false,
   };
 
   function escape(value) {
@@ -32,6 +34,34 @@
 
   function notify(message, type = 'success') {
     if (typeof showAlert === 'function') showAlert(message, type);
+  }
+
+  async function locationApiCall(functionName, data) {
+    const baseUrl = typeof SUPABASE_URL === 'string' ? SUPABASE_URL.replace(/\/$/, '') : '';
+    const anonKey = typeof SUPABASE_KEY === 'string' ? SUPABASE_KEY : '';
+    if (!baseUrl) throw new Error('Konfigurasi server belum tersedia.');
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (anonKey) {
+      headers.apikey = anonKey;
+      headers.Authorization = `Bearer ${anonKey}`;
+    }
+
+    const response = await fetch(`${baseUrl}/functions/v1/SppgLocationConfig`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ function: functionName, data }),
+    });
+    let payload;
+    try {
+      payload = await response.json();
+    } catch {
+      throw new Error('Respons server lokasi SPPG tidak valid.');
+    }
+    if (!response.ok || !payload?.success) {
+      throw new Error(payload?.error || 'Permintaan konfigurasi lokasi gagal.');
+    }
+    return payload.result;
   }
 
   function ensureStyles() {
@@ -208,6 +238,8 @@
       </div>
     `;
 
+    state.loaded = true;
+    root.dataset.locationConfigLoaded = 'true';
     bindEvents();
   }
 
@@ -304,7 +336,7 @@
     }
 
     try {
-      const result = await apiCall('saveSppgLocationConfiguration', {
+      const result = await locationApiCall('saveSppgLocationConfiguration', {
         token: AppState.token,
         kunciSppg: selected.key,
         namaSppg: selected.name,
@@ -315,8 +347,8 @@
         catatan,
       });
       notify(result?.message || 'Konfigurasi lokasi berhasil disimpan.', 'success');
-      await load();
-      selectLocation(selected.key);
+      state.selectedKey = selected.key;
+      await load(true);
     } catch (error) {
       notify(error?.message || 'Gagal menyimpan konfigurasi lokasi.', 'error');
     } finally {
@@ -332,7 +364,7 @@
       state.selectedKey = event.target.value;
       render();
     });
-    document.getElementById('btn-refresh-sppg-location')?.addEventListener('click', () => load());
+    document.getElementById('btn-refresh-sppg-location')?.addEventListener('click', () => load(true));
     document.getElementById('btn-use-current-sppg-location')?.addEventListener('click', useCurrentLocation);
     document.getElementById('btn-open-sppg-location-map')?.addEventListener('click', openMap);
     document.getElementById('btn-save-sppg-location')?.addEventListener('click', save);
@@ -341,23 +373,57 @@
     });
   }
 
-  async function load() {
-    if (!isSuperAdmin()) return;
+  async function load(force = false) {
+    if (!isSuperAdmin() || state.loading || (state.loaded && !force)) return;
     const root = ensureRoot();
     if (!root) return;
     ensureStyles();
+    state.loading = true;
     root.innerHTML = '<div class="feature-card sppg-location-card"><div class="loading-state"><span class="spinner"></span>Memuat lokasi SPPG...</div></div>';
     try {
-      const result = await apiCall('getSppgLocationConfiguration', { token: AppState.token });
+      const result = await locationApiCall('getSppgLocationConfiguration', { token: AppState.token });
       state.masterSppg = result?.masterSppg || [];
       state.locations = result?.locations || [];
       state.maxRadiusMeter = Number(result?.maxRadiusMeter) || 100;
       if (!state.selectedKey) state.selectedKey = 'DEFAULT';
       render();
     } catch (error) {
-      root.innerHTML = `<div class="feature-card sppg-location-card"><div class="table-empty">Gagal memuat lokasi SPPG: ${escape(error?.message || 'Terjadi kesalahan.')}</div></div>`;
+      state.loaded = true;
+      root.dataset.locationConfigLoaded = 'error';
+      root.innerHTML = `<div class="feature-card sppg-location-card"><div class="table-empty">Gagal memuat lokasi SPPG: ${escape(error?.message || 'Terjadi kesalahan.')}<div style="margin-top:.75rem"><button class="btn btn-secondary btn-sm" id="btn-retry-sppg-location" type="button">Coba Lagi</button></div></div></div>`;
+      document.getElementById('btn-retry-sppg-location')?.addEventListener('click', () => load(true));
+    } finally {
+      state.loading = false;
     }
   }
+
+  let scheduled = false;
+  function scheduleAutoLoad() {
+    if (scheduled) return;
+    scheduled = true;
+    window.setTimeout(() => {
+      scheduled = false;
+      if (isSuperAdmin() && document.getElementById('config-access-body')) load();
+    }, 80);
+  }
+
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('#btn-refresh-admin-config')) window.setTimeout(() => load(true), 150);
+  }, true);
+  window.addEventListener('absen:app-ready', scheduleAutoLoad);
+  window.addEventListener('absen:session-changed', () => {
+    state.loaded = false;
+    scheduleAutoLoad();
+  });
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', scheduleAutoLoad, { once: true });
+  } else {
+    scheduleAutoLoad();
+  }
+  new MutationObserver(scheduleAutoLoad).observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
 
   window.SppgLocationConfig = Object.freeze({ load });
 })();
