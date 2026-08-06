@@ -9,6 +9,8 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   let attendanceChallenge = null;
   let registeredDevice = null;
   const MAX_GPS_ACCURACY_METER = 100;
+  const GPS_ACQUISITION_TIMEOUT_MS = 25000;
+  const GPS_SETTLE_DELAY_MS = 2500;
   const IDEMPOTENT_FUNCTIONS = new Set(['recordAbsensiSelf', 'recordAbsensi']);
   const DEVICE_KEY_STORAGE = 'absen:device-key:v1';
 
@@ -71,12 +73,86 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   window.reviewAttendanceDevice = (deviceId, status, reason) => callDeviceTrust('reviewDevice', { deviceId, status, reason });
   window.getAttendanceDeviceReviewQueue = (status = 'PENDING') => callDeviceTrust('listReviewQueue', { status });
 
+  function setLocationStatus(message) {
+    const status = document.getElementById('absen-facecam-status');
+    if (status) status.textContent = message;
+  }
+
   function showLocationMessage(message) {
     window.setTimeout(() => {
       if (typeof window.closeAbsenScan === 'function') window.closeAbsenScan();
-      const status = document.getElementById('absen-facecam-status');
-      if (status) status.textContent = message;
+      setLocationStatus(message);
     }, 0);
+  }
+
+  function normalizeGpsPosition(position) {
+    const accuracy = Number(position?.coords?.accuracy);
+    return {
+      lat: Number(position?.coords?.latitude),
+      lng: Number(position?.coords?.longitude),
+      accuracy: Number.isFinite(accuracy) ? Math.round(accuracy) : null,
+      capturedAt: new Date(position?.timestamp || Date.now()).toISOString()
+    };
+  }
+
+  function gpsErrorMessage(error) {
+    if (error?.code === 1) return 'Izin lokasi ditolak. Aktifkan izin lokasi untuk aplikasi ini.';
+    if (error?.code === 2) return 'Lokasi GPS tidak tersedia. Aktifkan GPS dan coba lagi.';
+    if (error?.code === 3) return 'Pencarian lokasi terlalu lama. Pastikan GPS aktif lalu coba lagi.';
+    return 'Gagal membaca lokasi GPS.';
+  }
+
+  function acquireBestGpsPosition() {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Perangkat atau browser ini tidak mendukung layanan lokasi.'));
+        return;
+      }
+
+      let best = null;
+      let watchId = null;
+      let finished = false;
+      let firstSampleAt = 0;
+      let timeoutId = null;
+
+      const finish = (error = null) => {
+        if (finished) return;
+        finished = true;
+        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+        if (timeoutId !== null) window.clearTimeout(timeoutId);
+        if (error) reject(error);
+        else resolve(best);
+      };
+
+      const onPosition = (position) => {
+        const sample = normalizeGpsPosition(position);
+        if (!Number.isFinite(sample.lat) || !Number.isFinite(sample.lng) || !Number.isFinite(sample.accuracy)) return;
+        if (!best || sample.accuracy < best.accuracy) best = sample;
+        if (!firstSampleAt) firstSampleAt = Date.now();
+
+        setLocationStatus(`Mengunci lokasi GPS… akurasi terbaik ${best.accuracy} m`);
+
+        const settled = Date.now() - firstSampleAt >= GPS_SETTLE_DELAY_MS;
+        if (best.accuracy <= MAX_GPS_ACCURACY_METER && settled) finish();
+      };
+
+      const onError = (error) => {
+        if (best) return;
+        finish(new Error(gpsErrorMessage(error)));
+      };
+
+      setLocationStatus('Mengunci lokasi GPS… tunggu beberapa detik.');
+      watchId = navigator.geolocation.watchPosition(onPosition, onError, {
+        enableHighAccuracy: true,
+        timeout: GPS_ACQUISITION_TIMEOUT_MS,
+        maximumAge: 0
+      });
+
+      timeoutId = window.setTimeout(() => {
+        if (best) finish();
+        else finish(new Error('Lokasi GPS tidak berhasil diperoleh. Pastikan izin lokasi dan GPS aktif.'));
+      }, GPS_ACQUISITION_TIMEOUT_MS);
+    });
   }
 
   function getOrCreateIdempotencyKey(functionName) {
@@ -158,40 +234,13 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
 
     window.getCurrentPositionPromise = function getValidatedAttendancePosition() {
       resetAttendanceSecurityState();
-      return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error('Perangkat atau browser ini tidak mendukung layanan lokasi.'));
-          return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-          (position) => resolve({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            accuracy: Number.isFinite(position.coords.accuracy)
-              ? Math.round(position.coords.accuracy)
-              : null,
-            capturedAt: new Date(position.timestamp || Date.now()).toISOString()
-          }),
-          (error) => {
-            const message = error?.code === 1
-              ? 'Izin lokasi ditolak. Aktifkan izin lokasi untuk aplikasi ini.'
-              : error?.code === 2
-                ? 'Lokasi GPS tidak tersedia. Aktifkan GPS dan coba lagi.'
-                : error?.code === 3
-                  ? 'Pencarian lokasi terlalu lama. Pastikan GPS aktif lalu coba lagi.'
-                  : 'Gagal membaca lokasi GPS.';
-            reject(new Error(message));
-          },
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-        );
-      }).then(async (coords) => {
+      return acquireBestGpsPosition().then(async (coords) => {
         const token = localStorage.getItem('auth_token');
         if (!token || typeof window.apiCall !== 'function') {
           throw new Error('Sesi login tidak tersedia. Silakan login kembali.');
         }
-        if (!Number.isFinite(coords.accuracy) || coords.accuracy > MAX_GPS_ACCURACY_METER) {
-          throw new Error(`Akurasi GPS belum memadai (${coords.accuracy ?? '-'} m, maksimal ${MAX_GPS_ACCURACY_METER} m). Pindah ke area terbuka dan coba lagi.`);
+        if (!coords || !Number.isFinite(coords.accuracy) || coords.accuracy > MAX_GPS_ACCURACY_METER) {
+          throw new Error(`Akurasi terbaik GPS masih belum memadai (${coords?.accuracy ?? '-'} m, maksimal ${MAX_GPS_ACCURACY_METER} m). Gunakan perangkat dengan GPS, aktifkan lokasi presisi, atau pindah ke area terbuka.`);
         }
 
         const device = await ensureDeviceRegistered();
@@ -220,10 +269,7 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
             ? ' · akurasi sedang'
             : '';
         const trustLabel = device?.Status === 'PENDING' ? ' · perangkat menunggu persetujuan' : '';
-        const status = document.getElementById('absen-facecam-status');
-        if (status) {
-          status.textContent = `Lokasi valid (${distance ?? 0} m dari titik SPPG)${riskLabel}${trustLabel}`;
-        }
+        setLocationStatus(`Lokasi valid (${distance ?? 0} m dari titik SPPG, akurasi ${coords.accuracy} m)${riskLabel}${trustLabel}`);
         return coords;
       }).catch((error) => {
         resetAttendanceSecurityState();
@@ -235,6 +281,6 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
 })();
 
 // Satu-satunya entrypoint frontend modular. Asset turunan dikelola oleh bootstrap.
-import('./src/app/bootstrap.js?v=26.11.9').catch((error) => {
+import('./src/app/bootstrap.js?v=26.11.10').catch((error) => {
   console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
 });
