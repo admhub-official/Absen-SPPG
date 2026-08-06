@@ -19,9 +19,11 @@ if ($LASTEXITCODE -ne 0) {
   throw "Migration database gagal dengan exit code $LASTEXITCODE."
 }
 
-# Fungsi payroll sekali pakai yang tidak lagi menjadi bagian aplikasi.
+# Fungsi alias lama dan fungsi payroll sekali pakai yang tidak lagi menjadi bagian aplikasi.
 # Penghapusan dibuat idempotent: fungsi yang sudah tidak ada tidak menghentikan deployment.
 $ObsoleteFunctions = @(
+  "AbsenLegacy",
+  "AbsenProxy",
   "BulkPublishPayroll",
   "RebuildPayroll100",
   "PrepareLogoBGN",
