@@ -3,7 +3,8 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   functionName: 'AbsenV2',
   deviceTrustFunctionName: 'DeviceTrust',
   attendanceLocationFunctionName: 'AttendanceLocation',
-  payrollUserFunctionName: 'PayrollUser'
+  payrollUserFunctionName: 'PayrollUser',
+  complaintsFunctionName: 'Complaints'
 });
 
 (() => {
@@ -17,6 +18,16 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     'getMyPayroll',
     'getSlipDownloadUrl',
     'signPayrollReceipt'
+  ]);
+  const COMPLAINT_WORKFLOW_FUNCTIONS = new Set([
+    'kirimPengaduan',
+    'getRiwayatPengaduanSaya',
+    'getNotifikasiAdmin',
+    'getDaftarPengaduan',
+    'tandaiSudahDibaca',
+    'simpanTanggapanAdmin',
+    'updateComplaintTicketV2',
+    'closeMyComplaintTicketV2'
   ]);
   const DEVICE_KEY_STORAGE = 'absen:device-key:v1';
 
@@ -77,6 +88,36 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     return body?.result;
   }
 
+  async function callComplaintWorkflow(functionName, payload = {}) {
+    const token = payload.token || localStorage.getItem('auth_token');
+    if (!token) throw new Error('Sesi login tidak tersedia.');
+    const functionSlug = window.ABSEN_SUPABASE_CONFIG.complaintsFunctionName || 'Complaints';
+    const isSubmission = functionName === 'kirimPengaduan';
+    const complaintPayload = {
+      ...payload,
+      token,
+      ...(isSubmission
+        ? { idempotencyKey: payload.idempotencyKey || getOrCreateIdempotencyKey('kirimPengaduan') }
+        : {})
+    };
+    const response = await fetch(
+      `${window.ABSEN_SUPABASE_CONFIG.projectUrl}/functions/v1/${functionSlug}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ function: functionName, data: complaintPayload }),
+        cache: 'no-store'
+      }
+    );
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok || body?.success === false) {
+      const requestHint = body?.requestId ? ` (${body.requestId})` : '';
+      throw new Error(`${body?.error || body?.message || 'Workflow pengaduan tidak tersedia.'}${requestHint}`);
+    }
+    if (isSubmission) clearIdempotencyKey('kirimPengaduan');
+    return body?.result;
+  }
+
   async function ensureDeviceRegistered() {
     if (registeredDevice) return registeredDevice;
     registeredDevice = await callDeviceTrust('registerDevice', deviceMetadata());
@@ -108,6 +149,9 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     if (typeof originalApiCall === 'function' && !window.__ABSEN_API_WRAPPED__) {
       window.__ABSEN_API_WRAPPED__ = true;
       window.apiCall = async function securityAwareApiCall(functionName, payload = {}) {
+        if (COMPLAINT_WORKFLOW_FUNCTIONS.has(functionName)) {
+          return callComplaintWorkflow(functionName, payload);
+        }
         if (PAYROLL_WORKFLOW_FUNCTIONS.has(functionName)) {
           return callPayrollWorkflow(functionName, payload);
         }
@@ -129,6 +173,6 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   });
 })();
 
-import('./src/app/bootstrap.js?v=26.11.32').catch((error) => {
+import('./src/app/bootstrap.js?v=26.11.33').catch((error) => {
   console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
 });
