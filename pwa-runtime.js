@@ -1,6 +1,6 @@
 (()=>{
   if(window.AbsenPWA)return;
-  const VERSION='26.11.2';
+  const VERSION='26.11.3';
   const api=Object.freeze({
     version:VERSION,
     online:()=>navigator.onLine,
