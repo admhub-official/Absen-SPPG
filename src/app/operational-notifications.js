@@ -16,7 +16,8 @@
       '[data-profile-trigger]',
       '.topbar-profile',
       '.app-header-profile'
-    ].map((selector) => document.querySelector(selector)).find((node) => node instanceof HTMLElement && node.getClientRects().length > 0) || null;
+    ].map((selector) => document.querySelector(selector))
+      .find((node) => node instanceof HTMLElement && node.getClientRects().length > 0) || null;
   }
 
   function appActive() {
@@ -56,6 +57,24 @@
 
   function removeUi() {
     document.getElementById('operational-notification-root')?.remove();
+    document.querySelectorAll('.topbar-user-actions').forEach((node) => {
+      if (!node.children.length) node.remove();
+    });
+  }
+
+  function ensureActionsHost(profile) {
+    const parent = profile.parentElement;
+    if (!parent) return null;
+
+    let actions = parent.querySelector(':scope > .topbar-user-actions');
+    if (!actions) {
+      actions = document.createElement('div');
+      actions.className = 'topbar-user-actions';
+      parent.insertBefore(actions, profile);
+    }
+
+    if (profile.parentElement !== actions) actions.appendChild(profile);
+    return actions;
   }
 
   function ensureUi() {
@@ -65,11 +84,12 @@
     }
 
     const profile = profileNode();
-    const host = profile?.parentElement;
-    if (!profile || !host) return null;
+    if (!profile) return null;
+    const actions = ensureActionsHost(profile);
+    if (!actions) return null;
 
     let root = document.getElementById('operational-notification-root');
-    if (root && root.parentElement !== host) root.remove();
+    if (root && root.parentElement !== actions) root.remove();
     root = document.getElementById('operational-notification-root');
     if (root) return root;
 
@@ -89,7 +109,7 @@
         <div class="operational-notification-list"></div>
       </section>`;
 
-    host.insertBefore(root, profile);
+    actions.insertBefore(root, profile);
 
     const button = root.querySelector('.operational-notification-button');
     const panel = root.querySelector('.operational-notification-panel');
@@ -122,7 +142,7 @@
 
     list.innerHTML = state.items.map((item) => {
       const kind = kindOf(item);
-      return `<button type="button" class="operational-notification-item ${item.Read ? '' : 'unread'}" data-id="${escapeHtml(item.ID_Notification)}">
+      return `<button type="button" class="operational-notification-item ${item.Read ? '' : 'unread'}" data-id="${escapeHtml(item.ID_Notification)}" data-kind="${kind}">
         <span class="operational-notification-item-icon">${iconFor(kind)}</span>
         <span class="operational-notification-copy"><strong>${escapeHtml(item.Title)}</strong><p>${escapeHtml(item.Message)}</p></span>
         <span><span class="operational-notification-time">${escapeHtml(formatTime(item.Created_At))}</span><span class="operational-notification-dot"></span></span>
