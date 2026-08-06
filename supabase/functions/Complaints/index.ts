@@ -148,7 +148,9 @@ async function auditBestEffort(
 async function sendComplaint(payload: Record<string, unknown>, auth: AuthenticatedUser) {
   const category = requiredString(payload.Kategori, "Kategori", { min: 1, max: 100 });
   const message = requiredString(payload.Isi_Pengaduan, "Isi_Pengaduan", { min: 10, max: 5000 });
-  if (!CATEGORIES.has(category)) throw new ValidationError("Kategori pengaduan tidak valid.", "Kategori");
+  if (!CATEGORIES.has(category)) {
+    throw new ValidationError("INVALID_CATEGORY", "Kategori pengaduan tidak valid.", "Kategori");
+  }
 
   const anonymous = String(payload.Jenis_Pengirim || "").trim().toUpperCase() === "ANONYMOUS";
   const actor = await actorProfile(auth);
@@ -289,8 +291,12 @@ async function updateTicket(payload: Record<string, unknown>, auth: Authenticate
   const id = requiredString(payload.idPengaduan, "idPengaduan", { max: 160 });
   const status = requiredString(payload.status, "status", { max: 50 }).toUpperCase();
   const priority = String(payload.prioritas || "NORMAL").trim().toUpperCase();
-  if (!TICKET_STATUSES.has(status)) throw new ValidationError("Status tiket tidak valid.", "status");
-  if (!PRIORITIES.has(priority)) throw new ValidationError("Prioritas tiket tidak valid.", "prioritas");
+  if (!TICKET_STATUSES.has(status)) {
+    throw new ValidationError("INVALID_STATUS", "Status tiket tidak valid.", "status");
+  }
+  if (!PRIORITIES.has(priority)) {
+    throw new ValidationError("INVALID_PRIORITY", "Prioritas tiket tidak valid.", "prioritas");
+  }
   await scopedComplaint(auth, id);
   const timestamp = nowIso();
   const update = await db.from("Pengaduan").update({
@@ -355,7 +361,7 @@ async function route(
     case "closeMyComplaintTicketV2":
       return await closeOwnTicket(payload, auth);
     default:
-      throw new ValidationError("Fungsi pengaduan tidak didukung.", "function");
+      throw new ValidationError("ACTION_NOT_SUPPORTED", "Fungsi pengaduan tidak didukung.", "function");
   }
 }
 
