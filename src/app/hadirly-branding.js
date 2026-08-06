@@ -17,7 +17,11 @@
     };
     Object.entries(values).forEach(([name, content]) => {
       let meta = document.querySelector(`meta[name="${name}"]`);
-      if (!meta) { meta = document.createElement('meta'); meta.name = name; document.head.appendChild(meta); }
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = name;
+        document.head.appendChild(meta);
+      }
       meta.content = content;
     });
     document.querySelectorAll('link[rel~="icon"],link[rel="apple-touch-icon"]').forEach((link) => {
@@ -25,7 +29,11 @@
       link.type = 'image/svg+xml';
     });
     if (!document.querySelector('link[rel~="icon"]')) {
-      const link = document.createElement('link'); link.rel = 'icon'; link.type = 'image/svg+xml'; link.href = ICON; document.head.appendChild(link);
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.type = 'image/svg+xml';
+      link.href = ICON;
+      document.head.appendChild(link);
     }
   }
 
@@ -49,22 +57,40 @@
     while (walker.nextNode()) nodes.push(walker.currentNode);
     nodes.forEach((node) => {
       const parent = node.parentElement;
-      if (!parent || ['SCRIPT','STYLE','NOSCRIPT'].includes(parent.tagName)) return;
-      if (/Presence SPPG/i.test(node.nodeValue || '')) node.nodeValue = node.nodeValue.replace(/Presence SPPG/gi, APP_NAME);
+      if (!parent || ['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(parent.tagName)) return;
+      if (/Presence SPPG/i.test(node.nodeValue || '')) {
+        node.nodeValue = node.nodeValue.replace(/Presence SPPG/gi, APP_NAME);
+      }
     });
   }
 
   function decorateBrandBlocks() {
-    document.querySelectorAll('.session-loading-logo,.auth-brand-mark,.auth-logo-mobile,.app-sidebar-brand,.app-topbar-brand').forEach((block) => {
+    document.querySelectorAll(
+      '.session-loading-logo,.auth-brand-mark,.auth-logo-mobile,.app-sidebar-brand,.app-topbar-brand'
+    ).forEach((block) => {
       block.classList.add('hadirly-brand');
-      let text = block.querySelector('.hadirly-brand__text');
-      if (!text) {
-        [...block.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE).forEach((n) => n.remove());
+
+      let text = block.querySelector(':scope > .hadirly-brand__text');
+
+      // Hapus teks/nama aplikasi lama, tetapi pertahankan elemen ikon atau pembungkus ikon.
+      [...block.childNodes]
+        .filter((node) => node.nodeType === Node.TEXT_NODE)
+        .forEach((node) => node.remove());
+
+      [...block.children].forEach((child) => {
+        if (child === text) return;
+        const isIconElement = child.matches('img') || Boolean(child.querySelector('img'));
+        if (!isIconElement) child.remove();
+      });
+
+      if (!text || !block.contains(text)) {
         text = document.createElement('span');
         text.className = 'hadirly-brand__text';
-        text.innerHTML = `<strong>${APP_NAME}</strong><small>${TAGLINE}</small>`;
         block.appendChild(text);
       }
+
+      const displayName = block.classList.contains('app-sidebar-brand') ? `${APP_NAME} :` : APP_NAME;
+      text.innerHTML = `<strong>${displayName}</strong><small>${TAGLINE}</small>`;
     });
   }
 
@@ -80,11 +106,16 @@
   const schedule = () => {
     if (queued) return;
     queued = true;
-    requestAnimationFrame(() => { queued = false; apply(); });
+    requestAnimationFrame(() => {
+      queued = false;
+      apply();
+    });
   };
 
   apply();
-  document.readyState === 'loading' && document.addEventListener('DOMContentLoaded', apply, { once: true });
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', apply, { once: true });
+  }
   window.addEventListener('absen:app-ready', apply);
   window.addEventListener('absen:session-changed', apply);
   new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
