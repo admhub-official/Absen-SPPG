@@ -1,5 +1,6 @@
 (() => {
-  if (window.SystemSettings) return;
+  if (window.__ABSEN_SYSTEM_SETTINGS_CONTROLLER_V2__) return;
+  window.__ABSEN_SYSTEM_SETTINGS_CONTROLLER_V2__ = true;
 
   const endpoint = `${String(window.ABSEN_SUPABASE_CONFIG?.projectUrl || '').replace(/\/$/, '')}/functions/v1/SystemSettings`;
   const categories = Object.freeze({
@@ -59,13 +60,7 @@
     if (!card) return;
     card.classList.add('system-settings-legacy-disabled');
     card.dataset.legacySystemSettings = 'disabled';
-    card.removeAttribute('aria-hidden');
-  }
-
-  function syncLegacyCategory(category=state.category) {
-    const button = document.querySelector(`[data-setting-tab="${CSS.escape(category)}"]`);
-    if (button && !button.classList.contains('active')) button.click();
-    disableLegacyRenderer();
+    card.setAttribute('aria-hidden','true');
   }
 
   function root() {
@@ -80,8 +75,10 @@
       node.className = 'system-settings-controller feature-card';
       node.dataset.saSettingsSection = 'system';
       const anchor = document.getElementById('sa-settings-system-intro');
-      if (anchor?.parentElement === view) anchor.insertAdjacentElement('afterend',node); else view.appendChild(node);
+      if (anchor?.parentElement === view) anchor.insertAdjacentElement('afterend',node);
+      else view.appendChild(node);
     }
+    node.hidden = false;
     return node;
   }
 
@@ -92,7 +89,8 @@
   }
 
   function render() {
-    const node = root(); if (!node) return;
+    const node = root();
+    if (!node) return;
     const rows = definitions.filter((item) => item.category === state.category);
     node.innerHTML = `<header class="ssc-header"><div><span class="sa-settings-eyebrow">SUMBER TUNGGAL BACKEND</span><h2>Konfigurasi Sistem</h2><p>Nilai tombol selalu berasal dari database. Pesan sukses hanya muncul setelah pembacaan ulang sesuai.</p></div><button type="button" class="btn btn-secondary btn-sm" data-ssc-refresh ${state.loading?'disabled':''}>Muat Ulang</button></header>
       <div class="ssc-health ${state.loaded?'is-ready':''}" role="status"><strong>${state.loading?'Membaca backend…':state.loaded?'Backend tersinkron':'Backend belum dimuat'}</strong><span>${state.loaded?`${state.rows.size} pengaturan tersedia.`:'Tidak ada nilai default sebelum backend siap.'}</span></div>
@@ -101,19 +99,25 @@
         const row=state.rows.get(item.key),ready=Boolean(row),on=ready&&enabled(row),saving=state.saving.has(item.key);
         return `<article class="ssc-row ${item.featured?'is-featured':''}"><div class="ssc-row-copy"><strong>${esc(item.label)}</strong><p>${esc(row?.Description||item.description)}</p><small>${ready?`Diperbarui ${esc(formatDate(row.Updated_At))}`:'Nilai backend belum tersedia'}</small></div><div class="ssc-row-control"><span class="ssc-state ${on?'is-on':'is-off'}">${on?'Aktif':'Nonaktif'}</span><button type="button" class="ssc-switch ${on?'active':''}" role="switch" aria-checked="${on}" aria-label="${esc(item.label)}" data-ssc-key="${esc(item.key)}" ${!ready||saving?'disabled':''}><span aria-hidden="true"></span></button></div></article>`;
       }).join('')}</div>`;
-    syncLegacyCategory();
   }
 
   async function refresh(silent=false) {
     if (!isSuper() || state.loading) return;
-    state.loading=true; if(!silent)render();
+    state.loading=true;
+    if(!silent)render();
     try {
       const result=await call('getSettings');
       const items=Array.isArray(result?.items)?result.items:[];
       if(items.length!==definitions.length)throw new Error(`Backend mengembalikan ${items.length} dari ${definitions.length} pengaturan.`);
-      state.rows=new Map(items.map((item)=>[String(item.Setting_Key),item])); state.loaded=true;
-    } catch(error) { state.loaded=false; window.showAlert?.(error.message,'error'); }
-    finally { state.loading=false; render(); }
+      state.rows=new Map(items.map((item)=>[String(item.Setting_Key),item]));
+      state.loaded=true;
+    } catch(error) {
+      state.loaded=false;
+      window.showAlert?.(error.message,'error');
+    } finally {
+      state.loading=false;
+      render();
+    }
   }
 
   async function update(key) {
@@ -124,7 +128,8 @@
     if(typeof window.appConfirm!=='function')return window.showAlert?.('Dialog konfirmasi belum siap.','error');
     const approved=await window.appConfirm({title:`${next?'Aktifkan':'Nonaktifkan'} ${item.label}?`,message:`Fitur akan ${next?'diaktifkan':'dinonaktifkan'} setelah database berhasil diverifikasi.`,confirmText:next?'Ya, aktifkan':'Ya, nonaktifkan',cancelText:'Tidak',tone:next?'primary':'danger',detail:'Tampilan tidak memakai status lokal atau nilai default.'});
     if(!approved)return;
-    state.saving.add(key);render();
+    state.saving.add(key);
+    render();
     try {
       const result=await call('updateSetting',{key,enabled:next,description:current.Description||item.description,reason:`SUPER ADMIN ${next?'mengaktifkan':'menonaktifkan'} ${item.label} melalui Konfigurasi Sistem.`});
       if(!result?.item||enabled(result.item)!==next)throw new Error('Respons simpan tidak sesuai.');
@@ -135,31 +140,58 @@
       window.showAlert?.(`${item.label} berhasil ${next?'diaktifkan':'dinonaktifkan'}.`,'success');
       window.dispatchEvent(new CustomEvent('absen:system-settings-changed',{detail:{key,enabled:next,setting:state.rows.get(key)}}));
       if(key==='notification.global_announcement')window.NotificationPublisher?.load?.();
-    } catch(error) { window.showAlert?.(error.message||'Pengaturan gagal disimpan.','error'); await refresh(true); }
-    finally { state.saving.delete(key); render(); }
+    } catch(error) {
+      window.showAlert?.(error.message||'Pengaturan gagal disimpan.','error');
+      await refresh(true);
+    } finally {
+      state.saving.delete(key);
+      render();
+    }
   }
 
-  function schedule(delay=80) {
-    clearTimeout(state.timer); state.timer=setTimeout(()=>{if(!root())return;render();if(!state.loaded&&!state.loading)refresh();},delay);
+  function schedule(delay=80,forceRefresh=false) {
+    clearTimeout(state.timer);
+    state.timer=setTimeout(()=>{
+      if(!root())return;
+      render();
+      if(forceRefresh||(!state.loaded&&!state.loading))refresh();
+    },delay);
   }
 
   document.addEventListener('click',(event)=>{
     const category=event.target.closest?.('[data-ssc-category]');
     if(category){state.category=category.dataset.sscCategory;render();return;}
     if(event.target.closest?.('[data-ssc-refresh]')){refresh();return;}
-    const toggle=event.target.closest?.('[data-ssc-key]');if(toggle){update(toggle.dataset.sscKey);return;}
-    const shortcut=event.target.closest?.('[data-sa-system-tab],[data-setting-tab]');
-    const requested=shortcut?.dataset.saSystemTab||shortcut?.dataset.settingTab;
+    const toggle=event.target.closest?.('[data-ssc-key]');
+    if(toggle){update(toggle.dataset.sscKey);return;}
+    const shortcut=event.target.closest?.('[data-sa-system-tab]');
+    const requested=shortcut?.dataset.saSystemTab;
     if(categories[requested]){state.category=requested;schedule(40);return;}
-    if(event.target.closest?.('[data-sa-settings-tab="system"],[data-view="admin-config"]'))schedule(120);
+    if(event.target.closest?.('[data-sa-settings-tab="system"],[data-view="admin-config"]'))schedule(80,true);
   });
-  window.addEventListener('absen:app-ready',()=>schedule(180));
-  window.addEventListener('absen:session-changed',()=>{state.loaded=false;schedule(180);});
+
+  window.addEventListener('absen:app-ready',()=>schedule(80,true));
+  window.addEventListener('absen:session-changed',()=>{state.loaded=false;schedule(80,true);});
   window.addEventListener('focus',()=>{if(state.loaded)refresh(true);});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.loaded)refresh(true);});
-  new MutationObserver(()=>{disableLegacyRenderer();if(isSuper()&&!document.getElementById('system-settings-root'))schedule(50);}).observe(document.documentElement,{childList:true,subtree:true});
+  new MutationObserver(()=>{
+    disableLegacyRenderer();
+    if(isSuper()&&!document.getElementById('system-settings-root'))schedule(30);
+  }).observe(document.documentElement,{childList:true,subtree:true});
 
-  window.SystemSettings=Object.freeze({refresh:()=>refresh(),get:(key)=>state.rows.get(key)||null,openCategory:(category)=>{if(categories[category])state.category=category;window.SuperAdminSettingsHub?.openTab?.('system');schedule(40);}});
-  window.SystemSettingsController=window.SystemSettings;
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>schedule(180),{once:true});else schedule(180);
+  const controller=Object.freeze({
+    refresh:()=>refresh(),
+    mount:()=>schedule(0,true),
+    get:(key)=>state.rows.get(key)||null,
+    openCategory:(category)=>{
+      if(categories[category])state.category=category;
+      window.SuperAdminSettingsHub?.openTab?.('system');
+      schedule(20,true);
+    }
+  });
+  window.SystemSettings=controller;
+  window.SystemSettingsController=controller;
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>schedule(80,true),{once:true});
+  else schedule(80,true);
 })();
