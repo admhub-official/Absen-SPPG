@@ -1,10 +1,11 @@
-const CACHE = 'absen-sppg-hadirly-v74';
-const APP_VERSION = '26.11.33';
+const CACHE = 'absen-sppg-hadirly-v75';
+const APP_VERSION = '26.11.34';
 const CANONICAL_ORIGIN = 'https://hadirly.org';
 const LEGACY_HOSTS = new Set(['absen-sppg.pages.dev']);
 const SHELL = [
   './',
   './index.html',
+  './verify-id.html',
   './manifest.webmanifest',
   './supabase-config.js',
   './icons/app-icon.svg',
@@ -13,10 +14,12 @@ const SHELL = [
   `./src/app/bootstrap.js?v=${APP_VERSION}`,
   `./src/app/attendance-location-flow.js?v=${APP_VERSION}`,
   `./src/app/in-app-confirm.js?v=${APP_VERSION}`,
+  `./src/app/digital-id-card.js?v=${APP_VERSION}`,
   `./src/app/super-admin-settings-hub.js?v=${APP_VERSION}`,
   `./src/app/system-settings.js?v=${APP_VERSION}`,
   `./src/app/notification-publisher.js?v=${APP_VERSION}`,
   `./src/styles/components/in-app-confirm.css?v=${APP_VERSION}`,
+  `./src/styles/pages/digital-id-card.css?v=${APP_VERSION}`,
   `./src/styles/pages/super-admin-settings-hub.css?v=${APP_VERSION}`,
   `./src/styles/pages/system-settings-controller.css?v=${APP_VERSION}`,
   `./src/styles/pages/notification-publisher.css?v=${APP_VERSION}`,
