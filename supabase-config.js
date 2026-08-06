@@ -5,12 +5,10 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
 });
 
 (() => {
-  let lastGpsPosition = null;
-  let attendanceChallenge = null;
+  if (window.__ABSEN_SECURITY_CONFIGURED__) return;
+  window.__ABSEN_SECURITY_CONFIGURED__ = true;
+
   let registeredDevice = null;
-  const MAX_GPS_ACCURACY_METER = 100;
-  const GPS_ACQUISITION_TIMEOUT_MS = 25000;
-  const GPS_SETTLE_DELAY_MS = 2500;
   const IDEMPOTENT_FUNCTIONS = new Set(['recordAbsensiSelf', 'recordAbsensi']);
   const DEVICE_KEY_STORAGE = 'absen:device-key:v1';
 
@@ -47,6 +45,7 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   async function callDeviceTrust(action, payload = {}) {
     const token = localStorage.getItem('auth_token');
     if (!token) throw new Error('Sesi login tidak tersedia.');
+
     const response = await fetch(
       `${window.ABSEN_SUPABASE_CONFIG.projectUrl}/functions/v1/${window.ABSEN_SUPABASE_CONFIG.deviceTrustFunctionName}`,
       {
@@ -66,93 +65,6 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     if (registeredDevice) return registeredDevice;
     registeredDevice = await callDeviceTrust('registerDevice', deviceMetadata());
     return registeredDevice;
-  }
-
-  window.getMyAttendanceDevices = () => callDeviceTrust('listMyDevices');
-  window.revokeMyAttendanceDevice = (deviceId) => callDeviceTrust('revokeMyDevice', { deviceId });
-  window.reviewAttendanceDevice = (deviceId, status, reason) => callDeviceTrust('reviewDevice', { deviceId, status, reason });
-  window.getAttendanceDeviceReviewQueue = (status = 'PENDING') => callDeviceTrust('listReviewQueue', { status });
-
-  function setLocationStatus(message) {
-    const status = document.getElementById('absen-facecam-status');
-    if (status) status.textContent = message;
-  }
-
-  function showLocationMessage(message) {
-    window.setTimeout(() => {
-      if (typeof window.closeAbsenScan === 'function') window.closeAbsenScan();
-      setLocationStatus(message);
-    }, 0);
-  }
-
-  function normalizeGpsPosition(position) {
-    const accuracy = Number(position?.coords?.accuracy);
-    return {
-      lat: Number(position?.coords?.latitude),
-      lng: Number(position?.coords?.longitude),
-      accuracy: Number.isFinite(accuracy) ? Math.round(accuracy) : null,
-      capturedAt: new Date(position?.timestamp || Date.now()).toISOString()
-    };
-  }
-
-  function gpsErrorMessage(error) {
-    if (error?.code === 1) return 'Izin lokasi ditolak. Aktifkan izin lokasi untuk aplikasi ini.';
-    if (error?.code === 2) return 'Lokasi GPS tidak tersedia. Aktifkan GPS dan coba lagi.';
-    if (error?.code === 3) return 'Pencarian lokasi terlalu lama. Pastikan GPS aktif lalu coba lagi.';
-    return 'Gagal membaca lokasi GPS.';
-  }
-
-  function acquireBestGpsPosition() {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Perangkat atau browser ini tidak mendukung layanan lokasi.'));
-        return;
-      }
-
-      let best = null;
-      let watchId = null;
-      let finished = false;
-      let firstSampleAt = 0;
-      let timeoutId = null;
-
-      const finish = (error = null) => {
-        if (finished) return;
-        finished = true;
-        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-        if (timeoutId !== null) window.clearTimeout(timeoutId);
-        if (error) reject(error);
-        else resolve(best);
-      };
-
-      const onPosition = (position) => {
-        const sample = normalizeGpsPosition(position);
-        if (!Number.isFinite(sample.lat) || !Number.isFinite(sample.lng) || !Number.isFinite(sample.accuracy)) return;
-        if (!best || sample.accuracy < best.accuracy) best = sample;
-        if (!firstSampleAt) firstSampleAt = Date.now();
-
-        setLocationStatus(`Mengunci lokasi GPS… akurasi terbaik ${best.accuracy} m`);
-
-        const settled = Date.now() - firstSampleAt >= GPS_SETTLE_DELAY_MS;
-        if (best.accuracy <= MAX_GPS_ACCURACY_METER && settled) finish();
-      };
-
-      const onError = (error) => {
-        if (best) return;
-        finish(new Error(gpsErrorMessage(error)));
-      };
-
-      setLocationStatus('Mengunci lokasi GPS… tunggu beberapa detik.');
-      watchId = navigator.geolocation.watchPosition(onPosition, onError, {
-        enableHighAccuracy: true,
-        timeout: GPS_ACQUISITION_TIMEOUT_MS,
-        maximumAge: 0
-      });
-
-      timeoutId = window.setTimeout(() => {
-        if (best) finish();
-        else finish(new Error('Lokasi GPS tidak berhasil diperoleh. Pastikan izin lokasi dan GPS aktif.'));
-      }, GPS_ACQUISITION_TIMEOUT_MS);
-    });
   }
 
   function getOrCreateIdempotencyKey(functionName) {
@@ -176,14 +88,15 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     }
   }
 
-  function resetAttendanceSecurityState() {
-    lastGpsPosition = null;
-    attendanceChallenge = null;
-  }
+  window.getMyAttendanceDevices = () => callDeviceTrust('listMyDevices');
+  window.revokeMyAttendanceDevice = (deviceId) => callDeviceTrust('revokeMyDevice', { deviceId });
+  window.reviewAttendanceDevice = (deviceId, status, reason) => callDeviceTrust('reviewDevice', { deviceId, status, reason });
+  window.getAttendanceDeviceReviewQueue = (status = 'PENDING') => callDeviceTrust('listReviewQueue', { status });
 
   window.addEventListener('DOMContentLoaded', () => {
     const originalApiCall = window.apiCall;
-    if (typeof originalApiCall === 'function') {
+    if (typeof originalApiCall === 'function' && !window.__ABSEN_API_WRAPPED__) {
+      window.__ABSEN_API_WRAPPED__ = true;
       window.apiCall = async function securityAwareApiCall(functionName, payload = {}) {
         if (localStorage.getItem('auth_token')) {
           try {
@@ -193,37 +106,17 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
           }
         }
 
-        payload = {
+        const securedPayload = {
           ...payload,
           deviceKey,
-          deviceId: registeredDevice?.Device_ID || registeredDevice?.deviceId || null
+          deviceId: registeredDevice?.Device_ID || registeredDevice?.deviceId || null,
+          ...(IDEMPOTENT_FUNCTIONS.has(functionName)
+            ? { idempotencyKey: payload.idempotencyKey || getOrCreateIdempotencyKey(functionName) }
+            : {})
         };
 
-        if (functionName === 'recordAbsensiSelf') {
-          if (!lastGpsPosition || !attendanceChallenge?.challengeId) {
-            throw new Error('Verifikasi lokasi telah kedaluwarsa. Periksa lokasi kembali.');
-          }
-          if (new Date(attendanceChallenge.expiresAt).getTime() <= Date.now()) {
-            resetAttendanceSecurityState();
-            throw new Error('Verifikasi lokasi telah kedaluwarsa. Periksa lokasi kembali.');
-          }
-          payload = {
-            ...payload,
-            lat: lastGpsPosition.lat,
-            lng: lastGpsPosition.lng,
-            accuracy: lastGpsPosition.accuracy,
-            locationCapturedAt: lastGpsPosition.capturedAt,
-            challengeId: attendanceChallenge.challengeId
-          };
-        }
-
-        if (IDEMPOTENT_FUNCTIONS.has(functionName)) {
-          payload = { ...payload, idempotencyKey: getOrCreateIdempotencyKey(functionName) };
-        }
-
-        const result = await originalApiCall(functionName, payload);
+        const result = await originalApiCall(functionName, securedPayload);
         if (IDEMPOTENT_FUNCTIONS.has(functionName)) clearIdempotencyKey(functionName);
-        if (functionName === 'recordAbsensiSelf') resetAttendanceSecurityState();
         return result;
       };
     }
@@ -231,56 +124,10 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     if (localStorage.getItem('auth_token')) {
       ensureDeviceRegistered().catch((error) => console.warn('Device registration pending', error));
     }
-
-    window.getCurrentPositionPromise = function getValidatedAttendancePosition() {
-      resetAttendanceSecurityState();
-      return acquireBestGpsPosition().then(async (coords) => {
-        const token = localStorage.getItem('auth_token');
-        if (!token || typeof window.apiCall !== 'function') {
-          throw new Error('Sesi login tidak tersedia. Silakan login kembali.');
-        }
-        if (!coords || !Number.isFinite(coords.accuracy) || coords.accuracy > MAX_GPS_ACCURACY_METER) {
-          throw new Error(`Akurasi terbaik GPS masih belum memadai (${coords?.accuracy ?? '-'} m, maksimal ${MAX_GPS_ACCURACY_METER} m). Gunakan perangkat dengan GPS, aktifkan lokasi presisi, atau pindah ke area terbuka.`);
-        }
-
-        const device = await ensureDeviceRegistered();
-        if (device?.Status === 'BLOCKED' || device?.Status === 'REVOKED') {
-          throw new Error('Perangkat ini telah diblokir atau dicabut. Hubungi Admin.');
-        }
-
-        const challenge = await window.apiCall('createAttendanceChallenge', {
-          token,
-          lat: coords.lat,
-          lng: coords.lng,
-          accuracy: coords.accuracy,
-          locationCapturedAt: coords.capturedAt
-        });
-
-        if (!challenge?.challengeId) {
-          throw new Error('Challenge presensi gagal dibuat. Periksa lokasi kembali.');
-        }
-
-        lastGpsPosition = coords;
-        attendanceChallenge = challenge;
-        const distance = challenge.location?.distance;
-        const riskLabel = challenge.riskLevel === 'HIGH'
-          ? ' · perlu peninjauan'
-          : challenge.riskLevel === 'MEDIUM'
-            ? ' · akurasi sedang'
-            : '';
-        const trustLabel = device?.Status === 'PENDING' ? ' · perangkat menunggu persetujuan' : '';
-        setLocationStatus(`Lokasi valid (${distance ?? 0} m dari titik SPPG, akurasi ${coords.accuracy} m)${riskLabel}${trustLabel}`);
-        return coords;
-      }).catch((error) => {
-        resetAttendanceSecurityState();
-        showLocationMessage(error?.message || 'Lokasi tidak dapat divalidasi.');
-        throw error;
-      });
-    };
   });
 })();
 
 // Satu-satunya entrypoint frontend modular. Asset turunan dikelola oleh bootstrap.
-import('./src/app/bootstrap.js?v=26.11.10').catch((error) => {
+import('./src/app/bootstrap.js?v=26.11.17').catch((error) => {
   console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
 });
