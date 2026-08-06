@@ -1,5 +1,5 @@
-const CACHE = 'absen-sppg-hadirly-v65';
-const APP_VERSION = '26.11.24';
+const CACHE = 'absen-sppg-hadirly-v66';
+const APP_VERSION = '26.11.25';
 const CANONICAL_ORIGIN = 'https://hadirly.org';
 const LEGACY_HOSTS = new Set(['absen-sppg.pages.dev']);
 const SHELL = [
