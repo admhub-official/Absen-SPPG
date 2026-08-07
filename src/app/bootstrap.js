@@ -14,7 +14,7 @@ import { renderReleaseOperationsPage } from '../pages/release/release-operations
 import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js';
 import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js';
 
-const VERSION = '26.11.45';
+const VERSION = '26.11.46';
 const loadedAssets = new Map();
 function canonicalPath(value) { return new URL(value, document.baseURI).pathname; }
 function loadStyle(path) { const key=`style:${canonicalPath(path)}`; if(loadedAssets.has(key))return loadedAssets.get(key); const existing=[...document.querySelectorAll('link[rel="stylesheet"][href]')].find((node)=>canonicalPath(node.href)===canonicalPath(path)); if(existing){const ready=Promise.resolve(existing);loadedAssets.set(key,ready);return ready;} const ready=new Promise((resolve,reject)=>{const link=document.createElement('link');link.rel='stylesheet';link.href=path;link.onload=()=>resolve(link);link.onerror=()=>reject(new Error(`Gagal memuat stylesheet: ${path}`));document.head.appendChild(link);});loadedAssets.set(key,ready);return ready; }
