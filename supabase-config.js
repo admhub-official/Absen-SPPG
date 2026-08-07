@@ -71,6 +71,7 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   const callEmploymentContractWorkflow = (name,payload={}) => callWorkflow(window.ABSEN_SUPABASE_CONFIG.employmentContractsFunctionName || 'EmploymentContracts', name, payload, 'Layanan Perjanjian Kerja tidak tersedia.');
 
   async function ensureDeviceRegistered() { if (registeredDevice) return registeredDevice; registeredDevice = await callDeviceTrust('registerDevice', deviceMetadata()); return registeredDevice; }
+  function resetDeviceContext(){ registeredDevice = null; }
   function getOrCreateIdempotencyKey(functionName) { const storageKey=`absen:idempotency:${functionName}`; try { const current=JSON.parse(sessionStorage.getItem(storageKey)||'null'); if(current?.key&&Number(current.expiresAt)>Date.now())return current.key; const key=crypto.randomUUID();sessionStorage.setItem(storageKey,JSON.stringify({key,expiresAt:Date.now()+2*60*1000}));return key;} catch{return crypto.randomUUID();} }
   function clearIdempotencyKey(functionName){try{sessionStorage.removeItem(`absen:idempotency:${functionName}`);}catch{}}
 
@@ -78,6 +79,10 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   window.revokeMyAttendanceDevice=(deviceId)=>callDeviceTrust('revokeMyDevice',{deviceId});
   window.reviewAttendanceDevice=(deviceId,status,reason)=>callDeviceTrust('reviewDevice',{deviceId,status,reason});
   window.getAttendanceDeviceReviewQueue=(status='PENDING')=>callDeviceTrust('listReviewQueue',{status});
+  window.HadirlySecurityContext=Object.freeze({resetDeviceContext});
+  window.addEventListener('absen:session-changed',(event)=>{
+    if(event.detail?.authenticated===false)resetDeviceContext();
+  });
 
   window.addEventListener('DOMContentLoaded', () => {
     const originalApiCall = window.apiCall;

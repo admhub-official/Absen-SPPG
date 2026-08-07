@@ -73,7 +73,7 @@ Deno.test("sidebar cleanup release assets stay version aligned", async () => {
   const config = await read("supabase-config.js");
   const manifest = await read("manifest.webmanifest");
 
-  if (!release.includes("version = '26.11.50'") || !release.includes("cacheName = 'absen-sppg-hadirly-v91'")) {
+  if (!release.includes("version = '26.11.51'") || !release.includes("cacheName = 'absen-sppg-hadirly-v92'")) {
     throw new Error("shared frontend/PWA release mismatch");
   }
   if (!bootstrap.includes('HADIRLY_RELEASE?.version')) throw new Error("bootstrap must use shared release version");

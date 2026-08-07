@@ -11,14 +11,21 @@
 
   function clearClientSession() {
     try { window.clearApiResponseCache?.(); } catch {}
+    try { window.HadirlyUpdateSafety?.markClean?.(); } catch {}
     try {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
+    } catch {}
+    try {
+      // sessionStorage hanya berisi state sementara Hadirly per-tab
+      // (idempotency key, marker reload PWA, dan state workflow sementara).
+      sessionStorage.clear();
     } catch {}
 
     if (window.AppState) {
       window.AppState.token = null;
       window.AppState.user = null;
+      if (Array.isArray(window.AppState.notifications)) window.AppState.notifications = [];
     }
 
     window.dispatchEvent(new CustomEvent('absen:session-changed', { detail: { authenticated: false } }));
@@ -57,5 +64,5 @@
     logout();
   }, true);
 
-  window.HadirlyLogout = Object.freeze({ logout });
+  window.HadirlyLogout = Object.freeze({ logout, clearClientSession });
 })();
