@@ -6,7 +6,9 @@ Deno.test("employment contract module owns complete lifecycle, masters, PDF, QR 
   const endpoint = await read("supabase/functions/EmploymentContracts/index.ts");
   const profileOps = await read("supabase/functions/ProfileOps/index.ts");
   const frontend = await read("src/app/employment-contracts.js");
+  const navigation = await read("src/app/employment-contract-navigation.js");
   const css = await read("src/styles/pages/employment-contracts.css");
+  const navigationCss = await read("src/styles/pages/employment-contract-navigation.css");
   const verify = await read("verify-contract.html");
   const bootstrap = await read("src/app/bootstrap.js");
   const sw = await read("sw.js");
@@ -35,6 +37,23 @@ Deno.test("employment contract module owns complete lifecycle, masters, PDF, QR 
   for (const marker of ['Perjanjian Kerja Saya','Perjanjian Kerja','Master Perjanjian Kerja','SPPG & Yayasan','Jabatan & Divisi','Job Description','Jam Kerja','Status Kerja & Kontrak','Kompensasi','Template Perjanjian','SOP / Referensi','Nomor Kontrak','TTD MITRA','TTD KEPALA SPPG','Tanda Tangan Karyawan']) {
     if (!frontend.includes(marker)) throw new Error(`frontend employment workspace missing ${marker}`);
   }
+  for (const marker of [
+    'function syncNavigation()',
+    'const sessionSignature =',
+    'employment-contract-personal-nav',
+    'data-employment-view="employment-admin"',
+    'data-employment-view="employment-master"',
+    "makeSentinel('employment-contract-nav-group')",
+    '#app-layout',
+    '#topbar-profile-role',
+    'new MutationObserver',
+    "window.addEventListener('absen:session-changed'",
+    'retrySync()',
+    "['ADMIN', 'SUPER ADMIN']",
+  ]) if (!navigation.includes(marker)) throw new Error(`employment navigation lifecycle missing ${marker}`);
+  if (!navigationCss.includes('.employment-contract-admin-nav') || !navigationCss.includes('.employment-contract-mobile-admin-nav')) {
+    throw new Error('employment navigation integration CSS missing');
+  }
   if (!css.includes('.employment-contract-view') || !css.includes('.employment-contract-signature-canvas')) throw new Error("employment contract responsive CSS missing");
   if (!verify.includes('PERJANJIAN TERVERIFIKASI') || !verify.includes('SHA-256 Dokumen')) throw new Error("contract verification page missing safe verification fields");
 
@@ -47,8 +66,11 @@ Deno.test("employment contract module owns complete lifecycle, masters, PDF, QR 
     throw new Error("ProfileOps must explicitly reject daily salary changes");
   }
 
-  if (!bootstrap.includes("'./src/app/employment-contracts.js'") || !bootstrap.includes("'./src/styles/pages/employment-contracts.css'")) throw new Error("bootstrap must load employment contract assets");
-  if (!sw.includes("'./verify-contract.html'") || !sw.includes('employment-contracts.js') || !sw.includes('employment-contracts.css')) throw new Error("PWA shell must include employment contract assets");
+  const workspaceIndex = bootstrap.indexOf("'./src/app/employment-contracts.js'");
+  const navigationIndex = bootstrap.indexOf("'./src/app/employment-contract-navigation.js'");
+  if (workspaceIndex < 0 || navigationIndex < 0 || navigationIndex <= workspaceIndex) throw new Error('contract navigation sync must load after workspace controller');
+  if (!bootstrap.includes("'./src/styles/pages/employment-contracts.css'") || !bootstrap.includes("'./src/styles/pages/employment-contract-navigation.css'")) throw new Error("bootstrap must load employment contract styles");
+  if (!sw.includes("'./verify-contract.html'") || !sw.includes('employment-contracts.js') || !sw.includes('employment-contract-navigation.js') || !sw.includes('employment-contract-navigation.css')) throw new Error("PWA shell must include employment contract navigation assets");
   if (!config.includes("employmentContractsFunctionName: 'EmploymentContracts'")) throw new Error("EmploymentContracts function slug missing");
   if (!deploy.includes('"EmploymentContracts"')) throw new Error("EmploymentContracts must be in production deployment allowlist");
 });
