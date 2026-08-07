@@ -84,6 +84,7 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     if (typeof originalApiCall === 'function' && !window.__ABSEN_API_WRAPPED__) {
       window.__ABSEN_API_WRAPPED__ = true;
       window.apiCall = async function securityAwareApiCall(functionName, payload = {}) {
+        if (functionName === 'logout') return originalApiCall(functionName, payload);
         if (OPERATIONS_V2_WORKFLOW_FUNCTIONS.has(functionName)) return callOperationsV2(functionName,payload);
         if (EMPLOYMENT_CONTRACT_WORKFLOW_FUNCTIONS.has(functionName)) return callEmploymentContractWorkflow(functionName,payload);
         if (DIGITAL_IDENTITY_WORKFLOW_FUNCTIONS.has(functionName)) return callDigitalIdentityWorkflow(functionName,payload);
@@ -98,4 +99,11 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   });
 })();
 
-import('./src/app/bootstrap.js?v=26.11.49').catch((error) => { console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error); });
+const HADIRLY_BOOTSTRAP_VERSION = globalThis.HADIRLY_RELEASE?.version;
+if (!HADIRLY_BOOTSTRAP_VERSION) {
+  console.warn('Release version Hadirly belum dimuat; frontend modular tidak dijalankan.');
+} else {
+  import(`./src/app/bootstrap.js?v=${HADIRLY_BOOTSTRAP_VERSION}`).catch((error) => {
+    console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
+  });
+}
