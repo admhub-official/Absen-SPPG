@@ -27,7 +27,7 @@ Deno.test('PWA release version has one canonical source', async () => {
 
   if (!release.includes("version = '26.11.50'")) throw new Error('release version mismatch');
   if (!release.includes("cacheName = 'absen-sppg-hadirly-v91'")) throw new Error('release cache mismatch');
-  for (const [name, source] of [['bootstrap', bootstrap], ['runtime', runtime]]) {
+  for (const [name, source] of [['bootstrap', bootstrap], ['runtime', runtime]] as const) {
     if (!source.includes('HADIRLY_RELEASE?.version')) throw new Error(`${name} must read shared release version`);
   }
   if (!sw.includes("importScripts('./src/app/release-version.js', './src/app/pwa-shell-assets.js')")) {
@@ -52,7 +52,9 @@ Deno.test('PWA shell is the same manifest consumed by bootstrap and all entries 
   }
   if (!manifest.includes("'./src/app/logout-session-guard.js'")) throw new Error('logout guard must be part of shell');
 
-  const paths = [...manifest.matchAll(/'((?:\.\/)[^']+\.(?:js|css))'/g)].map((match) => match[1].replace(/^\.\//, ''));
+  const paths = [...manifest.matchAll(/'((?:\.\/)[^']+\.(?:js|css))'/g)]
+    .map((match) => (match[1] ?? '').replace(/^\.\//, ''))
+    .filter(Boolean);
   if (paths.length < 60) throw new Error(`unexpectedly small PWA asset manifest: ${paths.length}`);
   for (const path of paths) {
     try {
