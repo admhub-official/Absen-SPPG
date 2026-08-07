@@ -28,20 +28,22 @@ Deno.test("profile preview and downloaded PDF share one stable 300 DPI CR80 mast
   for(const rule of ['.digital-id-portrait-card','aspect-ratio:53.98/85.6','.id-card-admin-nav-group','.id-card-signature-canvas'])if(!css.includes(rule))throw new Error(`ID card base CSS missing ${rule}`);
   for(const rule of ['.digital-id-master-preview','.digital-id-master-canvas','aspect-ratio:53.98/85.6','.has-master-preview>.digital-id-portrait-card'])if(!rendererCss.includes(rule))throw new Error(`master renderer CSS missing ${rule}`);
   for(const retired of ['digital-id-card-print-sync.js','digital-id-card-v2.css'])if(bootstrap.includes(retired)||serviceWorker.includes(retired))throw new Error(`retired ID card asset still referenced: ${retired}`);
-  if(!bootstrap.includes("const VERSION = '26.11.41'"))throw new Error("bootstrap asset version must match current release");
+  if(!bootstrap.includes("const VERSION = '26.11.42'"))throw new Error("bootstrap asset version must match current release");
   if(!bootstrap.includes("'./src/app/digital-id-card-master-renderer.js'")||!bootstrap.includes("'./src/styles/pages/digital-id-card-master-renderer.css'"))throw new Error("bootstrap must load CR80 master renderer assets");
-  if(!serviceWorker.includes("const APP_VERSION = '26.11.41'")||!serviceWorker.includes("const CACHE = 'absen-sppg-hadirly-v82'"))throw new Error("service worker version/cache must match bootstrap");
+  if(!serviceWorker.includes("const APP_VERSION = '26.11.42'")||!serviceWorker.includes("const CACHE = 'absen-sppg-hadirly-v83'"))throw new Error("service worker version/cache must match bootstrap");
   if(!serviceWorker.includes('digital-id-card-master-renderer.js')||!serviceWorker.includes('digital-id-card-master-renderer.css'))throw new Error("master renderer assets must be cached");
-  if(!config.includes("import('./src/app/bootstrap.js?v=26.11.41')"))throw new Error("top-level bootstrap import must match current release");
+  if(!config.includes("import('./src/app/bootstrap.js?v=26.11.42')"))throw new Error("top-level bootstrap import must match current release");
   if(!serviceWorker.includes("'./verify-id.html'"))throw new Error("ID verification page must remain in PWA shell");
 });
 
 Deno.test("profile employment editor can update identity/employment data but never daily salary", async () => {
-  const editor=await read("src/app/profile-employment-editor.js"),profileOps=await read("supabase/functions/ProfileOps/index.ts"),bootstrap=await read("src/app/bootstrap.js"),serviceWorker=await read("sw.js"),deploy=await read("deploy-supabase.ps1");
+  const editor=await read("src/app/profile-employment-editor.js"),profileIdentity=await read("src/app/profile-contract-identity.js"),profileOps=await read("supabase/functions/ProfileOps/index.ts"),bootstrap=await read("src/app/bootstrap.js"),serviceWorker=await read("sw.js"),deploy=await read("deploy-supabase.ps1");
   for(const field of ["NIK","Alamat","SPPG","Yayasan","Jabatan_Divisi","Tanggal_Mulai_Kerja"]) if(!editor.includes(field)||!profileOps.includes(field))throw new Error(`employment field missing: ${field}`);
-  for(const marker of ['edit-gaji-harian','disabled aria-readonly="true"','/functions/v1/ProfileOps','event.stopImmediatePropagation()','Nama_Lengkap','Nomor_Rekening','getProfileEmployment']) if(!editor.includes(marker)&&marker!=='getProfileEmployment')throw new Error(`profile editor missing ${marker}`);
+  for(const marker of ['edit-gaji-harian','disabled aria-readonly="true"','/functions/v1/ProfileOps','event.stopImmediatePropagation()','Nama_Lengkap','Nomor_Rekening']) if(!editor.includes(marker))throw new Error(`profile editor missing ${marker}`);
   for(const marker of ['Object.prototype.hasOwnProperty.call(updates, "Gaji_Harian")','Gaji Harian hanya dapat diubah oleh ADMIN/SUPER ADMIN','Object.prototype.hasOwnProperty.call(updates, "Role")','Object.prototype.hasOwnProperty.call(updates, "Status_Aktif")','resolveFoundation','Master_SPPG','UPDATE_PROFIL','getProfileEmployment']) if(!profileOps.includes(marker))throw new Error(`ProfileOps protection missing ${marker}`);
+  for(const marker of ["p-nik","p-alamat","getProfileEmployment","NIK","Alamat Lengkap"]) if(!profileIdentity.includes(marker))throw new Error(`profile contract identity display missing ${marker}`);
   const stringFields=profileOps.split('const stringFields')[1]?.split('];')[0]||'';if(stringFields.includes('Gaji_Harian'))throw new Error("Gaji_Harian must not be self-editable");
-  if(!bootstrap.includes("'./src/app/profile-employment-editor.js'")||!serviceWorker.includes('profile-employment-editor.js'))throw new Error("profile employment editor must be loaded and cached");
+  if(!bootstrap.includes("'./src/app/profile-employment-editor.js'")||!bootstrap.includes("'./src/app/profile-contract-identity.js'"))throw new Error("profile identity assets must be loaded");
+  if(!serviceWorker.includes('profile-employment-editor.js')||!serviceWorker.includes('profile-contract-identity.js'))throw new Error("profile identity assets must be cached");
   const production=deploy.split('$FunctionNames = @(')[1]?.split('\n)')[0]||'';if(!production.includes('"ProfileOps"'))throw new Error("ProfileOps must be in production allowlist");
 });
