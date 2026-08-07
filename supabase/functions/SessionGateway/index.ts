@@ -16,6 +16,7 @@ const TARGETS: Record<string, string> = Object.freeze({
   AttendanceImport: "AttendanceImportCore",
   EmploymentContracts: "EmploymentContractsCore",
 });
+const DIGEST_RE = /^[0-9a-f]{64}$/i;
 
 const configuredOrigins = new Set(
   (Deno.env.get("ABSEN_ALLOWED_ORIGINS") || "")
@@ -66,14 +67,22 @@ function collectTokenCandidates(value: unknown, output = new Set<string>()): Set
   return output;
 }
 
-async function sessionDigestMap(payload: Record<string, unknown>): Promise<Map<string, string>> {
+function isServiceRequest(request: Request): boolean {
+  return request.headers.get("authorization") === `Bearer ${SERVICE_KEY}`;
+}
+
+async function sessionDigestMap(payload: Record<string, unknown>, allowStoredDigest: boolean): Promise<Map<string, string>> {
   const candidates = [...collectTokenCandidates(payload)];
   if (!candidates.length) return new Map();
   const pairs = await Promise.all(candidates.map(async (raw) => [raw, await sha256Hex(raw)] as const));
-  const hashes = [...new Set(pairs.map(([, hash]) => hash))];
+  const directDigests = candidates.filter((candidate) => DIGEST_RE.test(candidate)).map((candidate) => candidate.toLowerCase());
+  const hashes = [...new Set([...pairs.map(([, hash]) => hash), ...directDigests])];
   const result = await db.from("Sessions").select("Token_Hash").in("Token_Hash", hashes);
   if (result.error) throw new Error("SESSION_LOOKUP_FAILED");
-  const existing = new Set((result.data || []).map((row) => String(row.Token_Hash || "")));
+  const existing = new Set((result.data || []).map((row) => String(row.Token_Hash || "").toLowerCase()));
+  if (!allowStoredDigest && directDigests.some((digest) => existing.has(digest))) {
+    throw new Error("SESSION_DIGEST_NOT_ACCEPTED");
+  }
   return new Map(pairs.filter(([, hash]) => existing.has(hash)));
 }
 
@@ -138,7 +147,7 @@ Deno.serve(async (request) => {
       : body.payload && typeof body.payload === "object"
       ? body.payload as Record<string, unknown>
       : {};
-    const digests = await sessionDigestMap(payload);
+    const digests = await sessionDigestMap(payload, isServiceRequest(request));
     const forwardedPayload = replaceSessionTokens(payload, digests);
     const upstream = await fetch(`${SUPABASE_URL}/functions/v1/${core}`, {
       method: "POST",
@@ -165,9 +174,16 @@ Deno.serve(async (request) => {
       },
     });
   } catch (error) {
-    console.error(JSON.stringify({ service: "SessionGateway", requestId: id, error: error instanceof Error ? error.message : String(error) }));
-    return new Response(JSON.stringify({ success: false, code: "GATEWAY_ERROR", message: "Gateway sesi gagal memproses permintaan.", requestId: id }), {
-      status: 500,
+    const code = error instanceof Error ? error.message : String(error);
+    const digestRejected = code === "SESSION_DIGEST_NOT_ACCEPTED";
+    console.error(JSON.stringify({ service: "SessionGateway", requestId: id, error: code }));
+    return new Response(JSON.stringify({
+      success: false,
+      code: digestRejected ? "SESSION_EXPIRED" : "GATEWAY_ERROR",
+      message: digestRejected ? "Sesi tidak valid. Silakan login kembali." : "Gateway sesi gagal memproses permintaan.",
+      requestId: id,
+    }), {
+      status: digestRejected ? 401 : 500,
       headers: { ...headers, "Content-Type": "application/json; charset=utf-8", "X-Request-Id": id },
     });
   }
