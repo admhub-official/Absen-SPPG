@@ -72,7 +72,6 @@
 
       let text = block.querySelector(':scope > .hadirly-brand__text');
 
-      // Hapus teks/nama aplikasi lama, tetapi pertahankan elemen ikon atau pembungkus ikon.
       [...block.childNodes]
         .filter((node) => node.nodeType === Node.TEXT_NODE)
         .forEach((node) => node.remove());
@@ -102,22 +101,10 @@
     document.documentElement.dataset.brand = 'hadirly';
   }
 
-  let queued = false;
-  const schedule = () => {
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(() => {
-      queued = false;
-      apply();
-    });
-  };
-
-  apply();
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', apply, { once: true });
-  }
-  window.addEventListener('absen:app-ready', apply);
-  window.addEventListener('absen:session-changed', apply);
-  new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
-  window.HadirlyBranding = Object.freeze({ apply, APP_NAME, TAGLINE, FULL_NAME, ICON, LOGO });
+  const refresh = () => apply(document);
+  refresh();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refresh, { once: true });
+  window.addEventListener('absen:app-ready', refresh);
+  window.addEventListener('absen:session-changed', refresh);
+  window.HadirlyBranding = Object.freeze({ apply, refresh, APP_NAME, TAGLINE, FULL_NAME, ICON, LOGO });
 })();
