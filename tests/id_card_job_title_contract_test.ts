@@ -10,10 +10,14 @@ Deno.test("ID Card job title comes only from Jabatan_Divisi", async () => {
     "Jabatan_Divisi",
     "Jabatan / Divisi belum diatur",
     "ID Card tidak akan menggunakan Role akun sebagai pengganti jabatan",
-    "generateButton.disabled = true",
-    "jobTitleSource: 'Jabatan_Divisi'",
+    "employmentBlocked",
+    "disabled=true",
+    "jobTitleSource:'Jabatan_Divisi'",
   ]) {
-    if (!editor.includes(marker)) throw new Error(`employment guard missing ${marker}`);
+    if (!editor.replace(/\s+/g, '').includes(marker.replace(/\s+/g, ''))) throw new Error(`employment guard missing ${marker}`);
+  }
+  if (/profile\.role|\.Role\s*:\s*profile\.jabatan|jabatan\s*===\s*['"]-['"]\s*\?\s*profile\.role/i.test(editor)) {
+    throw new Error("ID Card employment guard must not fall back to account Role");
   }
 
   const profileEditorIndex = bootstrap.indexOf("'./src/app/profile-employment-editor.js'");
