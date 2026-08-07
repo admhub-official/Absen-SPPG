@@ -3,7 +3,8 @@ const read = (path: string) => Deno.readTextFile(path);
 Deno.test("Master Jabatan is one Jabatan atau Divisi field with automatic code", async () => {
   const migration = await read("supabase/migrations/20260807191500_employment_master_document_seed.sql");
   const ui = await read("src/app/employment-master-normalization.js");
-  const bootstrap = await read("src/app/bootstrap.js");
+  const assets = await read("src/app/pwa-shell-assets.js");
+  const release = await read("src/app/release-version.js");
   const sw = await read("sw.js");
   const config = await read("supabase-config.js");
 
@@ -28,11 +29,10 @@ Deno.test("Master Jabatan is one Jabatan atau Divisi field with automatic code",
     "codeFor",
   ]) if (!ui.includes(marker)) throw new Error(`master UI normalization missing ${marker}`);
 
-  if (!bootstrap.includes("'./src/app/employment-master-normalization.js'")) throw new Error("master normalization script must load");
-  if (!bootstrap.includes("const VERSION = '26.11.49'")) throw new Error("frontend version mismatch");
-  if (!sw.includes("const APP_VERSION = '26.11.49'") || !sw.includes("absen-sppg-hadirly-v90")) throw new Error("PWA version mismatch");
-  if (!sw.includes("employment-master-normalization.js")) throw new Error("master normalization must be cached");
-  if (!config.includes("bootstrap.js?v=26.11.49")) throw new Error("bootstrap import version mismatch");
+  if (!assets.includes("'./src/app/employment-master-normalization.js'")) throw new Error("master normalization script must load");
+  if (!release.includes("version = '26.11.50'") || !release.includes("cacheName = 'absen-sppg-hadirly-v91'")) throw new Error("frontend/PWA release mismatch");
+  if (!sw.includes('...ASSETS.scripts.map(versioned)')) throw new Error("PWA must cache shared script manifest");
+  if (!config.includes("await import('./src/app/release-version.js')") || !config.includes('bootstrap.js?v=${version}')) throw new Error("bootstrap import must use shared release version");
 });
 
 Deno.test("document master seeds job descriptions, schedules, and SOP references", async () => {
