@@ -74,11 +74,11 @@ Deno.test("DigitalIdentity remains the canonical approval and verification backe
 
   const obsoleteSection = deploy.split('$ObsoleteFunctions = @(')[1]?.split('\n)')[0] || '';
   const productionSection = deploy.split('$FunctionNames = @(')[1]?.split('\n)')[0] || '';
-  if (!obsoleteSection.includes('"DigitalIdentityPrint"')) {
-    throw new Error("retired DigitalIdentityPrint must remain on the idempotent cleanup list");
+  if (!obsoleteSection.includes('"DigitalIdentityPrint"') || !obsoleteSection.includes('"ResetDigitalIdentityOnce"')) {
+    throw new Error("retired and one-time ID card helpers must remain on the idempotent cleanup list");
   }
   if (!productionSection.includes('"DigitalIdentity"') || productionSection.includes('"DigitalIdentityPrint"')) {
-    throw new Error("production allowlist must contain only DigitalIdentity for the workflow backend");
+    throw new Error("production allowlist must contain only DigitalIdentity for the ID workflow backend");
   }
 
   for (const action of [
@@ -92,7 +92,7 @@ Deno.test("DigitalIdentity remains the canonical approval and verification backe
   }
 });
 
-Deno.test("profile preview and downloaded PDF share one 300 DPI CR80 master raster", async () => {
+Deno.test("profile preview and downloaded PDF share one stable 300 DPI CR80 master raster", async () => {
   const controller = await read("src/app/digital-id-card.js");
   const renderer = await read("src/app/digital-id-card-master-renderer.js");
   const css = await read("src/styles/pages/digital-id-card.css");
@@ -137,9 +137,17 @@ Deno.test("profile preview and downloaded PDF share one 300 DPI CR80 master rast
     'imageFromUrl(data.photoUrl)',
     'imageFromUrl(data.qrUrl)',
     'imageFromUrl(data.signatureUrl)',
+    'function dataSignature(data)',
+    'function stagingCanvas()',
+    'function commitCanvas(target, staging)',
+    'pair.dataset.masterSignature',
+    'function mutationTouchesCard(mutation)',
     "document.addEventListener('click', handleCardAction, true)",
   ]) {
     if (!renderer.includes(marker)) throw new Error(`CR80 master renderer missing ${marker}`);
+  }
+  if (renderer.includes('new MutationObserver(queueRender)')) {
+    throw new Error("global unfiltered mutation rerender must not return because it causes preview flicker");
   }
   if (!renderer.includes("download-card") || !renderer.includes("print-card")) {
     throw new Error("download and print must be intercepted by the WYSIWYG renderer");
@@ -167,8 +175,8 @@ Deno.test("profile preview and downloaded PDF share one 300 DPI CR80 master rast
       throw new Error(`retired ID card asset still referenced: ${retiredAsset}`);
     }
   }
-  if (!bootstrap.includes("const VERSION = '26.11.38'")) {
-    throw new Error("bootstrap asset version must be bumped for the CR80 master renderer");
+  if (!bootstrap.includes("const VERSION = '26.11.39'")) {
+    throw new Error("bootstrap asset version must be bumped for the flicker fix");
   }
   if (!bootstrap.includes("'./src/app/digital-id-card-master-renderer.js'")) {
     throw new Error("bootstrap must load the CR80 master renderer after the ID card controller");
@@ -176,19 +184,63 @@ Deno.test("profile preview and downloaded PDF share one 300 DPI CR80 master rast
   if (!bootstrap.includes("'./src/styles/pages/digital-id-card-master-renderer.css'")) {
     throw new Error("bootstrap must load the CR80 master renderer stylesheet");
   }
-  if (!serviceWorker.includes("const APP_VERSION = '26.11.38'")) {
+  if (!serviceWorker.includes("const APP_VERSION = '26.11.39'")) {
     throw new Error("service worker asset version must match bootstrap");
   }
-  if (!serviceWorker.includes("const CACHE = 'absen-sppg-hadirly-v79'")) {
-    throw new Error("service worker cache namespace must be bumped for the new assets");
+  if (!serviceWorker.includes("const CACHE = 'absen-sppg-hadirly-v80'")) {
+    throw new Error("service worker cache namespace must be bumped for the fixed assets");
   }
   if (!serviceWorker.includes('digital-id-card-master-renderer.js') || !serviceWorker.includes('digital-id-card-master-renderer.css')) {
     throw new Error("master renderer assets must be cached for the PWA");
   }
-  if (!config.includes("import('./src/app/bootstrap.js?v=26.11.38')")) {
-    throw new Error("top-level bootstrap import must match the CR80 renderer asset version");
+  if (!config.includes("import('./src/app/bootstrap.js?v=26.11.39')")) {
+    throw new Error("top-level bootstrap import must match the fixed renderer asset version");
   }
   if (!serviceWorker.includes("'./verify-id.html'")) {
     throw new Error("verification page must remain part of the PWA shell");
   }
+});
+
+Deno.test("profile employment editor can update employment data but never daily salary", async () => {
+  const editor = await read("src/app/profile-employment-editor.js");
+  const profileOps = await read("supabase/functions/ProfileOps/index.ts");
+  const bootstrap = await read("src/app/bootstrap.js");
+  const serviceWorker = await read("sw.js");
+  const deploy = await read("deploy-supabase.ps1");
+
+  for (const field of ["SPPG", "Yayasan", "Jabatan_Divisi", "Tanggal_Mulai_Kerja"]) {
+    if (!editor.includes(field) || !profileOps.includes(field)) throw new Error(`employment field missing: ${field}`);
+  }
+  for (const marker of [
+    'id="edit-gaji-harian"',
+    'disabled aria-readonly="true"',
+    '/functions/v1/ProfileOps',
+    "event.stopImmediatePropagation()",
+    "Nama_Lengkap",
+    "Nomor_Rekening",
+  ]) {
+    if (!editor.includes(marker)) throw new Error(`profile employment editor missing ${marker}`);
+  }
+  for (const marker of [
+    'Object.prototype.hasOwnProperty.call(updates, "Gaji_Harian")',
+    'Gaji Harian hanya dapat diubah oleh ADMIN/SUPER ADMIN',
+    'Object.prototype.hasOwnProperty.call(updates, "Role")',
+    'Object.prototype.hasOwnProperty.call(updates, "Status_Aktif")',
+    'resolveFoundation',
+    'Master_SPPG',
+    'Jenis_Aktivitas: "UPDATE_PROFIL"',
+  ]) {
+    if (!profileOps.includes(marker)) throw new Error(`ProfileOps protection missing ${marker}`);
+  }
+  const stringFields = profileOps.split('const stringFields')[1]?.split('];')[0] || '';
+  if (stringFields.includes('Gaji_Harian')) throw new Error("Gaji_Harian must not be part of the self-service update field list");
+
+  if (!bootstrap.includes("'./src/app/profile-employment-editor.js'")) {
+    throw new Error("bootstrap must load the profile employment editor");
+  }
+  if (!serviceWorker.includes('profile-employment-editor.js')) {
+    throw new Error("profile employment editor must be cached by the PWA");
+  }
+  const productionSection = deploy.split('$FunctionNames = @(')[1]?.split('\n)')[0] || '';
+  if (!productionSection.includes('"ProfileOps"')) throw new Error("ProfileOps must be in the production deployment allowlist");
 });

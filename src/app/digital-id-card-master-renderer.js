@@ -153,11 +153,34 @@
     };
   }
 
-  async function drawFront(canvas, data) {
+  function dataSignature(data) {
+    return JSON.stringify([
+      data.logoUrl, data.sppg, data.foundation, data.photoUrl, data.name, data.position,
+      data.startDate, data.qrUrl, data.code, data.officialNote, data.signatureUrl,
+      data.headName, Boolean(data.pending)
+    ]);
+  }
+
+  function stagingCanvas() {
+    const canvas = document.createElement('canvas');
     canvas.width = CARD_WIDTH;
     canvas.height = CARD_HEIGHT;
-    const ctx = canvas.getContext('2d', { alpha: false });
+    return canvas;
+  }
+
+  function commitCanvas(target, staging) {
+    if (target.width !== CARD_WIDTH || target.height !== CARD_HEIGHT) {
+      target.width = CARD_WIDTH;
+      target.height = CARD_HEIGHT;
+    }
+    const ctx = target.getContext('2d', { alpha: false });
+    ctx.drawImage(staging, 0, 0);
+  }
+
+  async function drawFront(canvas, data) {
     const [logo, photo] = await Promise.all([imageFromUrl(data.logoUrl), imageFromUrl(data.photoUrl)]);
+    const staging = stagingCanvas();
+    const ctx = staging.getContext('2d', { alpha: false });
 
     ctx.fillStyle = COLORS.white;
     ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
@@ -194,17 +217,17 @@
     ctx.fillRect(58, 692, CARD_WIDTH - 116, 2);
     drawCentered(ctx, 'TANGGAL MULAI BEKERJA', 735, '700 19px Arial, sans-serif', COLORS.blue);
     drawCentered(ctx, data.startDate, 776, fitFont(ctx, data.startDate, 500, '700', 25, 19));
+    commitCanvas(canvas, staging);
   }
 
   async function drawBack(canvas, data) {
-    canvas.width = CARD_WIDTH;
-    canvas.height = CARD_HEIGHT;
-    const ctx = canvas.getContext('2d', { alpha: false });
     const [logo, qr, signature] = await Promise.all([
       imageFromUrl(data.logoUrl),
       imageFromUrl(data.qrUrl),
       imageFromUrl(data.signatureUrl)
     ]);
+    const staging = stagingCanvas();
+    const ctx = staging.getContext('2d', { alpha: false });
 
     ctx.fillStyle = COLORS.white;
     ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
@@ -262,13 +285,21 @@
     if (!data.pending || signature) {
       drawCentered(ctx, data.headName || '-', 937, fitFont(ctx, data.headName || '-', 500, '700', 22, 17));
     }
+    commitCanvas(canvas, staging);
   }
 
   async function renderPair(pair) {
-    if (pair.dataset.masterRendering === '1') return;
     const data = readData(pair);
     if (!data) return;
+    const signature = dataSignature(data);
+    if (pair.dataset.masterReady === '1' && pair.dataset.masterSignature === signature) return;
+    if (pair.dataset.masterRendering === '1') {
+      pair.dataset.masterPendingSignature = signature;
+      return;
+    }
+
     pair.dataset.masterRendering = '1';
+    pair.dataset.masterPendingSignature = '';
     try {
       let host = pair.querySelector(':scope > .digital-id-master-preview');
       if (!host) {
@@ -282,12 +313,15 @@
       await Promise.all([drawFront(frontCanvas, data), drawBack(backCanvas, data)]);
       pair.classList.add('has-master-preview');
       pair.dataset.masterReady = '1';
+      pair.dataset.masterSignature = signature;
     } catch (error) {
-      pair.classList.remove('has-master-preview');
-      pair.dataset.masterReady = '0';
+      if (pair.dataset.masterReady !== '1') pair.classList.remove('has-master-preview');
       console.warn('Master ID Card renderer deferred', error);
     } finally {
       pair.dataset.masterRendering = '0';
+      const latest = readData(pair);
+      const latestSignature = latest ? dataSignature(latest) : '';
+      if (latestSignature && latestSignature !== pair.dataset.masterSignature) queueRender();
     }
   }
 
@@ -302,6 +336,20 @@
       renderQueued = false;
       renderAll();
     });
+  }
+
+  function mutationTouchesCard(mutation) {
+    const target = mutation.target?.nodeType === 1 ? mutation.target : mutation.target?.parentElement;
+    if (target?.closest?.('.digital-id-preview-pair')) return true;
+    for (const node of mutation.addedNodes || []) {
+      if (node.nodeType !== 1) continue;
+      if (node.matches?.('.digital-id-preview-pair') || node.querySelector?.('.digital-id-preview-pair')) return true;
+    }
+    for (const node of mutation.removedNodes || []) {
+      if (node.nodeType !== 1) continue;
+      if (node.matches?.('.digital-id-preview-pair') || node.querySelector?.('.digital-id-preview-pair')) return true;
+    }
+    return false;
   }
 
   function canvasJpeg(canvas) {
@@ -404,12 +452,21 @@
     }
   }
 
-  const observer = new MutationObserver(queueRender);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  const observer = new MutationObserver((mutations) => {
+    if (mutations.some(mutationTouchesCard)) queueRender();
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
   document.addEventListener('click', handleCardAction, true);
   document.addEventListener('DOMContentLoaded', queueRender, { once: true });
   window.addEventListener('absen:app-ready', queueRender);
-  window.addEventListener('absen:session-changed', () => { imageCache.clear(); queueRender(); });
+  window.addEventListener('absen:session-changed', () => {
+    imageCache.clear();
+    document.querySelectorAll('.digital-id-preview-pair').forEach((pair) => {
+      pair.dataset.masterSignature = '';
+      pair.dataset.masterReady = '0';
+    });
+    queueRender();
+  });
   queueRender();
 
   window.AbsenIdCardMasterRenderer = Object.freeze({
