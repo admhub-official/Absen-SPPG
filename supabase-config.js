@@ -99,11 +99,14 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   });
 })();
 
-const HADIRLY_BOOTSTRAP_VERSION = globalThis.HADIRLY_RELEASE?.version;
-if (!HADIRLY_BOOTSTRAP_VERSION) {
-  console.warn('Release version Hadirly belum dimuat; frontend modular tidak dijalankan.');
-} else {
-  import(`./src/app/bootstrap.js?v=${HADIRLY_BOOTSTRAP_VERSION}`).catch((error) => {
+(async () => {
+  try {
+    if (!globalThis.HADIRLY_RELEASE) await import('./src/app/release-version.js');
+    if (!globalThis.HADIRLY_PWA_ASSETS) await import('./src/app/pwa-shell-assets.js');
+    const version = globalThis.HADIRLY_RELEASE?.version;
+    if (!version) throw new Error('Release version Hadirly belum dimuat.');
+    await import(`./src/app/bootstrap.js?v=${version}`);
+  } catch (error) {
     console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
-  });
-}
+  }
+})();
