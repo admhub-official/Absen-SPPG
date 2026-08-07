@@ -10,6 +10,11 @@
   };
   const valueOf = (user, camel, raw) => user?.[camel] ?? user?.[raw] ?? '';
   const dateOnly = (value) => value ? String(value).slice(0, 10) : '';
+  const normalizedJobTitle = (user = currentUser()) => {
+    const value = String(valueOf(user, 'jabatanDivisi', 'Jabatan_Divisi') || '').trim();
+    return value && value !== '-' ? value : '';
+  };
+  let idCardSyncQueued = false;
 
   function appendField(grid, label, id, type, hint = '') {
     const group = document.createElement('div');
@@ -41,7 +46,7 @@
 
     appendField(grid, 'SPPG', 'edit-sppg', 'text', 'Nama SPPG tempat bekerja');
     appendField(grid, 'Yayasan', 'edit-yayasan', 'text', 'Nama yayasan');
-    appendField(grid, 'Jabatan / Divisi', 'edit-jabatan-divisi', 'text', 'Jabatan atau divisi');
+    appendField(grid, 'Jabatan / Divisi', 'edit-jabatan-divisi', 'text', 'Jabatan atau divisi. Data ini yang tampil di bawah nama pada ID Card.');
     appendField(grid, 'Tanggal Mulai Kerja', 'edit-tanggal-mulai-kerja', 'date');
     appendSalaryField(grid);
     return true;
@@ -55,6 +60,7 @@
     byId('edit-jabatan-divisi').value = valueOf(user, 'jabatanDivisi', 'Jabatan_Divisi');
     byId('edit-tanggal-mulai-kerja').value = dateOnly(valueOf(user, 'tanggalMulaiKerja', 'Tanggal_Mulai_Kerja'));
     byId('edit-gaji-harian').value = valueOf(user, 'gajiHarian', 'Gaji_Harian');
+    queueIdCardEmploymentSync();
   }
 
   function showInline(message = '', type = 'error') {
@@ -67,6 +73,56 @@
     if (!node) return;
     node.textContent = message;
     node.style.display = message ? 'block' : 'none';
+  }
+
+  function syncIdCardEmploymentTitle() {
+    const root = document.querySelector('#digital-identity-section');
+    if (!root) return;
+    const jobTitle = normalizedJobTitle();
+    const display = jobTitle || 'Jabatan / Divisi belum diatur';
+
+    root.querySelectorAll('.digital-id-person > span').forEach((node) => {
+      if (node.textContent?.trim() !== display) node.textContent = display;
+      node.dataset.idCardSource = 'Jabatan_Divisi';
+    });
+
+    const generateButton = root.querySelector('[data-digital-id-action="generate"]');
+    if (generateButton) {
+      if (!jobTitle) {
+        generateButton.dataset.employmentBlocked = '1';
+        generateButton.disabled = true;
+        generateButton.title = 'Lengkapi Jabatan / Divisi di Update Profil sebelum membuat ID Card.';
+      } else if (generateButton.dataset.employmentBlocked === '1') {
+        delete generateButton.dataset.employmentBlocked;
+        generateButton.removeAttribute('title');
+        const pending = /menunggu persetujuan/i.test(generateButton.textContent || '');
+        const busy = root.classList.contains('is-busy');
+        if (!pending && !busy) generateButton.disabled = false;
+      }
+    }
+
+    let warning = root.querySelector('[data-id-card-employment-warning]');
+    if (!jobTitle) {
+      if (!warning) {
+        warning = document.createElement('div');
+        warning.dataset.idCardEmploymentWarning = '1';
+        warning.className = 'digital-id-pending-note';
+        const actions = root.querySelector('.digital-identity-actions');
+        if (actions) actions.before(warning);
+      }
+      warning.textContent = 'Lengkapi Jabatan / Divisi pada Update Profil. ID Card tidak akan menggunakan Role akun sebagai pengganti jabatan.';
+    } else if (warning) {
+      warning.remove();
+    }
+  }
+
+  function queueIdCardEmploymentSync() {
+    if (idCardSyncQueued) return;
+    idCardSyncQueued = true;
+    requestAnimationFrame(() => {
+      idCardSyncQueued = false;
+      syncIdCardEmploymentTitle();
+    });
   }
 
   async function callProfileOps(updates) {
@@ -112,6 +168,7 @@
       if (typeof window.showAlert === 'function') window.showAlert(result.message || 'Profil berhasil diperbarui.', 'success');
       if (typeof window.loadProfilLengkap === 'function') await window.loadProfilLengkap();
       else window.dispatchEvent(new CustomEvent('absen:profile-updated'));
+      queueIdCardEmploymentSync();
       if (typeof window.closeEditProfil === 'function') window.closeEditProfil();
       else modal()?.classList.remove('active');
     } catch (error) {
@@ -143,9 +200,25 @@
     document.addEventListener('click', handleClick, true);
     window.addEventListener('absen:profile-updated', populate);
     window.addEventListener('absen:session-changed', () => queueMicrotask(populate));
+    window.addEventListener('absen:app-ready', queueIdCardEmploymentSync);
+
+    const observer = new MutationObserver((mutations) => {
+      const relevant = mutations.some((mutation) => {
+        const target = mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;
+        if (target?.closest?.('#digital-identity-section')) return true;
+        return [...mutation.addedNodes].some((node) => node instanceof Element && (node.matches?.('#digital-identity-section') || node.querySelector?.('#digital-identity-section')));
+      });
+      if (relevant) queueIdCardEmploymentSync();
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    queueIdCardEmploymentSync();
   }
 
-  window.AbsenProfileEmploymentEditor = Object.freeze({ refresh: populate });
+  window.AbsenProfileEmploymentEditor = Object.freeze({
+    refresh: populate,
+    syncIdCardJobTitle: syncIdCardEmploymentTitle,
+    jobTitleSource: 'Jabatan_Divisi',
+  });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();
 })();
