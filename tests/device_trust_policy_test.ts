@@ -19,9 +19,9 @@ Deno.test('Super Admin settings expose a dedicated Device Trust tab',async()=>{
 });
 
 Deno.test('Device Trust settings use compact responsive styling',async()=>{
-  const bootstrap=await read('src/app/bootstrap.js');
+  const assets=await read('src/app/pwa-shell-assets.js');
   const css=await read('src/styles/device-trust-policy.css');
-  if(!bootstrap.includes('device-trust-policy.css'))throw new Error('Bootstrap must load Device Trust policy styles');
+  if(!assets.includes('device-trust-policy.css'))throw new Error('Shared asset manifest must load Device Trust policy styles');
   if(!css.includes('.compact-form-grid'))throw new Error('Compact Device Trust layout missing');
   if(!css.includes('@media(max-width:640px)'))throw new Error('Mobile Device Trust layout missing');
 });
