@@ -509,7 +509,6 @@ async function buildIdCardPdf(
   const pale = rgb(248 / 255, 250 / 255, 252 / 255);
   const border = rgb(203 / 255, 213 / 255, 225 / 255);
   const muted = rgb(71 / 255, 85 / 255, 105 / 255);
-  const green = rgb(5 / 255, 150 / 255, 105 / 255);
   const amber = rgb(180 / 255, 83 / 255, 9 / 255);
   const white = rgb(1, 1, 1);
   const mm = 72 / 25.4;
@@ -554,7 +553,6 @@ async function buildIdCardPdf(
     borderWidth: 0.8,
   });
   page.drawRectangle({ x: frontX, y: cardY + cardH - 63, width: cardW, height: 63, color: sky });
-  page.drawRectangle({ x: frontX, y: cardY, width: cardW, height: 47, color: pale });
   page.drawRectangle({ x: frontX, y: cardY + cardH - 4, width: cardW, height: 4, color: blue });
 
   const frontCenter = frontX + cardW / 2;
@@ -586,10 +584,9 @@ async function buildIdCardPdf(
 
   drawCenteredText(page, fitText(name, bold, 10, cardW - 18), bold, 10, frontCenter, cardY + 89, navy);
   drawCenteredText(page, fitText(position, regular, 6.7, cardW - 18), regular, 6.7, frontCenter, cardY + 77, muted);
-  page.drawRectangle({ x: frontX + 18, y: cardY + 56, width: cardW - 36, height: 1, color: border });
-  drawCenteredText(page, "TANGGAL MULAI BEKERJA", bold, 4.7, frontCenter, cardY + 45, blue);
-  drawCenteredText(page, fitText(startDate, bold, 6.6, cardW - 18), bold, 6.6, frontCenter, cardY + 34, navy);
-  drawWrappedText(page, note, regular, 4.35, frontX + 10, cardY + 23, cardW - 20, 5.3, muted, 4);
+  page.drawRectangle({ x: frontX + 18, y: cardY + 61, width: cardW - 36, height: 1, color: border });
+  drawCenteredText(page, "TANGGAL MULAI BEKERJA", bold, 4.7, frontCenter, cardY + 49, blue);
+  drawCenteredText(page, fitText(startDate, bold, 6.6, cardW - 18), bold, 6.6, frontCenter, cardY + 38, navy);
 
   page.drawRectangle({
     x: backX,
@@ -627,7 +624,6 @@ async function buildIdCardPdf(
       page.drawImage(signature, { x: backCenter - width / 2, y: cardY + 18, width, height });
     }
     drawCenteredText(page, fitText(approval.headName, bold, 6.1, cardW - 18), bold, 6.1, backCenter, cardY + 9, navy);
-    drawCenteredText(page, "DISETUJUI", bold, 4.4, backCenter, cardY + 2.5, green);
   } else {
     drawCenteredText(page, "KEPALA SPPG", bold, 4.8, backCenter, cardY + 43, blue);
     drawCenteredText(page, "MENUNGGU PERSETUJUAN", bold, 5.7, backCenter, cardY + 27, amber);
