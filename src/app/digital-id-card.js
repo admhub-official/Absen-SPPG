@@ -1,12 +1,18 @@
 (() => {
   if (window.AbsenDigitalIdentity) return;
 
+  const BGN_LOGO = 'https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/Logo%20BGN/LOGO_BGN.png';
   const state = {
     identity: null,
     busy: false,
-    mounted: false,
     loadedForUser: null,
-    profileObserver: null
+    profileObserver: null,
+    adminOverview: null,
+    adminBusy: false,
+    selected: new Set(),
+    signatureDrawn: false,
+    drawing: false,
+    adminTimer: null,
   };
 
   const token = () => localStorage.getItem('auth_token');
@@ -15,6 +21,8 @@
     catch { return null; }
   };
   const userId = () => String(currentUser()?.idUser || currentUser()?.ID_User || '');
+  const role = () => String(currentUser()?.role || currentUser()?.Role || '').trim().toUpperCase().replace(/_/g, ' ');
+  const isIdCardAdmin = () => ['ADMIN', 'SUPER ADMIN'].includes(role());
   const page = () => document.querySelector('#view-profil');
   const section = () => document.querySelector('#digital-identity-section');
   const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -42,10 +50,9 @@
     return await window.apiCall(functionName, { token: token(), ...payload });
   }
 
-  function mount() {
+  function mountProfile() {
     const profile = page();
     if (!profile || section()) return Boolean(section());
-
     const node = document.createElement('section');
     node.className = 'info-section digital-identity-section';
     node.id = 'digital-identity-section';
@@ -53,59 +60,26 @@
     node.innerHTML = `
       <div class="digital-identity-heading">
         <div class="info-section-title" id="digital-identity-title">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h4M7 12h6M7 16h4"/><path d="M16 9h2v2h-2zM16 14h2v2h-2z"/>
-          </svg>
-          QR Code &amp; ID Card Digital
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h4M7 12h6M7 16h4"/><path d="M16 9h2v2h-2zM16 14h2v2h-2z"/></svg>
+          ID Card Karyawan
         </div>
         <span class="digital-identity-status" id="digital-identity-status">Memuat...</span>
       </div>
-      <p class="digital-identity-intro">
-        Buat kartu identitas digital dengan QR verifikasi aman. QR tidak menyimpan password, nomor rekening, atau data biometrik.
-      </p>
+      <p class="digital-identity-intro">ID Card portrait resmi SPPG dengan QR verifikasi. Penerbitan baru aktif setelah mendapat persetujuan dan TTD Kepala SPPG melalui akun ADMIN.</p>
       <div id="digital-identity-message" class="digital-identity-message" role="status" aria-live="polite"></div>
-      <div class="digital-identity-content" id="digital-identity-content">
-        <div class="digital-identity-skeleton" aria-label="Memuat identitas digital">
-          <span></span><span></span><span></span>
-        </div>
-      </div>
-      <div class="digital-identity-actions" aria-label="Aksi QR Code dan ID Card">
-        <button type="button" class="digital-identity-action digital-identity-action-primary" data-digital-id-action="generate">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-          <span data-generate-label>Buat Identitas</span>
-        </button>
-        <button type="button" class="digital-identity-action" data-digital-id-action="download-card" disabled>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-          <span>Unduh ID Card</span>
-        </button>
-        <button type="button" class="digital-identity-action" data-digital-id-action="print-card" disabled>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg>
-          <span>Cetak ID Card</span>
-        </button>
-        <button type="button" class="digital-identity-action digital-identity-action-qr" data-digital-id-action="download-qr" disabled>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM18 18h3v3h-3zM18 14h3"/></svg>
-          <span>Unduh QR</span>
-        </button>
-        <button type="button" class="digital-identity-action digital-identity-action-qr" data-digital-id-action="print-qr" disabled>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg>
-          <span>Cetak QR</span>
-        </button>
-      </div>
-      <div class="digital-identity-security-row" id="digital-identity-security-row" hidden>
-        <div>
-          <strong>QR perlu diganti?</strong>
-          <span>Regenerasi akan menonaktifkan QR lama dan membuat versi baru.</span>
-        </div>
-        <button type="button" class="digital-identity-regenerate" data-digital-id-action="regenerate">Regenerasi QR &amp; ID Card</button>
+      <div class="digital-identity-content" id="digital-identity-content"><div class="digital-identity-skeleton"><span></span><span></span></div></div>
+      <div class="digital-identity-actions" aria-label="Aksi ID Card">
+        <button type="button" class="digital-identity-action digital-identity-action-primary" data-digital-id-action="generate"><span data-generate-label>Buat ID Card</span></button>
+        <button type="button" class="digital-identity-action" data-digital-id-action="download-card" disabled>Unduh ID Card</button>
+        <button type="button" class="digital-identity-action" data-digital-id-action="print-card" disabled>Cetak ID Card</button>
+        <button type="button" class="digital-identity-action digital-identity-action-qr" data-digital-id-action="download-qr" disabled>Unduh QR</button>
+        <button type="button" class="digital-identity-action digital-identity-action-qr" data-digital-id-action="print-qr" disabled>Cetak QR</button>
       </div>`;
-
     const securitySection = profile.querySelector('#p-id-card-digital')?.closest('.info-section');
     if (securitySection) securitySection.before(node);
     else profile.appendChild(node);
-
-    node.addEventListener('click', handleAction);
-    state.mounted = true;
-    render();
+    node.addEventListener('click', handleProfileAction);
+    renderProfile();
     return true;
   }
 
@@ -119,169 +93,142 @@
 
   function setBusy(busy, message = '') {
     state.busy = busy;
-    section()?.classList.toggle('is-busy', busy);
-    section()?.querySelectorAll('button').forEach((button) => {
-      if (busy) {
-        button.dataset.wasDisabled = String(button.disabled);
-        button.disabled = true;
-      } else if (button.dataset.wasDisabled !== 'true') {
-        button.disabled = false;
-      }
-      if (!busy) delete button.dataset.wasDisabled;
-    });
+    const root = section();
+    root?.classList.toggle('is-busy', busy);
     if (message) setMessage(message, 'info');
+    renderProfile();
   }
 
-  function updateLegacyStatus(hasCard) {
+  function updateLegacyStatus(identity) {
     const idStatus = document.querySelector('#p-id-card-digital');
     const qrStatus = document.querySelector('#p-qr-code');
-    if (idStatus) idStatus.textContent = hasCard ? 'Tersedia' : 'Belum Tersedia';
-    if (qrStatus) qrStatus.textContent = hasCard ? 'Tersedia' : 'Belum Tersedia';
+    const hasCard = Boolean(identity?.hasCard);
+    const hasPending = Boolean(identity?.hasPending);
+    if (idStatus) idStatus.textContent = hasPending && !hasCard ? 'Menunggu Persetujuan' : hasPending ? 'Aktif · Pembaruan Menunggu Persetujuan' : hasCard ? 'Tersedia' : 'Belum Tersedia';
+    if (qrStatus) qrStatus.textContent = hasCard ? 'Aktif' : hasPending ? 'Menunggu Persetujuan' : 'Belum Tersedia';
   }
 
-  function cardPreview(profile, card) {
+  function frontPreview(profile) {
     const photo = safeUrl(profile.fotoUrl);
-    const qr = safeUrl(card?.qrPngUrl);
     return `
-      <article class="digital-id-preview" aria-label="Pratinjau ID Card digital">
-        <div class="digital-id-card-face digital-id-card-front">
-          <div class="digital-id-card-brand">
-            <span class="digital-id-card-logo"><img src="./icons/app-icon.svg" alt=""></span>
-            <span><strong>Hadirly</strong><small>ABSENSI &amp; PAYROLL DIGITAL</small></span>
-          </div>
-          <div class="digital-id-card-body">
-            <div class="digital-id-card-photo">${photo
-              ? `<img src="${esc(photo)}" alt="Foto ${esc(profile.namaLengkap)}">`
-              : `<span>${esc(initials(profile.namaLengkap))}</span>`}</div>
-            <div class="digital-id-card-copy">
-              <strong title="${esc(profile.namaLengkap)}">${esc(profile.namaLengkap)}</strong>
-              <span>${esc(profile.jabatan === '-' ? profile.role : profile.jabatan)}</span>
-              <small>SPPG</small>
-              <b>${esc(profile.sppg)}</b>
-              <small>ID CARD</small>
-              <code>${esc(profile.idCardCode)}</code>
-            </div>
-            <div class="digital-id-card-mini-qr">${qr
-              ? `<img src="${esc(qr)}" alt="QR verifikasi ID Card">`
-              : '<span aria-hidden="true">QR</span>'}</div>
-          </div>
+      <div class="digital-id-portrait-card digital-id-front" aria-label="Pratinjau bagian depan ID Card">
+        <div class="digital-id-bgn-header">
+          <img src="${BGN_LOGO}" alt="Logo BGN">
+          <strong>SATUAN PELAYANAN PEMENUHAN GIZI (SPPG)</strong>
+          <b>${esc(profile.sppg)}</b>
+          <small>${esc(profile.yayasanLabel || profile.yayasan)}</small>
         </div>
-        <div class="digital-id-preview-caption">
-          <span>Ukuran cetak standar CR80</span>
-          <span>85,60 × 53,98 mm</span>
+        <div class="digital-id-photo-circle">${photo ? `<img src="${esc(photo)}" alt="Foto ${esc(profile.namaLengkap)}">` : `<span>${esc(initials(profile.namaLengkap))}</span>`}</div>
+        <div class="digital-id-person">
+          <strong>${esc(profile.namaLengkap)}</strong>
+          <span>${esc(profile.jabatan === '-' ? profile.role : profile.jabatan)}</span>
+          <small>TANGGAL MULAI BEKERJA</small>
+          <b>${esc(profile.tanggalMulaiKerjaLabel || '-')}</b>
         </div>
-      </article>`;
+        <p class="digital-id-official-note">${esc(profile.officialNote || '')}</p>
+      </div>`;
   }
 
-  function qrPreview(profile, card) {
+  function backPreview(profile, card, pending) {
     const qr = safeUrl(card?.qrPngUrl);
+    const signature = safeUrl(card?.headSppgSignatureUrl);
     return `
-      <article class="digital-qr-preview" aria-label="Pratinjau QR Code identitas">
-        <div class="digital-qr-icon">${qr
-          ? `<img src="${esc(qr)}" alt="QR Code ${esc(profile.namaLengkap)}">`
-          : `<svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM18 18h3v3h-3zM18 14h3"/></svg>`}</div>
-        <div class="digital-qr-copy">
-          <strong>${card ? 'QR Aktif' : 'QR Belum Dibuat'}</strong>
-          <span>${esc(profile.idCardCode)}</span>
-          <small>${card ? `Versi ${Number(card.version)} · ${esc(card.generatedAtLabel)}` : 'Buat identitas digital untuk menghasilkan QR verifikasi.'}</small>
+      <div class="digital-id-portrait-card digital-id-back" aria-label="Pratinjau bagian belakang ID Card">
+        <div class="digital-id-back-title"><strong>VERIFIKASI ID CARD</strong><span>SPPG · BADAN GIZI NASIONAL</span></div>
+        <div class="digital-id-back-qr">${qr ? `<img src="${esc(qr)}" alt="QR verifikasi ID Card">` : '<span>QR</span>'}</div>
+        <small class="digital-id-code-label">KODE ID CARD</small>
+        <code>${esc(profile.idCardCode)}</code>
+        <p class="digital-id-official-note">${esc(profile.officialNote || '')}</p>
+        <div class="digital-id-head-signature">
+          <small>KEPALA SPPG</small>
+          ${signature ? `<img src="${esc(signature)}" alt="TTD Kepala SPPG">` : '<div class="digital-id-signature-placeholder"></div>'}
+          <strong>${card?.headSppgName ? esc(card.headSppgName) : pending ? 'MENUNGGU PERSETUJUAN' : 'BELUM DITERBITKAN'}</strong>
         </div>
-        ${card ? `<div class="digital-qr-verified"><span></span>${Number(card.verificationCount || 0)} kali diverifikasi</div>` : ''}
-      </article>`;
+      </div>`;
   }
 
-  function render() {
+  function renderProfile() {
     const root = section();
     if (!root) return;
     const content = root.querySelector('#digital-identity-content');
     const status = root.querySelector('#digital-identity-status');
+    const generate = root.querySelector('[data-digital-id-action="generate"]');
     const generateLabel = root.querySelector('[data-generate-label]');
-    const securityRow = root.querySelector('#digital-identity-security-row');
     const identity = state.identity;
-
     if (!identity) {
       status.textContent = 'Belum dimuat';
       status.className = 'digital-identity-status';
-      content.innerHTML = '<div class="digital-identity-empty"><strong>Identitas digital belum dimuat</strong><span>Buka kembali halaman Profil atau tekan Buat Identitas.</span></div>';
-      updateLegacyStatus(false);
+      content.innerHTML = '<div class="digital-identity-empty"><strong>ID Card belum dimuat</strong><span>Buka kembali Profil untuk memuat status kartu.</span></div>';
+      root.querySelectorAll('button').forEach((button) => { button.disabled = state.busy; });
+      updateLegacyStatus(null);
       return;
     }
 
     const hasCard = Boolean(identity.hasCard && identity.card);
+    const hasPending = Boolean(identity.hasPending && identity.pending);
     const profile = identity.profile;
-    status.textContent = hasCard ? 'Aktif' : 'Belum Dibuat';
-    status.className = `digital-identity-status ${hasCard ? 'is-active' : 'is-empty'}`;
-    generateLabel.textContent = hasCard ? 'Muat Ulang' : 'Buat Identitas';
+    status.textContent = hasPending ? 'Menunggu Persetujuan Kepala SPPG' : hasCard ? 'Aktif' : 'Belum Dibuat';
+    status.className = `digital-identity-status ${hasPending ? 'is-pending' : hasCard ? 'is-active' : 'is-empty'}`;
+    generateLabel.textContent = hasPending ? 'Menunggu Persetujuan Kepala SPPG' : hasCard ? 'Ajukan Pembaruan ID Card' : 'Buat ID Card';
+    generate.disabled = state.busy || hasPending;
     content.innerHTML = `
-      <div class="digital-identity-preview-grid">
-        ${cardPreview(profile, identity.card)}
-        ${qrPreview(profile, identity.card)}
+      <div class="digital-id-preview-pair">
+        ${frontPreview(profile)}
+        ${backPreview(profile, identity.card, identity.pending)}
       </div>
       <dl class="digital-identity-meta">
         <div><dt>Kode ID Card</dt><dd>${esc(profile.idCardCode)}</dd></div>
-        <div><dt>Status</dt><dd>${hasCard ? 'Aktif dan dapat diverifikasi' : 'Belum diterbitkan'}</dd></div>
-        <div><dt>Versi</dt><dd>${hasCard ? Number(identity.card.version) : '-'}</dd></div>
-        <div><dt>Terakhir dibuat</dt><dd>${hasCard ? esc(identity.card.generatedAtLabel) : '-'}</dd></div>
-      </dl>`;
+        <div><dt>Status</dt><dd>${hasPending ? 'Menunggu Persetujuan Kepala SPPG' : hasCard ? 'Aktif dan dapat diverifikasi' : 'Belum diterbitkan'}</dd></div>
+        <div><dt>Versi Aktif</dt><dd>${hasCard ? Number(identity.card.version) : '-'}</dd></div>
+        <div><dt>${hasPending ? 'Diajukan' : 'Disetujui'}</dt><dd>${hasPending ? esc(identity.pending.requestedAtLabel) : hasCard ? esc(identity.card.approvedAtLabel) : '-'}</dd></div>
+      </dl>
+      ${hasPending ? `<div class="digital-id-pending-note">Pengajuan versi ${Number(identity.pending.version)} sedang menunggu TTD Kepala SPPG. ${hasCard ? 'ID Card aktif sebelumnya tetap berlaku sampai pengajuan ini disetujui.' : 'QR baru belum aktif sampai persetujuan selesai.'}</div>` : ''}`;
 
     root.querySelectorAll('[data-digital-id-action="download-card"], [data-digital-id-action="print-card"], [data-digital-id-action="download-qr"], [data-digital-id-action="print-qr"]')
-      .forEach((button) => { button.disabled = !hasCard || state.busy; });
-    if (securityRow) securityRow.hidden = !hasCard;
-    updateLegacyStatus(hasCard);
+      .forEach((button) => { button.disabled = state.busy || !hasCard; });
+    updateLegacyStatus(identity);
   }
 
-  async function load(force = false) {
-    if (!token() || !mount() || state.busy) return;
+  async function loadProfile(force = false) {
+    if (!token() || !mountProfile() || state.busy) return;
     const id = userId();
-    if (!force && state.identity && state.loadedForUser === id) {
-      render();
-      return;
-    }
-    setBusy(true, 'Memuat QR Code dan ID Card...');
+    if (!force && state.identity && state.loadedForUser === id) return renderProfile();
+    setBusy(true, 'Memuat ID Card...');
     try {
       state.identity = await api('getMyDigitalIdentity');
       state.loadedForUser = id;
       setMessage('');
-      render();
     } catch (error) {
-      setMessage(error.message || 'Identitas digital gagal dimuat.', 'error');
-      notify(error.message || 'Identitas digital gagal dimuat.', 'error');
+      setMessage(error.message || 'ID Card gagal dimuat.', 'error');
     } finally {
-      setBusy(false);
-      render();
+      state.busy = false;
+      section()?.classList.remove('is-busy');
+      renderProfile();
     }
   }
 
-  async function generate(regenerate = false) {
-    if (state.busy) return;
-    if (regenerate) {
-      const approved = window.confirm(
-        'QR lama akan langsung dinonaktifkan. Lanjutkan membuat QR dan ID Card versi baru?'
-      );
-      if (!approved) return;
-    }
-    setBusy(true, regenerate ? 'Membuat versi baru...' : 'Membuat QR dan ID Card...');
+  async function requestCard(renew = false) {
+    if (state.busy || state.identity?.hasPending) return;
+    if (renew && !window.confirm('Ajukan pembaruan ID Card? Kartu aktif saat ini tetap berlaku sampai pengajuan baru disetujui.')) return;
+    setBusy(true, renew ? 'Mengirim pengajuan pembaruan ID Card...' : 'Mengirim pengajuan ID Card...');
     try {
-      state.identity = await api(
-        regenerate ? 'regenerateMyDigitalIdentity' : 'generateMyDigitalIdentity',
-        regenerate ? { confirmation: 'REGENERATE' } : {}
-      );
+      state.identity = await api(renew ? 'regenerateMyDigitalIdentity' : 'generateMyDigitalIdentity', renew ? { confirmation: 'REGENERATE' } : {});
       state.loadedForUser = userId();
-      setMessage(regenerate
-        ? 'QR lama telah dinonaktifkan dan versi baru berhasil dibuat.'
-        : 'QR Code dan ID Card berhasil dibuat.', 'success');
-      notify(regenerate ? 'Identitas digital berhasil diperbarui.' : 'QR Code dan ID Card berhasil dibuat.', 'success');
+      setMessage('Pengajuan ID Card berhasil dikirim. Status: Menunggu Persetujuan Kepala SPPG.', 'success');
+      notify('Pengajuan ID Card dikirim ke ADMIN untuk TTD Kepala SPPG.', 'success');
     } catch (error) {
-      setMessage(error.message || 'Identitas digital gagal dibuat.', 'error');
-      notify(error.message || 'Identitas digital gagal dibuat.', 'error');
+      setMessage(error.message || 'Pengajuan ID Card gagal dikirim.', 'error');
+      notify(error.message || 'Pengajuan ID Card gagal dikirim.', 'error');
     } finally {
-      setBusy(false);
-      render();
+      state.busy = false;
+      section()?.classList.remove('is-busy');
+      renderProfile();
     }
   }
 
   async function download(url, filename) {
     const resolved = safeUrl(url);
-    if (!resolved) throw new Error('Tautan berkas tidak tersedia. Muat ulang identitas digital.');
+    if (!resolved) throw new Error('Tautan berkas tidak tersedia. Muat ulang ID Card.');
     try {
       const response = await fetch(resolved, { cache: 'no-store' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -300,32 +247,362 @@
 
   function printPdf(url) {
     const resolved = safeUrl(url);
-    if (!resolved) throw new Error('Tautan cetak tidak tersedia. Muat ulang identitas digital.');
+    if (!resolved) throw new Error('Tautan cetak tidak tersedia. Muat ulang ID Card.');
     const opened = window.open(resolved, '_blank', 'noopener,noreferrer');
-    if (!opened) throw new Error('Popup diblokir browser. Izinkan popup untuk membuka halaman cetak.');
+    if (!opened) throw new Error('Popup diblokir browser. Izinkan popup untuk membuka PDF.');
   }
 
-  async function handleAction(event) {
+  async function handleProfileAction(event) {
     const button = event.target.closest?.('[data-digital-id-action]');
-    if (!button || state.busy) return;
+    if (!button || button.disabled || state.busy) return;
     const action = button.dataset.digitalIdAction;
     try {
-      if (action === 'generate') {
-        if (state.identity?.hasCard) await load(true);
-        else await generate(false);
-      } else if (action === 'regenerate') {
-        await generate(true);
-      } else if (action === 'download-card') {
-        await download(state.identity?.card?.idCardPdfUrl, `ID-Card-${state.identity?.profile?.idCardCode || 'Hadirly'}.pdf`);
-      } else if (action === 'print-card') {
-        printPdf(state.identity?.card?.idCardPdfUrl);
-      } else if (action === 'download-qr') {
-        await download(state.identity?.card?.qrPdfUrl, `QR-ID-${state.identity?.profile?.idCardCode || 'Hadirly'}.pdf`);
-      } else if (action === 'print-qr') {
-        printPdf(state.identity?.card?.qrPdfUrl);
-      }
+      if (action === 'generate') await requestCard(Boolean(state.identity?.hasCard));
+      else if (action === 'download-card') await download(state.identity?.card?.idCardPdfUrl, `ID-Card-${state.identity?.profile?.idCardCode || 'SPPG'}.pdf`);
+      else if (action === 'print-card') printPdf(state.identity?.card?.idCardPdfUrl);
+      else if (action === 'download-qr') await download(state.identity?.card?.qrPdfUrl, `QR-ID-${state.identity?.profile?.idCardCode || 'SPPG'}.pdf`);
+      else if (action === 'print-qr') printPdf(state.identity?.card?.qrPdfUrl);
     } catch (error) {
-      notify(error.message || 'Aksi identitas digital gagal.', 'error');
+      notify(error.message || 'Aksi ID Card gagal.', 'error');
+    }
+  }
+
+  function adminViewsContainer() {
+    return document.querySelector('.app-content') || document.querySelector('.app-main');
+  }
+
+  function mountAdminShell() {
+    if (!isIdCardAdmin()) return false;
+    const sidebar = document.querySelector('.app-nav');
+    const mobile = document.querySelector('#mobile-more-menu');
+    const container = adminViewsContainer();
+    if (!sidebar || !container) return false;
+
+    if (!document.querySelector('#id-card-admin-nav-group')) {
+      const group = document.createElement('div');
+      group.id = 'id-card-admin-nav-group';
+      group.className = 'id-card-admin-nav-group admin-only-nav';
+      group.innerHTML = `
+        <div class="id-card-admin-nav-title"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h4M7 12h6"/></svg><span>ID Card</span></div>
+        <button class="app-nav-item id-card-admin-subnav" data-id-card-view="admin-id-card-list" type="button"><span>Daftar ID Card</span></button>
+        <button class="app-nav-item id-card-admin-subnav" data-id-card-view="admin-id-card-pending" type="button"><span>Pengajuan ID Card</span><span class="badge-count" id="id-card-pending-nav-count" style="display:none">0</span></button>`;
+      const before = sidebar.querySelector('[data-view="admin-log"]') || sidebar.lastElementChild;
+      sidebar.insertBefore(group, before);
+      group.querySelectorAll('[data-id-card-view]').forEach((button) => button.addEventListener('click', () => openAdminView(button.dataset.idCardView)));
+    }
+
+    if (mobile && !document.querySelector('#id-card-mobile-nav')) {
+      const wrap = document.createElement('div');
+      wrap.id = 'id-card-mobile-nav';
+      wrap.innerHTML = `
+        <div class="mobile-more-menu-title">ID Card</div>
+        <button class="mobile-more-menu-item" data-id-card-view="admin-id-card-list" type="button">Daftar ID Card</button>
+        <button class="mobile-more-menu-item" data-id-card-view="admin-id-card-pending" type="button">Pengajuan ID Card <span class="badge-count" id="id-card-pending-mobile-count" style="display:none">0</span></button>`;
+      mobile.insertBefore(wrap, mobile.firstChild?.nextSibling || null);
+      wrap.querySelectorAll('[data-id-card-view]').forEach((button) => button.addEventListener('click', () => openAdminView(button.dataset.idCardView)));
+    }
+
+    if (!document.querySelector('#view-admin-id-card-list')) {
+      const listView = document.createElement('div');
+      listView.id = 'view-admin-id-card-list';
+      listView.className = 'app-view hidden id-card-admin-view';
+      listView.innerHTML = `
+        <div class="page-header id-card-page-heading"><div><div class="page-title">ID Card</div><div class="page-subtitle">Daftar ID Card yang sudah disetujui dan ditandatangani Kepala SPPG</div></div><button class="btn btn-secondary" data-id-card-admin-action="refresh">Refresh</button></div>
+        <div class="stats-grid id-card-admin-stats"><div class="stat-card"><div><div class="stat-card-value" id="id-card-approved-count">0</div><div class="stat-card-label">ID Card Aktif</div></div></div><div class="stat-card"><div><div class="stat-card-value" id="id-card-pending-count-summary">0</div><div class="stat-card-label">Menunggu Persetujuan</div></div></div></div>
+        <div class="admin-card"><div class="admin-card-header"><div class="admin-card-title">Daftar ID Card</div></div><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Nama</th><th>SPPG</th><th>Kode ID Card</th><th>Kepala SPPG</th><th>Disetujui</th><th>Aksi</th></tr></thead><tbody id="id-card-approved-body"></tbody></table></div></div>`;
+      container.appendChild(listView);
+    }
+
+    if (!document.querySelector('#view-admin-id-card-pending')) {
+      const pendingView = document.createElement('div');
+      pendingView.id = 'view-admin-id-card-pending';
+      pendingView.className = 'app-view hidden id-card-admin-view';
+      pendingView.innerHTML = `
+        <div class="page-header id-card-page-heading"><div><div class="page-title">Pengajuan ID Card <span class="badge-count id-card-page-badge" id="id-card-pending-page-count">0</span></div><div class="page-subtitle">Pengajuan yang belum mendapat TTD Kepala SPPG</div></div><button class="btn btn-secondary" data-id-card-admin-action="refresh">Refresh</button></div>
+        <div class="id-card-bulk-toolbar"><div><strong id="id-card-selected-count">0 dipilih</strong><span>Pilih pengajuan lalu TTD secara massal.</span></div><div class="id-card-bulk-actions"><button class="btn btn-secondary" id="id-card-approve-selected" data-id-card-admin-action="approve-selected" disabled>TTD Pilihan</button><button class="btn btn-primary" id="id-card-approve-all" data-id-card-admin-action="approve-all" disabled>Setujui Semua</button></div></div>
+        <div class="admin-card"><div class="data-table-wrap"><table class="data-table"><thead><tr><th class="id-card-check-col"><input type="checkbox" id="id-card-select-all" aria-label="Pilih semua pengajuan"></th><th>Nama</th><th>Jabatan / Divisi</th><th>SPPG</th><th>Yayasan</th><th>Mulai Kerja</th><th>Kode</th><th>Diajukan</th></tr></thead><tbody id="id-card-pending-body"></tbody></table></div></div>`;
+      container.appendChild(pendingView);
+    }
+
+    if (!document.querySelector('#id-card-approval-modal')) mountApprovalModal();
+    document.querySelectorAll('[data-id-card-admin-action="refresh"]').forEach((button) => button.addEventListener('click', () => loadAdmin(true)));
+    document.querySelector('#id-card-approve-selected')?.addEventListener('click', () => openApprovalModal([...state.selected]));
+    document.querySelector('#id-card-approve-all')?.addEventListener('click', () => {
+      const ids = (state.adminOverview?.pending || []).map((item) => String(item.id));
+      state.selected = new Set(ids);
+      renderAdminPending();
+      openApprovalModal(ids);
+    });
+    document.querySelector('#id-card-select-all')?.addEventListener('change', (event) => {
+      const ids = (state.adminOverview?.pending || []).map((item) => String(item.id));
+      state.selected = event.target.checked ? new Set(ids) : new Set();
+      renderAdminPending();
+    });
+    document.querySelector('#id-card-pending-body')?.addEventListener('change', handlePendingSelection);
+    document.querySelector('#id-card-approved-body')?.addEventListener('click', handleApprovedAction);
+    return true;
+  }
+
+  function mountApprovalModal() {
+    const modal = document.createElement('div');
+    modal.id = 'id-card-approval-modal';
+    modal.className = 'id-card-approval-modal';
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="id-card-approval-backdrop" data-id-card-modal-action="cancel"></div>
+      <div class="id-card-approval-dialog" role="dialog" aria-modal="true" aria-labelledby="id-card-approval-title">
+        <div class="id-card-approval-header"><div><strong id="id-card-approval-title">TTD & Persetujuan ID Card</strong><span id="id-card-approval-subtitle">0 pengajuan dipilih</span></div><button type="button" class="id-card-modal-close" data-id-card-modal-action="cancel" aria-label="Tutup">×</button></div>
+        <div class="id-card-approval-body">
+          <label class="form-label" for="id-card-head-name">Nama Kepala SPPG *</label>
+          <input class="form-input" id="id-card-head-name" type="text" maxlength="120" placeholder="Nama lengkap Kepala SPPG">
+          <div class="id-card-signature-label"><span>TTD Kepala SPPG *</span><button type="button" data-id-card-modal-action="clear-signature">Bersihkan TTD</button></div>
+          <div class="id-card-signature-wrap"><canvas id="id-card-signature-canvas" class="id-card-signature-canvas" width="900" height="300" aria-label="Kanvas TTD Kepala SPPG"></canvas></div>
+          <p class="id-card-signature-help">Tanda tangan pada area putih menggunakan mouse atau sentuhan. TTD dan nama yang sama akan diterapkan ke seluruh pengajuan terpilih.</p>
+          <div id="id-card-approval-error" class="digital-identity-message digital-identity-message-error" hidden></div>
+        </div>
+        <div class="id-card-approval-footer"><button type="button" class="btn btn-secondary" data-id-card-modal-action="cancel">Batal</button><button type="button" class="btn btn-primary" id="id-card-confirm-approval" data-id-card-modal-action="confirm">Setujui & TTD</button></div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', handleModalAction);
+    const canvas = modal.querySelector('#id-card-signature-canvas');
+    ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'pointerleave'].forEach((eventName) => canvas.addEventListener(eventName, handleSignaturePointer));
+    clearSignature();
+  }
+
+  function openAdminView(view) {
+    if (!isIdCardAdmin()) return;
+    mountAdminShell();
+    if (typeof window.switchView === 'function') window.switchView(view);
+    else {
+      document.querySelectorAll('.app-view').forEach((node) => node.classList.add('hidden'));
+      document.querySelector(`#view-${view}`)?.classList.remove('hidden');
+    }
+    document.querySelector('#mobile-more-menu')?.classList.remove('active');
+    loadAdmin(true);
+  }
+
+  function setBadge(count) {
+    ['#id-card-pending-nav-count', '#id-card-pending-mobile-count', '#id-card-pending-page-count'].forEach((selector) => {
+      const badge = document.querySelector(selector);
+      if (!badge) return;
+      badge.textContent = String(count || 0);
+      badge.style.display = count > 0 ? 'inline-flex' : 'none';
+    });
+  }
+
+  function renderAdmin() {
+    if (!state.adminOverview) return;
+    const pendingCount = Number(state.adminOverview.pendingCount || 0);
+    const approvedCount = Number(state.adminOverview.approvedCount || 0);
+    setBadge(pendingCount);
+    const approvedNode = document.querySelector('#id-card-approved-count');
+    const pendingSummary = document.querySelector('#id-card-pending-count-summary');
+    if (approvedNode) approvedNode.textContent = String(approvedCount);
+    if (pendingSummary) pendingSummary.textContent = String(pendingCount);
+    renderAdminApproved();
+    renderAdminPending();
+  }
+
+  function renderAdminApproved() {
+    const body = document.querySelector('#id-card-approved-body');
+    if (!body) return;
+    const rows = state.adminOverview?.approved || [];
+    if (!rows.length) {
+      body.innerHTML = '<tr><td colspan="6"><div class="table-empty">Belum ada ID Card yang sudah disetujui.</div></td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map((item) => `
+      <tr>
+        <td><strong>${esc(item.namaLengkap)}</strong><div class="id-card-table-sub">${esc(item.jabatan)}</div></td>
+        <td>${esc(item.sppg)}</td><td><code>${esc(item.idCardCode)}</code></td>
+        <td>${esc(item.headSppgName || '-')}</td><td>${esc(item.approvedAtLabel || '-')}</td>
+        <td><div class="id-card-row-actions"><button class="btn btn-secondary" data-id-card-file="download" data-url="${esc(item.idCardPdfUrl || '')}" data-code="${esc(item.idCardCode)}">Unduh</button><button class="btn btn-secondary" data-id-card-file="print" data-url="${esc(item.idCardPdfUrl || '')}">Cetak</button></div></td>
+      </tr>`).join('');
+  }
+
+  function renderAdminPending() {
+    const body = document.querySelector('#id-card-pending-body');
+    if (!body) return;
+    const rows = state.adminOverview?.pending || [];
+    const validIds = new Set(rows.map((item) => String(item.id)));
+    state.selected = new Set([...state.selected].filter((id) => validIds.has(id)));
+    if (!rows.length) {
+      body.innerHTML = '<tr><td colspan="8"><div class="table-empty">Tidak ada pengajuan ID Card yang menunggu persetujuan.</div></td></tr>';
+    } else {
+      body.innerHTML = rows.map((item) => {
+        const id = String(item.id);
+        return `<tr class="${state.selected.has(id) ? 'is-selected' : ''}">
+          <td class="id-card-check-col"><input type="checkbox" data-id-card-select="${esc(id)}" ${state.selected.has(id) ? 'checked' : ''} aria-label="Pilih ${esc(item.namaLengkap)}"></td>
+          <td><strong>${esc(item.namaLengkap)}</strong></td><td>${esc(item.jabatan)}</td><td>${esc(item.sppg)}</td><td>${esc(item.yayasan)}</td><td>${esc(item.tanggalMulaiKerjaLabel || '-')}</td><td><code>${esc(item.idCardCode)}</code></td><td>${esc(item.requestedAtLabel || '-')}</td>
+        </tr>`;
+      }).join('');
+    }
+    const count = state.selected.size;
+    const countNode = document.querySelector('#id-card-selected-count');
+    if (countNode) countNode.textContent = `${count} dipilih`;
+    const selectedButton = document.querySelector('#id-card-approve-selected');
+    const allButton = document.querySelector('#id-card-approve-all');
+    if (selectedButton) selectedButton.disabled = !count || state.adminBusy;
+    if (allButton) allButton.disabled = !rows.length || state.adminBusy;
+    const selectAll = document.querySelector('#id-card-select-all');
+    if (selectAll) {
+      selectAll.checked = Boolean(rows.length && count === rows.length);
+      selectAll.indeterminate = Boolean(count && count < rows.length);
+    }
+  }
+
+  async function loadAdmin(force = false) {
+    if (!token() || !isIdCardAdmin() || !mountAdminShell() || state.adminBusy) return;
+    if (!force && state.adminOverview) return renderAdmin();
+    state.adminBusy = true;
+    document.querySelectorAll('.id-card-admin-view').forEach((node) => node.classList.add('is-loading'));
+    try {
+      state.adminOverview = await api('getIdCardAdminOverview');
+      renderAdmin();
+    } catch (error) {
+      notify(error.message || 'Data ID Card ADMIN gagal dimuat.', 'error');
+    } finally {
+      state.adminBusy = false;
+      document.querySelectorAll('.id-card-admin-view').forEach((node) => node.classList.remove('is-loading'));
+      renderAdminPending();
+    }
+  }
+
+  function handlePendingSelection(event) {
+    const checkbox = event.target.closest?.('[data-id-card-select]');
+    if (!checkbox) return;
+    const id = String(checkbox.dataset.idCardSelect || '');
+    if (checkbox.checked) state.selected.add(id); else state.selected.delete(id);
+    renderAdminPending();
+  }
+
+  async function handleApprovedAction(event) {
+    const button = event.target.closest?.('[data-id-card-file]');
+    if (!button) return;
+    try {
+      if (button.dataset.idCardFile === 'download') await download(button.dataset.url, `ID-Card-${button.dataset.code || 'SPPG'}.pdf`);
+      else printPdf(button.dataset.url);
+    } catch (error) {
+      notify(error.message || 'File ID Card tidak dapat dibuka.', 'error');
+    }
+  }
+
+  function clearSignature() {
+    const canvas = document.querySelector('#id-card-signature-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    state.signatureDrawn = false;
+    state.drawing = false;
+  }
+
+  function pointerPosition(canvas, event) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (event.clientX - rect.left) * (canvas.width / rect.width),
+      y: (event.clientY - rect.top) * (canvas.height / rect.height),
+    };
+  }
+
+  function handleSignaturePointer(event) {
+    const canvas = event.currentTarget;
+    const ctx = canvas.getContext('2d');
+    if (event.type === 'pointerdown') {
+      event.preventDefault();
+      state.drawing = true;
+      state.signatureDrawn = true;
+      canvas.setPointerCapture?.(event.pointerId);
+      const point = pointerPosition(canvas, event);
+      ctx.beginPath();
+      ctx.moveTo(point.x, point.y);
+      return;
+    }
+    if (event.type === 'pointermove' && state.drawing) {
+      event.preventDefault();
+      const point = pointerPosition(canvas, event);
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+      return;
+    }
+    if (['pointerup', 'pointercancel', 'pointerleave'].includes(event.type)) state.drawing = false;
+  }
+
+  function openApprovalModal(ids) {
+    if (!ids?.length) return notify('Pilih minimal satu pengajuan ID Card.', 'warning');
+    const modal = document.querySelector('#id-card-approval-modal');
+    if (!modal) return;
+    modal.dataset.cardIds = JSON.stringify(ids);
+    modal.querySelector('#id-card-approval-subtitle').textContent = `${ids.length} pengajuan dipilih`;
+    modal.querySelector('#id-card-approval-error').hidden = true;
+    modal.querySelector('#id-card-head-name').value = '';
+    clearSignature();
+    modal.hidden = false;
+    document.body.classList.add('id-card-modal-open');
+    setTimeout(() => modal.querySelector('#id-card-head-name')?.focus(), 40);
+  }
+
+  function closeApprovalModal() {
+    const modal = document.querySelector('#id-card-approval-modal');
+    if (!modal) return;
+    modal.hidden = true;
+    delete modal.dataset.cardIds;
+    document.body.classList.remove('id-card-modal-open');
+  }
+
+  function setModalError(message = '') {
+    const node = document.querySelector('#id-card-approval-error');
+    if (!node) return;
+    node.textContent = message;
+    node.hidden = !message;
+  }
+
+  async function handleModalAction(event) {
+    const actionNode = event.target.closest?.('[data-id-card-modal-action]');
+    if (!actionNode) return;
+    const action = actionNode.dataset.idCardModalAction;
+    if (action === 'cancel') return closeApprovalModal();
+    if (action === 'clear-signature') return clearSignature();
+    if (action !== 'confirm' || state.adminBusy) return;
+    const modal = document.querySelector('#id-card-approval-modal');
+    let ids = [];
+    try { ids = JSON.parse(modal.dataset.cardIds || '[]'); } catch {}
+    const headName = String(modal.querySelector('#id-card-head-name').value || '').trim();
+    if (headName.length < 3) return setModalError('Masukkan nama Kepala SPPG.');
+    if (!state.signatureDrawn) return setModalError('TTD Kepala SPPG wajib diisi.');
+    if (!ids.length) return setModalError('Tidak ada pengajuan yang dipilih.');
+
+    const canvas = modal.querySelector('#id-card-signature-canvas');
+    const confirmButton = modal.querySelector('#id-card-confirm-approval');
+    state.adminBusy = true;
+    confirmButton.disabled = true;
+    confirmButton.textContent = 'Memproses...';
+    setModalError('');
+    try {
+      const result = await api('approveIdCardRequests', {
+        cardIds: ids,
+        headName,
+        signatureDataUrl: canvas.toDataURL('image/png'),
+      });
+      closeApprovalModal();
+      state.selected.clear();
+      state.adminOverview = null;
+      await loadAdmin(true);
+      await loadProfile(true).catch(() => {});
+      const failed = Number(result?.failedCount || 0);
+      notify(`${Number(result?.approvedCount || 0)} ID Card berhasil disetujui dan ditandatangani${failed ? `, ${failed} gagal` : ''}.`, failed ? 'warning' : 'success');
+    } catch (error) {
+      setModalError(error.message || 'Persetujuan ID Card gagal.');
+    } finally {
+      state.adminBusy = false;
+      confirmButton.disabled = false;
+      confirmButton.textContent = 'Setujui & TTD';
+      renderAdminPending();
     }
   }
 
@@ -333,23 +610,34 @@
     const profile = page();
     if (!profile || state.profileObserver) return;
     state.profileObserver = new MutationObserver(() => {
-      if (!profile.classList.contains('hidden')) load(false);
+      if (!profile.classList.contains('hidden')) loadProfile(false);
     });
     state.profileObserver.observe(profile, { attributes: true, attributeFilter: ['class'] });
-    if (!profile.classList.contains('hidden')) load(false);
+    if (!profile.classList.contains('hidden')) loadProfile(false);
+  }
+
+  function startAdminBadgePolling() {
+    if (!isIdCardAdmin()) return;
+    mountAdminShell();
+    loadAdmin(true);
+    if (state.adminTimer) clearInterval(state.adminTimer);
+    state.adminTimer = setInterval(() => {
+      if (document.visibilityState === 'visible' && token() && isIdCardAdmin()) loadAdmin(true);
+    }, 60000);
   }
 
   function init() {
-    mount();
+    mountProfile();
     watchProfile();
-    setTimeout(() => { mount(); watchProfile(); }, 400);
-    setTimeout(() => { mount(); watchProfile(); }, 1200);
+    if (isIdCardAdmin()) startAdminBadgePolling();
+    setTimeout(() => { mountProfile(); watchProfile(); if (isIdCardAdmin()) mountAdminShell(); }, 500);
+    setTimeout(() => { mountProfile(); watchProfile(); if (isIdCardAdmin()) mountAdminShell(); }, 1400);
   }
 
   window.AbsenDigitalIdentity = Object.freeze({
-    refresh: () => load(true),
-    generate: () => generate(false),
-    regenerate: () => generate(true)
+    refresh: () => loadProfile(true),
+    request: () => requestCard(false),
+    refreshAdmin: () => loadAdmin(true),
   });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
@@ -358,6 +646,10 @@
   window.addEventListener('absen:session-changed', () => {
     state.identity = null;
     state.loadedForUser = null;
+    state.adminOverview = null;
+    state.selected.clear();
+    if (state.adminTimer) clearInterval(state.adminTimer);
+    state.adminTimer = null;
     init();
   });
 })();
