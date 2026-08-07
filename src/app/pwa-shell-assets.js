@@ -46,6 +46,7 @@
     './src/app/remove-legacy-notifications.js',
     './src/app/attendance-location-flow.js',
     './pwa-runtime.js',
+    './src/app/logout-session-guard.js',
     './src/app/layout-enhancements.js',
     './src/app/mobile-ui-refresh.js',
     './src/app/dashboard-bento.js',
