@@ -30,7 +30,8 @@ $PublicFunctionNames = @(
 $InternalFunctionNames = @(
   "AbsenCore","Absen",
   "AbsenV2Core","AttendanceLocationCore","PayrollUserCore","ProfileOpsCore","DeviceTrustCore",
-  "SecurityOpsCore","ProductionReadinessCore","AttendanceCorrectionsCore","AttendanceImportCore","EmploymentContractsCore"
+  "SecurityOpsCore","ProductionReadinessCore","AttendanceCorrectionsCore","AttendanceImportCore","EmploymentContractsCore",
+  "ConfigCenterCore","PayrollListPageCore","SppgLocationConfigCore","SystemSettingsCore"
 )
 
 $TemporaryFunctionPattern = '^(RunP|RunPublish|VerifyPayroll|PublishPayroll\d|PublishPayrollFinal|RebuildPayroll|TrimPublished|PrepareLogo|CleanupOrphan|RunCleanup|ResetDigitalIdentity)'
@@ -59,7 +60,8 @@ foreach ($FunctionName in $InternalFunctionNames) {
 # di working tree setelah deploy agar repository tidak dimutasi permanen.
 $GatewayAliases = @(
   "AbsenV2","AttendanceLocation","PayrollUser","ProfileOps","DeviceTrust",
-  "SecurityOps","ProductionReadiness","AttendanceCorrections","AttendanceImport","EmploymentContracts"
+  "SecurityOps","ProductionReadiness","AttendanceCorrections","AttendanceImport","EmploymentContracts",
+  "ConfigCenter","PayrollListPage","SppgLocationConfig","SystemSettings"
 )
 $GatewaySourcePath = Join-Path $PSScriptRoot "supabase\functions\SessionGateway\index.ts"
 $GatewaySource = Get-Content -LiteralPath $GatewaySourcePath -Raw

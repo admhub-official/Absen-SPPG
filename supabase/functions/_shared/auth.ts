@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { normalizeRole, OPERATIONAL_ROLES } from "./contracts.ts";
+import { enforceSessionActivity, sha256Hex } from "./session-policy.ts";
 import { requiredString } from "./validation.ts";
 
 export type AuthenticatedUser = Readonly<{
@@ -12,20 +13,14 @@ function isActiveAccount(value: unknown): boolean {
   return ["TRUE", "1", "ACTIVE", "AKTIF"].includes(String(value ?? "").trim().toUpperCase());
 }
 
-async function sha256Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return [...new Uint8Array(digest)]
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 async function findSession(db: SupabaseClient, token: string) {
   const tokenHash = await sha256Hex(token);
-  return await db
+  const result = await db
     .from("Sessions")
-    .select("ID_User,Type,Expires_At")
+    .select("Token_Hash,ID_User,Type,Expires_At,Last_Activity_At")
     .eq("Token_Hash", tokenHash)
     .maybeSingle();
+  return { tokenHash, result };
 }
 
 export async function authenticateUserSession(
@@ -33,19 +28,14 @@ export async function authenticateUserSession(
   tokenValue: unknown,
 ): Promise<AuthenticatedUser> {
   const token = requiredString(tokenValue, "token", { min: 16, max: 512 });
-  const session = await findSession(db, token);
+  const { tokenHash, result: session } = await findSession(db, token);
 
   const sessionType = String(session.data?.Type ?? "").trim().toLowerCase();
-  const expiresAt = new Date(String(session.data?.Expires_At ?? "")).getTime();
-  if (
-    session.error ||
-    !session.data?.ID_User ||
-    sessionType !== "user" ||
-    !Number.isFinite(expiresAt) ||
-    expiresAt <= Date.now()
-  ) {
+  if (session.error || !session.data?.ID_User || sessionType !== "user") {
     throw new Error("SESSION_EXPIRED");
   }
+
+  await enforceSessionActivity(db, session.data, tokenHash);
 
   const user = await db
     .from("Users")
@@ -54,6 +44,7 @@ export async function authenticateUserSession(
     .maybeSingle();
 
   if (user.error || !user.data || !isActiveAccount(user.data.Status_Aktif)) {
+    await db.from("Sessions").delete().eq("Token_Hash", tokenHash);
     throw new Error("ACCOUNT_INACTIVE");
   }
 

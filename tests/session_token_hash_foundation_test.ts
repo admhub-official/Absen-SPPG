@@ -13,13 +13,33 @@ Deno.test("final migration persists only SHA-256 digests while retaining the leg
 
 Deno.test("shared modern authentication is hash-only with no raw database fallback", async () => {
   const auth = await read("supabase/functions/_shared/auth.ts");
-  for (const marker of ['crypto.subtle.digest("SHA-256"', '.eq("Token_Hash", tokenHash)', 'SESSION_EXPIRED']) if (!auth.includes(marker)) throw new Error(`shared auth missing ${marker}`);
-  if (auth.includes('.eq("Token", token)') || auth.includes('Phase 8A compatibility')) throw new Error("shared auth must not fall back to raw Sessions.Token");
+  const policy = await read("supabase/functions/_shared/session-policy.ts");
+  for (const marker of ['.eq("Token_Hash", tokenHash)', 'SESSION_EXPIRED', 'sha256Hex', 'enforceSessionActivity']) {
+    if (!auth.includes(marker)) throw new Error(`shared auth missing ${marker}`);
+  }
+  for (const marker of ['crypto.subtle.digest("SHA-256"', 'export async function sha256Hex']) {
+    if (!policy.includes(marker)) throw new Error(`shared session crypto helper missing ${marker}`);
+  }
+  if (auth.includes('.eq("Token", token)') || auth.includes('Phase 8A compatibility')) {
+    throw new Error("shared auth must not fall back to raw Sessions.Token");
+  }
 });
 
 Deno.test("SessionGateway is safe before and after final database cutover", async () => {
   const gateway = await read("supabase/functions/SessionGateway/index.ts");
-  for (const marker of ['AbsenV2: "AbsenV2Core"','AttendanceLocation: "AttendanceLocationCore"','EmploymentContracts: "EmploymentContractsCore"','sessionForwardMap','.select("Token,Token_Hash")','storedToken.toLowerCase() === hash ? hash : raw','SESSION_DIGEST_NOT_ACCEPTED','isServiceRequest(request)','directAlias','Authorization":`Bearer ${SERVICE_KEY}`']) if (!gateway.includes(marker)) throw new Error(`SessionGateway missing ${marker}`);
+  for (const marker of [
+    'AbsenV2: "AbsenV2Core"',
+    'AttendanceLocation: "AttendanceLocationCore"',
+    'EmploymentContracts: "EmploymentContractsCore"',
+    'sessionForwardMap',
+    'Token,Token_Hash,ID_User,ID_Device,Type,Expires_At,Last_Activity_At',
+    'storedToken.toLowerCase() === lookupHash ? lookupHash : raw',
+    'SESSION_DIGEST_NOT_ACCEPTED',
+    'isServiceRequest(request)',
+    'directAlias',
+    '`Bearer ${SERVICE_KEY}`',
+    'enforceSessionActivity(db, row, lookupHash)',
+  ]) if (!gateway.includes(marker)) throw new Error(`SessionGateway missing ${marker}`);
 });
 
 Deno.test("browser and public contract verification route legacy calls through SessionGateway", async () => {
