@@ -12,16 +12,39 @@ function isActiveAccount(value: unknown): boolean {
   return ["TRUE", "1", "ACTIVE", "AKTIF"].includes(String(value ?? "").trim().toUpperCase());
 }
 
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function findSession(db: SupabaseClient, token: string) {
+  const tokenHash = await sha256Hex(token);
+  const hashed = await db
+    .from("Sessions")
+    .select("ID_User,Type,Expires_At")
+    .eq("Token_Hash", tokenHash)
+    .maybeSingle();
+
+  if (!hashed.error && hashed.data) return hashed;
+
+  // Phase 8A compatibility: legacy deployments and sessions still retain raw
+  // Token until every gateway has migrated. Remove this fallback only at the
+  // final HttpOnly-cookie/hash-only cutover.
+  return await db
+    .from("Sessions")
+    .select("ID_User,Type,Expires_At")
+    .eq("Token", token)
+    .maybeSingle();
+}
+
 export async function authenticateUserSession(
   db: SupabaseClient,
   tokenValue: unknown,
 ): Promise<AuthenticatedUser> {
   const token = requiredString(tokenValue, "token", { min: 16, max: 512 });
-  const session = await db
-    .from("Sessions")
-    .select("ID_User,Type,Expires_At")
-    .eq("Token", token)
-    .maybeSingle();
+  const session = await findSession(db, token);
 
   const sessionType = String(session.data?.Type ?? "").trim().toLowerCase();
   const expiresAt = new Date(String(session.data?.Expires_At ?? "")).getTime();
