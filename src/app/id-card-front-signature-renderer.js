@@ -31,7 +31,7 @@
       block.setAttribute('aria-label', 'TTD Kepala SPPG pada bagian depan');
       front.appendChild(block);
     }
-    block.innerHTML = backBlock.innerHTML;
+    if (block.innerHTML !== backBlock.innerHTML) block.innerHTML = backBlock.innerHTML;
   }
 
   async function imageFromUrl(url) {
@@ -82,7 +82,7 @@
     ctx.restore();
   }
 
-  async function paintPair(pair, force = false) {
+  async function paintPair(pair) {
     ensureFallbackBlock(pair);
     const canvas = pair?.querySelector('.digital-id-master-canvas[data-side="front"]');
     if (!canvas || canvas.width !== 638 || canvas.height !== 1011) return false;
@@ -90,7 +90,6 @@
     if (!data) return false;
     const masterSignature = pair.dataset.masterSignature || '';
     const renderKey = `${masterSignature}|${data.signature}`;
-    if (!force && rendered.get(pair) === renderKey) return true;
 
     const signature = data.url ? await imageFromUrl(data.url) : null;
     const ctx = canvas.getContext('2d', { alpha: false });
@@ -156,7 +155,7 @@
 
     event.preventDefault();
     event.stopImmediatePropagation();
-    paintPair(pair, true).then(() => {
+    paintPair(pair).then(() => {
       button.dataset.frontSignatureReplay = '1';
       button.click();
     }).catch((error) => {
