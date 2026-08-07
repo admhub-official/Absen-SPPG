@@ -33,7 +33,9 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   const DIGITAL_IDENTITY_WORKFLOW_FUNCTIONS = new Set([
     'getMyDigitalIdentity',
     'generateMyDigitalIdentity',
-    'regenerateMyDigitalIdentity'
+    'regenerateMyDigitalIdentity',
+    'getIdCardAdminOverview',
+    'approveIdCardRequests'
   ]);
   const DEVICE_KEY_STORAGE = 'absen:device-key:v1';
 
@@ -203,6 +205,6 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   });
 })();
 
-import('./src/app/bootstrap.js?v=26.11.34').catch((error) => {
+import('./src/app/bootstrap.js?v=26.11.35').catch((error) => {
   console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
 });
