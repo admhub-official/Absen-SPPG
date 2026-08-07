@@ -41,7 +41,11 @@ Deno.test("employment contract module owns complete lifecycle, masters, PDF, QR 
   for (const marker of ['NIK','Alamat','getProfileEmployment','NIK harus terdiri dari 16 digit']) {
     if (!profileOps.includes(marker)) throw new Error(`ProfileOps missing ${marker}`);
   }
-  if (profileOps.includes('["Gaji_Harian"')) throw new Error("daily salary must not become self-editable");
+  const selfEditableFields = profileOps.split('const stringFields')[1]?.split('];')[0] || '';
+  if (selfEditableFields.includes('Gaji_Harian')) throw new Error("daily salary must not become self-editable");
+  if (!profileOps.includes('Object.prototype.hasOwnProperty.call(updates, "Gaji_Harian")')) {
+    throw new Error("ProfileOps must explicitly reject daily salary changes");
+  }
 
   if (!bootstrap.includes("'./src/app/employment-contracts.js'") || !bootstrap.includes("'./src/styles/pages/employment-contracts.css'")) throw new Error("bootstrap must load employment contract assets");
   if (!sw.includes("'./verify-contract.html'") || !sw.includes('employment-contracts.js') || !sw.includes('employment-contracts.css')) throw new Error("PWA shell must include employment contract assets");
