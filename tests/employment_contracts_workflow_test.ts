@@ -43,24 +43,24 @@ Deno.test("employment contract module owns complete lifecycle, masters, PDF, QR 
     'employment-contract-personal-nav',
     'data-employment-view="employment-admin"',
     'data-employment-view="employment-master"',
-    "makeSentinel('employment-contract-nav-group')",
-    '#app-layout',
-    '#topbar-profile-role',
-    'new MutationObserver',
+    'function ensurePersonalNavigation(personal, authenticated)',
+    'function ensureAdminNavigation(sidebar, mobile, authorized)',
+    'session-sync-v4',
     "window.addEventListener('absen:session-changed'",
-    'retrySync()',
     "['ADMIN', 'SUPER ADMIN']",
     'function forceViewVisible(view)',
     'async function waitForController()',
     'async function openEmploymentView(view)',
     'requestAnimationFrame(() => forceViewVisible(view))',
-    'setTimeout(() => forceViewVisible(view), 60)',
     'void openEmploymentView(button.dataset.employmentView)',
     "'employment-my': 'openMy'",
     "'employment-admin': 'openAdmin'",
     "'employment-master': 'openMaster'",
     'Modul Perjanjian Kerja belum siap',
   ]) if (!navigation.includes(marker)) throw new Error(`employment navigation runtime missing ${marker}`);
+  for (const dead of ['makeSentinel(', 'retrySync(', 'retryTimers', 'observeSessionUi', 'new MutationObserver']) {
+    if (navigation.includes(dead)) throw new Error(`employment navigation dead/churn code returned: ${dead}`);
+  }
   if (navigation.includes('event.stopPropagation()')) {
     throw new Error('employment navigation must not swallow click propagation before the controller is ready');
   }
