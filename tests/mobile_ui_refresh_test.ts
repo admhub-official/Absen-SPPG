@@ -1,9 +1,9 @@
 const read = (path: string) => Deno.readTextFile(path);
 
-Deno.test("bootstrap loads the compact mobile UI runtime", async () => {
-  const bootstrap = await read("src/app/bootstrap.js");
-  if (!bootstrap.includes("mobile-ui-refresh.css")) throw new Error("mobile refresh stylesheet missing");
-  if (!bootstrap.includes("mobile-ui-refresh.js")) throw new Error("mobile refresh runtime missing");
+Deno.test("shared PWA manifest loads the compact mobile UI runtime", async () => {
+  const assets = await read("src/app/pwa-shell-assets.js");
+  if (!assets.includes("mobile-ui-refresh.css")) throw new Error("mobile refresh stylesheet missing");
+  if (!assets.includes("mobile-ui-refresh.js")) throw new Error("mobile refresh runtime missing");
 });
 
 Deno.test("mobile filters are collapsed only for known filter containers", async () => {

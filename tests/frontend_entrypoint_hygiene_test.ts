@@ -23,15 +23,15 @@ Deno.test("index keeps one application configuration entrypoint", async () => {
 Deno.test("PWA uses one implementation with a controlled legacy shim", async () => {
   const index = await read("index.html");
   const config = await read("supabase-config.js");
-  const bootstrap = await read("src/app/bootstrap.js");
+  const assets = await read("src/app/pwa-shell-assets.js");
   const runtime = await read("pwa-runtime.js");
   const legacyWorker = await read("service-worker.js");
 
   if (config.includes("serviceWorker.register")) {
     throw new Error("supabase-config.js must not register the service worker directly");
   }
-  if (!bootstrap.includes("pwa-runtime.js")) {
-    throw new Error("bootstrap must load the PWA runtime");
+  if (!assets.includes("'./pwa-runtime.js'")) {
+    throw new Error("shared asset manifest must load the PWA runtime");
   }
   if (!runtime.includes("serviceWorker.register('./sw.js'")) {
     throw new Error("PWA runtime must own the stable sw.js registration");
@@ -52,13 +52,13 @@ Deno.test("PWA uses one implementation with a controlled legacy shim", async () 
   }
 });
 
-Deno.test("responsive overrides are loaded only by bootstrap", async () => {
+Deno.test("responsive overrides are loaded only by shared bootstrap manifest", async () => {
   const index = await read("index.html");
-  const bootstrap = await read("src/app/bootstrap.js");
+  const assets = await read("src/app/pwa-shell-assets.js");
   if (index.includes("responsive-overrides.css") || index.includes("layout-enhancements.js")) {
     throw new Error("legacy index must not load modular layout assets directly");
   }
   for (const asset of ["responsive-overrides.css", "layout-enhancements.js"]) {
-    if (!bootstrap.includes(asset)) throw new Error(`bootstrap missing ${asset}`);
+    if (!assets.includes(asset)) throw new Error(`shared PWA manifest missing ${asset}`);
   }
 });

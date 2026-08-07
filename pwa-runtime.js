@@ -1,6 +1,7 @@
 (()=>{
   if(window.AbsenPWA)return;
-  const VERSION='26.11.4';
+  const VERSION=globalThis.HADIRLY_RELEASE?.version;
+  if(!VERSION){console.warn('PWA release version belum dimuat.');return;}
   const api=Object.freeze({
     version:VERSION,
     online:()=>navigator.onLine,
@@ -14,8 +15,10 @@
     notifyUpdate(registration){
       registration?.addEventListener?.('updatefound',()=>{
         const worker=registration.installing;
-        worker?.addEventListener?.('statechange',()=>{if(worker.state==='installed')worker.postMessage('SKIP_WAITING');});
-        window.dispatchEvent(new CustomEvent('absen:pwa-update-available'));
+        worker?.addEventListener?.('statechange',()=>{
+          if(worker.state==='installed')worker.postMessage('SKIP_WAITING');
+        });
+        window.dispatchEvent(new CustomEvent('absen:pwa-update-available',{detail:{version:VERSION}}));
       });
       navigator.serviceWorker?.addEventListener?.('controllerchange',()=>{
         const key=`absen-sw-reloaded:${VERSION}`;
@@ -26,5 +29,7 @@
     }
   });
   window.AbsenPWA=api;
-  window.addEventListener('load',()=>{api.register().then(({registration})=>api.notifyUpdate(registration)).catch((error)=>console.warn('PWA registration failed',error));},{once:true});
+  window.addEventListener('load',()=>{
+    api.register().then(({registration})=>api.notifyUpdate(registration)).catch((error)=>console.warn('PWA registration failed',error));
+  },{once:true});
 })();

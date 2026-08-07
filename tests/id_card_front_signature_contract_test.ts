@@ -3,7 +3,8 @@ const read = (path: string) => Deno.readTextFile(path);
 Deno.test("front ID Card renders Kepala SPPG signature and keeps PDF canvas in sync", async () => {
   const renderer = await read("src/app/id-card-front-signature-renderer.js");
   const css = await read("src/styles/pages/id-card-front-signature.css");
-  const bootstrap = await read("src/app/bootstrap.js");
+  const assets = await read("src/app/pwa-shell-assets.js");
+  const release = await read("src/app/release-version.js");
   const sw = await read("sw.js");
 
   for (const marker of [
@@ -21,16 +22,18 @@ Deno.test("front ID Card renders Kepala SPPG signature and keeps PDF canvas in s
     if (!css.includes(marker)) throw new Error(`front signature style missing ${marker}`);
   }
 
-  const frontRendererIndex = bootstrap.indexOf("'./src/app/id-card-front-signature-renderer.js'");
-  const masterRendererIndex = bootstrap.indexOf("'./src/app/digital-id-card-master-renderer.js'");
+  const frontRendererIndex = assets.indexOf("'./src/app/id-card-front-signature-renderer.js'");
+  const masterRendererIndex = assets.indexOf("'./src/app/digital-id-card-master-renderer.js'");
   if (frontRendererIndex < 0 || masterRendererIndex < 0 || frontRendererIndex > masterRendererIndex) {
     throw new Error("front signature renderer must load before the master renderer so PDF export is intercepted first");
   }
-  if (!bootstrap.includes("'./src/styles/pages/id-card-front-signature.css'")) {
+  if (!assets.includes("'./src/styles/pages/id-card-front-signature.css'")) {
     throw new Error("front signature stylesheet is not loaded");
   }
-  if (!bootstrap.includes("const VERSION = '26.11.49'")) throw new Error("frontend version must match current release");
-  if (!sw.includes("absen-sppg-hadirly-v90") || !sw.includes("id-card-front-signature-renderer.js")) {
+  if (!release.includes("version = '26.11.50'") || !release.includes("cacheName = 'absen-sppg-hadirly-v91'")) {
+    throw new Error("frontend release/cache must match current release");
+  }
+  if (!sw.includes('...ASSETS.scripts.map(versioned)') || !assets.includes("id-card-front-signature-renderer.js")) {
     throw new Error("PWA shell does not cache the front signature renderer");
   }
 });

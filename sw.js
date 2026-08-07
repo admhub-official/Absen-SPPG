@@ -1,13 +1,119 @@
-const CACHE = 'absen-sppg-hadirly-v90';
-const APP_VERSION = '26.11.49';
+importScripts('./src/app/release-version.js', './src/app/pwa-shell-assets.js');
+
+const RELEASE = self.HADIRLY_RELEASE;
+const ASSETS = self.HADIRLY_PWA_ASSETS;
+if (!RELEASE?.version || !RELEASE?.cacheName) throw new Error('Release manifest PWA tidak tersedia.');
+if (!ASSETS?.styles?.length || !ASSETS?.scripts?.length) throw new Error('Asset manifest PWA tidak tersedia.');
+
+const CACHE = RELEASE.cacheName;
+const APP_VERSION = RELEASE.version;
 const CANONICAL_ORIGIN = 'https://hadirly.org';
 const LEGACY_HOSTS = new Set(['absen-sppg.pages.dev']);
+const versioned = (path) => `${path}?v=${APP_VERSION}`;
 const SHELL = [
-  './','./index.html','./verify-id.html','./verify-contract.html','./manifest.webmanifest','./supabase-config.js','./icons/app-icon.svg','./icons/app-icon-maskable.svg','./icons/hadirly-logo-horizontal.svg',
-  `./src/app/bootstrap.js?v=${APP_VERSION}`,`./src/app/attendance-location-flow.js?v=${APP_VERSION}`,`./src/app/in-app-confirm.js?v=${APP_VERSION}`,`./src/app/profile-employment-editor.js?v=${APP_VERSION}`,`./src/app/profile-contract-identity.js?v=${APP_VERSION}`,`./src/app/id-card-profile-action-policy.js?v=${APP_VERSION}`,`./src/app/digital-id-card.js?v=${APP_VERSION}`,`./src/app/id-card-front-signature-renderer.js?v=${APP_VERSION}`,`./src/app/digital-id-card-master-renderer.js?v=${APP_VERSION}`,`./src/app/employment-contracts.js?v=${APP_VERSION}`,`./src/app/employment-master-normalization.js?v=${APP_VERSION}`,`./src/app/employment-contract-navigation.js?v=${APP_VERSION}`,`./src/app/super-admin-settings-hub.js?v=${APP_VERSION}`,`./src/app/system-settings.js?v=${APP_VERSION}`,`./src/app/notification-publisher.js?v=${APP_VERSION}`,
-  `./src/styles/components/in-app-confirm.css?v=${APP_VERSION}`,`./src/styles/pages/digital-id-card.css?v=${APP_VERSION}`,`./src/styles/pages/id-card-front-signature.css?v=${APP_VERSION}`,`./src/styles/pages/digital-id-card-master-renderer.css?v=${APP_VERSION}`,`./src/styles/pages/employment-contracts.css?v=${APP_VERSION}`,`./src/styles/pages/employment-contract-navigation.css?v=${APP_VERSION}`,`./src/styles/pages/super-admin-settings-hub.css?v=${APP_VERSION}`,`./src/styles/pages/system-settings-controller.css?v=${APP_VERSION}`,`./src/styles/pages/notification-publisher.css?v=${APP_VERSION}`,`./src/features/sppg-location-config.js?v=${APP_VERSION}`
+  './',
+  './index.html',
+  './verify-id.html',
+  './verify-contract.html',
+  './manifest.webmanifest',
+  './supabase-config.js',
+  './src/app/release-version.js',
+  './src/app/pwa-shell-assets.js',
+  './icons/app-icon.svg',
+  './icons/app-icon-maskable.svg',
+  './icons/hadirly-logo-horizontal.svg',
+  versioned('./src/app/bootstrap.js'),
+  ...ASSETS.styles.map(versioned),
+  ...ASSETS.scripts.map(versioned)
 ];
-self.addEventListener('install',(event)=>{event.waitUntil(caches.open(CACHE).then((cache)=>cache.addAll(SHELL.map((path)=>new Request(path,{cache:'reload'})))).then(()=>self.skipWaiting()));});
-self.addEventListener('activate',(event)=>{event.waitUntil(caches.keys().then((keys)=>Promise.all(keys.filter((key)=>(key.startsWith('absen-sppg-')||key.startsWith('hadirly-'))&&key!==CACHE).map((key)=>caches.delete(key)))).then(()=>self.clients.claim()));});
-self.addEventListener('fetch',(event)=>{const request=event.request;if(request.method!=='GET')return;const url=new URL(request.url);if(url.origin!==location.origin)return;if(request.mode==='navigate'&&LEGACY_HOSTS.has(url.hostname.toLowerCase())){const target=new URL(url.pathname+url.search+url.hash,CANONICAL_ORIGIN);event.respondWith(Response.redirect(target.href,308));return;}if(url.pathname.endsWith('/src/app/bootstrap.js')){const fresh=new Request(`./src/app/bootstrap.js?v=${APP_VERSION}`,{cache:'reload',credentials:'same-origin'});event.respondWith(fetch(fresh,{cache:'no-store'}).then((response)=>{if(response.ok){const copy=response.clone();caches.open(CACHE).then((cache)=>cache.put(fresh,copy));}return response;}).catch(()=>caches.match(fresh)));return;}const networkFirst=request.mode==='navigate'||['script','style','worker'].includes(request.destination)||url.pathname.endsWith('.js')||url.pathname.endsWith('.css');if(networkFirst){event.respondWith(fetch(request,{cache:'no-store'}).then((response)=>{if(response.ok){const copy=response.clone();caches.open(CACHE).then((cache)=>cache.put(request,copy));}return response;}).catch(()=>caches.match(request).then((cached)=>cached||caches.match('./index.html'))));return;}event.respondWith(caches.match(request).then((cached)=>cached||fetch(request).then((response)=>{if(response.ok&&['image','font'].includes(request.destination)){const copy=response.clone();caches.open(CACHE).then((cache)=>cache.put(request,copy));}return response;})));});
-self.addEventListener('message',(event)=>{if(event.data==='SKIP_WAITING')self.skipWaiting();});
+
+function offlineAssetResponse(request) {
+  const type = request.destination === 'style' || new URL(request.url).pathname.endsWith('.css')
+    ? 'text/css; charset=utf-8'
+    : 'application/javascript; charset=utf-8';
+  return new Response('', {
+    status: 503,
+    statusText: 'Offline asset unavailable',
+    headers: { 'Content-Type': type, 'Cache-Control': 'no-store' }
+  });
+}
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE)
+      .then((cache) => cache.addAll(SHELL.map((path) => new Request(path, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys
+          .filter((key) => (key.startsWith('absen-sppg-') || key.startsWith('hadirly-')) && key !== CACHE)
+          .map((key) => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (url.origin !== location.origin) return;
+
+  if (request.mode === 'navigate' && LEGACY_HOSTS.has(url.hostname.toLowerCase())) {
+    const target = new URL(url.pathname + url.search + url.hash, CANONICAL_ORIGIN);
+    event.respondWith(Response.redirect(target.href, 308));
+    return;
+  }
+
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' })
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  const isCodeAsset = ['script', 'style', 'worker'].includes(request.destination) ||
+    url.pathname.endsWith('.js') || url.pathname.endsWith('.css');
+
+  if (isCodeAsset) {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' })
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || offlineAssetResponse(request)))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(request).then((cached) => cached || fetch(request).then((response) => {
+      if (response.ok && ['image', 'font'].includes(request.destination)) {
+        const copy = response.clone();
+        caches.open(CACHE).then((cache) => cache.put(request, copy));
+      }
+      return response;
+    }))
+  );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
+});

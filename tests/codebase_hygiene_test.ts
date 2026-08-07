@@ -4,10 +4,11 @@ Deno.test("frontend has one modular bootstrap owner", async () => {
   const config = await read("supabase-config.js");
   const client = await read("security-ops-client.js");
   const bootstrap = await read("src/app/bootstrap.js");
-  const configBootstrapImports = config.match(/import\(['"]\.\/src\/app\/bootstrap\.js/g) ?? [];
+  const configBootstrapImports = config.match(/src\/app\/bootstrap\.js/g) ?? [];
   if (configBootstrapImports.length !== 1) throw new Error(`supabase-config must start bootstrap exactly once; found ${configBootstrapImports.length}`);
   if (client.includes("src/app/bootstrap.js")) throw new Error("security-ops-client must not bootstrap the application");
   if (!bootstrap.includes("canonicalPath") || !bootstrap.includes("loadedAssets")) throw new Error("bootstrap must deduplicate versioned and unversioned assets");
+  if (!bootstrap.includes("HADIRLY_PWA_ASSETS")) throw new Error("bootstrap must consume the shared asset manifest");
 });
 
 Deno.test("legacy security loader was removed", async () => {
@@ -44,14 +45,14 @@ Deno.test("operations edge functions use shared session authentication", async (
 });
 
 Deno.test("temporary frontend artifacts are removed", async () => {
-  const bootstrap = await read("src/app/bootstrap.js");
+  const assets = await read("src/app/pwa-shell-assets.js");
   const apiClient = await read("src/services/api-client.js");
   const pwa = await read("pwa-runtime.js");
   for (const obsolete of ["sw-v22.js","src/app/mobile-compact-hotfix.js","src/styles/mobile-compact-hotfix.css"]) {
     try { await Deno.stat(obsolete); throw new Error(`obsolete temporary artifact still exists: ${obsolete}`); }
     catch (error) { if (!(error instanceof Deno.errors.NotFound)) throw error; }
   }
-  if (!bootstrap.includes("layout-enhancements.js") || !bootstrap.includes("responsive-overrides.css")) throw new Error("stable layout assets are not loaded");
+  if (!assets.includes("layout-enhancements.js") || !assets.includes("responsive-overrides.css")) throw new Error("stable layout assets are not loaded");
   if (apiClient.includes("export const apiCall")) throw new Error("unused apiCall compatibility export still exists");
   if (!pwa.includes("./sw.js") || pwa.includes("sw-v22.js")) throw new Error("PWA runtime must use stable service worker entrypoint");
 });

@@ -67,15 +67,21 @@ Deno.test("sidebar helpers are scoped and dynamic employment navigation is idemp
 });
 
 Deno.test("sidebar cleanup release assets stay version aligned", async () => {
+  const release = await read("src/app/release-version.js");
   const bootstrap = await read("src/app/bootstrap.js");
   const sw = await read("sw.js");
   const config = await read("supabase-config.js");
   const manifest = await read("manifest.webmanifest");
 
-  if (!bootstrap.includes("const VERSION = '26.11.49'")) throw new Error("frontend version mismatch");
-  if (!sw.includes("const APP_VERSION = '26.11.49'") || !sw.includes("absen-sppg-hadirly-v90")) {
-    throw new Error("PWA release/cache mismatch");
+  if (!release.includes("version = '26.11.50'") || !release.includes("cacheName = 'absen-sppg-hadirly-v91'")) {
+    throw new Error("shared frontend/PWA release mismatch");
   }
-  if (!config.includes("bootstrap.js?v=26.11.49")) throw new Error("bootstrap import version mismatch");
+  if (!bootstrap.includes('HADIRLY_RELEASE?.version')) throw new Error("bootstrap must use shared release version");
+  if (!sw.includes('const APP_VERSION = RELEASE.version') || !sw.includes('const CACHE = RELEASE.cacheName')) {
+    throw new Error("service worker must use shared release/cache");
+  }
+  if (!config.includes("await import('./src/app/release-version.js')") || !config.includes('bootstrap.js?v=${version}')) {
+    throw new Error("bootstrap import must use shared release version");
+  }
   if (!manifest.includes('"name": "Hadirly — Absensi & Payroll Digital"')) throw new Error("PWA name still uses old punctuation");
 });
