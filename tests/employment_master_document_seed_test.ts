@@ -30,7 +30,7 @@ Deno.test("Master Jabatan is one Jabatan atau Divisi field with automatic code",
   ]) if (!ui.includes(marker)) throw new Error(`master UI normalization missing ${marker}`);
 
   if (!assets.includes("'./src/app/employment-master-normalization.js'")) throw new Error("master normalization script must load");
-  if (!release.includes("version = '26.11.50'") || !release.includes("cacheName = 'absen-sppg-hadirly-v91'")) throw new Error("frontend/PWA release mismatch");
+  if (!release.includes("version = '26.11.51'") || !release.includes("cacheName = 'absen-sppg-hadirly-v92'")) throw new Error("frontend/PWA release mismatch");
   if (!sw.includes('...ASSETS.scripts.map(versioned)')) throw new Error("PWA must cache shared script manifest");
   if (!config.includes("await import('./src/app/release-version.js')") || !config.includes('bootstrap.js?v=${version}')) throw new Error("bootstrap import must use shared release version");
 });
