@@ -10,7 +10,7 @@ Deno.test("employment contract module owns complete lifecycle, masters, PDF, QR 
   const css = await read("src/styles/pages/employment-contracts.css");
   const navigationCss = await read("src/styles/pages/employment-contract-navigation.css");
   const verify = await read("verify-contract.html");
-  const bootstrap = await read("src/app/bootstrap.js");
+  const assets = await read("src/app/pwa-shell-assets.js");
   const sw = await read("sw.js");
   const config = await read("supabase-config.js");
   const deploy = await read("deploy-supabase.ps1");
@@ -79,11 +79,11 @@ Deno.test("employment contract module owns complete lifecycle, masters, PDF, QR 
     throw new Error("ProfileOps must explicitly reject daily salary changes");
   }
 
-  const workspaceIndex = bootstrap.indexOf("'./src/app/employment-contracts.js'");
-  const navigationIndex = bootstrap.indexOf("'./src/app/employment-contract-navigation.js'");
+  const workspaceIndex = assets.indexOf("'./src/app/employment-contracts.js'");
+  const navigationIndex = assets.indexOf("'./src/app/employment-contract-navigation.js'");
   if (workspaceIndex < 0 || navigationIndex < 0 || navigationIndex <= workspaceIndex) throw new Error('contract navigation sync must load after workspace controller');
-  if (!bootstrap.includes("'./src/styles/pages/employment-contracts.css'") || !bootstrap.includes("'./src/styles/pages/employment-contract-navigation.css'")) throw new Error("bootstrap must load employment contract styles");
-  if (!sw.includes("'./verify-contract.html'") || !sw.includes('employment-contracts.js') || !sw.includes('employment-contract-navigation.js') || !sw.includes('employment-contract-navigation.css')) throw new Error("PWA shell must include employment contract navigation assets");
+  if (!assets.includes("'./src/styles/pages/employment-contracts.css'") || !assets.includes("'./src/styles/pages/employment-contract-navigation.css'")) throw new Error("shared asset manifest must load employment contract styles");
+  if (!sw.includes("'./verify-contract.html'") || !sw.includes('...ASSETS.scripts.map(versioned)') || !sw.includes('...ASSETS.styles.map(versioned)')) throw new Error("PWA shell must consume employment contract assets through shared manifest");
   if (!config.includes("employmentContractsFunctionName: 'EmploymentContracts'")) throw new Error("EmploymentContracts function slug missing");
   if (!deploy.includes('"EmploymentContracts"')) throw new Error("EmploymentContracts must be in production deployment allowlist");
 });
