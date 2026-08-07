@@ -17,8 +17,8 @@ html.mobile-ui-active .feature-tabs,html.mobile-ui-active .app-tabs{margin:0!imp
 html.mobile-ui-active .feature-form input,html.mobile-ui-active .feature-form select,html.mobile-ui-active .feature-form textarea,html.mobile-ui-active .feature-form button{min-height:var(--mobile-control-height)}
 html.mobile-ui-active .feature-actions,html.mobile-ui-active .app-actions{gap:6px!important}
 html.mobile-ui-active .floating-device-button,html.mobile-ui-active #btn-my-devices-float,html.mobile-ui-active [data-device-launcher="floating"]{display:none!important}
-html.mobile-ui-active .mobile-bottom-nav{min-height:62px!important}
-html.mobile-ui-active .mobile-bottom-nav button,html.mobile-ui-active .mobile-bottom-nav a{padding:5px 3px!important;font-size:.68rem!important}
+html.mobile-ui-active .app-bottomnav{min-height:62px!important}
+html.mobile-ui-active .app-bottomnav button,html.mobile-ui-active .app-bottomnav a{padding:5px 3px!important;font-size:.68rem!important}
 html.mobile-ui-active .app-topbar-brand{gap:8px!important;min-width:0!important}
 html.mobile-ui-active .app-topbar-brand img{width:38px!important;height:38px!important}
 html.mobile-ui-active .app-topbar-brand span{font-size:1rem!important;white-space:nowrap!important}
