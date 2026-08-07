@@ -15,6 +15,7 @@ const SHELL = [
   `./src/app/attendance-location-flow.js?v=${APP_VERSION}`,
   `./src/app/in-app-confirm.js?v=${APP_VERSION}`,
   `./src/app/profile-employment-editor.js?v=${APP_VERSION}`,
+  `./src/app/id-card-profile-action-policy.js?v=${APP_VERSION}`,
   `./src/app/digital-id-card.js?v=${APP_VERSION}`,
   `./src/app/digital-id-card-master-renderer.js?v=${APP_VERSION}`,
   `./src/app/super-admin-settings-hub.js?v=${APP_VERSION}`,
