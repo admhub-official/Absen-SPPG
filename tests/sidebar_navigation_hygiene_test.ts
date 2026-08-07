@@ -46,6 +46,13 @@ Deno.test("sidebar helpers are scoped and dynamic employment navigation is idemp
   for (const marker of ["absen:app-ready", "absen:session-changed", "HadirlyBranding"]) {
     if (!branding.includes(marker)) throw new Error(`branding refresh contract missing ${marker}`);
   }
+  if (!branding.includes("const FULL_NAME = `${APP_NAME} — ${TAGLINE}`")) throw new Error("browser branding must not use a colon");
+  if (!branding.includes("text.innerHTML = `<strong>${APP_NAME}</strong><small>${TAGLINE}</small>`")) {
+    throw new Error("visual branding must render Hadirly and its tagline as separate lines without a colon");
+  }
+  if (branding.includes("`${APP_NAME} :`") || branding.includes("`${APP_NAME} : ${TAGLINE}`")) {
+    throw new Error("legacy Hadirly colon branding must stay removed");
+  }
 
   for (const dead of ["retryTimers", "makeSentinel", "observeSessionUi", "new MutationObserver"]) {
     if (employment.includes(dead)) throw new Error(`employment navigation still contains churn/dead code: ${dead}`);
@@ -63,10 +70,12 @@ Deno.test("sidebar cleanup release assets stay version aligned", async () => {
   const bootstrap = await read("src/app/bootstrap.js");
   const sw = await read("sw.js");
   const config = await read("supabase-config.js");
+  const manifest = await read("manifest.webmanifest");
 
-  if (!bootstrap.includes("const VERSION = '26.11.48'")) throw new Error("frontend version mismatch");
-  if (!sw.includes("const APP_VERSION = '26.11.48'") || !sw.includes("absen-sppg-hadirly-v89")) {
+  if (!bootstrap.includes("const VERSION = '26.11.49'")) throw new Error("frontend version mismatch");
+  if (!sw.includes("const APP_VERSION = '26.11.49'") || !sw.includes("absen-sppg-hadirly-v90")) {
     throw new Error("PWA release/cache mismatch");
   }
-  if (!config.includes("bootstrap.js?v=26.11.48")) throw new Error("bootstrap import version mismatch");
+  if (!config.includes("bootstrap.js?v=26.11.49")) throw new Error("bootstrap import version mismatch");
+  if (!manifest.includes('"name": "Hadirly — Absensi & Payroll Digital"')) throw new Error("PWA name still uses old punctuation");
 });

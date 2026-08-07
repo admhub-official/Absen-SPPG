@@ -4,7 +4,7 @@
 
   const APP_NAME = 'Hadirly';
   const TAGLINE = 'Absensi & Payroll Digital';
-  const FULL_NAME = `${APP_NAME} : ${TAGLINE}`;
+  const FULL_NAME = `${APP_NAME} — ${TAGLINE}`;
   const ICON = './icons/app-icon.svg';
   const LOGO = './icons/hadirly-logo-horizontal.svg';
 
@@ -58,9 +58,10 @@
     nodes.forEach((node) => {
       const parent = node.parentElement;
       if (!parent || ['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(parent.tagName)) return;
-      if (/Presence SPPG/i.test(node.nodeValue || '')) {
-        node.nodeValue = node.nodeValue.replace(/Presence SPPG/gi, APP_NAME);
-      }
+      const current = node.nodeValue || '';
+      node.nodeValue = current
+        .replace(/Presence SPPG/gi, APP_NAME)
+        .replace(/Hadirly\s*:/g, APP_NAME);
     });
   }
 
@@ -88,8 +89,7 @@
         block.appendChild(text);
       }
 
-      const displayName = block.classList.contains('app-sidebar-brand') ? `${APP_NAME} :` : APP_NAME;
-      text.innerHTML = `<strong>${displayName}</strong><small>${TAGLINE}</small>`;
+      text.innerHTML = `<strong>${APP_NAME}</strong><small>${TAGLINE}</small>`;
     });
   }
 
