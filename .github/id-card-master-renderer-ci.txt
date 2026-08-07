@@ -1,0 +1,1 @@
+Validate WYSIWYG CR80 ID card preview and two-page PDF renderer.
