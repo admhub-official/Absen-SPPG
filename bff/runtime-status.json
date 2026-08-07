@@ -1,0 +1,9 @@
+{
+  "mode": "source-only",
+  "productionEnabled": false,
+  "productionOrigin": "https://hadirly.org",
+  "cookieName": "__Host-hadirly_session",
+  "sameSite": "Strict",
+  "legacyExchangePlanned": true,
+  "reason": "No connected server-side hosting or Cloudflare runtime is available in this session; frontend cutover must remain disabled until /api is deployed and smoke-tested on hadirly.org."
+}
