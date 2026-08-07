@@ -1,0 +1,8 @@
+.digital-id-front-head-signature{width:100%;margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0;text-align:center}
+.digital-id-front-head-signature small{display:block;color:#1e40af;font-size:.54rem;font-weight:800;letter-spacing:.05em}
+.digital-id-front-head-signature img{display:block;max-width:96px;max-height:36px;margin:1px auto 2px;object-fit:contain}
+.digital-id-front-head-signature .digital-id-signature-placeholder{height:28px}
+.digital-id-front-head-signature strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#0f172a;font-size:.61rem;line-height:1.2}
+.digital-id-front .digital-id-person{flex:0 0 auto;margin-top:10px}
+.digital-id-front .digital-id-person>small{margin-top:11px}
+@media(max-width:600px){.digital-id-front-head-signature{margin-top:7px;padding-top:7px}.digital-id-front-head-signature img{max-width:88px;max-height:32px}}
