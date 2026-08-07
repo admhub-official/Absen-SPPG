@@ -1,22 +1,9 @@
 {
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "noUncheckedIndexedAccess": true
-  },
-  "fmt": {
-    "lineWidth": 110,
-    "indentWidth": 2,
-    "semiColons": true,
-    "singleQuote": false
-  },
-  "lint": {
-    "rules": {
-      "tags": ["recommended"]
-    }
-  },
+  "compilerOptions": { "strict": true, "noImplicitAny": true, "noUncheckedIndexedAccess": true },
+  "fmt": { "lineWidth": 110, "indentWidth": 2, "semiColons": true, "singleQuote": false },
+  "lint": { "rules": { "tags": ["recommended"] } },
   "tasks": {
-    "check": "deno check supabase/functions/_shared/contracts.ts supabase/functions/_shared/http.ts supabase/functions/_shared/validation.ts supabase/functions/_shared/auth.ts supabase/functions/Absen/index.ts supabase/functions/AttendanceLocation/index.ts supabase/functions/SecurityOps/index.ts supabase/functions/OperationsV2/index.ts supabase/functions/WorkforceOps/index.ts supabase/functions/PlatformOps/index.ts supabase/functions/ProfileOps/index.ts tests/shared_validation_test.ts tests/codebase_hygiene_test.ts tests/security_hardening_test.ts tests/attendance_gateway_hygiene_test.ts tests/payroll_user_workflow_test.ts tests/frontend_entrypoint_hygiene_test.ts tests/device_trust_policy_test.ts tests/mobile_ui_refresh_test.ts tests/complaints_profile_import_regression_test.ts tests/digital_identity_workflow_test.ts tests/id_card_job_title_contract_test.ts tests/id_card_profile_actions_contract_test.ts tests/id_card_front_signature_contract_test.ts && deno check --config supabase/functions/PayrollUser/deno.json supabase/functions/PayrollUser/index.ts && deno check --config supabase/functions/Complaints/deno.json supabase/functions/Complaints/index.ts && deno check --config supabase/functions/DigitalIdentity/deno.json supabase/functions/DigitalIdentity/index.ts && deno test --allow-read tests/shared_validation_test.ts tests/codebase_hygiene_test.ts tests/security_hardening_test.ts tests/attendance_gateway_hygiene_test.ts tests/payroll_user_workflow_test.ts tests/frontend_entrypoint_hygiene_test.ts tests/device_trust_policy_test.ts tests/mobile_ui_refresh_test.ts tests/complaints_profile_import_regression_test.ts tests/digital_identity_workflow_test.ts tests/id_card_job_title_contract_test.ts tests/id_card_profile_actions_contract_test.ts tests/id_card_front_signature_contract_test.ts",
+    "check": "deno check supabase/functions/_shared/contracts.ts supabase/functions/_shared/http.ts supabase/functions/_shared/validation.ts supabase/functions/_shared/auth.ts supabase/functions/Absen/index.ts supabase/functions/AttendanceLocation/index.ts supabase/functions/SecurityOps/index.ts supabase/functions/OperationsV2/index.ts supabase/functions/WorkforceOps/index.ts supabase/functions/PlatformOps/index.ts supabase/functions/ProfileOps/index.ts tests/shared_validation_test.ts tests/codebase_hygiene_test.ts tests/security_hardening_test.ts tests/attendance_gateway_hygiene_test.ts tests/payroll_user_workflow_test.ts tests/frontend_entrypoint_hygiene_test.ts tests/device_trust_policy_test.ts tests/mobile_ui_refresh_test.ts tests/complaints_profile_import_regression_test.ts tests/digital_identity_workflow_test.ts tests/id_card_job_title_contract_test.ts tests/id_card_profile_actions_contract_test.ts tests/id_card_front_signature_contract_test.ts tests/employment_contracts_workflow_test.ts && deno check --config supabase/functions/PayrollUser/deno.json supabase/functions/PayrollUser/index.ts && deno check --config supabase/functions/Complaints/deno.json supabase/functions/Complaints/index.ts && deno check --config supabase/functions/DigitalIdentity/deno.json supabase/functions/DigitalIdentity/index.ts && deno check --config supabase/functions/EmploymentContracts/deno.json supabase/functions/EmploymentContracts/index.ts && deno test --allow-read tests/shared_validation_test.ts tests/codebase_hygiene_test.ts tests/security_hardening_test.ts tests/attendance_gateway_hygiene_test.ts tests/payroll_user_workflow_test.ts tests/frontend_entrypoint_hygiene_test.ts tests/device_trust_policy_test.ts tests/mobile_ui_refresh_test.ts tests/complaints_profile_import_regression_test.ts tests/digital_identity_workflow_test.ts tests/id_card_job_title_contract_test.ts tests/id_card_profile_actions_contract_test.ts tests/id_card_front_signature_contract_test.ts tests/employment_contracts_workflow_test.ts",
     "contracts": "deno test --allow-read tests/release_sprint_11_15_test.ts tests/release_sprint_16_19_test.ts tests/release_sprint_20_22_test.ts",
     "ci": "deno task check && deno task contracts"
   }
