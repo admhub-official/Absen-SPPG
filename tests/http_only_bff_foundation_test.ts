@@ -27,6 +27,8 @@ async function authTokenConsumers(): Promise<string[]> {
   return found.sort();
 }
 
+// Baseline captured by Engineering Quality #437. This list is intentionally explicit:
+// adding a new browser auth_token consumer fails CI, while final cookie cutover must reduce it to zero.
 const expectedLegacyConsumers = [
   "index.html",
   "security-operations-ui.js",
@@ -35,15 +37,24 @@ const expectedLegacyConsumers = [
   "src/app/attendance-location-flow.js",
   "src/app/config-center.js",
   "src/app/digital-id-card.js",
+  "src/app/employment-contract-navigation.js",
   "src/app/employment-contracts.js",
+  "src/app/in-app-confirm.js",
   "src/app/logout-session-guard.js",
   "src/app/notification-publisher.js",
   "src/app/operational-notifications.js",
   "src/app/profile-contract-identity.js",
   "src/app/profile-employment-editor.js",
+  "src/app/super-admin-dashboard.js",
+  "src/app/super-admin-settings-hub.js",
   "src/app/system-settings.js",
   "src/features/notifications/app-announcements.js",
   "src/features/payroll/payroll-history.js",
+  "src/services/api-client.js",
+  "src/services/attendance-correction-service.js",
+  "src/services/domain-services.js",
+  "src/services/operations-v2-service.js",
+  "supabase-config.js",
 ].sort();
 
 Deno.test("browser auth_token inventory is explicit until production cookie cutover", async () => {
