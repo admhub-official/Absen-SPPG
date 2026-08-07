@@ -29,10 +29,10 @@ Deno.test("Master Jabatan is one Jabatan atau Divisi field with automatic code",
   ]) if (!ui.includes(marker)) throw new Error(`master UI normalization missing ${marker}`);
 
   if (!bootstrap.includes("'./src/app/employment-master-normalization.js'")) throw new Error("master normalization script must load");
-  if (!bootstrap.includes("const VERSION = '26.11.47'")) throw new Error("frontend version mismatch");
-  if (!sw.includes("const APP_VERSION = '26.11.47'") || !sw.includes("absen-sppg-hadirly-v88")) throw new Error("PWA version mismatch");
+  if (!bootstrap.includes("const VERSION = '26.11.48'")) throw new Error("frontend version mismatch");
+  if (!sw.includes("const APP_VERSION = '26.11.48'") || !sw.includes("absen-sppg-hadirly-v89")) throw new Error("PWA version mismatch");
   if (!sw.includes("employment-master-normalization.js")) throw new Error("master normalization must be cached");
-  if (!config.includes("bootstrap.js?v=26.11.47")) throw new Error("bootstrap import version mismatch");
+  if (!config.includes("bootstrap.js?v=26.11.48")) throw new Error("bootstrap import version mismatch");
 });
 
 Deno.test("document master seeds job descriptions, schedules, and SOP references", async () => {
