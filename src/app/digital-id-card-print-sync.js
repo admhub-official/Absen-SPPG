@@ -10,9 +10,9 @@
     const root = document.querySelector('#digital-identity-section');
     const front = root?.querySelector('.digital-id-front');
     if (!front) return null;
-    const title = front.querySelector('.digital-id-bgn-header b')?.textContent?.trim() || '-';
+    const sppg = front.querySelector('.digital-id-bgn-header b')?.textContent?.trim() || '-';
     const foundation = front.querySelector('.digital-id-bgn-header small')?.textContent?.trim() || 'Yayasan -';
-    return { sppg: title, foundation };
+    return { sppg, foundation };
   }
 
   function syncPreview() {
@@ -41,10 +41,11 @@
     return body?.result;
   }
 
-  const originalApiCall = window.apiCall;
-  if (typeof originalApiCall === 'function') {
-    window.apiCall = async function idCardPrintSyncApi(functionName, payload = {}) {
-      const result = await originalApiCall(functionName, payload);
+  function ensureApiWrap() {
+    const current = window.apiCall;
+    if (typeof current !== 'function' || current.__idCardPrintSyncWrapped) return;
+    const wrapped = async function idCardPrintSyncApi(functionName, payload = {}) {
+      const result = await current(functionName, payload);
       if (syncing) return result;
       try {
         if (functionName === 'getMyDigitalIdentity' && result?.card?.id) {
@@ -53,7 +54,7 @@
             syncing = true;
             await callPrint('refreshMyActiveIdCardPdf');
             sessionStorage.setItem(stamp, '1');
-            return await originalApiCall(functionName, payload);
+            return await current(functionName, payload);
           }
         }
         if (functionName === 'approveIdCardRequests' && Array.isArray(result?.approvedIds) && result.approvedIds.length) {
@@ -67,10 +68,17 @@
       }
       return result;
     };
+    wrapped.__idCardPrintSyncWrapped = true;
+    window.apiCall = wrapped;
   }
 
-  const observer = new MutationObserver(syncPreview);
+  const observer = new MutationObserver(() => { syncPreview(); ensureApiWrap(); });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   syncPreview();
-  window.addEventListener('absen:app-ready', syncPreview);
+  ensureApiWrap();
+  document.addEventListener('DOMContentLoaded', () => { syncPreview(); ensureApiWrap(); }, { once: true });
+  window.addEventListener('absen:app-ready', () => { syncPreview(); ensureApiWrap(); });
+  setTimeout(ensureApiWrap, 0);
+  setTimeout(ensureApiWrap, 500);
+  setTimeout(ensureApiWrap, 1500);
 })();
