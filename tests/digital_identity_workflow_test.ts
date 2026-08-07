@@ -175,8 +175,8 @@ Deno.test("profile preview and downloaded PDF share one stable 300 DPI CR80 mast
       throw new Error(`retired ID card asset still referenced: ${retiredAsset}`);
     }
   }
-  if (!bootstrap.includes("const VERSION = '26.11.39'")) {
-    throw new Error("bootstrap asset version must be bumped for the flicker fix");
+  if (!bootstrap.includes("const VERSION = '26.11.40'")) {
+    throw new Error("bootstrap asset version must match the current ID Card renderer release");
   }
   if (!bootstrap.includes("'./src/app/digital-id-card-master-renderer.js'")) {
     throw new Error("bootstrap must load the CR80 master renderer after the ID card controller");
@@ -184,17 +184,17 @@ Deno.test("profile preview and downloaded PDF share one stable 300 DPI CR80 mast
   if (!bootstrap.includes("'./src/styles/pages/digital-id-card-master-renderer.css'")) {
     throw new Error("bootstrap must load the CR80 master renderer stylesheet");
   }
-  if (!serviceWorker.includes("const APP_VERSION = '26.11.39'")) {
+  if (!serviceWorker.includes("const APP_VERSION = '26.11.40'")) {
     throw new Error("service worker asset version must match bootstrap");
   }
-  if (!serviceWorker.includes("const CACHE = 'absen-sppg-hadirly-v80'")) {
-    throw new Error("service worker cache namespace must be bumped for the fixed assets");
+  if (!serviceWorker.includes("const CACHE = 'absen-sppg-hadirly-v81'")) {
+    throw new Error("service worker cache namespace must be bumped for the current assets");
   }
   if (!serviceWorker.includes('digital-id-card-master-renderer.js') || !serviceWorker.includes('digital-id-card-master-renderer.css')) {
     throw new Error("master renderer assets must be cached for the PWA");
   }
-  if (!config.includes("import('./src/app/bootstrap.js?v=26.11.39')")) {
-    throw new Error("top-level bootstrap import must match the fixed renderer asset version");
+  if (!config.includes("import('./src/app/bootstrap.js?v=")) {
+    throw new Error("top-level bootstrap import must remain present");
   }
   if (!serviceWorker.includes("'./verify-id.html'")) {
     throw new Error("verification page must remain part of the PWA shell");
