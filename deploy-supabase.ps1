@@ -83,7 +83,8 @@ $ObsoleteFunctions = @(
   "PayrollTTDMassal",
   "SyncPayrollSignatureLogo",
   "PendingSignatureCounts",
-  "DigitalIdentityPrint"
+  "DigitalIdentityPrint",
+  "ResetDigitalIdentityOnce"
 )
 
 foreach ($FunctionName in $ObsoleteFunctions) {
@@ -102,6 +103,7 @@ $FunctionNames = @(
   "Absen",
   "AbsenV2",
   "PayrollUser",
+  "ProfileOps",
   "DeviceTrust",
   "SecurityOps",
   "ProductionReadiness",
@@ -114,7 +116,7 @@ $FunctionNames = @(
   "PlatformOps"
 )
 
-$TemporaryFunctionPattern = '^(RunP|RunPublish|VerifyPayroll|PublishPayroll\d|PublishPayrollFinal|RebuildPayroll|TrimPublished|PrepareLogo|CleanupOrphan|RunCleanup)'
+$TemporaryFunctionPattern = '^(RunP|RunPublish|VerifyPayroll|PublishPayroll\d|PublishPayrollFinal|RebuildPayroll|TrimPublished|PrepareLogo|CleanupOrphan|RunCleanup|ResetDigitalIdentity)'
 $InvalidFunction = $FunctionNames | Where-Object { $_ -match $TemporaryFunctionPattern }
 if ($InvalidFunction) {
   throw "Fungsi sementara tidak boleh berada di production allowlist: $($InvalidFunction -join ', ')"
