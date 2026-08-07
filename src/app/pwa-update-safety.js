@@ -37,6 +37,12 @@
     notifySafePointIfNeeded();
   }
 
+  function isSignatureCanvas(canvas) {
+    if (!(canvas instanceof HTMLCanvasElement)) return false;
+    const identity = `${canvas.id || ''} ${canvas.className || ''}`;
+    return Boolean(canvas.closest('.modal-overlay')) || /signature|tanda.?tangan|ttd/i.test(identity);
+  }
+
   function isDirty() {
     if (manualDirty) return true;
     for (const [element, state] of dirtyInputs) {
@@ -76,7 +82,7 @@
   document.addEventListener('change', (event) => updateInput(event.target), true);
   document.addEventListener('pointerdown', (event) => {
     const canvas = event.target instanceof Element ? event.target.closest('canvas') : null;
-    if (canvas && visible(canvas) && canvas.closest('.modal-overlay,.app-view,form')) {
+    if (canvas && visible(canvas) && isSignatureCanvas(canvas)) {
       dirtyCanvases.add(canvas);
       notifySafePointIfNeeded();
     }
