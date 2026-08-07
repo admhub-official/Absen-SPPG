@@ -2,7 +2,7 @@ const read = (path: string) => Deno.readTextFile(path);
 
 Deno.test("ID Card job title comes only from Jabatan_Divisi", async () => {
   const editor = await read("src/app/profile-employment-editor.js");
-  const bootstrap = await read("src/app/bootstrap.js");
+  const assets = await read("src/app/pwa-shell-assets.js");
   const migration = await read("supabase/migrations/20260807114500_require_id_card_job_title.sql");
 
   for (const marker of [
@@ -20,8 +20,8 @@ Deno.test("ID Card job title comes only from Jabatan_Divisi", async () => {
     throw new Error("ID Card employment guard must not fall back to account Role");
   }
 
-  const profileEditorIndex = bootstrap.indexOf("'./src/app/profile-employment-editor.js'");
-  const digitalIdIndex = bootstrap.indexOf("'./src/app/digital-id-card.js'");
+  const profileEditorIndex = assets.indexOf("'./src/app/profile-employment-editor.js'");
+  const digitalIdIndex = assets.indexOf("'./src/app/digital-id-card.js'");
   if (profileEditorIndex < 0 || digitalIdIndex < 0 || profileEditorIndex > digitalIdIndex) {
     throw new Error("employment guard must load before the ID Card controller");
   }
