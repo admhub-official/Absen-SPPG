@@ -49,38 +49,33 @@ function compactSppgComparison(){
   card?.classList.add('compact-sppg-comparison');
 }
 
-function isolateTabs(){
-  document.querySelectorAll('[role="tablist"],.feature-tabs,.app-tabs,.security-ui-tabs').forEach((tablist)=>{
-    const tabs=[...tablist.querySelectorAll('[role="tab"],button')];
-    tabs.forEach((tab)=>{
-      if(tab.dataset.layoutTabBound)return;
-      tab.dataset.layoutTabBound='1';
-      tab.addEventListener('click',()=>{
-        tabs.forEach((item)=>{
-          const active=item===tab;
-          item.classList.toggle('is-active',active);
-          item.classList.toggle('active',active);
-          item.setAttribute('aria-selected',String(active));
-        });
-      });
-    });
-  });
-  document.querySelectorAll('[data-tab-panel]').forEach((panel)=>{
-    if(!panel.classList.contains('active')&&!panel.classList.contains('is-active'))panel.hidden=true;
-  });
-}
-
 function compactGenericLayouts(){
   document.querySelectorAll('.kpi-grid,.stats-grid,.summary-grid,.dashboard-kpis').forEach((node)=>node.classList.add('compact-dashboard-grid'));
   document.querySelectorAll('.toolbar,.filter-toolbar,.table-toolbar,.search-toolbar').forEach((node)=>node.classList.add('compact-toolbar'));
-  document.querySelectorAll('.bottom-nav,.mobile-bottom-nav,.app-bottom-nav').forEach((node)=>node.classList.add('compact-bottom-nav'));
-  document.querySelectorAll('.topbar,.app-header,.main-header').forEach((node)=>node.classList.add('compact-topbar'));
 }
 
-function apply(){compactUserFilters();compactPayroll();compactSppgComparison();isolateTabs();compactGenericLayouts();}
+function apply(){compactUserFilters();compactPayroll();compactSppgComparison();compactGenericLayouts();}
+
 let queued=false;
-const schedule=()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;apply();});};
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});else schedule();
-new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','aria-selected']});
+const schedule=()=>{
+  if(queued)return;
+  queued=true;
+  requestAnimationFrame(()=>{queued=false;apply();});
+};
+
+let observer=null;
+function observeDynamicContent(){
+  if(observer)return;
+  const root=document.querySelector('#app-layout .app-content')||document.querySelector('#app-layout');
+  if(!root)return;
+  observer=new MutationObserver((mutations)=>{
+    const hasAddedElements=mutations.some((mutation)=>[...mutation.addedNodes].some((node)=>node.nodeType===Node.ELEMENT_NODE));
+    if(hasAddedElements)schedule();
+  });
+  observer.observe(root,{childList:true,subtree:true});
+}
+
+function init(){schedule();observeDynamicContent();}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 window.addEventListener('hashchange',schedule);
-window.addEventListener('absen:app-ready',schedule);
+window.addEventListener('absen:app-ready',()=>{observeDynamicContent();schedule();});
