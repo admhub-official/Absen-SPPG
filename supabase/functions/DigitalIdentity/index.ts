@@ -66,10 +66,7 @@ type UserProfile = {
   Status_Aktif: boolean | null;
 };
 type ImageAsset = { bytes: Uint8Array; type: "png" | "jpg" };
-type ApprovalData = {
-  headName: string;
-  signaturePng: Uint8Array | null;
-};
+type ApprovalData = { headName: string; signaturePng: Uint8Array | null };
 type CardArtifacts = {
   qrPng: Uint8Array;
   qrPdf: Uint8Array;
@@ -183,7 +180,8 @@ function wrapText(
   maxWidth: number,
   maxLines = 6,
 ): string[] {
-  const words = cleanText(text).split(/\s+/);
+  const source = cleanText(text);
+  const words = source.split(/\s+/);
   const lines: string[] = [];
   let line = "";
   for (const word of words) {
@@ -197,11 +195,8 @@ function wrapText(
     if (lines.length >= maxLines - 1) break;
   }
   if (line && lines.length < maxLines) lines.push(line);
-  if (lines.length === maxLines) {
-    const consumed = lines.join(" ").length;
-    if (consumed < cleanText(text).length) {
-      lines[maxLines - 1] = fitText(`${lines[maxLines - 1]}…`, font, size, maxWidth);
-    }
+  if (lines.length === maxLines && lines.join(" ").length < source.length) {
+    lines[maxLines - 1] = fitText(`${lines[maxLines - 1]}…`, font, size, maxWidth);
   }
   return lines;
 }
@@ -238,6 +233,20 @@ function drawWrappedText(
   return y - lines.length * lineHeight;
 }
 
+function detectImageType(bytes: Uint8Array, contentType = ""): "png" | "jpg" | null {
+  const type = contentType.toLowerCase();
+  if (
+    type.includes("png") ||
+    (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47)
+  ) return "png";
+  if (
+    type.includes("jpeg") ||
+    type.includes("jpg") ||
+    (bytes[0] === 0xff && bytes[1] === 0xd8)
+  ) return "jpg";
+  return null;
+}
+
 async function fetchKnownImage(value: string | null | undefined): Promise<ImageAsset | null> {
   if (!value) return null;
   try {
@@ -247,15 +256,18 @@ async function fetchKnownImage(value: string | null | undefined): Promise<ImageA
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch(url, { signal: controller.signal, cache: "no-store" });
-    clearTimeout(timeout);
+    let response: Response;
+    try {
+      response = await fetch(url, { signal: controller.signal, cache: "no-store" });
+    } finally {
+      clearTimeout(timeout);
+    }
     if (!response.ok) return null;
-    const type = String(response.headers.get("content-type") || "").toLowerCase();
+
     const bytes = new Uint8Array(await response.arrayBuffer());
     if (!bytes.length || bytes.length > 5 * 1024 * 1024) return null;
-    if (type.includes("png")) return { bytes, type: "png" };
-    if (type.includes("jpeg") || type.includes("jpg")) return { bytes, type: "jpg" };
-    return null;
+    const type = detectImageType(bytes, response.headers.get("content-type") || "");
+    return type ? { bytes, type } : null;
   } catch {
     return null;
   }
@@ -277,25 +289,25 @@ function drawCircularImage(
   y: number,
   size: number,
 ): void {
-  const r = size / 2;
-  const cx = x + r;
-  const cy = y + r;
-  const c = r * 0.552284749831;
+  const radius = size / 2;
+  const cx = x + radius;
+  const cy = y + radius;
+  const curve = radius * 0.552284749831;
   page.pushOperators(
     pushGraphicsState(),
-    moveTo(cx + r, cy),
-    appendBezierCurve(cx + r, cy + c, cx + c, cy + r, cx, cy + r),
-    appendBezierCurve(cx - c, cy + r, cx - r, cy + c, cx - r, cy),
-    appendBezierCurve(cx - r, cy - c, cx - c, cy - r, cx, cy - r),
-    appendBezierCurve(cx + c, cy - r, cx + r, cy - c, cx + r, cy),
+    moveTo(cx + radius, cy),
+    appendBezierCurve(cx + radius, cy + curve, cx + curve, cy + radius, cx, cy + radius),
+    appendBezierCurve(cx - curve, cy + radius, cx - radius, cy + curve, cx - radius, cy),
+    appendBezierCurve(cx - radius, cy - curve, cx - curve, cy - radius, cx, cy - radius),
+    appendBezierCurve(cx + curve, cy - radius, cx + radius, cy - curve, cx + radius, cy),
     clip(),
     endPath(),
   );
 
   const dimensions = image.scale(1);
-  const ratio = Math.max(size / dimensions.width, size / dimensions.height);
-  const width = dimensions.width * ratio;
-  const height = dimensions.height * ratio;
+  const scale = Math.max(size / dimensions.width, size / dimensions.height);
+  const width = dimensions.width * scale;
+  const height = dimensions.height * scale;
   page.drawImage(image, {
     x: x + (size - width) / 2,
     y: y + (size - height) / 2,
@@ -306,7 +318,7 @@ function drawCircularImage(
   page.drawCircle({
     x: cx,
     y: cy,
-    size: r,
+    size: radius,
     borderColor: rgb(226 / 255, 232 / 255, 240 / 255),
     borderWidth: 1,
   });
@@ -315,8 +327,10 @@ function drawCircularImage(
 function signatureBytes(value: unknown): Uint8Array {
   const raw = requiredString(value, "signatureDataUrl", { min: 50, max: 3_000_000 });
   const match = raw.match(/^data:image\/png;base64,([A-Za-z0-9+/=]+)$/);
-  if (!match) throw new ValidationError("Format TTD harus PNG dari kanvas tanda tangan.", "signatureDataUrl");
-  let binary = "";
+  if (!match) {
+    throw new ValidationError("Format TTD harus PNG dari kanvas tanda tangan.", "signatureDataUrl");
+  }
+  let binary: string;
   try {
     binary = atob(match[1]);
   } catch {
@@ -328,12 +342,13 @@ function signatureBytes(value: unknown): Uint8Array {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
+const PROFILE_COLUMNS =
+  "ID_User,Nama_Lengkap,Role,Jabatan_Divisi,SPPG,Yayasan,Tanggal_Mulai_Kerja,ID_Card_Unik,URL_Foto_Profil,URL_Foto_Profil_Asli,Status_Aktif";
+
 async function getProfile(idUser: string): Promise<UserProfile> {
   const result = await db
     .from("Users")
-    .select(
-      "ID_User,Nama_Lengkap,Role,Jabatan_Divisi,SPPG,Yayasan,Tanggal_Mulai_Kerja,ID_Card_Unik,URL_Foto_Profil,URL_Foto_Profil_Asli,Status_Aktif",
-    )
+    .select(PROFILE_COLUMNS)
     .eq("ID_User", idUser)
     .maybeSingle();
   if (result.error || !result.data) throw new Error("ACCOUNT_INACTIVE");
@@ -343,18 +358,13 @@ async function getProfile(idUser: string): Promise<UserProfile> {
 async function getProfiles(ids: string[]): Promise<Map<string, UserProfile>> {
   const unique = [...new Set(ids.filter(Boolean))];
   if (!unique.length) return new Map();
-  const result = await db
-    .from("Users")
-    .select(
-      "ID_User,Nama_Lengkap,Role,Jabatan_Divisi,SPPG,Yayasan,Tanggal_Mulai_Kerja,ID_Card_Unik,URL_Foto_Profil,URL_Foto_Profil_Asli,Status_Aktif",
-    )
-    .in("ID_User", unique);
+  const result = await db.from("Users").select(PROFILE_COLUMNS).in("ID_User", unique);
   if (result.error) throw result.error;
   return new Map((result.data || []).map((row) => [String(row.ID_User), row as UserProfile]));
 }
 
 async function ensureIdCardCode(profile: UserProfile): Promise<UserProfile> {
-  if (cleanText(profile.ID_Card_Unik, "") !== "") return profile;
+  if (cleanText(profile.ID_Card_Unik, "")) return profile;
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const hash = await sha256Hex(`${profile.ID_User}:${Date.now()}:${randomToken()}:${attempt}`);
@@ -363,9 +373,7 @@ async function ensureIdCardCode(profile: UserProfile): Promise<UserProfile> {
       .from("Users")
       .update({ ID_Card_Unik: code, Updated_At: nowIso() })
       .eq("ID_User", profile.ID_User)
-      .select(
-        "ID_User,Nama_Lengkap,Role,Jabatan_Divisi,SPPG,Yayasan,Tanggal_Mulai_Kerja,ID_Card_Unik,URL_Foto_Profil,URL_Foto_Profil_Asli,Status_Aktif",
-      )
+      .select(PROFILE_COLUMNS)
       .maybeSingle();
     if (!update.error && update.data) return update.data as UserProfile;
     if (update.error?.code !== "23505") throw update.error;
@@ -497,8 +505,10 @@ async function buildIdCardPdf(
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const qr = await pdf.embedPng(qrPng);
-  const photoAsset = await fetchKnownImage(profile.URL_Foto_Profil || profile.URL_Foto_Profil_Asli);
-  const logoAsset = await fetchKnownImage(BGN_LOGO_URL);
+  const [photoAsset, logoAsset] = await Promise.all([
+    fetchKnownImage(profile.URL_Foto_Profil || profile.URL_Foto_Profil_Asli),
+    fetchKnownImage(BGN_LOGO_URL),
+  ]);
   const photo = await embedImage(pdf, photoAsset);
   const logo = await embedImage(pdf, logoAsset);
   const signature = approval?.signaturePng ? await pdf.embedPng(approval.signaturePng) : null;
@@ -519,6 +529,9 @@ async function buildIdCardPdf(
   const frontX = (595.28 - totalW) / 2;
   const backX = frontX + cardW + gap;
   const cardY = 455;
+  const frontCenter = frontX + cardW / 2;
+  const backCenter = backX + cardW / 2;
+
   const name = cleanText(profile.Nama_Lengkap);
   const role = normalizeRole(profile.Role) || "USER";
   const position = cleanText(profile.Jabatan_Divisi) === "-" ? role : cleanText(profile.Jabatan_Divisi);
@@ -555,7 +568,6 @@ async function buildIdCardPdf(
   page.drawRectangle({ x: frontX, y: cardY + cardH - 63, width: cardW, height: 63, color: sky });
   page.drawRectangle({ x: frontX, y: cardY + cardH - 4, width: cardW, height: 4, color: blue });
 
-  const frontCenter = frontX + cardW / 2;
   if (logo) {
     const dims = logo.scale(1);
     const logoH = 29;
@@ -578,7 +590,12 @@ async function buildIdCardPdf(
   if (photo) {
     drawCircularImage(page, photo, photoX, photoY, photoSize);
   } else {
-    page.drawCircle({ x: frontCenter, y: photoY + photoSize / 2, size: photoSize / 2, color: rgb(219 / 255, 234 / 255, 254 / 255) });
+    page.drawCircle({
+      x: frontCenter,
+      y: photoY + photoSize / 2,
+      size: photoSize / 2,
+      color: rgb(219 / 255, 234 / 255, 254 / 255),
+    });
     drawCenteredText(page, initials(name), bold, 19, frontCenter, photoY + 25, blue);
   }
 
@@ -597,42 +614,86 @@ async function buildIdCardPdf(
     borderColor: border,
     borderWidth: 0.8,
   });
-  page.drawRectangle({ x: backX, y: cardY + cardH - 40, width: cardW, height: 40, color: navy });
-  page.drawRectangle({ x: backX, y: cardY + cardH - 44, width: cardW, height: 4, color: blue });
-  const backCenter = backX + cardW / 2;
-  drawCenteredText(page, "VERIFIKASI ID CARD", bold, 8.2, backCenter, cardY + cardH - 22, white);
-  drawCenteredText(page, "SPPG · BADAN GIZI NASIONAL", regular, 4.7, backCenter, cardY + cardH - 32, rgb(191 / 255, 219 / 255, 254 / 255));
+  page.drawRectangle({ x: backX, y: cardY + cardH - 66, width: cardW, height: 66, color: sky });
+  page.drawRectangle({ x: backX, y: cardY + cardH - 4, width: cardW, height: 4, color: blue });
+
+  const backLogoSize = 34;
+  const backLogoX = backX + 12;
+  const backLogoY = cardY + cardH - 48;
+  if (logo) {
+    page.drawImage(logo, {
+      x: backLogoX,
+      y: backLogoY,
+      width: backLogoSize,
+      height: backLogoSize,
+    });
+  }
+  const headerTextX = backLogoX + backLogoSize + 8;
+  page.drawText("SATUAN PELAYANAN PEMENUHAN GIZI (SPPG)", {
+    x: headerTextX,
+    y: cardY + cardH - 23,
+    size: 4.45,
+    font: bold,
+    color: navy,
+  });
+  page.drawText(fitText(sppg, bold, 7.1, cardW - 62), {
+    x: headerTextX,
+    y: cardY + cardH - 35,
+    size: 7.1,
+    font: bold,
+    color: blue,
+  });
+  page.drawText(fitText(foundation, regular, 4.8, cardW - 62), {
+    x: headerTextX,
+    y: cardY + cardH - 46,
+    size: 4.8,
+    font: regular,
+    color: muted,
+  });
 
   const qrSize = 82;
-  page.drawRectangle({ x: backCenter - qrSize / 2 - 4, y: cardY + 120, width: qrSize + 8, height: qrSize + 8, color: pale, borderColor: border, borderWidth: 0.5 });
-  page.drawImage(qr, { x: backCenter - qrSize / 2, y: cardY + 124, width: qrSize, height: qrSize });
-  drawCenteredText(page, "KODE ID CARD", bold, 4.8, backCenter, cardY + 109, blue);
-  drawCenteredText(page, fitText(code, bold, 7.3, cardW - 16), bold, 7.3, backCenter, cardY + 98, navy);
+  page.drawRectangle({
+    x: backCenter - qrSize / 2 - 4,
+    y: cardY + 116,
+    width: qrSize + 8,
+    height: qrSize + 8,
+    color: pale,
+    borderColor: border,
+    borderWidth: 0.5,
+  });
+  page.drawImage(qr, { x: backCenter - qrSize / 2, y: cardY + 120, width: qrSize, height: qrSize });
+  drawCenteredText(page, "KODE ID CARD", bold, 4.8, backCenter, cardY + 105, blue);
+  drawCenteredText(page, fitText(code, bold, 7.3, cardW - 16), bold, 7.3, backCenter, cardY + 94, navy);
 
-  const noteBottom = drawWrappedText(page, note, regular, 4.4, backX + 10, cardY + 84, cardW - 20, 5.4, muted, 5);
-  page.drawRectangle({ x: backX + 12, y: Math.max(cardY + 49, noteBottom - 1), width: cardW - 24, height: 0.7, color: border });
+  const noteBottom = drawWrappedText(page, note, regular, 4.35, backX + 10, cardY + 80, cardW - 20, 5.25, muted, 5);
+  page.drawRectangle({
+    x: backX + 12,
+    y: Math.max(cardY + 54, noteBottom - 1),
+    width: cardW - 24,
+    height: 0.7,
+    color: border,
+  });
 
+  drawCenteredText(page, "KEPALA SPPG", bold, 4.8, backCenter, cardY + 49, blue);
   if (approval) {
-    drawCenteredText(page, "KEPALA SPPG", bold, 4.8, backCenter, cardY + 43, blue);
     if (signature) {
       const dims = signature.scale(1);
       const maxW = 64;
-      const maxH = 29;
-      const ratio = Math.min(maxW / dims.width, maxH / dims.height);
-      const width = dims.width * ratio;
-      const height = dims.height * ratio;
-      page.drawImage(signature, { x: backCenter - width / 2, y: cardY + 18, width, height });
+      const maxH = 27;
+      const scale = Math.min(maxW / dims.width, maxH / dims.height);
+      const width = dims.width * scale;
+      const height = dims.height * scale;
+      page.drawImage(signature, { x: backCenter - width / 2, y: cardY + 22, width, height });
     }
-    drawCenteredText(page, fitText(approval.headName, bold, 6.1, cardW - 18), bold, 6.1, backCenter, cardY + 9, navy);
+    drawCenteredText(page, fitText(approval.headName, bold, 6.1, cardW - 18), bold, 6.1, backCenter, cardY + 13, navy);
   } else {
-    drawCenteredText(page, "KEPALA SPPG", bold, 4.8, backCenter, cardY + 43, blue);
-    drawCenteredText(page, "MENUNGGU PERSETUJUAN", bold, 5.7, backCenter, cardY + 27, amber);
-    drawCenteredText(page, "TTD akan muncul setelah ADMIN menyetujui pengajuan.", regular, 4.1, backCenter, cardY + 17, muted);
-    drawCenteredText(page, formatDateId(generatedAt), regular, 4.1, backCenter, cardY + 8, muted);
+    drawCenteredText(page, "MENUNGGU PERSETUJUAN", bold, 5.7, backCenter, cardY + 33, amber);
+    drawCenteredText(page, "TTD akan muncul setelah ADMIN menyetujui pengajuan.", regular, 4.1, backCenter, cardY + 23, muted);
+    drawCenteredText(page, formatDateId(generatedAt), regular, 4.1, backCenter, cardY + 14, muted);
   }
 
-  page.drawText("DEPAN", { x: frontX + cardW / 2 - 12, y: cardY - 16, size: 7, font: bold, color: muted });
-  page.drawText("BELAKANG", { x: backX + cardW / 2 - 18, y: cardY - 16, size: 7, font: bold, color: muted });
+  page.drawText("DEPAN", { x: frontCenter - 12, y: cardY - 16, size: 7, font: bold, color: muted });
+  page.drawText("BELAKANG", { x: backCenter - 18, y: cardY - 16, size: 7, font: bold, color: muted });
   page.drawText("QR hanya valid setelah kartu disetujui dan berstatus ACTIVE.", {
     x: frontX,
     y: 410,
@@ -654,8 +715,7 @@ async function buildQrPdf(
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const qr = await pdf.embedPng(qrPng);
-  const logoAsset = await fetchKnownImage(BGN_LOGO_URL);
-  const logo = await embedImage(pdf, logoAsset);
+  const logo = await embedImage(pdf, await fetchKnownImage(BGN_LOGO_URL));
   const navy = rgb(15 / 255, 23 / 255, 42 / 255);
   const blue = rgb(30 / 255, 64 / 255, 175 / 255);
   const pale = rgb(239 / 255, 246 / 255, 255 / 255);
@@ -679,10 +739,18 @@ async function buildQrPdf(
     color: muted,
   });
   page.drawText("QR aktif setelah ID Card disetujui Kepala SPPG melalui akun ADMIN.", {
-    x: 102, y: 215, size: 9, font: regular, color: navy,
+    x: 102,
+    y: 215,
+    size: 9,
+    font: regular,
+    color: navy,
   });
   page.drawText(`Pengajuan dibuat ${formatDateId(generatedAt)}`, {
-    x: 102, y: 190, size: 8, font: regular, color: muted,
+    x: 102,
+    y: 190,
+    size: 8,
+    font: regular,
+    color: muted,
   });
   drawWrappedText(page, officialOwnershipNote(profile), regular, 7.5, 102, 160, 390, 10, muted, 4);
 
@@ -714,7 +782,7 @@ async function buildArtifacts(
 }
 
 async function uploadArtifacts(paths: Record<string, string>, artifacts: CardArtifacts): Promise<void> {
-  const uploads = [
+  const results = await Promise.all([
     db.storage.from(BUCKET).upload(paths.qrPng, artifacts.qrPng, {
       contentType: "image/png",
       cacheControl: "3600",
@@ -730,8 +798,7 @@ async function uploadArtifacts(paths: Record<string, string>, artifacts: CardArt
       cacheControl: "3600",
       upsert: false,
     }),
-  ];
-  const results = await Promise.all(uploads);
+  ]);
   const failed = results.find((result) => result.error);
   if (failed?.error) throw failed.error;
 }
@@ -863,10 +930,12 @@ async function getIdCardAdminOverview(auth: AuthenticatedUser) {
   ]);
   if (pendingResult.error) throw pendingResult.error;
   if (activeResult.error) throw activeResult.error;
+
   const rows = [...(pendingResult.data || []), ...(activeResult.data || [])] as DataRow[];
   const profiles = await getProfiles(rows.map((row) => String(row.ID_User)));
-
   const pending: Record<string, unknown>[] = [];
+  const approved: Record<string, unknown>[] = [];
+
   for (const card of pendingResult.data || []) {
     const profile = profiles.get(String(card.ID_User));
     if (!profile || !adminCanAccessProfile(auth, adminProfile, profile)) continue;
@@ -885,7 +954,6 @@ async function getIdCardAdminOverview(auth: AuthenticatedUser) {
     });
   }
 
-  const approved: Record<string, unknown>[] = [];
   for (const card of activeResult.data || []) {
     const profile = profiles.get(String(card.ID_User));
     if (!profile || !adminCanAccessProfile(auth, adminProfile, profile)) continue;
@@ -923,6 +991,7 @@ async function approveOneCard(
   const approvedAt = nowIso();
   const qrDownload = await db.storage.from(BUCKET).download(card.QR_PNG_Storage_Path);
   if (qrDownload.error || !qrDownload.data) throw qrDownload.error || new Error("QR_NOT_FOUND");
+
   const qrPng = new Uint8Array(await qrDownload.data.arrayBuffer());
   const approvedPdf = await buildIdCardPdf(profile, qrPng, approvedAt, { headName, signaturePng });
   const pdfSha256 = await sha256Hex(approvedPdf);
@@ -984,7 +1053,9 @@ async function approveIdCardRequests(auth: AuthenticatedUser, payload: Record<st
   const rawIds = Array.isArray(payload.cardIds) ? payload.cardIds : [];
   const cardIds = [...new Set(rawIds.map((value) => String(value || "").trim()).filter(Boolean))];
   if (!cardIds.length) throw new ValidationError("Pilih minimal satu pengajuan ID Card.", "cardIds");
-  if (cardIds.length > 100) throw new ValidationError("Maksimal 100 pengajuan dalam sekali persetujuan.", "cardIds");
+  if (cardIds.length > 100) {
+    throw new ValidationError("Maksimal 100 pengajuan dalam sekali persetujuan.", "cardIds");
+  }
   const headName = requiredString(payload.headName, "headName", { min: 3, max: 120 });
   const signaturePng = signatureBytes(payload.signatureDataUrl);
 
@@ -996,8 +1067,8 @@ async function approveIdCardRequests(auth: AuthenticatedUser, payload: Record<st
   if (cardsResult.error) throw cardsResult.error;
   const cards = (cardsResult.data || []) as DataRow[];
   if (!cards.length) throw new Error("CARD_NOT_PENDING");
-  const profiles = await getProfiles(cards.map((card) => String(card.ID_User)));
 
+  const profiles = await getProfiles(cards.map((card) => String(card.ID_User)));
   const accessible = cards.filter((card) => {
     const profile = profiles.get(String(card.ID_User));
     return Boolean(profile && adminCanAccessProfile(auth, adminProfile, profile));
@@ -1040,9 +1111,7 @@ async function verifyDigitalIdentity(payload: Record<string, unknown>) {
   if (!cardResult.data) return { valid: false, status: "INVALID" };
 
   const profile = await getProfile(String(cardResult.data.ID_User)).catch(() => null);
-  if (!profile || profile.Status_Aktif === false) {
-    return { valid: false, status: "INACTIVE" };
-  }
+  if (!profile || profile.Status_Aktif === false) return { valid: false, status: "INACTIVE" };
 
   const verifiedAt = nowIso();
   const count = Number(cardResult.data.Verification_Count || 0) + 1;

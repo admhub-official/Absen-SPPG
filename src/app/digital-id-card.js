@@ -9,6 +9,7 @@
     profileObserver: null,
     adminOverview: null,
     adminBusy: false,
+    adminBound: false,
     selected: new Set(),
     signatureDrawn: false,
     drawing: false,
@@ -31,8 +32,7 @@
   const safeUrl = (value) => {
     try {
       const url = new URL(String(value || ''), window.location.origin);
-      if (!['https:', 'http:', 'blob:'].includes(url.protocol)) return '';
-      return url.href;
+      return ['https:', 'http:', 'blob:'].includes(url.protocol) ? url.href : '';
     } catch { return ''; }
   };
   const initials = (name) => String(name || 'ID').trim().split(/\s+/).filter(Boolean).slice(0, 2)
@@ -93,8 +93,7 @@
 
   function setBusy(busy, message = '') {
     state.busy = busy;
-    const root = section();
-    root?.classList.toggle('is-busy', busy);
+    section()?.classList.toggle('is-busy', busy);
     if (message) setMessage(message, 'info');
     renderProfile();
   }
@@ -104,8 +103,28 @@
     const qrStatus = document.querySelector('#p-qr-code');
     const hasCard = Boolean(identity?.hasCard);
     const hasPending = Boolean(identity?.hasPending);
-    if (idStatus) idStatus.textContent = hasPending && !hasCard ? 'Menunggu Persetujuan' : hasPending ? 'Aktif · Pembaruan Menunggu Persetujuan' : hasCard ? 'Tersedia' : 'Belum Tersedia';
+    if (idStatus) {
+      idStatus.textContent = hasPending && !hasCard
+        ? 'Menunggu Persetujuan'
+        : hasPending
+        ? 'Aktif · Pembaruan Menunggu Persetujuan'
+        : hasCard
+        ? 'Tersedia'
+        : 'Belum Tersedia';
+    }
     if (qrStatus) qrStatus.textContent = hasCard ? 'Aktif' : hasPending ? 'Menunggu Persetujuan' : 'Belum Tersedia';
+  }
+
+  function institutionHeader(profile, className) {
+    return `
+      <div class="${className}">
+        <img src="${BGN_LOGO}" alt="Logo BGN">
+        <div class="digital-id-back-title-copy">
+          <strong>SATUAN PELAYANAN PEMENUHAN GIZI (SPPG)</strong>
+          <b>${esc(profile.sppg)}</b>
+          <span>${esc(profile.yayasanLabel || profile.yayasan)}</span>
+        </div>
+      </div>`;
   }
 
   function frontPreview(profile) {
@@ -125,7 +144,6 @@
           <small>TANGGAL MULAI BEKERJA</small>
           <b>${esc(profile.tanggalMulaiKerjaLabel || '-')}</b>
         </div>
-        <p class="digital-id-official-note">${esc(profile.officialNote || '')}</p>
       </div>`;
   }
 
@@ -134,7 +152,7 @@
     const signature = safeUrl(card?.headSppgSignatureUrl);
     return `
       <div class="digital-id-portrait-card digital-id-back" aria-label="Pratinjau bagian belakang ID Card">
-        <div class="digital-id-back-title"><strong>VERIFIKASI ID CARD</strong><span>SPPG · BADAN GIZI NASIONAL</span></div>
+        ${institutionHeader(profile, 'digital-id-back-title')}
         <div class="digital-id-back-qr">${qr ? `<img src="${esc(qr)}" alt="QR verifikasi ID Card">` : '<span>QR</span>'}</div>
         <small class="digital-id-code-label">KODE ID CARD</small>
         <code>${esc(profile.idCardCode)}</code>
@@ -155,6 +173,7 @@
     const generate = root.querySelector('[data-digital-id-action="generate"]');
     const generateLabel = root.querySelector('[data-generate-label]');
     const identity = state.identity;
+
     if (!identity) {
       status.textContent = 'Belum dimuat';
       status.className = 'digital-identity-status';
@@ -288,7 +307,6 @@
         <button class="app-nav-item id-card-admin-subnav" data-id-card-view="admin-id-card-pending" type="button"><span>Pengajuan ID Card</span><span class="badge-count" id="id-card-pending-nav-count" style="display:none">0</span></button>`;
       const before = sidebar.querySelector('[data-view="admin-log"]') || sidebar.lastElementChild;
       sidebar.insertBefore(group, before);
-      group.querySelectorAll('[data-id-card-view]').forEach((button) => button.addEventListener('click', () => openAdminView(button.dataset.idCardView)));
     }
 
     if (mobile && !document.querySelector('#id-card-mobile-nav')) {
@@ -299,7 +317,6 @@
         <button class="mobile-more-menu-item" data-id-card-view="admin-id-card-list" type="button">Daftar ID Card</button>
         <button class="mobile-more-menu-item" data-id-card-view="admin-id-card-pending" type="button">Pengajuan ID Card <span class="badge-count" id="id-card-pending-mobile-count" style="display:none">0</span></button>`;
       mobile.insertBefore(wrap, mobile.firstChild?.nextSibling || null);
-      wrap.querySelectorAll('[data-id-card-view]').forEach((button) => button.addEventListener('click', () => openAdminView(button.dataset.idCardView)));
     }
 
     if (!document.querySelector('#view-admin-id-card-list')) {
@@ -325,6 +342,21 @@
     }
 
     if (!document.querySelector('#id-card-approval-modal')) mountApprovalModal();
+    bindAdminEvents();
+    return true;
+  }
+
+  function bindAdminEvents() {
+    if (state.adminBound) return;
+    state.adminBound = true;
+    document.querySelector('#id-card-admin-nav-group')?.addEventListener('click', (event) => {
+      const button = event.target.closest?.('[data-id-card-view]');
+      if (button) openAdminView(button.dataset.idCardView);
+    });
+    document.querySelector('#id-card-mobile-nav')?.addEventListener('click', (event) => {
+      const button = event.target.closest?.('[data-id-card-view]');
+      if (button) openAdminView(button.dataset.idCardView);
+    });
     document.querySelectorAll('[data-id-card-admin-action="refresh"]').forEach((button) => button.addEventListener('click', () => loadAdmin(true)));
     document.querySelector('#id-card-approve-selected')?.addEventListener('click', () => openApprovalModal([...state.selected]));
     document.querySelector('#id-card-approve-all')?.addEventListener('click', () => {
@@ -340,7 +372,6 @@
     });
     document.querySelector('#id-card-pending-body')?.addEventListener('change', handlePendingSelection);
     document.querySelector('#id-card-approved-body')?.addEventListener('click', handleApprovedAction);
-    return true;
   }
 
   function mountApprovalModal() {
@@ -365,7 +396,8 @@
     document.body.appendChild(modal);
     modal.addEventListener('click', handleModalAction);
     const canvas = modal.querySelector('#id-card-signature-canvas');
-    ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'pointerleave'].forEach((eventName) => canvas.addEventListener(eventName, handleSignaturePointer));
+    ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'pointerleave']
+      .forEach((eventName) => canvas.addEventListener(eventName, handleSignaturePointer));
     clearSignature();
   }
 
@@ -472,7 +504,8 @@
     const checkbox = event.target.closest?.('[data-id-card-select]');
     if (!checkbox) return;
     const id = String(checkbox.dataset.idCardSelect || '');
-    if (checkbox.checked) state.selected.add(id); else state.selected.delete(id);
+    if (checkbox.checked) state.selected.add(id);
+    else state.selected.delete(id);
     renderAdminPending();
   }
 
@@ -480,8 +513,11 @@
     const button = event.target.closest?.('[data-id-card-file]');
     if (!button) return;
     try {
-      if (button.dataset.idCardFile === 'download') await download(button.dataset.url, `ID-Card-${button.dataset.code || 'SPPG'}.pdf`);
-      else printPdf(button.dataset.url);
+      if (button.dataset.idCardFile === 'download') {
+        await download(button.dataset.url, `ID-Card-${button.dataset.code || 'SPPG'}.pdf`);
+      } else {
+        printPdf(button.dataset.url);
+      }
     } catch (error) {
       notify(error.message || 'File ID Card tidak dapat dibuka.', 'error');
     }
@@ -569,6 +605,7 @@
     if (action === 'cancel') return closeApprovalModal();
     if (action === 'clear-signature') return clearSignature();
     if (action !== 'confirm' || state.adminBusy) return;
+
     const modal = document.querySelector('#id-card-approval-modal');
     let ids = [];
     try { ids = JSON.parse(modal.dataset.cardIds || '[]'); } catch {}
@@ -626,12 +663,16 @@
     }, 60000);
   }
 
-  function init() {
+  function retryMount() {
     mountProfile();
     watchProfile();
+    if (isIdCardAdmin()) mountAdminShell();
+  }
+
+  function init() {
+    retryMount();
     if (isIdCardAdmin()) startAdminBadgePolling();
-    setTimeout(() => { mountProfile(); watchProfile(); if (isIdCardAdmin()) mountAdminShell(); }, 500);
-    setTimeout(() => { mountProfile(); watchProfile(); if (isIdCardAdmin()) mountAdminShell(); }, 1400);
+    [500, 1400].forEach((delay) => setTimeout(retryMount, delay));
   }
 
   window.AbsenDigitalIdentity = Object.freeze({

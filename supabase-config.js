@@ -205,6 +205,6 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   });
 })();
 
-import('./src/app/bootstrap.js?v=26.11.35').catch((error) => {
+import('./src/app/bootstrap.js?v=26.11.37').catch((error) => {
   console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error);
 });
