@@ -13,7 +13,6 @@ const db = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   { auth: { persistSession: false } },
 );
-
 const corsOptions = {
   allowedOriginsEnv: Deno.env.get("ABSEN_ALLOWED_ORIGINS") || "",
   productionOrigin: "https://hadirly.org",
@@ -22,34 +21,11 @@ const corsOptions = {
 };
 
 const USER_SAFE_COLUMNS = [
-  "ID_User",
-  "Username",
-  "Role",
-  "Status_Aktif",
-  "Nama_Lengkap",
-  "Tempat_Lahir",
-  "Tanggal_Lahir",
-  "Jenis_Kelamin",
-  "Email",
-  "No_Whatsapp",
-  "SPPG",
-  "Yayasan",
-  "Tanggal_Mulai_Kerja",
-  "Jabatan_Divisi",
-  "Gaji_Harian",
-  "Nama_Bank",
-  "Atas_Nama_Rekening",
-  "Nomor_Rekening",
-  "ID_Card_Unik",
-  "URL_Foto_Profil",
-  "URL_Foto_Profil_Asli",
-  "URL_Foto_Wajah_Ref",
-  "Setuju_Kebijakan_Data",
-  "Created_At",
-  "Updated_At",
-  "Akun_Dibekukan",
-  "NIK",
-  "Alamat",
+  "ID_User", "Username", "Role", "Status_Aktif", "Nama_Lengkap", "Tempat_Lahir", "Tanggal_Lahir",
+  "Jenis_Kelamin", "Email", "No_Whatsapp", "SPPG", "Yayasan", "Tanggal_Mulai_Kerja", "Jabatan_Divisi",
+  "Gaji_Harian", "Nama_Bank", "Atas_Nama_Rekening", "Nomor_Rekening", "ID_Card_Unik", "URL_Foto_Profil",
+  "URL_Foto_Profil_Asli", "URL_Foto_Wajah_Ref", "Setuju_Kebijakan_Data", "Created_At", "Updated_At",
+  "Akun_Dibekukan", "NIK", "Alamat",
 ].join(",");
 
 const normalize = (value: unknown) => String(value ?? "").trim().toUpperCase().replace(/_/g, " ");
@@ -59,20 +35,12 @@ const clampInt = (value: unknown, fallback: number, min: number, max: number) =>
   const parsed = Number.parseInt(String(value ?? ""), 10);
   return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
 };
-const jakartaDate = () =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Jakarta",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
+const jakartaDate = () => new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit",
+}).format(new Date());
 
 async function actorProfile(auth: AuthenticatedUser) {
-  const result = await db
-    .from("Users")
-    .select("ID_User,Email,SPPG,Role")
-    .eq("ID_User", auth.idUser)
-    .maybeSingle();
+  const result = await db.from("Users").select("ID_User,Email,SPPG,Role").eq("ID_User", auth.idUser).maybeSingle();
   if (result.error || !result.data) throw new Error("ACCOUNT_INACTIVE");
   return result.data as Record<string, unknown>;
 }
@@ -102,7 +70,7 @@ async function scopedUsers(scope: string[] | null): Promise<Record<string, unkno
   if (scope) query = query.in("SPPG", scope);
   const result = await query;
   if (result.error) throw result.error;
-  return (result.data || []) as Record<string, unknown>[];
+  return (result.data || []) as unknown as Record<string, unknown>[];
 }
 
 function profileMissing(row: Record<string, unknown>): string[] {
@@ -119,33 +87,26 @@ function profileMissing(row: Record<string, unknown>): string[] {
   if (!String(row.URL_Foto_Profil || "").trim()) missing.push("Foto Profil");
   return missing;
 }
-
-function profileScore(row: Record<string, unknown>): number {
-  return Math.round((10 - profileMissing(row).length) * 10);
-}
+const profileScore = (row: Record<string, unknown>) => Math.round((10 - profileMissing(row).length) * 10);
 
 async function presenceFor(ids: string[]) {
   const latest = new Map<string, string>();
   const online = new Set<string>();
   if (!ids.length) return { latest, online };
-
   const sessionTable = db.from("Sessions");
   const sessions = await sessionTable
     .select("ID_User,Expires_At,Last_Activity_At,Created_At")
     .in("ID_User", ids)
     .gt("Expires_At", new Date().toISOString());
   if (sessions.error) throw sessions.error;
-
-  const onlineCutoff = Date.now() - 2 * 60 * 1000;
+  const cutoff = Date.now() - 2 * 60 * 1000;
   for (const row of sessions.data || []) {
     const id = String(row.ID_User || "");
-    if (!id) continue;
     const activity = String(row.Last_Activity_At || row.Created_At || "");
-    if (activity) {
-      const previous = latest.get(id);
-      if (!previous || new Date(activity).getTime() > new Date(previous).getTime()) latest.set(id, activity);
-      if (new Date(activity).getTime() >= onlineCutoff) online.add(id);
-    }
+    if (!id || !activity) continue;
+    const previous = latest.get(id);
+    if (!previous || new Date(activity).getTime() > new Date(previous).getTime()) latest.set(id, activity);
+    if (new Date(activity).getTime() >= cutoff) online.add(id);
   }
   return { latest, online };
 }
@@ -153,8 +114,7 @@ async function presenceFor(ids: string[]) {
 async function todayPunches(ids: string[]) {
   const punches = new Map<string, Record<string, unknown>[]>();
   if (!ids.length) return punches;
-  const attendance = await db
-    .from("Absensi")
+  const attendance = await db.from("Absensi")
     .select("ID_User,Jenis_Absen,Waktu_Timestamp,Tanggal")
     .in("ID_User", ids)
     .eq("Tanggal", jakartaDate())
@@ -170,36 +130,29 @@ async function todayPunches(ids: string[]) {
   return punches;
 }
 
-function hasArrival(rows: Record<string, unknown>[]) {
-  return rows.some((row) => ["DATANG", "MASUK", "IN"].includes(normalize(row.Jenis_Absen)));
-}
-
-function hasDeparture(rows: Record<string, unknown>[]) {
-  return rows.some((row) => ["PULANG", "KELUAR", "OUT"].includes(normalize(row.Jenis_Absen)));
-}
+const hasArrival = (rows: Record<string, unknown>[]) =>
+  rows.some((row) => ["DATANG", "MASUK", "IN"].includes(normalize(row.Jenis_Absen)));
+const hasDeparture = (rows: Record<string, unknown>[]) =>
+  rows.some((row) => ["PULANG", "KELUAR", "OUT"].includes(normalize(row.Jenis_Absen)));
 
 async function operationalUsers(body: Record<string, unknown>, auth: AuthenticatedUser) {
   requireOperationalRole(auth);
   const scope = await allowedSppg(auth);
   const allUsers = await scopedUsers(scope);
-
   const filterOptions = {
     roles: [...new Set(allUsers.map((row) => normalize(row.Role)).filter(Boolean))].sort(),
     sppg: [...new Set(allUsers.map((row) => String(row.SPPG || "").trim()).filter(Boolean))].sort(),
     divisions: [...new Set(allUsers.map((row) => String(row.Jabatan_Divisi || "").trim()).filter(Boolean))].sort(),
   };
-
   const search = String(body.search || "").trim().toLowerCase();
   const role = normalize(body.role);
   const sppg = String(body.sppg || "").trim();
   const division = String(body.division || "").trim();
   const account = normalize(body.account);
-
   let filtered = allUsers.filter((row) => {
     if (search) {
       const haystack = [row.Nama_Lengkap, row.Email, row.Username, row.SPPG, row.Jabatan_Divisi]
-        .map((value) => String(value || "").toLowerCase())
-        .join(" ");
+        .map((value) => String(value || "").toLowerCase()).join(" ");
       if (!haystack.includes(search)) return false;
     }
     if (role && normalize(row.Role) !== role) return false;
@@ -210,14 +163,12 @@ async function operationalUsers(body: Record<string, unknown>, auth: Authenticat
     if (account === "INACTIVE" && active) return false;
     return true;
   });
-
   const total = filtered.length;
   const page = clampInt(body.page, 1, 1, 100000);
   const pageSize = clampInt(body.pageSize, 24, 1, 200);
   filtered = filtered.slice((page - 1) * pageSize, page * pageSize);
   const ids = filtered.map((row) => String(row.ID_User || "")).filter(Boolean);
   const [presence, punches] = await Promise.all([presenceFor(ids), todayPunches(ids)]);
-
   const users = filtered.map((row) => {
     const id = String(row.ID_User || "");
     return {
@@ -229,7 +180,6 @@ async function operationalUsers(body: Record<string, unknown>, auth: Authenticat
       _hasFace: Boolean(String(row.URL_Foto_Wajah_Ref || "").trim()),
     };
   });
-
   return { users, total, filterOptions };
 }
 
@@ -239,12 +189,10 @@ async function operationalDashboard(auth: AuthenticatedUser) {
   const users = await scopedUsers(scope);
   const employees = users.filter((row) => normalize(row.Role) === "USER" && activeValue(row.Status_Aktif));
   const ids = employees.map((row) => String(row.ID_User || "")).filter(Boolean);
-
   const [presence, punches] = await Promise.all([presenceFor(ids), todayPunches(ids)]);
   const belumDatang: Array<Record<string, unknown>> = [];
   const belumPulang: Array<Record<string, unknown>> = [];
   const profilBelumLengkap: Array<Record<string, unknown>> = [];
-
   for (const row of employees) {
     const id = String(row.ID_User || "");
     const today = punches.get(id) || [];
@@ -254,18 +202,14 @@ async function operationalDashboard(auth: AuthenticatedUser) {
       jabatan: String(row.Jabatan_Divisi || "-") || "-",
       sppg: String(row.SPPG || "-") || "-",
     };
-    const arrived = hasArrival(today);
-    const departed = hasDeparture(today);
-    if (!arrived) belumDatang.push(summary);
-    else if (!departed) belumPulang.push(summary);
-
+    if (!hasArrival(today)) belumDatang.push(summary);
+    else if (!hasDeparture(today)) belumPulang.push(summary);
     const missing = profileMissing(row);
     if (missing.length) profilBelumLengkap.push({ ...summary, missing, score: profileScore(row) });
   }
 
   let complaintQuery = db.from("Pengaduan").select("ID_Pengaduan,SPPG,Status_Tiket").limit(5000);
-  let slipQuery = db
-    .from("Slip_Gaji")
+  let slipQuery = db.from("Slip_Gaji")
     .select("ID_Slip,ID_User,SPPG,Status_Penerbitan")
     .eq("Status_Penerbitan", "MENUNGGU_TTD_PENERIMA")
     .limit(5000);
@@ -281,11 +225,9 @@ async function operationalDashboard(auth: AuthenticatedUser) {
   const [complaints, slips] = await Promise.all([complaintQuery, slipQuery]);
   if (complaints.error) throw complaints.error;
   if (slips.error) throw slips.error;
-
   const openTickets = (complaints.data || []).filter((row) =>
     !["SELESAI", "DITUTUP", "CLOSED", "CLOSE"].includes(normalize(row.Status_Tiket))
   ).length;
-
   return {
     totals: {
       employees: employees.length,
@@ -296,47 +238,32 @@ async function operationalDashboard(auth: AuthenticatedUser) {
       openTickets,
       pendingRecipientSignatures: (slips.data || []).length,
     },
-    exceptions: {
-      belumDatang,
-      belumPulang,
-      profilBelumLengkap,
-    },
+    exceptions: { belumDatang, belumPulang, profilBelumLengkap },
   };
 }
 
 async function route(action: string, body: Record<string, unknown>, auth: AuthenticatedUser) {
   if (action === "getOperationalUsersV2") return await operationalUsers(body, auth);
   if (action === "getOperationalDashboardV2") return await operationalDashboard(auth);
-
   if (action === "listFeatureFlags") {
     requireOperationalRole(auth);
     const result = await db.from("Release_Feature_Flags").select("*").order("Flag_Key");
     if (result.error) throw result.error;
     return result.data || [];
   }
-
   if (action === "setFeatureFlag") {
     requireSuperAdminRole(auth);
-    const key = requiredString(body.key, "key", { max: 100 });
-    const enabled = Boolean(body.enabled);
-    const scope = optionalString(body.scopeSppg, 200);
-    const config = typeof body.config === "object" && body.config ? body.config : {};
-    const result = await db
-      .from("Release_Feature_Flags")
-      .upsert({
-        Flag_Key: key,
-        Enabled: enabled,
-        Scope_SPPG: scope,
-        Config: config,
-        Updated_By: auth.idUser,
-        Updated_At: new Date().toISOString(),
-      })
-      .select()
-      .maybeSingle();
+    const result = await db.from("Release_Feature_Flags").upsert({
+      Flag_Key: requiredString(body.key, "key", { max: 100 }),
+      Enabled: Boolean(body.enabled),
+      Scope_SPPG: optionalString(body.scopeSppg, 200),
+      Config: typeof body.config === "object" && body.config ? body.config : {},
+      Updated_By: auth.idUser,
+      Updated_At: new Date().toISOString(),
+    }).select().maybeSingle();
     if (result.error) throw result.error;
     return result.data;
   }
-
   if (action === "transitionPayroll") {
     requireOperationalRole(auth);
     const result = await db.rpc("transition_payroll_workflow", {
@@ -350,7 +277,6 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
     if (result.error) throw result.error;
     return result.data;
   }
-
   if (action === "listPayrollWorkflow") {
     requireOperationalRole(auth);
     let query = db.from("Payroll_Workflow_State").select("*").order("Updated_At", { ascending: false }).limit(200);
@@ -359,7 +285,6 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
     if (result.error) throw result.error;
     return result.data || [];
   }
-
   if (action === "logComplaintIdentityAccess") {
     requireSuperAdminRole(auth);
     const result = await db.rpc("log_complaint_identity_access", {
@@ -372,70 +297,48 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
     if (result.error) throw result.error;
     return { accessId: result.data };
   }
-
   if (action === "listComplaintPrivacyLog") {
     requireSuperAdminRole(auth);
-    const result = await db
-      .from("Complaint_Privacy_Access_Log")
-      .select("*")
-      .order("Created_At", { ascending: false })
-      .limit(300);
+    const result = await db.from("Complaint_Privacy_Access_Log").select("*").order("Created_At", { ascending: false }).limit(300);
     if (result.error) throw result.error;
     return result.data || [];
   }
-
   if (action === "listUserAccess") {
     requireOperationalRole(auth);
-    let query = db
-      .from("User_SPPG_Access_V2")
-      .select("*")
-      .order("Created_At", { ascending: false })
-      .limit(500);
+    let query = db.from("User_SPPG_Access_V2").select("*").order("Created_At", { ascending: false }).limit(500);
     if (body.userId) query = query.eq("ID_User", String(body.userId));
     const result = await query;
     if (result.error) throw result.error;
     return result.data || [];
   }
-
   if (action === "grantUserAccess") {
     requireSuperAdminRole(auth);
-    const row = {
+    const result = await db.from("User_SPPG_Access_V2").upsert({
       ID_User: requiredString(body.userId, "userId", { max: 100 }),
       SPPG: requiredString(body.sppg, "sppg", { max: 200 }),
       Role_Scope: optionalString(body.roleScope, 100),
       Active: true,
       Valid_Until: body.validUntil || null,
       Granted_By: auth.idUser,
-    };
-    const result = await db
-      .from("User_SPPG_Access_V2")
-      .upsert(row, { onConflict: "ID_User,SPPG,Role_Scope" })
-      .select()
-      .maybeSingle();
+    }, { onConflict: "ID_User,SPPG,Role_Scope" }).select().maybeSingle();
     if (result.error) throw result.error;
     return result.data;
   }
-
   if (action === "recordUserSecurityEvent") {
     requireOperationalRole(auth);
-    const result = await db
-      .from("User_Security_Events")
-      .insert({
-        ID_User: requiredString(body.userId, "userId", { max: 100 }),
-        Event_Type: requiredString(body.eventType, "eventType", { max: 100 }),
-        Actor_ID: auth.idUser,
-        Session_ID: optionalString(body.sessionId, 200),
-        Device_ID: optionalString(body.deviceId, 200),
-        Before_Data: body.beforeData || {},
-        After_Data: body.afterData || {},
-        Reason: optionalString(body.reason, 2000),
-      })
-      .select()
-      .maybeSingle();
+    const result = await db.from("User_Security_Events").insert({
+      ID_User: requiredString(body.userId, "userId", { max: 100 }),
+      Event_Type: requiredString(body.eventType, "eventType", { max: 100 }),
+      Actor_ID: auth.idUser,
+      Session_ID: optionalString(body.sessionId, 200),
+      Device_ID: optionalString(body.deviceId, 200),
+      Before_Data: body.beforeData || {},
+      After_Data: body.afterData || {},
+      Reason: optionalString(body.reason, 2000),
+    }).select().maybeSingle();
     if (result.error) throw result.error;
     return result.data;
   }
-
   throw new ValidationError("ACTION_NOT_SUPPORTED", "action");
 }
 
@@ -443,22 +346,12 @@ Deno.serve(async (req) => {
   const requestId = createRequestId();
   const origin = req.headers.get("origin");
   const headers = corsHeaders(origin, corsOptions);
-
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: origin && isOriginAllowed(origin, corsOptions) ? 204 : 403,
-      headers,
-    });
+    return new Response(null, { status: origin && isOriginAllowed(origin, corsOptions) ? 204 : 403, headers });
   }
   if (req.method !== "POST") {
-    return jsonResponse(
-      { success: false, code: "METHOD_NOT_ALLOWED", message: "Gunakan POST.", requestId },
-      405,
-      requestId,
-      headers,
-    );
+    return jsonResponse({ success: false, code: "METHOD_NOT_ALLOWED", message: "Gunakan POST.", requestId }, 405, requestId, headers);
   }
-
   try {
     const body = await req.json();
     const auth = await authenticateUserSession(db, body.token);
@@ -469,25 +362,15 @@ Deno.serve(async (req) => {
     let status = 500;
     let code = "INTERNAL_ERROR";
     let message = "Terjadi kesalahan pada server.";
-
     if (error instanceof ValidationError) {
-      status = 422;
-      code = error.code;
-      message = error.message;
+      status = 422; code = error.code; message = error.message;
     } else if (rawMessage === "SESSION_EXPIRED") {
-      status = 401;
-      code = rawMessage;
-      message = "Sesi telah berakhir.";
+      status = 401; code = rawMessage; message = "Sesi telah berakhir.";
     } else if (rawMessage === "ACCOUNT_INACTIVE" || rawMessage === "FORBIDDEN") {
-      status = 403;
-      code = rawMessage;
-      message = "Akses ditolak.";
+      status = 403; code = rawMessage; message = "Akses ditolak.";
     } else if (rawMessage.includes("FINAL_STATE") || rawMessage.includes("IDEMPOTENCY")) {
-      status = 409;
-      code = rawMessage;
-      message = "Status workflow tidak dapat diubah.";
+      status = 409; code = rawMessage; message = "Status workflow tidak dapat diubah.";
     }
-
     console.error(JSON.stringify({ requestId, code, error: rawMessage }));
     return jsonResponse({ success: false, code, message, requestId }, status, requestId, headers);
   }
