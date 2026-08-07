@@ -28,11 +28,11 @@ Deno.test("profile preview and downloaded PDF share one stable 300 DPI CR80 mast
   for(const rule of ['.digital-id-portrait-card','aspect-ratio:53.98/85.6','.id-card-admin-nav-group','.id-card-signature-canvas'])if(!css.includes(rule))throw new Error(`ID card base CSS missing ${rule}`);
   for(const rule of ['.digital-id-master-preview','.digital-id-master-canvas','aspect-ratio:53.98/85.6','.has-master-preview>.digital-id-portrait-card'])if(!rendererCss.includes(rule))throw new Error(`master renderer CSS missing ${rule}`);
   for(const retired of ['digital-id-card-print-sync.js','digital-id-card-v2.css'])if(bootstrap.includes(retired)||serviceWorker.includes(retired))throw new Error(`retired ID card asset still referenced: ${retired}`);
-  if(!bootstrap.includes("const VERSION = '26.11.43'"))throw new Error("bootstrap asset version must match current release");
+  if(!bootstrap.includes("const VERSION = '26.11.44'"))throw new Error("bootstrap asset version must match current release");
   if(!bootstrap.includes("'./src/app/digital-id-card-master-renderer.js'")||!bootstrap.includes("'./src/styles/pages/digital-id-card-master-renderer.css'"))throw new Error("bootstrap must load CR80 master renderer assets");
-  if(!serviceWorker.includes("const APP_VERSION = '26.11.43'")||!serviceWorker.includes("const CACHE = 'absen-sppg-hadirly-v84'"))throw new Error("service worker version/cache must match bootstrap");
+  if(!serviceWorker.includes("const APP_VERSION = '26.11.44'")||!serviceWorker.includes("const CACHE = 'absen-sppg-hadirly-v85'"))throw new Error("service worker version/cache must match bootstrap");
   if(!serviceWorker.includes('digital-id-card-master-renderer.js')||!serviceWorker.includes('digital-id-card-master-renderer.css'))throw new Error("master renderer assets must be cached");
-  if(!config.includes("import('./src/app/bootstrap.js?v=26.11.43')"))throw new Error("top-level bootstrap import must match current release");
+  if(!config.includes("import('./src/app/bootstrap.js?v=26.11.44')"))throw new Error("top-level bootstrap import must match current release");
   if(!serviceWorker.includes("'./verify-id.html'"))throw new Error("ID verification page must remain in PWA shell");
 });
 
