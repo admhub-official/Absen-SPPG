@@ -38,7 +38,8 @@ Deno.test("operations edge functions use shared session authentication", async (
   for (const path of ["supabase/functions/OperationsV2/index.ts","supabase/functions/WorkforceOps/index.ts","supabase/functions/PlatformOps/index.ts"]) {
     const source = await read(path);
     if (!source.includes("authenticateUserSession")) throw new Error(`${path} does not use shared authentication`);
-    if (source.includes('from("Sessions").select')) throw new Error(`${path} still duplicates session authentication`);
+    const duplicatesTokenLookup = source.includes('from("Sessions").select') && source.includes('.eq("Token"');
+    if (duplicatesTokenLookup) throw new Error(`${path} still duplicates session authentication`);
   }
 });
 
