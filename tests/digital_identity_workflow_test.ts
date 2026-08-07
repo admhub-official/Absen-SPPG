@@ -34,6 +34,7 @@ Deno.test("digital identity database supports private pending approval workflow"
 
 Deno.test("digital identity backend creates portrait BGN cards and approves them safely", async () => {
   const endpoint = await read("supabase/functions/DigitalIdentity/index.ts");
+  const printEndpoint = await read("supabase/functions/DigitalIdentityPrint/index.ts");
   const deploy = await read("deploy-supabase.ps1");
   const config = await read("supabase-config.js");
 
@@ -66,11 +67,22 @@ Deno.test("digital identity backend creates portrait BGN cards and approves them
   ]) {
     if (!endpoint.includes(marker)) throw new Error(`DigitalIdentity backend missing ${marker}`);
   }
+  for (const marker of [
+    'DigitalIdentity',
+    'refreshMyActiveIdCardPdf',
+    'refreshApprovedIdCardPdfs',
+    'SATUAN PELAYANAN PEMENUHAN GIZI (SPPG)',
+    'Head_SPPG_Name',
+    'URL_Foto_Profil',
+    'sniff(bytes',
+  ]) {
+    if (!printEndpoint.includes(marker)) throw new Error(`DigitalIdentityPrint missing ${marker}`);
+  }
   if (!endpoint.includes('if (action === "verifyDigitalIdentity")')) {
     throw new Error("public verification must be isolated before session authentication");
   }
-  if (!deploy.includes('"DigitalIdentity"')) {
-    throw new Error("DigitalIdentity must remain in the production deployment allowlist");
+  if (!deploy.includes('"DigitalIdentity"') || !deploy.includes('"DigitalIdentityPrint"')) {
+    throw new Error("Digital identity functions must remain in the production deployment allowlist");
   }
   for (const action of [
     "getMyDigitalIdentity",
@@ -83,9 +95,11 @@ Deno.test("digital identity backend creates portrait BGN cards and approves them
   }
 });
 
-Deno.test("profile and ADMIN UI expose request badge bulk selection and signature canvas", async () => {
+Deno.test("profile and ADMIN UI expose request badge bulk selection signature canvas and print sync", async () => {
   const controller = await read("src/app/digital-id-card.js");
+  const syncController = await read("src/app/digital-id-card-print-sync.js");
   const css = await read("src/styles/pages/digital-id-card.css");
+  const cssV2 = await read("src/styles/pages/digital-id-card-v2.css");
   const bootstrap = await read("src/app/bootstrap.js");
   const serviceWorker = await read("sw.js");
 
@@ -107,6 +121,15 @@ Deno.test("profile and ADMIN UI expose request badge bulk selection and signatur
   ]) {
     if (!controller.includes(marker)) throw new Error(`ID card controller missing ${marker}`);
   }
+  for (const marker of [
+    'DigitalIdentityPrint',
+    'refreshMyActiveIdCardPdf',
+    'refreshApprovedIdCardPdfs',
+    'digital-id-back-title-copy',
+    'SATUAN PELAYANAN PEMENUHAN GIZI (SPPG)',
+  ]) {
+    if (!syncController.includes(marker)) throw new Error(`ID card print sync missing ${marker}`);
+  }
   for (const rule of [
     '.digital-id-portrait-card',
     'aspect-ratio:53.98/85.6',
@@ -118,13 +141,19 @@ Deno.test("profile and ADMIN UI expose request badge bulk selection and signatur
   ]) {
     if (!css.includes(rule)) throw new Error(`ID card CSS missing ${rule}`);
   }
-  if (!bootstrap.includes("const VERSION = '26.11.35'")) {
-    throw new Error("bootstrap asset version must be bumped for the ID card workflow");
+  for (const rule of ['.digital-id-back-title-copy', '.digital-id-head-signature', '.digital-id-back-title img']) {
+    if (!cssV2.includes(rule)) throw new Error(`ID card synchronized CSS missing ${rule}`);
   }
-  if (!bootstrap.includes("'./src/app/digital-id-card.js'")) {
-    throw new Error("bootstrap must load the ID card controller");
+  if (!bootstrap.includes("const VERSION = '26.11.36'")) {
+    throw new Error("bootstrap asset version must be bumped for the synchronized ID card renderer");
   }
-  if (!serviceWorker.includes("const APP_VERSION = '26.11.35'")) {
+  if (!bootstrap.includes("'./src/app/digital-id-card-print-sync.js'")) {
+    throw new Error("bootstrap must load the ID card print sync controller");
+  }
+  if (!bootstrap.includes("'./src/styles/pages/digital-id-card-v2.css'")) {
+    throw new Error("bootstrap must load synchronized ID card styles");
+  }
+  if (!serviceWorker.includes("const APP_VERSION = '26.11.36'")) {
     throw new Error("service worker asset version must match bootstrap");
   }
   if (!serviceWorker.includes("'./verify-id.html'")) {
