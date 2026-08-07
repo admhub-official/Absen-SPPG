@@ -1,0 +1,15 @@
+name = "hadirly-auth-bff"
+main = "worker.ts"
+compatibility_date = "2026-08-07"
+workers_dev = false
+
+routes = [
+  { pattern = "hadirly.org/api/*", zone_name = "hadirly.org" }
+]
+
+[vars]
+HADIRLY_ORIGIN = "https://hadirly.org"
+SUPABASE_URL = "https://szwwpnbbsmjsbzzcecyj.supabase.co"
+SESSION_MAX_AGE_SECONDS = "28800"
+# Disable this after legacy localStorage sessions have been exchanged once.
+ALLOW_LEGACY_EXCHANGE = "true"
