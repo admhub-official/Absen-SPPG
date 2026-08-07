@@ -11,31 +11,39 @@
   const valueOf = (user, camel, raw) => user?.[camel] ?? user?.[raw] ?? '';
   const dateOnly = (value) => value ? String(value).slice(0, 10) : '';
 
+  function appendField(grid, label, id, type, hint = '') {
+    const group = document.createElement('div');
+    group.className = 'form-group';
+    group.dataset.profileEmploymentField = id;
+    group.innerHTML = `
+      <label class="form-label" for="${id}">${label}</label>
+      <input type="${type}" id="${id}" class="form-input">
+      ${hint ? `<div class="helper-text" style="margin-top:.35rem">${hint}</div>` : ''}`;
+    grid.appendChild(group);
+  }
+
+  function appendSalaryField(grid) {
+    const group = document.createElement('div');
+    group.className = 'form-group';
+    group.dataset.profileEmploymentField = 'edit-gaji-harian';
+    group.innerHTML = `
+      <label class="form-label" for="edit-gaji-harian">Gaji Harian</label>
+      <input type="number" id="edit-gaji-harian" class="form-input" disabled aria-readonly="true">
+      <div class="helper-text" style="margin-top:.35rem">Dikelola ADMIN/SUPER ADMIN dan tidak dapat diubah dari Profil.</div>`;
+    grid.appendChild(group);
+  }
+
   function ensureFields() {
     const root = modal();
     const grid = root?.querySelector('.modal-grid');
     if (!grid || grid.dataset.employmentFieldsReady === '1') return Boolean(grid);
     grid.dataset.employmentFieldsReady = '1';
 
-    const fields = [
-      ['SPPG', 'edit-sppg', 'text', 'Nama SPPG tempat bekerja'],
-      ['Yayasan', 'edit-yayasan', 'text', 'Nama yayasan'],
-      ['Jabatan / Divisi', 'edit-jabatan-divisi', 'text', 'Jabatan atau divisi'],
-      ['Tanggal Mulai Kerja', 'edit-tanggal-mulai-kerja', 'date', ''],
-      ['Gaji Harian', 'edit-gaji-harian', 'number', 'Dikelola ADMIN/SUPER ADMIN dan tidak dapat diubah dari Profil.'],
-    ];
-
-    for (const [label, id, type, hint] of fields) {
-      const group = document.createElement('div');
-      group.className = 'form-group';
-      group.dataset.profileEmploymentField = id;
-      const disabled = id === 'edit-gaji-harian';
-      group.innerHTML = `
-        <label class="form-label" for="${id}">${label}</label>
-        <input type="${type}" id="${id}" class="form-input" ${disabled ? 'disabled aria-readonly="true"' : ''}>
-        ${hint ? `<div class="helper-text" style="margin-top:.35rem">${hint}</div>` : ''}`;
-      grid.appendChild(group);
-    }
+    appendField(grid, 'SPPG', 'edit-sppg', 'text', 'Nama SPPG tempat bekerja');
+    appendField(grid, 'Yayasan', 'edit-yayasan', 'text', 'Nama yayasan');
+    appendField(grid, 'Jabatan / Divisi', 'edit-jabatan-divisi', 'text', 'Jabatan atau divisi');
+    appendField(grid, 'Tanggal Mulai Kerja', 'edit-tanggal-mulai-kerja', 'date');
+    appendSalaryField(grid);
     return true;
   }
 
