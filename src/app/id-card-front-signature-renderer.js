@@ -138,7 +138,12 @@
          node.querySelector?.('#digital-identity-section, .digital-id-preview-pair, .digital-id-master-preview')));
     })) schedule();
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src', 'class'] });
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['src', 'class', 'data-master-ready', 'data-master-signature'],
+  });
 
   document.addEventListener('click', (event) => {
     const button = event.target.closest?.('[data-digital-id-action="download-card"]');
