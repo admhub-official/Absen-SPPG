@@ -32,7 +32,7 @@ Deno.test("digital identity database supports private pending approval workflow"
   }
 });
 
-Deno.test("DigitalIdentity is the single canonical portrait card renderer", async () => {
+Deno.test("DigitalIdentity remains the canonical approval and verification backend", async () => {
   const endpoint = await read("supabase/functions/DigitalIdentity/index.ts");
   const deploy = await read("deploy-supabase.ps1");
   const config = await read("supabase-config.js");
@@ -56,8 +56,6 @@ Deno.test("DigitalIdentity is the single canonical portrait card renderer", asyn
     'officialOwnershipNote(profile)',
     'drawCircularImage(',
     'detectImageType(',
-    'bytes[0] === 0x89',
-    'bytes[0] === 0xff',
     'CR80_PORTRAIT',
     'Status: "PENDING"',
     'getCardByStatus(auth.idUser, "PENDING")',
@@ -67,14 +65,8 @@ Deno.test("DigitalIdentity is the single canonical portrait card renderer", asyn
     'Head_SPPG_Signature_Storage_Path',
     '.eq("Status", "ACTIVE")',
     'createSignedUrl(path, SIGNED_URL_SECONDS)',
-    'SATUAN PELAYANAN PEMENUHAN GIZI (SPPG)',
-    'backLogoSize',
-    'cardY + 49',
   ]) {
     if (!endpoint.includes(marker)) throw new Error(`DigitalIdentity backend missing ${marker}`);
-  }
-  if (endpoint.includes('VERIFIKASI ID CARD')) {
-    throw new Error("legacy dark verification header must not return to the PDF renderer");
   }
   if (!endpoint.includes('if (action === "verifyDigitalIdentity")')) {
     throw new Error("public verification must be isolated before session authentication");
@@ -86,7 +78,7 @@ Deno.test("DigitalIdentity is the single canonical portrait card renderer", asyn
     throw new Error("retired DigitalIdentityPrint must remain on the idempotent cleanup list");
   }
   if (!productionSection.includes('"DigitalIdentity"') || productionSection.includes('"DigitalIdentityPrint"')) {
-    throw new Error("production allowlist must contain only the canonical DigitalIdentity renderer");
+    throw new Error("production allowlist must contain only DigitalIdentity for the workflow backend");
   }
 
   for (const action of [
@@ -100,9 +92,11 @@ Deno.test("DigitalIdentity is the single canonical portrait card renderer", asyn
   }
 });
 
-Deno.test("profile and ADMIN UI render the final card layout without override shims", async () => {
+Deno.test("profile preview and downloaded PDF share one 300 DPI CR80 master raster", async () => {
   const controller = await read("src/app/digital-id-card.js");
+  const renderer = await read("src/app/digital-id-card-master-renderer.js");
   const css = await read("src/styles/pages/digital-id-card.css");
+  const rendererCss = await read("src/styles/pages/digital-id-card-master-renderer.css");
   const bootstrap = await read("src/app/bootstrap.js");
   const serviceWorker = await read("sw.js");
   const config = await read("supabase-config.js");
@@ -122,59 +116,77 @@ Deno.test("profile and ADMIN UI render the final card layout without override sh
     "api('approveIdCardRequests'",
     "canvas.toDataURL('image/png')",
     'BGN_LOGO',
-    'digital-id-back-title-copy',
-    'SATUAN PELAYANAN PEMENUHAN GIZI (SPPG)',
-    'institutionHeader(profile',
-    'adminBound',
   ]) {
     if (!controller.includes(marker)) throw new Error(`ID card controller missing ${marker}`);
   }
-  if (controller.includes('VERIFIKASI ID CARD')) {
-    throw new Error("legacy preview header must not return");
+
+  for (const marker of [
+    'const CARD_WIDTH = 638',
+    'const CARD_HEIGHT = 1011',
+    '53.98 * 72 / 25.4',
+    '85.6 * 72 / 25.4',
+    'digital-id-master-canvas',
+    "canvas.toBlob",
+    "'image/jpeg', 0.97",
+    'buildTwoPagePdf',
+    '/Count 2',
+    '/MediaBox [0 0',
+    'SATUAN PELAYANAN PEMENUHAN GIZI (SPPG)',
+    'KODE ID CARD',
+    'KEPALA SPPG',
+    'imageFromUrl(data.photoUrl)',
+    'imageFromUrl(data.qrUrl)',
+    'imageFromUrl(data.signatureUrl)',
+    "document.addEventListener('click', handleCardAction, true)",
+  ]) {
+    if (!renderer.includes(marker)) throw new Error(`CR80 master renderer missing ${marker}`);
   }
-  const frontPreview = controller.split('function frontPreview')[1]?.split('function backPreview')[0] || '';
-  if (frontPreview.includes('digital-id-official-note')) {
-    throw new Error("front preview must not render the ownership note and hide it with CSS");
+  if (!renderer.includes("download-card") || !renderer.includes("print-card")) {
+    throw new Error("download and print must be intercepted by the WYSIWYG renderer");
   }
 
   for (const rule of [
     '.digital-id-portrait-card',
     'aspect-ratio:53.98/85.6',
-    '.digital-id-photo-circle',
-    'border-radius:50%',
-    '.digital-id-back-title-copy',
-    '.digital-id-back-title img',
-    '.digital-id-head-signature',
-    'min-height:84px',
     '.id-card-admin-nav-group',
     '.id-card-signature-canvas',
-    '@media(max-width:600px)',
   ]) {
-    if (!css.includes(rule)) throw new Error(`ID card CSS missing ${rule}`);
+    if (!css.includes(rule)) throw new Error(`ID card base CSS missing ${rule}`);
   }
-  if (css.includes('.digital-id-front>.digital-id-official-note')) {
-    throw new Error("dead CSS for the removed front note must stay deleted");
+  for (const rule of [
+    '.digital-id-master-preview',
+    '.digital-id-master-canvas',
+    'aspect-ratio:53.98/85.6',
+    '.has-master-preview>.digital-id-portrait-card',
+  ]) {
+    if (!rendererCss.includes(rule)) throw new Error(`master renderer CSS missing ${rule}`);
   }
 
-  for (const retiredAsset of [
-    'digital-id-card-print-sync.js',
-    'digital-id-card-v2.css',
-  ]) {
+  for (const retiredAsset of ['digital-id-card-print-sync.js', 'digital-id-card-v2.css']) {
     if (bootstrap.includes(retiredAsset) || serviceWorker.includes(retiredAsset)) {
       throw new Error(`retired ID card asset still referenced: ${retiredAsset}`);
     }
   }
-  if (!bootstrap.includes("const VERSION = '26.11.37'")) {
-    throw new Error("bootstrap asset version must be bumped after dead-code cleanup");
+  if (!bootstrap.includes("const VERSION = '26.11.38'")) {
+    throw new Error("bootstrap asset version must be bumped for the CR80 master renderer");
   }
-  if (!serviceWorker.includes("const APP_VERSION = '26.11.37'")) {
+  if (!bootstrap.includes("'./src/app/digital-id-card-master-renderer.js'")) {
+    throw new Error("bootstrap must load the CR80 master renderer after the ID card controller");
+  }
+  if (!bootstrap.includes("'./src/styles/pages/digital-id-card-master-renderer.css'")) {
+    throw new Error("bootstrap must load the CR80 master renderer stylesheet");
+  }
+  if (!serviceWorker.includes("const APP_VERSION = '26.11.38'")) {
     throw new Error("service worker asset version must match bootstrap");
   }
-  if (!serviceWorker.includes("const CACHE = 'absen-sppg-hadirly-v78'")) {
-    throw new Error("service worker cache namespace must be bumped after asset removal");
+  if (!serviceWorker.includes("const CACHE = 'absen-sppg-hadirly-v79'")) {
+    throw new Error("service worker cache namespace must be bumped for the new assets");
   }
-  if (!config.includes("import('./src/app/bootstrap.js?v=26.11.37')")) {
-    throw new Error("top-level bootstrap import must match the cleaned asset version");
+  if (!serviceWorker.includes('digital-id-card-master-renderer.js') || !serviceWorker.includes('digital-id-card-master-renderer.css')) {
+    throw new Error("master renderer assets must be cached for the PWA");
+  }
+  if (!config.includes("import('./src/app/bootstrap.js?v=26.11.38')")) {
+    throw new Error("top-level bootstrap import must match the CR80 renderer asset version");
   }
   if (!serviceWorker.includes("'./verify-id.html'")) {
     throw new Error("verification page must remain part of the PWA shell");
