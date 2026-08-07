@@ -19,7 +19,7 @@ if ($LASTEXITCODE -ne 0) {
   throw "Migration database gagal dengan exit code $LASTEXITCODE."
 }
 
-# Fungsi alias lama dan fungsi payroll sekali pakai yang tidak lagi menjadi bagian aplikasi.
+# Fungsi alias lama, fungsi sementara, dan fungsi payroll sekali pakai yang tidak lagi menjadi bagian aplikasi.
 # Penghapusan dibuat idempotent: fungsi yang sudah tidak ada tidak menghentikan deployment.
 $ObsoleteFunctions = @(
   "AbsenLegacy",
@@ -82,7 +82,8 @@ $ObsoleteFunctions = @(
   "RunCleanupOrphanPayrollPDFs",
   "PayrollTTDMassal",
   "SyncPayrollSignatureLogo",
-  "PendingSignatureCounts"
+  "PendingSignatureCounts",
+  "DigitalIdentityPrint"
 )
 
 foreach ($FunctionName in $ObsoleteFunctions) {
@@ -93,7 +94,7 @@ foreach ($FunctionName in $ObsoleteFunctions) {
   }
 }
 
-# Production allowlist. Fungsi runner, verifier, rebuild, dan payroll sekali pakai
+# Production allowlist. Fungsi runner, verifier, rebuild, dan fungsi sementara
 # tidak boleh ditambahkan ke daftar ini. Urutan fungsi absensi bersifat dependency order.
 $FunctionNames = @(
   "AbsenCore",
@@ -109,7 +110,6 @@ $FunctionNames = @(
   "OperationsV2",
   "Complaints",
   "DigitalIdentity",
-  "DigitalIdentityPrint",
   "WorkforceOps",
   "PlatformOps"
 )
