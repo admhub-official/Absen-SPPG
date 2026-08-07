@@ -123,8 +123,8 @@ function randomToken(): string {
 }
 
 async function sha256Hex(value: string | Uint8Array): Promise<string> {
-  const bytes = typeof value === "string" ? encoder.encode(value) : value;
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const bytes = typeof value === "string" ? encoder.encode(value) : Uint8Array.from(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes.buffer);
   return [...new Uint8Array(digest)]
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
@@ -544,7 +544,6 @@ async function buildIdCardPdf(
     color: muted,
   });
 
-  // FRONT — portrait employee card.
   page.drawRectangle({
     x: frontX,
     y: cardY,
@@ -592,7 +591,6 @@ async function buildIdCardPdf(
   drawCenteredText(page, fitText(startDate, bold, 6.6, cardW - 18), bold, 6.6, frontCenter, cardY + 34, navy);
   drawWrappedText(page, note, regular, 4.35, frontX + 10, cardY + 23, cardW - 20, 5.3, muted, 4);
 
-  // BACK — QR, official note and Head of SPPG approval.
   page.drawRectangle({
     x: backX,
     y: cardY,
