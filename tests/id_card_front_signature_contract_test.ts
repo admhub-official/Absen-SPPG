@@ -30,7 +30,7 @@ Deno.test("front ID Card renders Kepala SPPG signature and keeps PDF canvas in s
   if (!assets.includes("'./src/styles/pages/id-card-front-signature.css'")) {
     throw new Error("front signature stylesheet is not loaded");
   }
-  if (!release.includes("version = '26.11.50'") || !release.includes("cacheName = 'absen-sppg-hadirly-v91'")) {
+  if (!release.includes("version = '26.11.51'") || !release.includes("cacheName = 'absen-sppg-hadirly-v92'")) {
     throw new Error("frontend release/cache must match current release");
   }
   if (!sw.includes('...ASSETS.scripts.map(versioned)') || !assets.includes("id-card-front-signature-renderer.js")) {
