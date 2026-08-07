@@ -23,7 +23,7 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     'getMyEmploymentContracts','getEmploymentContractDetail','getAdminEmploymentContracts','getContractMasterData',
     'saveContractMaster','createEmploymentContract','signEmploymentContract','cancelEmploymentContract','endEmploymentContract'
   ]);
-  const OPERATIONS_V2_WORKFLOW_FUNCTIONS = new Set(['getOperationalUsersV2']);
+  const OPERATIONS_V2_WORKFLOW_FUNCTIONS = new Set(['getOperationalUsersV2','getOperationalDashboardV2']);
   const DEVICE_KEY_STORAGE = 'absen:device-key:v1';
 
   function getOrCreateDeviceKey() {
@@ -62,7 +62,7 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     const token = payload.token || localStorage.getItem('auth_token'); if (!token) throw new Error('Sesi login tidak tersedia.');
     const response = await fetch(`${window.ABSEN_SUPABASE_CONFIG.projectUrl}/functions/v1/${window.ABSEN_SUPABASE_CONFIG.operationsV2FunctionName || 'OperationsV2'}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:name, ...payload, token }), cache:'no-store' });
     const body = await response.json().catch(() => ({}));
-    if (!response.ok || body?.success === false) { const hint=body?.requestId?` (${body.requestId})`:''; throw new Error(`${body?.message || body?.code || 'Operasional data user tidak tersedia.'}${hint}`); }
+    if (!response.ok || body?.success === false) { const hint=body?.requestId?` (${body.requestId})`:''; throw new Error(`${body?.message || body?.code || 'Layanan operasional tidak tersedia.'}${hint}`); }
     return body?.result;
   }
   const callPayrollWorkflow = (name,payload={}) => callWorkflow(window.ABSEN_SUPABASE_CONFIG.payrollUserFunctionName || 'PayrollUser', name, payload, 'Workflow payroll tidak tersedia.');
@@ -98,4 +98,4 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   });
 })();
 
-import('./src/app/bootstrap.js?v=26.11.45').catch((error) => { console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error); });
+import('./src/app/bootstrap.js?v=26.11.46').catch((error) => { console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error); });
