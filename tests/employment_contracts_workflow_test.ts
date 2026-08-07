@@ -39,7 +39,7 @@ Deno.test("employment contract module owns complete lifecycle, masters, PDF, QR 
   }
   for (const marker of [
     'function syncNavigation()',
-    'function sessionSignature()',
+    'const sessionSignature =',
     'employment-contract-personal-nav',
     'data-employment-view="employment-admin"',
     'data-employment-view="employment-master"',
