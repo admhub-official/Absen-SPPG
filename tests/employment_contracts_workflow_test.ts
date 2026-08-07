@@ -50,7 +50,20 @@ Deno.test("employment contract module owns complete lifecycle, masters, PDF, QR 
     "window.addEventListener('absen:session-changed'",
     'retrySync()',
     "['ADMIN', 'SUPER ADMIN']",
-  ]) if (!navigation.includes(marker)) throw new Error(`employment navigation lifecycle missing ${marker}`);
+    'function forceViewVisible(view)',
+    'async function waitForController()',
+    'async function openEmploymentView(view)',
+    'requestAnimationFrame(() => forceViewVisible(view))',
+    'setTimeout(() => forceViewVisible(view), 60)',
+    'void openEmploymentView(button.dataset.employmentView)',
+    "'employment-my': 'openMy'",
+    "'employment-admin': 'openAdmin'",
+    "'employment-master': 'openMaster'",
+    'Modul Perjanjian Kerja belum siap',
+  ]) if (!navigation.includes(marker)) throw new Error(`employment navigation runtime missing ${marker}`);
+  if (navigation.includes('event.stopPropagation()')) {
+    throw new Error('employment navigation must not swallow click propagation before the controller is ready');
+  }
   if (!navigationCss.includes('.employment-contract-admin-nav') || !navigationCss.includes('.employment-contract-mobile-admin-nav')) {
     throw new Error('employment navigation integration CSS missing');
   }
