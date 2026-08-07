@@ -27,7 +27,7 @@ Deno.test("attendance gateways have explicit and non-overlapping ownership", asy
     throw new Error("Absen proxy must forward legacy operations to AbsenCore");
   }
   if (!proxy.includes("/functions/v1/AttendanceLocation")) {
-    throw new Error("Absen proxy must route location operations to AttendanceLocation");
+    throw new Error("Absen proxy must route location operations through the AttendanceLocation compatibility endpoint");
   }
   if (proxy.includes("AbsenLegacy")) {
     throw new Error("Absen proxy must not depend on the obsolete AbsenLegacy alias");
@@ -46,58 +46,36 @@ Deno.test("attendance gateways have explicit and non-overlapping ownership", asy
   if (!v2.includes("/functions/v1/Absen") || !v2.includes("Attendance_Challenges")) {
     throw new Error("AbsenV2 must protect attendance and forward to Absen");
   }
-  for (const path of [
-    "supabase/functions/Absen/geofence-gateway.ts",
-    "supabase/functions/AbsenProxy/index.ts",
-  ]) await assertMissing(path);
-  for (const token of [
-    "Frontend tidak boleh memanggil `AbsenCore`",
-    "AttendanceLocation",
-    "AbsenV2",
-    "Urutan deployment",
-  ]) {
+  for (const path of ["supabase/functions/Absen/geofence-gateway.ts", "supabase/functions/AbsenProxy/index.ts"]) await assertMissing(path);
+  for (const token of ["Frontend tidak boleh memanggil `AbsenCore`", "AttendanceLocation", "AbsenV2", "Urutan deployment"]) {
     if (!architecture.includes(token)) throw new Error(`attendance architecture missing ${token}`);
   }
 });
 
-Deno.test("deployment includes attendance functions in dependency order", async () => {
+Deno.test("deployment routes public attendance endpoints through gateway-backed cores", async () => {
   const deploy = await read("deploy-supabase.ps1");
-  const core = deploy.indexOf('"AbsenCore"');
-  const location = deploy.indexOf('"AttendanceLocation"', core + 1);
-  const gateway = deploy.indexOf('"Absen"', location + 1);
-  const v2 = deploy.indexOf('"AbsenV2"', gateway + 1);
-
-  if (core < 0 || location < 0 || gateway < 0 || v2 < 0) {
-    throw new Error("deployment must include AbsenCore, AttendanceLocation, Absen, and AbsenV2");
+  const internal = deploy.split('$InternalFunctionNames = @(')[1]?.split('\n)')[0] || '';
+  const aliases = deploy.split('$GatewayAliases = @(')[1]?.split('\n)')[0] || '';
+  for (const required of ['"AbsenCore"','"Absen"','"AbsenV2Core"','"AttendanceLocationCore"']) {
+    if (!internal.includes(required)) throw new Error(`internal attendance deploy missing ${required}`);
   }
-  if (!(core < location && location < gateway && gateway < v2)) {
-    throw new Error("attendance functions must deploy in AbsenCore -> AttendanceLocation -> Absen -> AbsenV2 order");
+  for (const required of ['"AbsenV2"','"AttendanceLocation"']) {
+    if (!aliases.includes(required)) throw new Error(`attendance compatibility gateway missing ${required}`);
+  }
+  if (!deploy.includes('Set-Content -LiteralPath $AliasIndex -Value $GatewaySource')) {
+    throw new Error("legacy attendance aliases must deploy SessionGateway source");
   }
   const obsoleteBlock = deploy.match(/\$ObsoleteFunctions\s*=\s*@\(([\s\S]*?)\n\)/)?.[1] ?? "";
   for (const obsolete of ["AbsenLegacy", "AbsenProxy"]) {
-    if (!obsoleteBlock.includes(`\"${obsolete}\"`)) {
-      throw new Error(`${obsolete} must be removed by production deployment cleanup`);
-    }
+    if (!obsoleteBlock.includes(`\"${obsolete}\"`)) throw new Error(`${obsolete} must be removed by production cleanup`);
   }
 });
 
 Deno.test("frontend source does not call internal attendance functions directly", async () => {
-  const frontendPaths = [
-    "index.html",
-    "supabase-config.js",
-    "security-ops-client.js",
-    "src/services/api-client.js",
-    "src/services/domain-services.js",
-    "src/services/attendance-correction-service.js",
-  ];
-
+  const frontendPaths = ["index.html","supabase-config.js","security-ops-client.js","src/services/api-client.js","src/services/domain-services.js","src/services/attendance-correction-service.js"];
   for (const path of frontendPaths) {
     const source = await read(path);
-    if (source.includes("functions/v1/AbsenCore") || source.includes("'AbsenCore'") || source.includes('"AbsenCore"')) {
-      throw new Error(`${path} must not call AbsenCore directly`);
-    }
-    if (source.includes("functions/v1/AbsenLegacy") || source.includes("'AbsenLegacy'") || source.includes('"AbsenLegacy"')) {
-      throw new Error(`${path} must not call obsolete AbsenLegacy directly`);
-    }
+    if (source.includes("functions/v1/AbsenCore") || source.includes("'AbsenCore'") || source.includes('"AbsenCore"')) throw new Error(`${path} must not call AbsenCore directly`);
+    if (source.includes("functions/v1/AbsenLegacy") || source.includes("'AbsenLegacy'") || source.includes('"AbsenLegacy"')) throw new Error(`${path} must not call obsolete AbsenLegacy directly`);
   }
 });

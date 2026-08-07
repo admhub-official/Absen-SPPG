@@ -1,6 +1,7 @@
 window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   projectUrl: 'https://szwwpnbbsmjsbzzcecyj.supabase.co',
   functionName: 'AbsenV2',
+  sessionGatewayFunctionName: 'SessionGateway',
   deviceTrustFunctionName: 'DeviceTrust',
   attendanceLocationFunctionName: 'AttendanceLocation',
   payrollUserFunctionName: 'PayrollUser',
@@ -9,6 +10,47 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   employmentContractsFunctionName: 'EmploymentContracts',
   operationsV2FunctionName: 'OperationsV2'
 });
+
+(() => {
+  if (window.__HADIRLY_SESSION_GATEWAY_FETCH__) return;
+  window.__HADIRLY_SESSION_GATEWAY_FETCH__ = true;
+  const nativeFetch = window.fetch.bind(window);
+  const config = window.ABSEN_SUPABASE_CONFIG;
+  const projectOrigin = new URL(config.projectUrl).origin;
+  const gatewayUrl = `${config.projectUrl}/functions/v1/${config.sessionGatewayFunctionName || 'SessionGateway'}`;
+  const legacyTargets = new Set([
+    'AbsenV2','AttendanceLocation','PayrollUser','ProfileOps','DeviceTrust',
+    'SecurityOps','ProductionReadiness','AttendanceCorrections','AttendanceImport','EmploymentContracts'
+  ]);
+
+  window.fetch = async function hadilySessionGatewayFetch(input, init = {}) {
+    const urlText = typeof input === 'string' ? input : input instanceof URL ? input.href : '';
+    if (!urlText) return nativeFetch(input, init);
+    let url;
+    try { url = new URL(urlText, location.href); } catch { return nativeFetch(input, init); }
+    const prefix = '/functions/v1/';
+    if (url.origin !== projectOrigin || !url.pathname.startsWith(prefix)) return nativeFetch(input, init);
+    const target = decodeURIComponent(url.pathname.slice(prefix.length).split('/')[0] || '');
+    if (!legacyTargets.has(target)) return nativeFetch(input, init);
+    const method = String(init.method || 'GET').toUpperCase();
+    if (method !== 'POST' || typeof init.body !== 'string') return nativeFetch(input, init);
+    let payload;
+    try { payload = JSON.parse(init.body); } catch { return nativeFetch(input, init); }
+    const sourceHeaders = new Headers(init.headers || {});
+    const proxyHeaders = new Headers({ 'Content-Type': 'application/json' });
+    const idempotency = sourceHeaders.get('x-idempotency-key');
+    if (idempotency) proxyHeaders.set('x-idempotency-key', idempotency);
+    return nativeFetch(gatewayUrl, {
+      method: 'POST',
+      headers: proxyHeaders,
+      body: JSON.stringify({ target, payload }),
+      cache: 'no-store',
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer'
+    });
+  };
+  window.HadirlySessionGateway = Object.freeze({ nativeFetch, legacyTargets });
+})();
 
 (() => {
   if (window.__ABSEN_SECURITY_CONFIGURED__) return;

@@ -21,21 +21,10 @@ async function sha256Hex(value: string): Promise<string> {
 
 async function findSession(db: SupabaseClient, token: string) {
   const tokenHash = await sha256Hex(token);
-  const hashed = await db
-    .from("Sessions")
-    .select("ID_User,Type,Expires_At")
-    .eq("Token_Hash", tokenHash)
-    .maybeSingle();
-
-  if (!hashed.error && hashed.data) return hashed;
-
-  // Phase 8A compatibility: legacy deployments and sessions still retain raw
-  // Token until every gateway has migrated. Remove this fallback only at the
-  // final HttpOnly-cookie/hash-only cutover.
   return await db
     .from("Sessions")
     .select("ID_User,Type,Expires_At")
-    .eq("Token", token)
+    .eq("Token_Hash", tokenHash)
     .maybeSingle();
 }
 

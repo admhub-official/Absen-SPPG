@@ -13,9 +13,9 @@ Deno.test("DigitalIdentity remains the canonical approval and verification backe
   for(const action of ["getMyDigitalIdentity","generateMyDigitalIdentity","regenerateMyDigitalIdentity","getIdCardAdminOverview","approveIdCardRequests","verifyDigitalIdentity"]) if(!endpoint.includes(action))throw new Error(`DigitalIdentity missing ${action}`);
   for(const marker of ['authenticateUserSession(db, payload.token)','BGN_LOGO_URL','Logo%20BGN/LOGO_BGN.png','Tanggal_Mulai_Kerja','officialOwnershipNote(profile)','drawCircularImage(','detectImageType(','CR80_PORTRAIT','Status: "PENDING"','getCardByStatus(auth.idUser, "PENDING")','requireIdCardAdmin(auth)','signatureDataUrl','approve_digital_id_card','Head_SPPG_Signature_Storage_Path','.eq("Status", "ACTIVE")','createSignedUrl(path, SIGNED_URL_SECONDS)']) if(!endpoint.includes(marker))throw new Error(`DigitalIdentity backend missing ${marker}`);
   if(!endpoint.includes('if (action === "verifyDigitalIdentity")'))throw new Error("public verification must be isolated before session authentication");
-  const obsolete=deploy.split('$ObsoleteFunctions = @(')[1]?.split('\n)')[0]||'',production=deploy.split('$FunctionNames = @(')[1]?.split('\n)')[0]||'';
+  const obsolete=deploy.split('$ObsoleteFunctions = @(')[1]?.split('\n)')[0]||'',publicFns=deploy.split('$PublicFunctionNames = @(')[1]?.split('\n)')[0]||'';
   if(!obsolete.includes('"DigitalIdentityPrint"')||!obsolete.includes('"ResetDigitalIdentityOnce"'))throw new Error("retired ID card helpers must remain on cleanup list");
-  if(!production.includes('"DigitalIdentity"')||production.includes('"DigitalIdentityPrint"'))throw new Error("production allowlist must contain canonical DigitalIdentity only");
+  if(!publicFns.includes('"DigitalIdentity"')||publicFns.includes('"DigitalIdentityPrint"'))throw new Error("public production allowlist must contain canonical DigitalIdentity only");
   for(const action of ["getMyDigitalIdentity","generateMyDigitalIdentity","regenerateMyDigitalIdentity","getIdCardAdminOverview","approveIdCardRequests"]) if(!config.includes(`'${action}'`))throw new Error(`frontend gateway missing ${action}`);
 });
 
@@ -29,7 +29,7 @@ Deno.test("profile preview and downloaded PDF share one stable 300 DPI CR80 mast
   for(const rule of ['.digital-id-master-preview','.digital-id-master-canvas','aspect-ratio:53.98/85.6','.has-master-preview>.digital-id-portrait-card'])if(!rendererCss.includes(rule))throw new Error(`master renderer CSS missing ${rule}`);
   for(const retired of ['digital-id-card-print-sync.js','digital-id-card-v2.css'])if(assets.includes(retired)||serviceWorker.includes(retired))throw new Error(`retired ID card asset still referenced: ${retired}`);
   if(!bootstrap.includes('HADIRLY_RELEASE?.version')||!bootstrap.includes('HADIRLY_PWA_ASSETS'))throw new Error("bootstrap must use shared release and asset manifests");
-  if(!release.includes("version = '26.11.51'")||!release.includes("cacheName = 'absen-sppg-hadirly-v92'"))throw new Error("shared release version/cache mismatch");
+  if(!release.includes("version = '26.11.52'")||!release.includes("cacheName = 'absen-sppg-hadirly-v93'"))throw new Error("shared release version/cache mismatch");
   if(!assets.includes("'./src/app/digital-id-card-master-renderer.js'")||!assets.includes("'./src/styles/pages/digital-id-card-master-renderer.css'"))throw new Error("shared asset manifest must load CR80 master renderer assets");
   if(!serviceWorker.includes('...ASSETS.scripts.map(versioned)')||!serviceWorker.includes('...ASSETS.styles.map(versioned)'))throw new Error("service worker must cache shared asset manifest");
   if(!config.includes("await import('./src/app/release-version.js')")||!config.includes('bootstrap.js?v=${version}'))throw new Error("top-level bootstrap must use shared release version");
@@ -44,5 +44,6 @@ Deno.test("profile employment editor can update identity/employment data but nev
   for(const marker of ["p-nik","p-alamat","getProfileEmployment","NIK","Alamat Lengkap"]) if(!profileIdentity.includes(marker))throw new Error(`profile contract identity display missing ${marker}`);
   const stringFields=profileOps.split('const stringFields')[1]?.split('];')[0]||'';if(stringFields.includes('Gaji_Harian'))throw new Error("Gaji_Harian must not be self-editable");
   if(!assets.includes("'./src/app/profile-employment-editor.js'")||!assets.includes("'./src/app/profile-contract-identity.js'"))throw new Error("profile identity assets must be loaded and cached through shared manifest");
-  const production=deploy.split('$FunctionNames = @(')[1]?.split('\n)')[0]||'';if(!production.includes('"ProfileOps"'))throw new Error("ProfileOps must be in production allowlist");
+  const internal=deploy.split('$InternalFunctionNames = @(')[1]?.split('\n)')[0]||'',aliases=deploy.split('$GatewayAliases = @(')[1]?.split('\n)')[0]||'';
+  if(!internal.includes('"ProfileOpsCore"')||!aliases.includes('"ProfileOps"'))throw new Error("ProfileOps must deploy as a gateway alias backed by ProfileOpsCore");
 });
