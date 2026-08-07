@@ -6,7 +6,8 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   payrollUserFunctionName: 'PayrollUser',
   complaintsFunctionName: 'Complaints',
   digitalIdentityFunctionName: 'DigitalIdentity',
-  employmentContractsFunctionName: 'EmploymentContracts'
+  employmentContractsFunctionName: 'EmploymentContracts',
+  operationsV2FunctionName: 'OperationsV2'
 });
 
 (() => {
@@ -22,6 +23,7 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     'getMyEmploymentContracts','getEmploymentContractDetail','getAdminEmploymentContracts','getContractMasterData',
     'saveContractMaster','createEmploymentContract','signEmploymentContract','cancelEmploymentContract','endEmploymentContract'
   ]);
+  const OPERATIONS_V2_WORKFLOW_FUNCTIONS = new Set(['getOperationalUsersV2']);
   const DEVICE_KEY_STORAGE = 'absen:device-key:v1';
 
   function getOrCreateDeviceKey() {
@@ -56,6 +58,13 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     const response = await fetch(`${window.ABSEN_SUPABASE_CONFIG.projectUrl}/functions/v1/${slug}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ function:functionName, data:{ ...payload, token } }), cache:'no-store' });
     const body = await response.json().catch(() => ({})); if (!response.ok || body?.success === false) { const hint = body?.requestId ? ` (${body.requestId})` : ''; throw new Error(`${body?.error || body?.message || fallback}${hint}`); } return body?.result;
   }
+  async function callOperationsV2(name,payload={}) {
+    const token = payload.token || localStorage.getItem('auth_token'); if (!token) throw new Error('Sesi login tidak tersedia.');
+    const response = await fetch(`${window.ABSEN_SUPABASE_CONFIG.projectUrl}/functions/v1/${window.ABSEN_SUPABASE_CONFIG.operationsV2FunctionName || 'OperationsV2'}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:name, ...payload, token }), cache:'no-store' });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok || body?.success === false) { const hint=body?.requestId?` (${body.requestId})`:''; throw new Error(`${body?.message || body?.code || 'Operasional data user tidak tersedia.'}${hint}`); }
+    return body?.result;
+  }
   const callPayrollWorkflow = (name,payload={}) => callWorkflow(window.ABSEN_SUPABASE_CONFIG.payrollUserFunctionName || 'PayrollUser', name, payload, 'Workflow payroll tidak tersedia.');
   async function callComplaintWorkflow(name,payload={}) { const isSubmission=name==='kirimPengaduan'; const result=await callWorkflow(window.ABSEN_SUPABASE_CONFIG.complaintsFunctionName || 'Complaints',name,{...payload,...(isSubmission?{idempotencyKey:payload.idempotencyKey||getOrCreateIdempotencyKey('kirimPengaduan')}:{})},'Workflow pengaduan tidak tersedia.'); if(isSubmission)clearIdempotencyKey('kirimPengaduan'); return result; }
   const callDigitalIdentityWorkflow = (name,payload={}) => callWorkflow(window.ABSEN_SUPABASE_CONFIG.digitalIdentityFunctionName || 'DigitalIdentity', name, payload, 'Layanan QR dan ID Card tidak tersedia.');
@@ -75,6 +84,7 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
     if (typeof originalApiCall === 'function' && !window.__ABSEN_API_WRAPPED__) {
       window.__ABSEN_API_WRAPPED__ = true;
       window.apiCall = async function securityAwareApiCall(functionName, payload = {}) {
+        if (OPERATIONS_V2_WORKFLOW_FUNCTIONS.has(functionName)) return callOperationsV2(functionName,payload);
         if (EMPLOYMENT_CONTRACT_WORKFLOW_FUNCTIONS.has(functionName)) return callEmploymentContractWorkflow(functionName,payload);
         if (DIGITAL_IDENTITY_WORKFLOW_FUNCTIONS.has(functionName)) return callDigitalIdentityWorkflow(functionName,payload);
         if (COMPLAINT_WORKFLOW_FUNCTIONS.has(functionName)) return callComplaintWorkflow(functionName,payload);
@@ -88,4 +98,4 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   });
 })();
 
-import('./src/app/bootstrap.js?v=26.11.44').catch((error) => { console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error); });
+import('./src/app/bootstrap.js?v=26.11.45').catch((error) => { console.warn('Frontend modular gagal dimuat; aplikasi utama tetap berjalan.', error); });
