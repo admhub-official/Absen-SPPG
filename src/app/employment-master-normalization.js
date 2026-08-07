@@ -102,13 +102,15 @@
     normalizeWorkingHoursForm();
   }
 
-  const observer = new MutationObserver(() => queueMicrotask(normalize));
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener('click', (event) => {
+    const target = event.target?.closest?.('[data-master-tab], [data-contract-action="master-new"], [data-contract-action="master-edit"]');
+    if (target) queueMicrotask(normalize);
+  });
   document.addEventListener('input', (event) => {
     if (event.target?.id === 'm-nama-jabatan') normalizeJabatanForm();
   }, true);
-  window.addEventListener('absen:session-changed', normalize);
-  window.addEventListener('absen:app-ready', normalize);
+  window.addEventListener('absen:session-changed', () => queueMicrotask(normalize));
+  window.addEventListener('absen:app-ready', () => queueMicrotask(normalize));
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', normalize, { once: true });
   else normalize();
 })();
