@@ -88,21 +88,15 @@
     return button;
   }
 
-  function syncPendingBadge() {
-    const badge = document.querySelector('#employment-pending-badge');
-    if (!badge) return;
-    const rows = window.__ABSEN_EMPLOYMENT_CONTRACTS_ADMIN_ROWS__;
-    if (!Array.isArray(rows)) return;
-    const count = rows.filter((row) => String(row?.status || '').startsWith('WAITING')).length;
-    badge.textContent = String(count);
-    badge.style.display = count ? 'inline-flex' : 'none';
-  }
-
   function syncNavigation() {
     const sidebar = document.querySelector('.app-nav');
     const mobile = document.querySelector('#mobile-more-menu');
     const personal = document.querySelector('#topbar-dropdown');
     if (!sidebar || !personal) return false;
+
+    const previousBadge = document.querySelector('#employment-pending-badge');
+    const previousBadgeText = previousBadge?.textContent || '0';
+    const previousBadgeVisible = previousBadge?.style.display !== 'none' && previousBadgeText !== '0';
 
     document.querySelector('#employment-contract-nav-group')?.remove();
     document.querySelector('#employment-contract-mobile-nav')?.remove();
@@ -120,6 +114,12 @@
       const sidebarAnchor = sidebar.querySelector('[data-view="admin-config"]');
       sidebar.insertBefore(sidebarGroup, sidebarAnchor || null);
 
+      const badge = sidebarGroup.querySelector('#employment-pending-badge');
+      if (badge && previousBadgeVisible) {
+        badge.textContent = previousBadgeText;
+        badge.style.display = 'inline-flex';
+      }
+
       if (mobile) {
         const mobileGroup = makeMobileAdminGroup();
         const mobileAnchor = mobile.querySelector('[data-view="admin-config"]');
@@ -132,7 +132,6 @@
       document.querySelector('#view-employment-master')?.remove();
     }
 
-    syncPendingBadge();
     return true;
   }
 
