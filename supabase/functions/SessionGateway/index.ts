@@ -93,6 +93,15 @@ function requestId(): string {
   return `SGW_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 }
 
+function invokedFunctionName(request: Request): string {
+  try {
+    const segments = new URL(request.url).pathname.split("/").filter(Boolean);
+    return decodeURIComponent(segments.at(-1) || "");
+  } catch {
+    return "";
+  }
+}
+
 Deno.serve(async (request) => {
   const id = requestId();
   const origin = request.headers.get("origin");
@@ -114,7 +123,9 @@ Deno.serve(async (request) => {
 
   try {
     const body = await request.json() as Record<string, unknown>;
-    const target = String(body.target || "").trim();
+    const invoked = invokedFunctionName(request);
+    const directAlias = Object.prototype.hasOwnProperty.call(TARGETS, invoked);
+    const target = directAlias ? invoked : String(body.target || "").trim();
     const core = TARGETS[target];
     if (!core) {
       return new Response(JSON.stringify({ success: false, code: "TARGET_NOT_ALLOWED", message: "Layanan tujuan tidak diizinkan.", requestId: id }), {
@@ -122,7 +133,9 @@ Deno.serve(async (request) => {
         headers: { ...headers, "Content-Type": "application/json; charset=utf-8", "X-Request-Id": id },
       });
     }
-    const payload = body.payload && typeof body.payload === "object"
+    const payload = directAlias
+      ? body
+      : body.payload && typeof body.payload === "object"
       ? body.payload as Record<string, unknown>
       : {};
     const digests = await sessionDigestMap(payload);
