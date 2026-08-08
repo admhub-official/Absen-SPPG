@@ -77,6 +77,32 @@ Deno.test('PWA shell is the same manifest consumed by bootstrap and all entries 
   }
 });
 
+Deno.test('navigation state guard parses and keeps critical lifecycle protections', async () => {
+  const guard = await read('src/app/navigation-state-guard.js');
+  const bootstrap = await read('src/app/bootstrap.js');
+  const sw = await read('sw.js');
+
+  new Function(guard);
+  for (const marker of [
+    'SESSION_CHANGED',
+    'roleCanOpenView',
+    'clearAbsenRedirectTimer',
+    'stopAbsenRealtime',
+    'closeAbsenScan',
+    "window.addEventListener('popstate'",
+    "window.addEventListener('hashchange'",
+    'absenRedirectTimer',
+  ]) {
+    if (!guard.includes(marker)) throw new Error(`navigation/session guard missing ${marker}`);
+  }
+  if (!bootstrap.includes("import './navigation-state-guard.js';")) {
+    throw new Error('bootstrap must load the navigation/session guard');
+  }
+  if (!sw.includes("'./src/app/navigation-state-guard.js'")) {
+    throw new Error('service worker shell must precache the navigation/session guard');
+  }
+});
+
 Deno.test('service worker never serves index HTML as JS or CSS fallback', async () => {
   const sw = await read('sw.js');
   if (!sw.includes("if (request.mode === 'navigate')")) throw new Error('navigation strategy missing');
@@ -130,7 +156,6 @@ Deno.test('private signed storage assets use browser no-store fetch policy', asy
   }
   if (!policy.includes('window.open = function guardedWindowOpen')) throw new Error('programmatic private asset opens must be guarded');
 });
-
 
 Deno.test('mandatory install detector exists before inline app boot', async () => {
   const config = await read('supabase-config.js');
