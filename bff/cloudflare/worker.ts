@@ -87,6 +87,13 @@ function json(body: unknown, status: number, id: string, extraHeaders?: HeadersI
   return new Response(JSON.stringify(body), { status, headers });
 }
 
+function redirectToApp(env: Env, id: string): Response {
+  const headers = securityHeaders(id);
+  headers.set("Location", `${configuredOrigin(env)}/`);
+  headers.set("Content-Type", "text/plain; charset=utf-8");
+  return new Response("", { status: 303, headers });
+}
+
 function cookieHeader(token: string, env: Env): string {
   return `${COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${maxAge(env)}`;
 }
@@ -125,6 +132,13 @@ function sameOriginReference(value: string | null, origin: string): boolean {
   }
 }
 
+function isApiNavigation(request: Request, path: string, method: string): boolean {
+  if (method !== "GET" || !path.startsWith("/api/")) return false;
+  const fetchMode = (request.headers.get("sec-fetch-mode") || "").toLowerCase();
+  const accept = (request.headers.get("accept") || "").toLowerCase();
+  return fetchMode === "navigate" || accept.includes("text/html");
+}
+
 function validateBrowserSource(request: Request, env: Env, mutation: boolean): string | null {
   const origin = configuredOrigin(env);
   const secFetchSite = (request.headers.get("sec-fetch-site") || "").toLowerCase();
@@ -138,7 +152,10 @@ function validateBrowserSource(request: Request, env: Env, mutation: boolean): s
   }
 
   if (mutation) {
-    if (!suppliedOrigin && !sameOriginReference(suppliedReferer, origin)) return "ORIGIN_REQUIRED";
+    const browserConfirmsSameOrigin = secFetchSite === "same-origin";
+    if (!suppliedOrigin && !sameOriginReference(suppliedReferer, origin) && !browserConfirmsSameOrigin) {
+      return "ORIGIN_REQUIRED";
+    }
     if (request.headers.get(CSRF_HEADER) !== CSRF_VALUE) return "CSRF_CHECK_FAILED";
   }
   return null;
@@ -319,8 +336,9 @@ async function handle(request: Request, env: Env): Promise<Response> {
 
   const path = url.pathname.replace(/\/+$/, "") || "/";
   const method = request.method.toUpperCase();
-  const isSessionRead = path === "/api/auth/session" && method === "GET";
-  const mutation = !isSessionRead;
+  if (isApiNavigation(request, path, method)) return redirectToApp(env, id);
+
+  const mutation = !["GET", "HEAD", "OPTIONS"].includes(method);
   const sourceError = validateBrowserSource(request, env, mutation);
   if (sourceError) return json({ success: false, code: sourceError }, 403, id);
 
