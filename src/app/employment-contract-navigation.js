@@ -7,11 +7,8 @@
     bound: false,
   };
 
-  const token = () => localStorage.getItem('auth_token') || '';
-  const currentUser = () => {
-    try { return JSON.parse(localStorage.getItem('auth_user') || 'null') || {}; }
-    catch { return {}; }
-  };
+  const token = () => window.HadirlySessionContext?.token?.() || '';
+  const currentUser = () => window.HadirlySessionContext?.user?.() || {};
   const normalizedRole = () => String(currentUser()?.role || currentUser()?.Role || '')
     .trim().toUpperCase().replace(/_/g, ' ');
   const isAdmin = () => ['ADMIN', 'SUPER ADMIN'].includes(normalizedRole());
