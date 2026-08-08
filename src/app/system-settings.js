@@ -35,7 +35,7 @@
   const state = { rows:new Map(), category:'attendance', loading:false, loaded:false, saving:new Set(), timer:null };
   const token = () => localStorage.getItem('auth_token') || '';
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const enabled = (row) => Boolean(row?.Enabled ?? row?.Setting_Value?.enabled);
+  const enabled = (row) => Boolean(row?._enabled ?? row?.Setting_Value?.enabled);
 
   function isSuper() {
     try {
