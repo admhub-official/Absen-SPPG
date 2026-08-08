@@ -1,11 +1,4 @@
-const CANONICAL_ORIGIN = 'https://hadirly.org';
-const LEGACY_HOSTS = new Set(['absen-sppg.pages.dev']);
-if (LEGACY_HOSTS.has(window.location.hostname.toLowerCase())) {
-  const target = new URL(window.location.pathname + window.location.search + window.location.hash, CANONICAL_ORIGIN);
-  window.location.replace(target.href);
-  throw new Error('Redirecting to canonical domain');
-}
-
+import './http-only-session-bridge.js';
 import { createRouter } from './router.js';
 import { createAppStore } from '../stores/app-store.js';
 import { createFeatureRegistry } from './feature-registry.js';
@@ -13,6 +6,14 @@ import { renderAttendanceProgress, showAttendanceReceipt, renderCorrectionWorksp
 import { renderReleaseOperationsPage } from '../pages/release/release-operations-page.js';
 import { renderWorkforceOperationsPage } from '../pages/workforce/workforce-operations-page.js';
 import { renderPlatformOperationsPage } from '../pages/platform/platform-operations-page.js';
+
+const CANONICAL_ORIGIN = 'https://hadirly.org';
+const LEGACY_HOSTS = new Set(['absen-sppg.pages.dev']);
+if (LEGACY_HOSTS.has(window.location.hostname.toLowerCase())) {
+  const target = new URL(window.location.pathname + window.location.search + window.location.hash, CANONICAL_ORIGIN);
+  window.location.replace(target.href);
+  throw new Error('Redirecting to canonical domain');
+}
 
 const VERSION = globalThis.HADIRLY_RELEASE?.version;
 const ASSETS = globalThis.HADIRLY_PWA_ASSETS;
