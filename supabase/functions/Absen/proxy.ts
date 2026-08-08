@@ -14,7 +14,10 @@ const headers = {
   'cache-control': 'no-store',
 };
 
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
+const json = (body: unknown, status = 200, requestId?: string) => new Response(JSON.stringify(body), {
+  status,
+  headers: { ...headers, ...(requestId ? { 'x-request-id': requestId } : {}) },
+});
 const normalize = (value: unknown) => String(value || '').trim().toUpperCase().replace(/_/g, ' ');
 const isActive = (value: unknown) => value === true || value === 1 || ['TRUE', '1'].includes(String(value || '').toUpperCase());
 const numeric = (value: unknown) => Number(value || 0);
@@ -101,7 +104,53 @@ async function forward(url: string, body: unknown, request: Request) {
   };
 }
 
-async function forwardLocation(body: any, request: Request): Promise<Response | null> {
+function mappedError(rawValue: unknown, fallbackStatus = 500) {
+  const raw = String(rawValue || '').trim();
+  const upper = raw.toUpperCase();
+  if (upper.includes('SESI_HABIS') || upper.includes('SESSION_EXPIRED')) {
+    return { status: 401, code: 'SESSION_EXPIRED', message: 'Sesi telah berakhir. Silakan login kembali.' };
+  }
+  if (upper.includes('AKUN_NONAKTIF') || upper.includes('ACCOUNT_INACTIVE')) {
+    return { status: 403, code: 'ACCOUNT_INACTIVE', message: 'Akun tidak aktif.' };
+  }
+  if (/akses ditolak|hanya untuk/i.test(raw)) return { status: 403, code: 'FORBIDDEN', message: raw || 'Akses ditolak.' };
+  if (/tidak ditemukan/i.test(raw)) return { status: 404, code: 'NOT_FOUND', message: raw };
+  if (/duplicate|sudah .*hari ini|sudah digunakan|sudah diproses|tidak dapat diubah/i.test(raw)) return { status: 409, code: 'CONFLICT', message: raw };
+  if (/wajib|tidak valid|tidak lengkap|format|harus|minimal|maksimal|tidak dikenali|tidak didukung/i.test(raw)) {
+    return { status: 422, code: 'VALIDATION_ERROR', message: raw || 'Permintaan tidak valid.' };
+  }
+  return { status: fallbackStatus >= 400 && fallbackStatus < 500 ? fallbackStatus : 500, code: 'INTERNAL_ERROR', message: fallbackStatus >= 400 && fallbackStatus < 500 && raw ? raw : 'Terjadi kesalahan pada server.' };
+}
+
+function legacyFailure(result: { status: number; payload: any }) {
+  if (!result.payload) return null;
+  const nested = result.payload?.success === true && result.payload?.result && typeof result.payload.result === 'object' && result.payload.result.success === false
+    ? result.payload.result
+    : null;
+  if (result.payload?.success !== false && !nested) return null;
+  const source = nested || result.payload;
+  const raw = source?.message || source?.error || source?.code || 'Permintaan gagal diproses.';
+  const mapped = mappedError(raw, result.status);
+  return {
+    status: mapped.status,
+    body: {
+      success: false,
+      code: mapped.code,
+      message: mapped.message,
+      error: source?.error || mapped.message,
+    },
+  };
+}
+
+function forwardResponse(result: { status: number; text: string; payload: any }, requestId: string) {
+  const failure = legacyFailure(result);
+  if (failure) return json({ ...failure.body, requestId }, failure.status, requestId);
+  if (!result.payload) return new Response(result.text, { status: result.status, headers: { ...headers, 'x-request-id': requestId } });
+  const status = result.status >= 200 && result.status < 300 ? result.status : 500;
+  return json({ ...result.payload, requestId }, status, requestId);
+}
+
+async function forwardLocation(body: any, request: Request, requestId: string): Promise<Response | null> {
   const functionName = String(body.function || body.functionName || '');
   const actions: Record<string, string> = {
     getAttendanceLocationPolicy: 'policy',
@@ -117,7 +166,7 @@ async function forwardLocation(body: any, request: Request): Promise<Response | 
     action,
     token: data.token,
   }, request);
-  return new Response(result.text, { status: result.status, headers });
+  return forwardResponse(result, requestId);
 }
 
 function notificationMatches(notification: any, user: any) {
@@ -261,28 +310,37 @@ async function superAdminOverview(user: any) {
 }
 
 Deno.serve(async (request) => {
+  const requestId = `ABS_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
   if (request.method === 'OPTIONS') return new Response('ok', { headers });
-  if (request.method !== 'POST') return json({ success: false, error: 'Method tidak didukung' }, 405);
+  if (request.method !== 'POST') return json({ success: false, code: 'METHOD_NOT_ALLOWED', message: 'Method tidak didukung', requestId }, 405, requestId);
 
   let body: any;
   try {
     body = await request.json();
   } catch {
-    return json({ success: false, error: 'Body JSON tidak valid' }, 400);
+    return json({ success: false, code: 'INVALID_JSON', message: 'Body JSON tidak valid', requestId }, 400, requestId);
+  }
+
+  const functionName = String(body.function || body.functionName || '').trim();
+  if (!functionName) {
+    return json({ success: false, code: 'FUNCTION_REQUIRED', message: 'Nama fungsi wajib diisi.', requestId }, 422, requestId);
   }
 
   try {
-    const locationResponse = await forwardLocation(body, request);
+    const locationResponse = await forwardLocation(body, request, requestId);
     if (locationResponse) return locationResponse;
 
-    if (body.function === 'getSuperAdminOverviewV3') {
+    if (functionName === 'getSuperAdminOverviewV3') {
       const user = await authenticate(body.data?.token);
-      return json({ success: true, result: await superAdminOverview(user) });
+      return json({ success: true, result: await superAdminOverview(user), requestId }, 200, requestId);
     }
 
-    if (body.function === 'getUserNotificationsV2') {
+    if (functionName === 'getUserNotificationsV2') {
       const user = await authenticate(body.data?.token);
       const legacy = await forward(LEGACY_CORE_URL, body, request);
+      const failure = legacyFailure(legacy);
+      if (failure) return json({ ...failure.body, requestId }, failure.status, requestId);
+      if (!legacy.payload) throw new Error('Respons backend notifikasi tidak valid.');
       const base = legacy.payload?.result || {};
       const nonGenerated = (Array.isArray(base.items) ? base.items : [])
         .filter((item: any) => item?.type !== 'PAYROLL' && item?.type !== 'PENGUMUMAN');
@@ -304,14 +362,16 @@ Deno.serve(async (request) => {
       const announcements = await appNotifications(user);
       const items = [...announcements, ...payroll, ...nonGenerated]
         .sort((a: any, b: any) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
-      return json({ success: true, result: { ...base, count: items.length, items } });
+      return json({ success: true, result: { ...base, count: items.length, items }, requestId }, 200, requestId);
     }
 
-    if (body.function === 'getOperationalDashboardV2') {
+    if (functionName === 'getOperationalDashboardV2') {
       const user = await authenticate(body.data?.token);
       const ids = await scopedUserIds(user);
       const legacy = await forward(LEGACY_CORE_URL, body, request);
-      if (!legacy.payload) return new Response(legacy.text, { status: legacy.status, headers });
+      const failure = legacyFailure(legacy);
+      if (failure) return json({ ...failure.body, requestId }, failure.status, requestId);
+      if (!legacy.payload) return new Response(legacy.text, { status: legacy.status, headers: { ...headers, 'x-request-id': requestId } });
       let count = 0;
       if (ids.length) {
         const result = await db.from('Slip_Gaji')
@@ -322,12 +382,16 @@ Deno.serve(async (request) => {
         count = Number(result.count || 0);
       }
       if (legacy.payload?.result?.totals) legacy.payload.result.totals.pendingRecipientSignatures = count;
-      return json(legacy.payload, legacy.status);
+      const status = legacy.status >= 200 && legacy.status < 300 ? legacy.status : 500;
+      return json({ ...legacy.payload, requestId }, status, requestId);
     }
 
     const legacy = await forward(LEGACY_CORE_URL, body, request);
-    return new Response(legacy.text, { status: legacy.status, headers });
+    return forwardResponse(legacy, requestId);
   } catch (error) {
-    return json({ success: false, error: error instanceof Error ? error.message : String(error) }, 400);
+    const raw = error instanceof Error ? error.message : String(error);
+    const mapped = mappedError(raw);
+    console.error(JSON.stringify({ requestId, function: functionName, code: mapped.code, status: mapped.status, error: raw }));
+    return json({ success: false, code: mapped.code, message: mapped.message, error: raw, requestId }, mapped.status, requestId);
   }
 });
