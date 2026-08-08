@@ -2406,6 +2406,23 @@ function bindAccessibleActivation(element,handler){
     event.preventDefault();handler(event);
   });
 }
+function dismissModal(modalId){document.getElementById(modalId)?.classList.remove('active');}
+function bindPaginationControls({prevId,nextId,canPrev,canNext,onPrev,onNext}){
+  document.getElementById(prevId)?.addEventListener('click',()=>{if(canPrev())onPrev();});
+  document.getElementById(nextId)?.addEventListener('click',()=>{if(canNext())onNext();});
+}
+function skeletonCardsMarkup(count=1){
+  const card='<div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>';
+  return Array(count).fill(card).join('');
+}
+function skeletonRowsMarkup(count=1){
+  const row='<div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>';
+  return Array(count).fill(row).join('');
+}
+function tableMessageMarkup(message,style=''){
+  const styleAttr=style?` style="${style}"`:'';
+  return `<div class="table-empty"${styleAttr}>${escapeHtml(message)}</div>`;
+}
 function parseDateValue(value){
   if(!value)return null;
   const date=new Date(value);
@@ -2829,7 +2846,7 @@ async function validateSelectedAttendance(action){
 async function loadAdminUsers(){
   const container = $('#users-grid-container');
   if(!container) return;
-  container.innerHTML = Array(8).fill(`<div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>`).join('');
+  container.innerHTML = skeletonCardsMarkup(8);
   try {
     const r = await apiCall('getOperationalUsersV2', {
       token:AppState.token,page:AdminState.userPage,pageSize:AdminState.userPageSize,
@@ -2843,7 +2860,7 @@ async function loadAdminUsers(){
     populateUserFilterOptions(AdminState.userFilterOptions);
     filterAndRenderUsers();
   } catch(e) {
-    container.innerHTML = `<div class="table-empty" style="grid-column:1/-1">Gagal memuat data: ${e.message}</div>`;
+    container.innerHTML = tableMessageMarkup(`Gagal memuat data: ${e.message}`,'grid-column:1/-1');
   }
 }
 
@@ -2925,9 +2942,7 @@ function renderUsersGrid(){
       <div class="profile-completeness" title="Kelengkapan profil ${Number(u._profileScore)||0}%"><span style="width:${Math.max(0,Math.min(100,Number(u._profileScore)||0))}%"></span></div>
     </div>`;
   }).join('');
-  container.querySelectorAll('[data-user-index]').forEach(row=>{
-    const open=()=>openUserDetail(Number(row.dataset.userIndex));row.addEventListener('click',open);row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}});
-  });
+  container.querySelectorAll('[data-user-index]').forEach(row=>bindAccessibleActivation(row,()=>openUserDetail(Number(row.dataset.userIndex))));
 }
 
 function openUserDetail(index){
@@ -3011,41 +3026,29 @@ async function openAdminDeleteUserModal(){
 }
 
 async function handleConfirmDeleteUser(reason){
-  const u = AdminState.selectedUser;
-  if(!u) return;
-  const userId = u.ID_User;
-  const b = $('#btn-admin-delete-user'), o = b?.innerHTML;
-  if(b){b.disabled = true;b.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px"></div>';}
-  try {
-    const r = await apiCall('deleteData', {token: AppState.token, menu: 'users', id: userId, reason});
-    if(r && r.success){
-      showAlert('User berhasil dihapus','success');
-      $('#modal-admin-delete-user').classList.remove('active');
-      AdminState.selectedUser = null;
-      switchView('admin-users');
-      loadAdminUsers();
-    } else {
-      showAlert(r?.message||'Gagal menghapus user','error');
-    }
-  } catch(e) {
-    showAlert(e.message||'Terjadi kesalahan','error');
-  } finally {
-    if(b){b.disabled = false;b.innerHTML = o;}
-  }
+  const u=AdminState.selectedUser;if(!u)return;
+  const userId=u.ID_User;
+  await withBusyButton($('#btn-admin-delete-user'),'<div class="spinner" style="width:18px;height:18px;border-width:2px"></div>',async()=>{
+    try{
+      const r=await apiCall('deleteData',{token:AppState.token,menu:'users',id:userId,reason});
+      if(r&&r.success){showAlert('User berhasil dihapus','success');dismissModal('modal-admin-delete-user');AdminState.selectedUser=null;switchView('admin-users');loadAdminUsers();}
+      else showAlert(r?.message||'Gagal menghapus user','error');
+    }catch(error){showAlert(parseApiError(error).message,'error');}
+  });
 }
 
 /* ---- Load Log Aktivitas ---- */
 async function loadAdminLog(){
   const container = $('#log-list-container');
   if(!container) return;
-  container.innerHTML = `<div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>`;
+  container.innerHTML = skeletonRowsMarkup(3);
   try {
     const r = await apiCall(isSuperAdminUser()?'getSuperAdminAuditV3':'getAuditLogEnriched', {token: AppState.token,limit:100});
     AdminState.allLogs = Array.isArray(r) ? r : (r?.logs || []);
     populateAuditFilters();
     filterAndRenderLog();
   } catch(e) {
-    container.innerHTML = `<div class="table-empty">Gagal memuat log: ${e.message}</div>`;
+    container.innerHTML = tableMessageMarkup(`Gagal memuat log: ${e.message}`);
   }
 }
 
@@ -3089,11 +3092,8 @@ function getLogIcon(aktivitas){
 }
 
 function formatWaktu(v){
-  if(!v) return '-';
-  const d = new Date(v);
-  if(isNaN(d)) return v;
-  return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) + ' ' +
-         d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  const d=parseDateValue(v);if(!d)return v||'-';
+  return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
 }
 
 function renderLogList(){
@@ -3128,11 +3128,7 @@ function renderLogList(){
       <div class="log-time">${waktu}</div>
     </div>`;
   }).join('');
-  container.querySelectorAll('[data-log-index]').forEach(item=>{
-    const open=()=>openLogDetail(Number(item.dataset.logIndex));
-    item.addEventListener('click',open);
-    item.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}});
-  });
+  container.querySelectorAll('[data-log-index]').forEach(item=>bindAccessibleActivation(item,()=>openLogDetail(Number(item.dataset.logIndex))));
 
   if(pg){
     pg.style.display = 'flex';
@@ -3225,9 +3221,7 @@ const SYSTEM_SETTING_DEFINITIONS=[
 ];
 
 function formatDateTime(value){
-  if(!value)return'-';
-  const date=new Date(value);
-  return Number.isNaN(date.getTime())?'-':date.toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'});
+  const date=parseDateValue(value);return date?date.toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
 }
 
 function safeExternalUrl(value){
@@ -3985,11 +3979,7 @@ function closeProfilePasswordModal(){
   $('#modal-profile-password').classList.remove('active');
   resetProfilePasswordFlow();
 }
-function profilePasswordErrorMessage(error,fallback){
-  const raw=error&&error.message?error.message:fallback;
-  const parts=String(raw).split('::');
-  return parts.length>1?parts.slice(1).join('::'):raw;
-}
+function profilePasswordErrorMessage(error,fallback){return parseApiError(error,fallback).message;}
 async function requestProfilePasswordOtp(isResend=false){
   if(isResend&&$('#btn-resend-profile-password').classList.contains('disabled'))return;
   hideInlineAlert('profile-password-alert');
@@ -4600,12 +4590,10 @@ async function initApp(){
   bindClicks(['btn-close-risk','btn-cancel-risk'],()=>closeRiskConfirmation(null));
   $('#btn-risk-next')?.addEventListener('click',advanceRiskConfirmation);
   $('#btn-risk-confirm')?.addEventListener('click',finishRiskConfirmation);
-  $('#btn-close-admin-update-user')?.addEventListener('click',()=>$('#modal-admin-update-user').classList.remove('active'));
-  $('#btn-cancel-admin-update-user')?.addEventListener('click',()=>$('#modal-admin-update-user').classList.remove('active'));
+  bindClicks(['btn-close-admin-update-user','btn-cancel-admin-update-user'],()=>dismissModal('modal-admin-update-user'));
   $('#btn-save-admin-update-user')?.addEventListener('click', handleSaveAdminUpdateUser);
   $('#btn-back-from-user-detail')?.addEventListener('click',()=>switchView('admin-users'));
-  $('#btn-close-log-detail')?.addEventListener('click',()=>$('#modal-log-detail').classList.remove('active'));
-  $('#btn-close-log-detail-footer')?.addEventListener('click',()=>$('#modal-log-detail').classList.remove('active'));
+  bindClicks(['btn-close-log-detail','btn-close-log-detail-footer'],()=>dismissModal('modal-log-detail'));
 
   // Admin: search input listeners
   let absenSearchTimer;
@@ -4636,12 +4624,9 @@ async function initApp(){
   $$('#audit-filter-grid input,#audit-filter-grid select').forEach(input=>input.addEventListener('change',filterAndRenderLog));
 
   // Admin: pagination
-  $('#absen-prev-btn')?.addEventListener('click',()=>{ if(AdminState.absenPage>1){AdminState.absenPage--;loadAdminAbsen();} });
-  $('#absen-next-btn')?.addEventListener('click',()=>{ if(AdminState.absenPage<Math.ceil(AdminState.absenTotal/AdminState.absenPageSize)){AdminState.absenPage++;loadAdminAbsen();} });
-  $('#users-prev-btn')?.addEventListener('click',()=>{if(AdminState.userPage>1){AdminState.userPage--;loadAdminUsers();}});
-  $('#users-next-btn')?.addEventListener('click',()=>{if(AdminState.userPage<Math.ceil(AdminState.userTotal/AdminState.userPageSize)){AdminState.userPage++;loadAdminUsers();}});
-  $('#log-prev-btn')?.addEventListener('click',()=>{ AdminState.logPage--; renderLogList(); });
-  $('#log-next-btn')?.addEventListener('click',()=>{ AdminState.logPage++; renderLogList(); });
+  bindPaginationControls({prevId:'absen-prev-btn',nextId:'absen-next-btn',canPrev:()=>AdminState.absenPage>1,canNext:()=>AdminState.absenPage<Math.ceil(AdminState.absenTotal/AdminState.absenPageSize),onPrev:()=>{AdminState.absenPage--;loadAdminAbsen();},onNext:()=>{AdminState.absenPage++;loadAdminAbsen();}});
+  bindPaginationControls({prevId:'users-prev-btn',nextId:'users-next-btn',canPrev:()=>AdminState.userPage>1,canNext:()=>AdminState.userPage<Math.ceil(AdminState.userTotal/AdminState.userPageSize),onPrev:()=>{AdminState.userPage--;loadAdminUsers();},onNext:()=>{AdminState.userPage++;loadAdminUsers();}});
+  bindPaginationControls({prevId:'log-prev-btn',nextId:'log-next-btn',canPrev:()=>AdminState.logPage>1,canNext:()=>AdminState.logPage<Math.max(1,Math.ceil(AdminState.filteredLogs.length/AdminState.logPageSize)),onPrev:()=>{AdminState.logPage--;renderLogList();},onNext:()=>{AdminState.logPage++;renderLogList();}});
   $('#btn-open-edit-profil').addEventListener('click',openEditProfil);
   $('#btn-open-profile-password').addEventListener('click',openProfilePasswordModal);
   $('#btn-profile-password-inline')?.addEventListener('click',openProfilePasswordModal);

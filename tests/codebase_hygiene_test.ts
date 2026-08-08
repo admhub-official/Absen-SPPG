@@ -148,3 +148,16 @@ Deno.test("frontend retains canonical navigation alert and risk helpers", async 
     if (!index.includes(helper)) throw new Error(`required frontend helper missing ${helper}`);
   }
 });
+
+
+Deno.test("frontend residual duplication is centralized", async () => {
+  const index = await read("index.html");
+  for (const helper of ["function bindPaginationControls(","function dismissModal(modalId)","function skeletonCardsMarkup(count=1)","function skeletonRowsMarkup(count=1)","function tableMessageMarkup(message,style='')"]) {
+    if (!index.includes(helper)) throw new Error(`residual shared helper missing ${helper}`);
+  }
+  for (const obsolete of ["row.addEventListener('click',open);row.addEventListener('keydown'","item.addEventListener('click',open);","$('#absen-prev-btn')?.addEventListener","$('#users-prev-btn')?.addEventListener","$('#log-prev-btn')?.addEventListener"]) {
+    if (index.includes(obsolete)) throw new Error(`duplicated frontend pattern remains ${obsolete}`);
+  }
+  if (!index.includes("function profilePasswordErrorMessage(error,fallback){return parseApiError(error,fallback).message;}")) throw new Error("profile password errors must use canonical parser");
+  if (!index.includes("container.innerHTML = skeletonCardsMarkup(8)") || !index.includes("container.innerHTML = skeletonRowsMarkup(3)")) throw new Error("loading skeleton markup must use shared helpers");
+});
