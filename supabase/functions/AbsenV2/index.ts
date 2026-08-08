@@ -201,6 +201,22 @@ async function stored(key: string): Promise<Stored | null> {
   return data as Stored | null;
 }
 
+async function persistIdempotencyBestEffort(
+  key: string,
+  patch: Record<string, unknown>,
+  phase: string,
+): Promise<void> {
+  const result = await supabase.from("API_Idempotency").update(patch).eq("Idempotency_Key", key);
+  if (result.error) {
+    console.error(JSON.stringify({
+      code: "IDEMPOTENCY_UPDATE_DEFERRED",
+      phase,
+      keyHint: key.slice(-12),
+      error: result.error.message,
+    }));
+  }
+}
+
 function replay(row: Stored, id: string, headers: Record<string, string>): Response | null {
   if (!row.Response_Body || (row.Status !== "COMPLETED" && row.Status !== "FAILED")) return null;
   return respond(row.Response_Body, Number(row.HTTP_Status || (row.Status === "FAILED" ? 500 : 200)), id, headers);
@@ -249,8 +265,12 @@ Deno.serve(async (request) => {
 
   if (isIdempotent) {
     const existing = await stored(idempotencyKey);
-    if (existing && new Date(existing.Expires_At).getTime() <= Date.now()) await supabase.from("API_Idempotency").delete().eq("Idempotency_Key", idempotencyKey).lte("Expires_At", new Date().toISOString());
-    else if (existing) {
+    if (existing && new Date(existing.Expires_At).getTime() <= Date.now()) {
+      const cleanup = await supabase.from("API_Idempotency").delete()
+        .eq("Idempotency_Key", idempotencyKey)
+        .lte("Expires_At", new Date().toISOString());
+      if (cleanup.error) throw new Error("IDEMPOTENCY_CLEANUP_FAILED");
+    } else if (existing) {
       if (existing.Request_Fingerprint !== fingerprint) return respond({ success: false, code: "IDEMPOTENCY_KEY_REUSED", message: "Kunci idempotensi telah digunakan untuk permintaan berbeda.", requestId: id }, 409, id, headers);
       const cached = replay(existing, id, headers); if (cached) return cached;
       return respond({ success: false, code: "REQUEST_IN_PROGRESS", message: "Permintaan presensi sedang diproses.", requestId: id }, 409, id, headers);
@@ -271,7 +291,14 @@ Deno.serve(async (request) => {
       const rate = String((error as Error)?.message) === "RATE_LIMITED";
       const e = rate ? { status: 429, code: "RATE_LIMITED", message: "Terlalu banyak percobaan presensi. Tunggu sebentar lalu coba lagi." } : normalizedError(error instanceof Error ? error.message : error);
       const responseBody = { success: false, code: e.code, message: e.message, requestId: id };
-      if (isIdempotent) await supabase.from("API_Idempotency").update({ Status: "COMPLETED", HTTP_Status: e.status, Response_Body: responseBody, Completed_At: new Date().toISOString() }).eq("Idempotency_Key", idempotencyKey);
+      if (isIdempotent) {
+        await persistIdempotencyBestEffort(idempotencyKey, {
+          Status: "COMPLETED",
+          HTTP_Status: e.status,
+          Response_Body: responseBody,
+          Completed_At: new Date().toISOString(),
+        }, "CHALLENGE_REJECTED");
+      }
       await audit(request, { requestId: id, event: "ATTENDANCE_CHALLENGE_REJECTED", result: "REJECTED", detail: { code: e.code } });
       return respond(responseBody, e.status, id, headers, rate ? { "Retry-After": String((error as any).retryAfter || 60) } : {});
     }
@@ -283,13 +310,27 @@ Deno.serve(async (request) => {
     let responseBody: Record<string, unknown> = called.body;
     if (called.body?.success === false) { const e = normalizedError(called.body.error || called.body.message); status = e.status; responseBody = { success: false, code: e.code, message: e.message, requestId: id, details: called.body.details || {} }; }
     else { status = status >= 200 && status < 300 ? status : 200; responseBody = { ...called.body, requestId: id }; }
-    if (isIdempotent) await supabase.from("API_Idempotency").update({ Status: status >= 500 ? "FAILED" : "COMPLETED", HTTP_Status: status, Response_Body: responseBody, Completed_At: new Date().toISOString() }).eq("Idempotency_Key", idempotencyKey);
+    if (isIdempotent) {
+      await persistIdempotencyBestEffort(idempotencyKey, {
+        Status: status >= 500 ? "FAILED" : "COMPLETED",
+        HTTP_Status: status,
+        Response_Body: responseBody,
+        Completed_At: new Date().toISOString(),
+      }, "UPSTREAM_COMPLETE");
+    }
     if (context) await audit(request, { requestId: id, userId: context.auth.idUser, challengeId: String(context.challenge.Challenge_ID), event: "ATTENDANCE_SUBMITTED", result: status >= 200 && status < 300 ? "SUCCESS" : "REJECTED", risk: context.risk, location: { latitude: Number(context.challenge.Latitude), longitude: Number(context.challenge.Longitude), accuracy: Number(context.challenge.Accuracy_Meter) }, detail: { status, code: responseBody.code || null } });
     return respond(responseBody, status, id, headers);
   } catch (error) {
     const e = normalizedError(error instanceof Error ? error.message : error);
     const responseBody = { success: false, code: e.code, message: e.message, requestId: id };
-    if (isIdempotent) await supabase.from("API_Idempotency").update({ Status: "FAILED", HTTP_Status: e.status, Response_Body: responseBody, Completed_At: new Date().toISOString() }).eq("Idempotency_Key", idempotencyKey);
+    if (isIdempotent) {
+      await persistIdempotencyBestEffort(idempotencyKey, {
+        Status: "FAILED",
+        HTTP_Status: e.status,
+        Response_Body: responseBody,
+        Completed_At: new Date().toISOString(),
+      }, "UPSTREAM_FAILED");
+    }
     if (context) await audit(request, { requestId: id, userId: context.auth.idUser, challengeId: String(context.challenge.Challenge_ID), event: "ATTENDANCE_SUBMITTED", result: "FAILED", risk: context.risk, detail: { code: e.code } });
     return respond(responseBody, e.status, id, headers);
   }
