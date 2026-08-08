@@ -8,7 +8,7 @@ async function listPayrollSlips({status='DITERBITKAN',page=1,pageSize=30}={}){
   const response=await fetch('https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/PayrollListPage',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({token:localStorage.getItem('auth_token')||'',status,page,pageSize})
+    body:JSON.stringify({token:window.HadirlySessionContext?.token?.()||'',status,page,pageSize})
   });
   const payload=await response.json().catch(()=>({success:false,error:'Respons daftar payroll tidak valid.'}));
   if(!response.ok||payload?.success===false)throw new Error(payload?.error||'Gagal mengambil daftar slip payroll.');
