@@ -148,6 +148,36 @@ function invokedFunctionName(request: Request): string {
   }
 }
 
+function normalizeUpstreamResponse(text: string, status: number, id: string): { text: string; status: number } {
+  const trimmed = String(text || "").trim();
+  if (!trimmed) {
+    return {
+      status: 502,
+      text: JSON.stringify({
+        success: false,
+        code: "UPSTREAM_EMPTY_RESPONSE",
+        message: "Layanan tujuan tidak mengembalikan respons.",
+        requestId: id,
+      }),
+    };
+  }
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (!parsed || typeof parsed !== "object") throw new Error("INVALID_UPSTREAM_JSON");
+    return { text: trimmed, status };
+  } catch {
+    return {
+      status: 502,
+      text: JSON.stringify({
+        success: false,
+        code: "UPSTREAM_INVALID_RESPONSE",
+        message: "Layanan tujuan mengembalikan respons yang tidak valid.",
+        requestId: id,
+      }),
+    };
+  }
+}
+
 Deno.serve(async (request) => {
   const id = requestId();
   const origin = request.headers.get("origin");
@@ -203,11 +233,12 @@ Deno.serve(async (request) => {
       cache: "no-store",
     });
     const text = await upstream.text();
-    return new Response(text, {
-      status: upstream.status,
+    const normalized = normalizeUpstreamResponse(text, upstream.status, id);
+    return new Response(normalized.text, {
+      status: normalized.status,
       headers: {
         ...headers,
-        "Content-Type": upstream.headers.get("content-type") || "application/json; charset=utf-8",
+        "Content-Type": "application/json; charset=utf-8",
         "X-Request-Id": upstream.headers.get("x-request-id") || id,
         ...(upstream.headers.get("retry-after") ? { "Retry-After": upstream.headers.get("retry-after")! } : {}),
       },
