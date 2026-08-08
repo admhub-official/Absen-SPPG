@@ -27,14 +27,11 @@ async function authTokenConsumers(): Promise<string[]> {
   return found.sort();
 }
 
-// Compatibility inventory while legacy call sites still read auth_token. Canonical production
-// virtualizes the fixed marker in memory; no auth_token value is persisted in browser storage.
+// Compatibility inventory while the inline legacy application is still being decomposed.
+// Canonical production virtualizes the fixed marker in memory; no raw auth token is persisted.
 const expectedCompatibilityConsumers = [
   "index.html",
-  "security-operations-ui.js",
-  "security-ops-client.js",
   "src/app/attendance-import.js",
-  "src/app/attendance-location-flow.js",
   "src/app/config-center.js",
   "src/app/digital-id-card.js",
   "src/app/employment-contract-navigation.js",
@@ -52,10 +49,6 @@ const expectedCompatibilityConsumers = [
   "src/app/system-settings.js",
   "src/features/notifications/app-announcements.js",
   "src/features/payroll/payroll-history.js",
-  "src/services/api-client.js",
-  "src/services/attendance-correction-service.js",
-  "src/services/domain-services.js",
-  "src/services/operations-v2-service.js",
   "supabase-config.js",
 ].sort();
 
@@ -63,6 +56,36 @@ Deno.test("browser auth_token inventory is explicit during runtime-only marker c
   const actual = await authTokenConsumers();
   if (JSON.stringify(actual) !== JSON.stringify(expectedCompatibilityConsumers)) {
     throw new Error(`auth_token compatibility inventory changed. expected=${JSON.stringify(expectedCompatibilityConsumers)} actual=${JSON.stringify(actual)}`);
+  }
+});
+
+Deno.test("modern service and security consumers use canonical session context", async () => {
+  const context = await read("src/app/session-context.js");
+  const bootstrap = await read("src/app/bootstrap.js");
+  const sw = await read("sw.js");
+  for (const marker of ["HadirlySessionContext", "function token()", "function user()", "function authenticated()"] ) {
+    if (!context.includes(marker)) throw new Error(`session context missing marker: ${marker}`);
+  }
+  const bridgeImport = bootstrap.indexOf("import './http-only-session-bridge.js';");
+  const contextImport = bootstrap.indexOf("import './session-context.js';");
+  const navigationImport = bootstrap.indexOf("import './navigation-state-guard.js';");
+  if (bridgeImport < 0 || contextImport < 0 || navigationImport < 0 || !(bridgeImport < contextImport && contextImport < navigationImport)) {
+    throw new Error("canonical session context must initialize after HttpOnly bridge and before navigation/application modules");
+  }
+  if (!sw.includes("'./src/app/session-context.js'")) throw new Error("PWA shell must precache canonical session context");
+
+  for (const path of [
+    "security-operations-ui.js",
+    "security-ops-client.js",
+    "src/app/attendance-location-flow.js",
+    "src/services/api-client.js",
+    "src/services/attendance-correction-service.js",
+    "src/services/domain-services.js",
+    "src/services/operations-v2-service.js",
+  ]) {
+    const source = await read(path);
+    if (source.includes("auth_token")) throw new Error(`modern session consumer must not read auth_token directly: ${path}`);
+    if (!source.includes("HadirlySessionContext")) throw new Error(`modern session consumer must use canonical session context: ${path}`);
   }
 });
 
@@ -153,9 +176,10 @@ Deno.test("canonical browser cutover keeps auth_token runtime-only and disables 
   }
   const abortImport = bootstrap.indexOf("import './session-request-abort.js';");
   const bridgeImport = bootstrap.indexOf("import './http-only-session-bridge.js';");
+  const contextImport = bootstrap.indexOf("import './session-context.js';");
   const routerImport = bootstrap.indexOf("import { createRouter } from './router.js';");
-  if (abortImport !== 0 || bridgeImport < 0 || routerImport < 0 || !(abortImport < bridgeImport && bridgeImport < routerImport)) {
-    throw new Error("bootstrap must initialize session abort first, then HttpOnly bridge before application modules");
+  if (abortImport !== 0 || bridgeImport < 0 || contextImport < 0 || routerImport < 0 || !(abortImport < bridgeImport && bridgeImport < contextImport && contextImport < routerImport)) {
+    throw new Error("bootstrap must initialize request abort, HttpOnly bridge, and session context before application modules");
   }
   if (status.productionEnabled !== true || status.compatibilityMarkerInLocalStorage !== false || status.compatibilityMarkerRuntimeOnly !== true || status.legacyExchangeEnabled !== false) {
     throw new Error("runtime status does not match final runtime-only marker contract");
