@@ -1,0 +1,80 @@
+name: Runtime Console Hotfix Once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix:
+    if: contains(github.event.head_commit.message, '[runtime-console-hotfix-once]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Apply runtime hotfix and validate
+        shell: bash
+        run: |
+          set -e
+          python - <<'PY'
+          from pathlib import Path
+
+          p=Path('supabase/functions/AbsenV2/index.ts')
+          s=p.read_text(encoding='utf-8')
+          if 'authenticateUserSession' not in s:
+              s=s.replace('import { createClient } from "jsr:@supabase/supabase-js@2";','import { createClient } from "jsr:@supabase/supabase-js@2";\nimport { authenticateUserSession } from "../_shared/auth.ts";')
+          anchor='''function replay(row: Stored, id: string, headers: Record<string, string>): Response | null {\n  if (!row.Response_Body || (row.Status !== "COMPLETED" && row.Status !== "FAILED")) return null;\n  return respond(row.Response_Body, Number(row.HTTP_Status || (row.Status === "FAILED" ? 500 : 200)), id, headers);\n}\n'''
+          helper='''function replay(row: Stored, id: string, headers: Record<string, string>): Response | null {\n  if (!row.Response_Body || (row.Status !== "COMPLETED" && row.Status !== "FAILED")) return null;\n  return respond(row.Response_Body, Number(row.HTTP_Status || (row.Status === "FAILED" ? 500 : 200)), id, headers);\n}\n\nasync function handlePresenceHeartbeat(body: Record<string, unknown>, id: string, headers: Record<string, string>): Promise<Response> {\n  const token = String(body.token || "").trim();\n  await authenticateUserSession(supabase, token);\n  const tokenHash = await sha256(token);\n  const requestedState = String(body.clientState || "ACTIVE").toUpperCase();\n  const clientState = requestedState === "HIDDEN" ? "HIDDEN" : "ACTIVE";\n  const { error } = await supabase.from("Sessions").update({\n    Last_Activity_At: new Date().toISOString(),\n    Client_State: clientState,\n  }).eq("Token_Hash", tokenHash);\n  if (error) throw new Error("HEARTBEAT_UPDATE_FAILED");\n  return respond({ success: true, result: { online: clientState === "ACTIVE", clientState }, requestId: id }, 200, id, headers);\n}\n'''
+          if 'async function handlePresenceHeartbeat' not in s:
+              if anchor not in s: raise SystemExit('heartbeat helper anchor missing')
+              s=s.replace(anchor,helper,1)
+          dispatch='''  if (functionName === "createAttendanceChallenge") {\n    try { return await issueChallenge(body, request, id, headers); }\n    catch (error) { const e = normalizedError(error instanceof Error ? error.message : error); return respond({ success: false, code: e.code, message: e.message, requestId: id }, e.status, id, headers); }\n  }\n'''
+          dispatch_new=dispatch+'''  if (functionName === "presenceHeartbeat") {\n    try { return await handlePresenceHeartbeat(body, id, headers); }\n    catch (error) { const e = normalizedError(error instanceof Error ? error.message : error); return respond({ success: false, code: e.code, message: e.message, requestId: id }, e.status, id, headers); }\n  }\n'''
+          if 'if (functionName === "presenceHeartbeat")' not in s:
+              if dispatch not in s: raise SystemExit('heartbeat dispatch anchor missing')
+              s=s.replace(dispatch,dispatch_new,1)
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('supabase-config.js')
+          s=p.read_text(encoding='utf-8')
+          if 'deviceRegistrationPromise' not in s:
+              s=s.replace('  let registeredDevice = null;','  let registeredDevice = null;\n  let deviceRegistrationPromise = null;\n  let deviceRegistrationRetryAfter = 0;\n  let deviceRegistrationWarnedAt = 0;',1)
+          old="  async function ensureDeviceRegistered() { if (registeredDevice) return registeredDevice; registeredDevice = await callDeviceTrust('registerDevice', deviceMetadata()); return registeredDevice; }\n  function resetDeviceContext(){ registeredDevice = null; }"
+          new="""  async function ensureDeviceRegistered() {\n    if (registeredDevice) return registeredDevice;\n    if (Date.now() < deviceRegistrationRetryAfter) return null;\n    if (deviceRegistrationPromise) return deviceRegistrationPromise;\n    deviceRegistrationPromise = callDeviceTrust('registerDevice', deviceMetadata())\n      .then((device)=>{registeredDevice=device||null;deviceRegistrationRetryAfter=0;return registeredDevice;})\n      .catch((error)=>{\n        deviceRegistrationRetryAfter=Date.now()+60_000;\n        if(Date.now()-deviceRegistrationWarnedAt>60_000){deviceRegistrationWarnedAt=Date.now();console.warn('Device registration deferred',error);}\n        return null;\n      })\n      .finally(()=>{deviceRegistrationPromise=null;});\n    return deviceRegistrationPromise;\n  }\n  function resetDeviceContext(){ registeredDevice = null; deviceRegistrationPromise = null; deviceRegistrationRetryAfter = 0; }"""
+          if old in s: s=s.replace(old,new,1)
+          s=s.replace("        if (localStorage.getItem('auth_token')) { try { await ensureDeviceRegistered(); } catch (error) { console.warn('Device registration deferred', error); } }","        if (localStorage.getItem('auth_token')) await ensureDeviceRegistered();")
+          s=s.replace("    if (localStorage.getItem('auth_token')) ensureDeviceRegistered().catch((error)=>console.warn('Device registration pending',error));","    if (localStorage.getItem('auth_token')) void ensureDeviceRegistered();")
+          p.write_text(s,encoding='utf-8')
+
+          release=Path('src/app/release-version.js')
+          r=release.read_text(encoding='utf-8').replace('26.11.57','26.11.58').replace('absen-sppg-hadirly-v98','absen-sppg-hadirly-v99')
+          release.write_text(r,encoding='utf-8')
+          for test in Path('tests').glob('*.ts'):
+              q=test.read_text(encoding='utf-8').replace('26.11.57','26.11.58').replace('absen-sppg-hadirly-v98','absen-sppg-hadirly-v99')
+              test.write_text(q,encoding='utf-8')
+
+          t=Path('tests/device_trust_policy_test.ts')
+          q=t.read_text(encoding='utf-8')
+          if 'runtime Device Trust registration is single-flight and rate-bounded' not in q:
+              q += '''\n\nDeno.test('runtime Device Trust registration is single-flight and rate-bounded',async()=>{\n  const config=await read('supabase-config.js');\n  for(const marker of ['deviceRegistrationPromise','deviceRegistrationRetryAfter','60_000','void ensureDeviceRegistered()'])if(!config.includes(marker))throw new Error(`Device Trust retry guard missing ${marker}`);\n});\n'''
+              t.write_text(q,encoding='utf-8')
+          t=Path('tests/session_lifecycle_hardening_test.ts')
+          q=t.read_text(encoding='utf-8')
+          if 'presence heartbeat is owned by the modern gateway' not in q:
+              q += '''\n\nDeno.test('presence heartbeat is owned by the modern gateway',async()=>{\n  const gateway=await read('supabase/functions/AbsenV2/index.ts');\n  for(const marker of ['handlePresenceHeartbeat','functionName === "presenceHeartbeat"','Client_State','Token_Hash','authenticateUserSession'])if(!gateway.includes(marker))throw new Error(`modern heartbeat missing ${marker}`);\n});\n'''
+              t.write_text(q,encoding='utf-8')
+          PY
+          deno task ci
+          rm -f .github/workflows/runtime-console-hotfix-once.yml .github/runtime-console-hotfix.trigger .github/workflows/device-trust-hotfix-once.yml .github/device-trust-hotfix.trigger
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: stabilize device trust and presence heartbeat"
+          git push origin HEAD:main
