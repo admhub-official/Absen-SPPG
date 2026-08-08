@@ -133,7 +133,9 @@ function sameOriginReference(value: string | null, origin: string): boolean {
 }
 
 function isApiNavigation(request: Request, path: string, method: string): boolean {
-  if (method !== "GET" || !path.startsWith("/api/")) return false;
+  if (method !== "GET") return false;
+  if (path === "/api") return true;
+  if (!path.startsWith("/api/")) return false;
   const fetchMode = (request.headers.get("sec-fetch-mode") || "").toLowerCase();
   const accept = (request.headers.get("accept") || "").toLowerCase();
   return fetchMode === "navigate" || accept.includes("text/html");
