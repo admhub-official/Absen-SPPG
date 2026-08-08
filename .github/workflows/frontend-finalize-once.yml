@@ -11,7 +11,7 @@ jobs:
   finalize:
     if: contains(github.event.head_commit.message, '[frontend-finalize-once]')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,9 +22,11 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Make one-time matcher indentation-safe
-        shell: python
+      - name: Apply, validate, and publish only when green
+        shell: bash
         run: |
+          set -u
+          python - <<'PY'
           from pathlib import Path
           p = Path('scripts/frontend_finalize_once.py')
           s = p.read_text(encoding='utf-8')
@@ -33,20 +35,32 @@ jobs:
           if old not in s:
               raise SystemExit('replace_function matcher source not found')
           p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
 
-      - name: Apply frontend finalization
-        run: python scripts/frontend_finalize_once.py
+          set +e
+          python scripts/frontend_finalize_once.py > frontend-finalize.log 2>&1
+          patch_status=$?
+          ci_status=99
+          if [ "$patch_status" -eq 0 ]; then
+            deno task ci >> frontend-finalize.log 2>&1
+            ci_status=$?
+          fi
+          set -e
 
-      - name: Run complete quality suite
-        run: deno task ci
-
-      - name: Remove one-time automation
-        run: rm -f scripts/frontend_finalize_once.py .github/workflows/frontend-finalize-once.yml .github/frontend-finalize.trigger
-
-      - name: Commit verified result
-        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ "$patch_status" -ne 0 ] || [ "$ci_status" -ne 0 ]; then
+            echo "patch_status=$patch_status ci_status=$ci_status" >> frontend-finalize.log
+            git checkout -B automation/frontend-finalize-debug
+            git add -A
+            git commit -m "debug: frontend finalizer failure" || true
+            git push --force origin automation/frontend-finalize-debug
+            cat frontend-finalize.log
+            exit 1
+          fi
+
+          rm -f scripts/frontend_finalize_once.py .github/workflows/frontend-finalize-once.yml .github/frontend-finalize.trigger frontend-finalize.log
           git add -A
           if git diff --cached --quiet; then
             echo "No changes to commit"
