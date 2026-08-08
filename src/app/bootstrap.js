@@ -1,4 +1,5 @@
 import './http-only-session-bridge.js';
+import './navigation-state-guard.js';
 import { createRouter } from './router.js';
 import { createAppStore } from '../stores/app-store.js';
 import { createFeatureRegistry } from './feature-registry.js';
