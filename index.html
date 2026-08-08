@@ -175,11 +175,6 @@
     .dash-card-title svg{color:var(--primary)}
 
     .trend-chart{display:flex;align-items:flex-end;gap:0.6rem;height:140px;padding-top:0.5rem}
-    .trend-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.4rem;height:100%;justify-content:flex-end}
-    .trend-bar-stack{width:100%;max-width:32px;display:flex;flex-direction:column-reverse;gap:2px;border-radius:4px 4px 0 0;overflow:hidden}
-    .trend-bar-datang{background:var(--primary);width:100%;border-radius:3px 3px 0 0;min-height:3px}
-    .trend-bar-pulang{background:#a5b4fc;width:100%;min-height:3px}
-    .trend-bar-label{font-size:0.6875rem;color:var(--text-muted);font-weight:600}
     .trend-legend{display:flex;gap:1.1rem;margin-top:1rem;justify-content:center;font-size:0.75rem;color:var(--text-secondary)}
     .trend-legend-item{display:flex;align-items:center;gap:0.4rem}
     .trend-legend-dot{width:9px;height:9px;border-radius:2px}
@@ -436,7 +431,6 @@
     .pagination-btn{padding:0.35rem 0.75rem;border-radius:var(--radius);border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:0.8125rem;cursor:pointer;font-weight:500;transition:background .15s,border-color .15s}
     .pagination-btn:hover:not(:disabled){background:var(--bg);border-color:var(--primary);color:var(--primary)}
     .pagination-btn:disabled{opacity:0.45;cursor:not-allowed}
-    .pagination-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 
     @media(max-width:767px){
       .users-grid{grid-template-columns:repeat(2,1fr);gap:0.875rem;padding:1rem}
@@ -2006,7 +2000,7 @@ let SUPABASE_URL='',SUPABASE_KEY='';
 const CONFIG_ENDPOINT=`${APP_CONFIG.projectUrl.replace(/\/$/,'')}/functions/v1/${encodeURIComponent(APP_CONFIG.functionName)}`;
 const LOGO_BGN_STORAGE_URL=`${APP_CONFIG.projectUrl.replace(/\/$/,'')}/storage/v1/object/public/Logo%20BGN/LOGO_BGN.webp`;
 let BgnLogoPngPromise=null;
-const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppState={token:null,user:null,currentPage:'login',currentView:'dashboard',pendingRegisterEmail:'',pendingResetEmail:'',pendingResetToken:'',profilePasswordEmail:'',profilePasswordResetToken:'',resendTimerRegister:null,resendTimerReset:null,resendTimerProfilePassword:null,presenceTimer:null,notifications:[]};
+const $=(s)=>document.querySelector(s),$$=(s)=>document.querySelectorAll(s),AppState={token:null,user:null,currentView:'dashboard',pendingRegisterEmail:'',pendingResetEmail:'',pendingResetToken:'',profilePasswordEmail:'',profilePasswordResetToken:'',resendTimerRegister:null,resendTimerReset:null,resendTimerProfilePassword:null,presenceTimer:null,notifications:[]};
 const escapeHtml=(value)=>String(value??'').replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const normalizeRole=(value)=>String(value||'').trim().toUpperCase().replace(/_/g,' ');
 const FACEAPI_CDN_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
@@ -2149,28 +2143,6 @@ function renderProfilFromUser(){
   updateFaceStatusBadge();
 }
 async function loadProfilLengkap(){try{const r=await apiCall('getProfilLengkap',{token:AppState.token});if(r&&r.user){AppState.user=r.user;localStorage.setItem('auth_user',JSON.stringify(r.user));renderProfilFromUser();}}catch(e){console.error(e);}}
-function renderTrendChart(trend7Hari){
-  const container=$('#dash-trend-chart');
-  if(!container)return;
-  container.innerHTML='';
-  const maxVal=Math.max(1,...trend7Hari.map(t=>t.datang+t.pulang));
-  trend7Hari.forEach(t=>{
-    const d=new Date(t.tanggal+'T00:00:00');
-    const label=d.toLocaleDateString('id-ID',{weekday:'short'});
-    const hDatang=Math.round((t.datang/maxVal)*100);
-    const hPulang=Math.round((t.pulang/maxVal)*100);
-    const col=document.createElement('div');
-    col.className='trend-bar-col';
-    col.innerHTML=`
-      <div class="trend-bar-stack" style="height:${Math.max(hDatang+hPulang,3)}%">
-        <div class="trend-bar-pulang" style="height:${hPulang?Math.round((hPulang/(hDatang+hPulang||1))*100):0}%"></div>
-        <div class="trend-bar-datang" style="height:${hDatang?Math.round((hDatang/(hDatang+hPulang||1))*100):0}%"></div>
-      </div>
-      <div class="trend-bar-label">${label}</div>
-    `;
-    container.appendChild(col);
-  });
-}
 
 function renderBelumAbsenList(belumAbsen){
   const container=$('#dash-belum-absen-list');
@@ -2296,7 +2268,7 @@ async function loadDashboardData(){
   }
 }
 function handleLogout(){localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user'),AppState.token=null,AppState.user=null;showAuth();navigateTo('login');}
-function navigateTo(p){AppState.currentPage=p;$$('.auth-page').forEach(e=>e.classList.add('hidden'));const t=$(`#page-${p}`);if(t)t.classList.remove('hidden');history.pushState({p},'',`#${p}`);}
+function navigateTo(p){$$('.auth-page').forEach(e=>e.classList.add('hidden'));const t=$(`#page-${p}`);if(t)t.classList.remove('hidden');history.pushState({p},'',`#${p}`);}
 function showAlert(m,t='info'){const i={success:'✓',error:'✕',warning:'⚠',info:'ℹ'},a=document.createElement('div');a.className=`alert ${t}`,a.innerHTML=`<span>${i[t]||i.info}</span><div style="flex:1">${m}</div><button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer">✕</button>`,$('#alert-box').appendChild(a),setTimeout(()=>{a.style.opacity='0';setTimeout(()=>a.remove(),300)},5000);}
 
 let RiskConfirmation=null;
@@ -3640,11 +3612,6 @@ function renderAdminComplaints(){
     card.querySelector('.complaint-status-btn')?.addEventListener('click',()=>updateComplaintTicket(id,card.querySelector('.ticket-status-select').value,card.querySelector('.ticket-priority-select').value));
     card.querySelector('.complaint-reply-btn')?.addEventListener('click',()=>replyComplaint(id,card.querySelector('.complaint-response-input').value,card.querySelector('.ticket-priority-select').value));
   });
-}
-
-async function markComplaintRead(id){
-  try{await apiCall('tandaiSudahDibaca',{token:AppState.token,idPengaduan:id});showAlert('Pengaduan ditandai sudah dibaca.','success');await loadAdminComplaints();}
-  catch(error){showAlert(error.message,'error');}
 }
 
 async function replyComplaint(id,response,prioritas='NORMAL'){
