@@ -29,7 +29,7 @@ Deno.test("profile preview and downloaded PDF share one stable 300 DPI CR80 mast
   for(const rule of ['.digital-id-master-preview','.digital-id-master-canvas','aspect-ratio:53.98/85.6','.has-master-preview>.digital-id-portrait-card'])if(!rendererCss.includes(rule))throw new Error(`master renderer CSS missing ${rule}`);
   for(const retired of ['digital-id-card-print-sync.js','digital-id-card-v2.css'])if(assets.includes(retired)||serviceWorker.includes(retired))throw new Error(`retired ID card asset still referenced: ${retired}`);
   if(!bootstrap.includes('HADIRLY_RELEASE?.version')||!bootstrap.includes('HADIRLY_PWA_ASSETS'))throw new Error("bootstrap must use shared release and asset manifests");
-  if(!release.includes("version = '26.11.53'")||!release.includes("cacheName = 'absen-sppg-hadirly-v94'"))throw new Error("shared release version/cache mismatch");
+  if(!release.includes("version = '26.11.54'")||!release.includes("cacheName = 'absen-sppg-hadirly-v95'"))throw new Error("shared release version/cache mismatch");
   if(!assets.includes("'./src/app/digital-id-card-master-renderer.js'")||!assets.includes("'./src/styles/pages/digital-id-card-master-renderer.css'"))throw new Error("shared asset manifest must load CR80 master renderer assets");
   if(!serviceWorker.includes('...ASSETS.scripts.map(versioned)')||!serviceWorker.includes('...ASSETS.styles.map(versioned)'))throw new Error("service worker must cache shared asset manifest");
   if(!config.includes("await import('./src/app/release-version.js')")||!config.includes('bootstrap.js?v=${version}'))throw new Error("top-level bootstrap must use shared release version");
