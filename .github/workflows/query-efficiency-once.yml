@@ -19,7 +19,6 @@ jobs:
           from pathlib import Path
           import re
 
-          # OperationsV2: one filtered/paginated SQL RPC per attendance page.
           path = Path('supabase/functions/OperationsV2/index.ts')
           src = path.read_text()
           pattern = re.compile(r"async function allGroupedAttendance\(auth: AuthenticatedUser, search: string\): Promise<Record<string, any>\[]> \{.*?\n\}\n\nasync function groupedAttendanceV2\(body: Record<string, unknown>, auth: AuthenticatedUser\) \{.*?\n\}\n\nasync function validateAttendanceBulkV3", re.S)
@@ -39,44 +38,26 @@ jobs:
             if (status && !ATTENDANCE_VIEW_STATUSES.has(status)) {
               throw new ValidationError("INVALID_ATTENDANCE_STATUS", "Filter status absensi tidak valid.", "status");
             }
-
             const scope = await allowedSppg(auth);
             const users = await scopedUsers(scope);
             const scopedIds = users.map((row) => String(row.ID_User || "")).filter(Boolean);
-            const filterOptions = {
-              sppg: [...new Set(users.map((row) => String(row.SPPG || "").trim()).filter(Boolean))].sort(),
-            };
+            const filterOptions = { sppg: [...new Set(users.map((row) => String(row.SPPG || "").trim()).filter(Boolean))].sort() };
             if (!scopedIds.length) return { absensi: [], total: 0, page, pageSize, filterOptions };
-
             const result = await db.rpc("get_absensi_grouped_page_v2", {
-              p_user_ids: scopedIds,
-              p_page: page,
-              p_page_size: pageSize,
-              p_search: search || null,
-              p_start_date: startDate || null,
-              p_end_date: endDate || null,
-              p_sppg: sppg || null,
-              p_status: status || null,
-              p_source: source || null,
+              p_user_ids: scopedIds, p_page: page, p_page_size: pageSize, p_search: search || null,
+              p_start_date: startDate || null, p_end_date: endDate || null, p_sppg: sppg || null,
+              p_status: status || null, p_source: source || null,
             });
             if (result.error) throw new Error(`ATTENDANCE_QUERY_FAILED:${result.error.message}`);
             const rows = (result.data || []).map((item: any) => normalizeAttendanceRow(item.row_data || {}));
-            return {
-              absensi: rows,
-              total: Number(result.data?.[0]?.total_count || 0),
-              page,
-              pageSize,
-              filterOptions,
-            };
+            return { absensi: rows, total: Number(result.data?.[0]?.total_count || 0), page, pageSize, filterOptions };
           }
 
           async function validateAttendanceBulkV3'''
           src2, count = pattern.subn(replacement, src)
-          if count != 1:
-            raise SystemExit(f'OperationsV2 patch expected 1 block, found {count}')
+          if count != 1: raise SystemExit(f'OperationsV2 patch expected 1 block, found {count}')
           path.write_text(src2)
 
-          # AttendanceImport: one transaction RPC for import rows + attendance punches; one bulk mapping upsert.
           path = Path('supabase/functions/AttendanceImport/index.ts')
           src = path.read_text()
           pattern = re.compile(r"      let inserted = 0, skipped = 0, errors = 0, scansRead = 0;.*?      const status = errors \? \(inserted \? 'PARTIAL' : 'FAILED'\) : 'COMPLETED';", re.S)
@@ -93,39 +74,25 @@ jobs:
           let skipped = Number(stats.skipped || 0);
           let errors = 0;
           let scansRead = Number(stats.scansRead || 0);
-
           if (body.saveMappings === true && roleConfig.Can_Save_Mapping) {
-            const mappingRows = employees
-              .filter((employee:any) => employee.mappingMode !== 'IGNORE')
-              .map((employee:any) => ({
-                SPPG: sppg,
-                Source_Name_Normalized: normalizeName(employee.sourceName),
-                Source_Machine_ID: employee.machineId || null,
-                Source_Department: employee.department,
-                Mapping_Mode: employee.mappingMode,
-                Target_User_IDs: employee.targetUserIds,
-                Is_Active: true,
-                Created_By: user.ID_User,
-                Updated_At: new Date().toISOString(),
-              }));
+            const mappingRows = employees.filter((employee:any) => employee.mappingMode !== 'IGNORE').map((employee:any) => ({
+              SPPG: sppg, Source_Name_Normalized: normalizeName(employee.sourceName), Source_Machine_ID: employee.machineId || null,
+              Source_Department: employee.department, Mapping_Mode: employee.mappingMode, Target_User_IDs: employee.targetUserIds,
+              Is_Active: true, Created_By: user.ID_User, Updated_At: new Date().toISOString(),
+            }));
             if (mappingRows.length) {
               const mappingSave = await db.from('Attendance_Name_Mappings').upsert(mappingRows, { onConflict: 'SPPG,Source_Name_Normalized,Source_Machine_ID' });
-              if (mappingSave.error) {
-                errors++;
-                console.error(JSON.stringify({ requestId, code: 'MAPPING_SAVE_FAILED', error: mappingSave.error.message }));
-              }
+              if (mappingSave.error) { errors++; console.error(JSON.stringify({ requestId, code: 'MAPPING_SAVE_FAILED', error: mappingSave.error.message })); }
             }
           }
           const status = errors ? (inserted ? 'PARTIAL' : 'FAILED') : 'COMPLETED';'''
           src2, count = pattern.subn(replacement, src)
-          if count != 1:
-            raise SystemExit(f'AttendanceImport patch expected 1 block, found {count}')
+          if count != 1: raise SystemExit(f'AttendanceImport patch expected 1 block, found {count}')
           path.write_text(src2)
 
-          # Public Absen proxy: move USER history/dashboard aggregation to SQL without touching pinned legacy core.
           path = Path('supabase/functions/Absen/proxy.ts')
           src = path.read_text()
-          marker = '''function notificationMatches(notification: any, user: any) {'''
+          marker = 'function notificationMatches(notification: any, user: any) {'
           helpers = '''async function optimizedMyAttendance(user: any, data: any) {
             const month = String(data?.filterBulan || '').trim();
             if (month && !/^\\d{4}-\\d{2}$/.test(month)) throw new Error('Filter bulan tidak valid.');
@@ -141,44 +108,30 @@ jobs:
           }
 
           function notificationMatches(notification: any, user: any) {'''
-          if src.count(marker) != 1:
-            raise SystemExit('Absen proxy helper marker mismatch')
+          if src.count(marker) != 1: raise SystemExit('Absen proxy helper marker mismatch')
           src = src.replace(marker, helpers, 1)
-          marker2 = '''    if (functionName === 'getSuperAdminOverviewV3') {'''
+          marker2 = "    if (functionName === 'getSuperAdminOverviewV3') {"
           routes = '''    if (functionName === 'getMyAbsensi') {
               const user = await authenticate(body.data?.token);
               return json({ success: true, result: await optimizedMyAttendance(user, body.data || {}), requestId }, 200, requestId);
             }
-
             if (functionName === 'getDashboardData') {
               const user = await authenticate(body.data?.token);
-              if (user.role === 'USER') {
-                return json({ success: true, result: await optimizedUserDashboard(user), requestId }, 200, requestId);
-              }
+              if (user.role === 'USER') return json({ success: true, result: await optimizedUserDashboard(user), requestId }, 200, requestId);
               const legacyDashboard = await forward(LEGACY_CORE_URL, body, request);
               return forwardResponse(legacyDashboard, requestId);
             }
-
             if (functionName === 'getSuperAdminOverviewV3') {'''
-          if src.count(marker2) != 1:
-            raise SystemExit('Absen proxy route marker mismatch')
+          if src.count(marker2) != 1: raise SystemExit('Absen proxy route marker mismatch')
           src = src.replace(marker2, routes, 1)
           path.write_text(src)
 
-          # Regression contract.
-          test = Path('tests/query_efficiency_contract_test.ts')
-          test.write_text('''import { assert, assertEquals } from "jsr:@std/assert@1";\n\nconst read = (path: string) => Deno.readTextFile(path);\n\nDeno.test("attendance menu delegates filtering and pagination to one SQL RPC", async () => {\n  const source = await read("supabase/functions/OperationsV2/index.ts");\n  assert(source.includes('db.rpc("get_absensi_grouped_page_v2"'));\n  assert(!source.includes("async function allGroupedAttendance("));\n  assert(source.includes("p_start_date: startDate || null"));\n  assert(source.includes("p_status: status || null"));\n  assert(source.includes("p_source: source || null"));\n});\n\nDeno.test("attendance import uses one batch RPC instead of per-punch inserts", async () => {\n  const source = await read("supabase/functions/AttendanceImport/index.ts");\n  assert(source.includes("db.rpc('commit_attendance_import_batch'"));\n  assert(!source.includes("db.from('Absensi').insert(row)"));\n  assert(source.includes("upsert(mappingRows"));\n});\n\nDeno.test("user attendance and dashboard use SQL aggregation at the public gateway", async () => {\n  const source = await read("supabase/functions/Absen/proxy.ts");\n  assert(source.includes("db.rpc('get_my_absensi_grouped'"));\n  assert(source.includes("db.rpc('get_user_dashboard_summary'"));\n  assertEquals((source.match(/functionName === 'getMyAbsensi'/g) || []).length, 1);\n});\n''')
-
-          # Ensure the new contract is part of check and test tasks.
+          Path('tests/query_efficiency_contract_test.ts').write_text('''import { assert, assertEquals } from "jsr:@std/assert@1";\nconst read = (path: string) => Deno.readTextFile(path);\nDeno.test("attendance menu delegates filtering and pagination to one SQL RPC", async () => { const source = await read("supabase/functions/OperationsV2/index.ts"); assert(source.includes('db.rpc("get_absensi_grouped_page_v2"')); assert(!source.includes("async function allGroupedAttendance(")); assert(source.includes("p_start_date: startDate || null")); assert(source.includes("p_status: status || null")); assert(source.includes("p_source: source || null")); });\nDeno.test("attendance import uses one batch RPC instead of per-punch inserts", async () => { const source = await read("supabase/functions/AttendanceImport/index.ts"); assert(source.includes("db.rpc('commit_attendance_import_batch'")); assert(!source.includes("db.from('Absensi').insert(row)")); assert(source.includes("upsert(mappingRows")); });\nDeno.test("user attendance and dashboard use SQL aggregation at the public gateway", async () => { const source = await read("supabase/functions/Absen/proxy.ts"); assert(source.includes("db.rpc('get_my_absensi_grouped'")); assert(source.includes("db.rpc('get_user_dashboard_summary'")); assertEquals((source.match(/functionName === 'getMyAbsensi'/g) || []).length, 1); });\n''')
           path = Path('deno.json')
-          src = path.read_text()
-          anchor = 'tests/backend_error_handling_contract_test.ts'
-          if src.count(anchor) != 2:
-            raise SystemExit(f'deno.json anchor expected twice, found {src.count(anchor)}')
-          src = src.replace(anchor, anchor + ' tests/query_efficiency_contract_test.ts')
-          path.write_text(src)
+          src = path.read_text(); anchor = 'tests/backend_error_handling_contract_test.ts'
+          if src.count(anchor) != 2: raise SystemExit(f'deno.json anchor expected twice, found {src.count(anchor)}')
+          path.write_text(src.replace(anchor, anchor + ' tests/query_efficiency_contract_test.ts'))
           PY
-
           rm .github/workflows/query-efficiency-once.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
