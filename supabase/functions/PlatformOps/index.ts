@@ -1,6 +1,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { authenticateUserSession, requireOperationalRole } from "../_shared/auth.ts";
 import { corsHeaders, createRequestId, isOriginAllowed, jsonResponse } from "../_shared/http.ts";
+import { optionalString, requiredString, ValidationError } from "../_shared/validation.ts";
 
 const db = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -35,9 +36,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
+    const body = await req.json() as Record<string, unknown>;
     const actor = await authenticateUserSession(db, body.token);
-    const action = String(body.action || "");
+    const action = requiredString(body.action, "action", { max: 80 });
 
     if (action === "readiness") {
       const result = await db.rpc("platform_readiness_summary");
@@ -46,12 +47,14 @@ Deno.serve(async (req) => {
     }
 
     if (action === "privacyRequest") {
+      const requestType = requiredString(body.type, "type", { min: 2, max: 80 }).toUpperCase();
+      const reason = optionalString(body.reason, 2000);
       const result = await db
         .from("Privacy_Requests")
         .insert({
           ID_User: actor.idUser,
-          Request_Type: String(body.type || ""),
-          Reason: String(body.reason || "").slice(0, 2000),
+          Request_Type: requestType,
+          Reason: reason,
         })
         .select()
         .single();
@@ -72,17 +75,32 @@ Deno.serve(async (req) => {
       return jsonResponse({ success: true, result: result.data, requestId }, 200, requestId, headers);
     }
 
-    throw new Error("UNKNOWN_ACTION");
+    throw new ValidationError("ACTION_NOT_SUPPORTED", "Action tidak didukung.", "action");
   } catch (error) {
-    const code = error instanceof Error ? error.message : String(error);
-    const status = code === "SESSION_EXPIRED"
-      ? 401
-      : code === "ACCOUNT_INACTIVE" || code === "FORBIDDEN"
-      ? 403
-      : 422;
-    const message = status === 422 && !["UNKNOWN_ACTION"].includes(code)
-      ? "Permintaan tidak dapat diproses."
-      : code;
-    return jsonResponse({ success: false, code, message, requestId }, status, requestId, headers);
+    const raw = error instanceof Error ? error.message : String(error);
+    let status = 500;
+    let code = "INTERNAL_ERROR";
+    let message = "Terjadi kesalahan pada server.";
+    if (error instanceof ValidationError) {
+      status = 422;
+      code = error.code;
+      message = error.message;
+    } else if (raw === "SESSION_EXPIRED") {
+      status = 401;
+      code = raw;
+      message = "Sesi telah berakhir. Silakan login kembali.";
+    } else if (raw === "ACCOUNT_INACTIVE" || raw === "FORBIDDEN") {
+      status = 403;
+      code = raw;
+      message = "Akses ditolak.";
+    }
+    console.error(JSON.stringify({ requestId, code, status, error: raw }));
+    return jsonResponse({
+      success: false,
+      code,
+      message,
+      requestId,
+      ...(error instanceof ValidationError && error.field ? { details: { field: error.field } } : {}),
+    }, status, requestId, headers);
   }
 });
