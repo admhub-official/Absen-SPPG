@@ -28,7 +28,7 @@
       deviceButton.id = 'security-ui-devices-launcher';
       deviceButton.className = 'security-ui-launcher secondary';
       deviceButton.textContent = 'Perangkat Saya';
-      deviceButton.hidden = !localStorage.getItem('auth_token');
+      deviceButton.hidden = !window.HadirlySessionContext?.authenticated?.();
       deviceButton.addEventListener('click', () => open('devices'));
       document.body.appendChild(deviceButton);
     }
@@ -135,7 +135,7 @@
     const timer = setInterval(() => {
       attempts += 1;
       injectLaunchers();
-      if ((window.SecurityOpsClient && localStorage.getItem('auth_token')) || attempts > 60) clearInterval(timer);
+      if ((window.SecurityOpsClient && window.HadirlySessionContext?.authenticated?.()) || attempts > 60) clearInterval(timer);
     }, 1000);
   }
   window.SecurityOperationsUI = Object.freeze({ open, close, refresh: load });
