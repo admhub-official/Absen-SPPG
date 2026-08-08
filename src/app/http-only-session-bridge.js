@@ -18,6 +18,36 @@
     'Complaints','DigitalIdentity','OperationsV2','WorkforceOps','PlatformOps',
     'ConfigCenter','PayrollListPage','SppgLocationConfig','SystemSettings'
   ]);
+  const publicUnauthenticatedFunctions = new Set([
+    'getPublicConfig',
+    'getMasterData',
+    'checkUsernameUnique',
+    'registerUser',
+    'verifyRegistrationOtp',
+    'requestResetPassword',
+    'requestResetPasswordByEmail',
+    'verifyResetPasswordOtp',
+    'resetPassword',
+    'resendConfirmationEmail'
+  ]);
+  const persistentUserKeys = new Set([
+    'success',
+    'ID_User','idUser',
+    'Username','username',
+    'Role','role',
+    'Nama_Lengkap','namaLengkap','nama',
+    'Email','email',
+    'SPPG','sppg',
+    'Yayasan','yayasan',
+    'Jabatan_Divisi','jabatanDivisi','jabatan_divisi',
+    'Status_Aktif','statusAktif',
+    'URL_Foto_Profil','urlFotoProfil',
+    'Wajah_Terdaftar',
+    'ID_Card_Digital_Tersedia',
+    'QR_Code_Tersedia',
+    'device'
+  ]);
+  const persistentDeviceKeys = new Set(['idDevice','ID_Device','username','Username_Device','lokasi','Lokasi_SPPG']);
 
   let exchangePromise = null;
   let restorePromise = null;
@@ -29,6 +59,48 @@
   function currentStoredToken() {
     try { return localStorage.getItem('auth_token') || ''; } catch { return ''; }
   }
+
+  function sanitizePersistentUser(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+    const source = value.user && typeof value.user === 'object' && !Array.isArray(value.user) ? value.user : value;
+    const safe = {};
+    for (const [key, item] of Object.entries(source)) {
+      if (!persistentUserKeys.has(key)) continue;
+      if (key === 'device') {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+        const device = {};
+        for (const [deviceKey, deviceValue] of Object.entries(item)) {
+          if (persistentDeviceKeys.has(deviceKey)) device[deviceKey] = deviceValue;
+        }
+        safe.device = device;
+        continue;
+      }
+      safe[key] = item;
+    }
+    return safe;
+  }
+
+  function installAuthUserStorageGuard() {
+    if (window.__HADIRLY_AUTH_USER_STORAGE_GUARD__) return;
+    window.__HADIRLY_AUTH_USER_STORAGE_GUARD__ = true;
+    const nativeSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function guardedStorageSetItem(key, value) {
+      if (this === localStorage && String(key) === 'auth_user') {
+        try {
+          value = JSON.stringify(sanitizePersistentUser(JSON.parse(String(value))));
+        } catch {
+          value = '{}';
+        }
+      }
+      return nativeSetItem.call(this, key, value);
+    };
+    try {
+      const existing = localStorage.getItem('auth_user');
+      if (existing) localStorage.setItem('auth_user', existing);
+    } catch {}
+  }
+
+  installAuthUserStorageGuard();
 
   function syncRuntimeToken(value) {
     try {
@@ -56,7 +128,7 @@
   function persistSafeUser(value) {
     if (!value || typeof value !== 'object') return;
     const user = value.user && typeof value.user === 'object' ? value.user : value;
-    try { localStorage.setItem('auth_user', JSON.stringify(user)); } catch {}
+    try { localStorage.setItem('auth_user', JSON.stringify(sanitizePersistentUser(user))); } catch {}
     syncRuntimeUser(user);
   }
 
@@ -285,6 +357,7 @@
     if (target === 'AbsenV2' && name === 'login') return bffLogin(body);
     if (target === 'AbsenV2' && name === 'logout') return bffLogout();
     if (target === 'AbsenV2' && name === 'checkSession') return bffSessionCheck();
+    if (target === 'AbsenV2' && publicUnauthenticatedFunctions.has(name)) return downstreamFetch(input, init);
 
     return bffProxy(target, body, init.headers || (typeof input === 'object' ? input.headers : undefined));
   };
@@ -292,9 +365,11 @@
   window.HadirlyCookieSession = Object.freeze({
     marker: sessionMarker,
     productionRequired: true,
+    publicUnauthenticatedFunctions,
     exchangeLegacySession,
     restoreCookieSession,
     clearClientAuth,
+    sanitizePersistentUser,
     hasCompatibilityMarker: () => currentStoredToken() === sessionMarker
   });
 
