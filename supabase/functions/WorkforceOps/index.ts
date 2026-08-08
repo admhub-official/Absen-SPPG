@@ -19,7 +19,10 @@ const corsOptions = {
   localOrigins: ["http://localhost:4173", "http://127.0.0.1:4173"],
 };
 
-const activeValue = (value: unknown) => value === true || value === 1 || ["TRUE", "1", "ACTIVE", "AKTIF"].includes(String(value ?? "").trim().toUpperCase());
+const activeValue = (value: unknown) =>
+  value === true || value === 1 || ["TRUE", "1", "ACTIVE", "AKTIF"].includes(
+    String(value ?? "").trim().toUpperCase(),
+  );
 
 async function allowedSppg(auth: AuthenticatedUser): Promise<string[] | null> {
   if (auth.role === "SUPER ADMIN") return null;
@@ -60,7 +63,11 @@ async function scopedUserIds(auth: AuthenticatedUser): Promise<string[] | null> 
   return (users.data || []).map((row) => String(row.ID_User || "")).filter(Boolean);
 }
 
-async function scopedSppg(auth: AuthenticatedUser, requested: unknown, field = "sppg"): Promise<string | null> {
+async function scopedSppg(
+  auth: AuthenticatedUser,
+  requested: unknown,
+  field = "sppg",
+): Promise<string | null> {
   const value = optionalString(requested, 200);
   if (auth.role === "SUPER ADMIN") return value;
   const scope = await allowedSppg(auth);
@@ -69,8 +76,12 @@ async function scopedSppg(auth: AuthenticatedUser, requested: unknown, field = "
     if (!scope.includes(value)) throw new Error("FORBIDDEN");
     return value;
   }
-  if (scope.length === 1) return scope[0];
-  throw new ValidationError("SPPG_REQUIRED", `${field} wajib dipilih untuk akun dengan akses ke beberapa SPPG.`, field);
+  if (scope.length === 1) return scope[0]!;
+  throw new ValidationError(
+    "SPPG_REQUIRED",
+    `${field} wajib dipilih untuk akun dengan akses ke beberapa SPPG.`,
+    field,
+  );
 }
 
 function integerInRange(value: unknown, field: string, fallback: number, min: number, max: number): number {
@@ -235,8 +246,15 @@ async function analytics(auth: AuthenticatedUser, body: Record<string, unknown>)
 async function scheduleReport(auth: AuthenticatedUser, body: Record<string, unknown>) {
   requireOperationalRole(auth);
   const recipients = body.recipients === undefined ? [] : body.recipients;
-  if (!Array.isArray(recipients) || recipients.length > 100 || recipients.some((value) => typeof value !== "string" || !value.trim())) {
-    throw new ValidationError("INVALID_RECIPIENTS", "recipients wajib berupa array string valid maksimal 100 item.", "recipients");
+  if (
+    !Array.isArray(recipients) || recipients.length > 100 ||
+    recipients.some((value) => typeof value !== "string" || !value.trim())
+  ) {
+    throw new ValidationError(
+      "INVALID_RECIPIENTS",
+      "recipients wajib berupa array string valid maksimal 100 item.",
+      "recipients",
+    );
   }
   if (body.filters !== undefined && (!body.filters || typeof body.filters !== "object" || Array.isArray(body.filters))) {
     throw new ValidationError("INVALID_FILTERS", "filters wajib berupa object.", "filters");
@@ -244,7 +262,9 @@ async function scheduleReport(auth: AuthenticatedUser, body: Record<string, unkn
   let nextRunAt: string | null = null;
   if (body.nextRunAt) {
     const parsed = new Date(String(body.nextRunAt));
-    if (Number.isNaN(parsed.getTime())) throw new ValidationError("INVALID_DATETIME", "nextRunAt tidak valid.", "nextRunAt");
+    if (Number.isNaN(parsed.getTime())) {
+      throw new ValidationError("INVALID_DATETIME", "nextRunAt tidak valid.", "nextRunAt");
+    }
     nextRunAt = parsed.toISOString();
   }
   const format = requiredString(body.format || "CSV", "format", { max: 20 }).toUpperCase();
@@ -252,6 +272,7 @@ async function scheduleReport(auth: AuthenticatedUser, body: Record<string, unkn
     throw new ValidationError("INVALID_FORMAT", "Format laporan tidak valid.", "format");
   }
   const sppg = await scopedSppg(auth, body.sppg);
+  const filters = (body.filters || {}) as Record<string, unknown>;
   const row = {
     Name: requiredString(body.name, "name", { min: 3, max: 200 }),
     Report_Type: requiredString(body.reportType, "reportType", { max: 30 }).toUpperCase(),
@@ -259,7 +280,7 @@ async function scheduleReport(auth: AuthenticatedUser, body: Record<string, unkn
     Frequency: requiredString(body.frequency, "frequency", { max: 20 }).toUpperCase(),
     Format: format,
     Recipients: recipients.map((value) => String(value).trim()),
-    Filters: { ...(body.filters as Record<string, unknown> || {}), ...(sppg ? { sppg } : {}) },
+    Filters: { ...filters, ...(sppg ? { sppg } : {}) },
     Next_Run_At: nextRunAt,
     Created_By: auth.idUser,
   };
@@ -295,14 +316,29 @@ Deno.serve(async (req) => {
     let result: unknown;
 
     switch (action) {
-      case "listNotifications": result = await listNotifications(auth, body); break;
-      case "markNotificationRead": result = await markRead(auth, body); break;
-      case "notificationPreferences": result = await preferences(auth, body); break;
-      case "assignShift": result = await assignShift(auth, body); break;
-      case "listShiftAssignments": result = await listShiftAssignments(auth, body); break;
-      case "analyticsSummary": result = await analytics(auth, body); break;
-      case "scheduleReport": result = await scheduleReport(auth, body); break;
-      default: throw new ValidationError("ACTION_NOT_SUPPORTED", "Action tidak valid.", "action");
+      case "listNotifications":
+        result = await listNotifications(auth, body);
+        break;
+      case "markNotificationRead":
+        result = await markRead(auth, body);
+        break;
+      case "notificationPreferences":
+        result = await preferences(auth, body);
+        break;
+      case "assignShift":
+        result = await assignShift(auth, body);
+        break;
+      case "listShiftAssignments":
+        result = await listShiftAssignments(auth, body);
+        break;
+      case "analyticsSummary":
+        result = await analytics(auth, body);
+        break;
+      case "scheduleReport":
+        result = await scheduleReport(auth, body);
+        break;
+      default:
+        throw new ValidationError("ACTION_NOT_SUPPORTED", "Action tidak valid.", "action");
     }
 
     return jsonResponse({ success: true, result, requestId }, 200, requestId, headers);
@@ -312,13 +348,21 @@ Deno.serve(async (req) => {
     let code = "INTERNAL_ERROR";
     let message = "Terjadi kesalahan pada server.";
     if (error instanceof ValidationError) {
-      status = 422; code = error.code; message = error.message;
+      status = 422;
+      code = error.code;
+      message = error.message;
     } else if (raw === "SESSION_EXPIRED") {
-      status = 401; code = raw; message = "Sesi telah berakhir. Silakan login kembali.";
+      status = 401;
+      code = raw;
+      message = "Sesi telah berakhir. Silakan login kembali.";
     } else if (raw === "ACCOUNT_INACTIVE" || raw === "FORBIDDEN") {
-      status = 403; code = raw; message = "Akses ditolak.";
+      status = 403;
+      code = raw;
+      message = "Akses ditolak.";
     } else if (raw === "NOTIFICATION_NOT_FOUND" || raw === "USER_NOT_FOUND") {
-      status = 404; code = raw; message = raw === "USER_NOT_FOUND" ? "User tidak ditemukan." : "Notifikasi tidak ditemukan.";
+      status = 404;
+      code = raw;
+      message = raw === "USER_NOT_FOUND" ? "User tidak ditemukan." : "Notifikasi tidak ditemukan.";
     }
     console.error(JSON.stringify({ requestId, code, status, error: raw }));
     return jsonResponse({
