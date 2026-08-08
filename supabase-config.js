@@ -23,6 +23,80 @@ function isInstalledApp() {
   return displayModeInstalled || iosStandalone || trustedWebActivity;
 }
 
+function installLegacyFrontendPerformanceGuards() {
+  if (window.__HADIRLY_LEGACY_PERF_GUARDS__) return;
+  window.__HADIRLY_LEGACY_PERF_GUARDS__ = true;
+
+  try {
+    if (typeof window.drawCropCanvas === 'function' && typeof CropState !== 'undefined') {
+      let cropDrawFrame = 0;
+      window.drawCropCanvas = function drawCropCanvasOptimized() {
+        if (cropDrawFrame) return;
+        cropDrawFrame = requestAnimationFrame(() => {
+          cropDrawFrame = 0;
+          const canvas = document.getElementById('crop-canvas');
+          if (!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const size = CropState.canvasSize;
+          if (canvas.width !== size) canvas.width = size;
+          if (canvas.height !== size) canvas.height = size;
+          ctx.clearRect(0, 0, size, size);
+          const img = CropState.img;
+          if (!img) return;
+          const w = img.width * CropState.scale;
+          const h = img.height * CropState.scale;
+          const x = (size - w) / 2 + CropState.offsetX;
+          const y = (size - h) / 2 + CropState.offsetY;
+          ctx.drawImage(img, x, y, w, h);
+        });
+      };
+    }
+  } catch (error) {
+    console.warn('Optimasi cropper legacy dilewati.', error);
+  }
+
+  const payrollBody = document.getElementById('admin-payroll-body');
+  payrollBody?.addEventListener('change', (event) => {
+    const input = event.target?.closest?.('.payroll-row-check');
+    if (!input) return;
+    try {
+      if (typeof FeatureState === 'undefined') return;
+      event.stopImmediatePropagation();
+      const id = input.dataset.payrollId;
+      if (input.checked) FeatureState.payrollSelected.add(id);
+      else FeatureState.payrollSelected.delete(id);
+      const selectedCount = FeatureState.payrollSelected.size;
+      const count = document.getElementById('payroll-selected-count');
+      if (count) count.textContent = String(selectedCount);
+      const publishButton = document.getElementById('btn-open-payroll-publish');
+      if (publishButton) publishButton.disabled = selectedCount === 0;
+      const checks = [...payrollBody.querySelectorAll('.payroll-row-check:not(:disabled)')];
+      const selectAll = document.getElementById('payroll-select-all');
+      if (selectAll) {
+        selectAll.checked = checks.length > 0 && checks.every((item) => item.checked);
+        selectAll.indeterminate = checks.some((item) => item.checked) && !selectAll.checked;
+      }
+      if (typeof window.updatePayrollWizard === 'function') window.updatePayrollWizard();
+    } catch (error) {
+      console.warn('Optimasi seleksi payroll dilewati.', error);
+    }
+  }, { capture: true });
+
+  const adjustmentBody = document.getElementById('payroll-adjustment-body');
+  adjustmentBody?.addEventListener('input', (event) => {
+    const input = event.target?.closest?.('.payroll-money-input');
+    if (!input) return;
+    const row = input.closest('[data-payroll-adjustment]');
+    if (!row) return;
+    event.stopImmediatePropagation();
+    const subtotal = Number(row.dataset.subtotal) || 0;
+    const bonus = Math.max(0, Number(row.querySelector('.payroll-bonus-input')?.value) || 0);
+    const deduction = Math.max(0, Number(row.querySelector('.payroll-deduction-input')?.value) || 0);
+    const total = row.querySelector('.payroll-total');
+    if (total && typeof window.formatRupiah === 'function') total.textContent = window.formatRupiah(Math.max(0, subtotal + bonus - deduction));
+  }, { capture: true });
+}
+
 (() => {
   if (window.__HADIRLY_SESSION_GATEWAY_FETCH__) return;
   window.__HADIRLY_SESSION_GATEWAY_FETCH__ = true;
@@ -180,6 +254,7 @@ function isInstalledApp() {
   });
 
   window.addEventListener('DOMContentLoaded', () => {
+    installLegacyFrontendPerformanceGuards();
     const originalApiCall = window.apiCall;
     if (typeof originalApiCall === 'function' && !window.__ABSEN_API_WRAPPED__) {
       window.__ABSEN_API_WRAPPED__ = true;
