@@ -181,6 +181,55 @@ async function optimizedUserDashboard(user: any) {
   if (result.error) throw new Error(`DASHBOARD_QUERY_FAILED:${result.error.message}`);
   return result.data || { role: 'USER', totalHariKerja: 0, totalSlip: 0, totalGajiDiterima: 0, riwayat: [], sudahDatang: false, sudahPulang: false };
 }
+async function optimizedAuditLog(user: any, data: any) {
+  if (!['ADMIN', 'SUPER ADMIN'].includes(user.role)) throw new Error('Akses hanya untuk ADMIN');
+  const limit = Math.min(500, Math.max(1, Number(data?.limit) || 100));
+  const result = await db.from('Audit_Log')
+    .select('ID_Log,Waktu,ID_User_Pelaku,Jenis_Aktivitas,Detail,IP_Address')
+    .order('Waktu', { ascending: false })
+    .limit(limit);
+  if (result.error) throw result.error;
+  let logs = result.data || [];
+  const filters = data?.filters || {};
+  if (filters.jenisAktivitas) logs = logs.filter((row: any) => row.Jenis_Aktivitas === filters.jenisAktivitas);
+  if (filters.tanggal) logs = logs.filter((row: any) => String(row.Waktu || '').slice(0, 10) === String(filters.tanggal).slice(0, 10));
+  if (filters.pelaku) logs = logs.filter((row: any) => row.ID_User_Pelaku === filters.pelaku);
+  const actorIds = [...new Set(logs.map((row: any) => String(row.ID_User_Pelaku || '')).filter((id: string) => id && id !== 'SYSTEM'))];
+  let actors = new Map<string, any>();
+  if (actorIds.length) {
+    const actorRows = await db.from('Users').select('ID_User,Nama_Lengkap,Email').in('ID_User', actorIds);
+    if (actorRows.error) throw actorRows.error;
+    actors = new Map((actorRows.data || []).map((row: any) => [String(row.ID_User), row]));
+  }
+  return { logs: logs.map((row: any) => {
+    const actor = actors.get(String(row.ID_User_Pelaku));
+    return { ...row, _pelakuNama: actor?.Nama_Lengkap || (row.ID_User_Pelaku === 'SYSTEM' ? 'Sistem' : row.ID_User_Pelaku), _pelakuEmail: actor?.Email || '' };
+  }) };
+}
+
+async function optimizedSlipList(user: any) {
+  if (!['ADMIN', 'SUPER ADMIN', 'AKUNTAN'].includes(user.role)) throw new Error('Akses hanya untuk ADMIN atau AKUNTAN');
+  const ids = user.role === 'SUPER ADMIN' ? null : await scopedUserIds(user);
+  if (ids && !ids.length) return { slipGaji: [] };
+  let query = db.from('Slip_Gaji')
+    .select('ID_Slip,ID_Payroll,ID_User,Periode_Mulai,Periode_Akhir,Total_Gaji_Diterima,Status_Penerbitan,Diterbitkan_At,Created_At,PDF_Storage_Path,URL_PDF_Slip,SPPG')
+    .order('Diterbitkan_At', { ascending: false, nullsFirst: false });
+  if (ids) query = query.in('ID_User', ids);
+  const slips = await query;
+  if (slips.error) throw slips.error;
+  const userIds = [...new Set((slips.data || []).map((row: any) => String(row.ID_User || '')).filter(Boolean))];
+  let users = new Map<string, any>();
+  if (userIds.length) {
+    const userRows = await db.from('Users').select('ID_User,Nama_Lengkap,SPPG').in('ID_User', userIds);
+    if (userRows.error) throw userRows.error;
+    users = new Map((userRows.data || []).map((row: any) => [String(row.ID_User), row]));
+  }
+  return { slipGaji: (slips.data || []).map((row: any) => {
+    const employee = users.get(String(row.ID_User));
+    return { ...row, _namaKaryawan: employee?.Nama_Lengkap || row.ID_User, _sppgKaryawan: employee?.SPPG || row.SPPG || '' };
+  }) };
+}
+
 function notificationMatches(notification: any, user: any) {
   const mode = String(notification.Target_Mode || 'ALL').toUpperCase();
   if (mode === 'ALL') return true;
@@ -193,7 +242,7 @@ function notificationMatches(notification: any, user: any) {
 async function appNotifications(user: any) {
   const now = new Date().toISOString();
   const { data: notifications, error } = await db.from('App_Notifications')
-    .select('*')
+    .select('ID_Notification,Title,Message,Priority,Target_Mode,Target_Roles,Target_SPPG,Target_User_IDs,Show_Banner,Play_Sound,Push_Enabled,Action_View,Starts_At,Expires_At,Created_At,Status')
     .eq('Status', 'PUBLISHED')
     .lte('Starts_At', now)
     .or(`Expires_At.is.null,Expires_At.gt.${now}`)
@@ -342,7 +391,16 @@ Deno.serve(async (request) => {
     const locationResponse = await forwardLocation(body, request, requestId);
     if (locationResponse) return locationResponse;
 
-    if (functionName === 'getMyAbsensi') {
+    if (functionName === 'getAuditLogEnriched') {
+    const user = await authenticate(body.data?.token);
+    return json({ success: true, result: await optimizedAuditLog(user, body.data || {}), requestId }, 200, requestId);
+  }
+  if (functionName === 'getAllSlipGajiList') {
+    const user = await authenticate(body.data?.token);
+    return json({ success: true, result: await optimizedSlipList(user), requestId }, 200, requestId);
+  }
+
+  if (functionName === 'getMyAbsensi') {
     const user = await authenticate(body.data?.token);
     return json({ success: true, result: await optimizedMyAttendance(user, body.data || {}), requestId }, 200, requestId);
   }

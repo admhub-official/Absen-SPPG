@@ -33,3 +33,17 @@ Deno.test("query efficiency database helpers are tracked in the migration histor
   assert(migration.includes("commit_attendance_import_batch"));
   assert(migration.includes("grant execute on function public.commit_attendance_import_batch"));
 });
+
+Deno.test("active admin KPI, audit, payroll and notification paths avoid row overfetch", async () => {
+  const operations = await read("supabase/functions/OperationsV2/index.ts");
+  const proxy = await read("supabase/functions/Absen/proxy.ts");
+  const migration = await read("supabase/migrations/20260808113400_query_efficiency_active_path_followup.sql");
+  assert(operations.includes('db.rpc("get_operational_dashboard_counts"'));
+  assert(!operations.includes('.select("ID_Pengaduan,SPPG,Status_Tiket").limit(5000)'));
+  assert(proxy.includes("async function optimizedAuditLog"));
+  assert(proxy.includes("select('ID_Log,Waktu,ID_User_Pelaku,Jenis_Aktivitas,Detail,IP_Address')"));
+  assert(proxy.includes("async function optimizedSlipList"));
+  assert(proxy.includes("select('ID_User,Nama_Lengkap,SPPG')"));
+  assert(!proxy.includes(".from('App_Notifications')\n    .select('*')"));
+  assert(migration.includes("get_operational_dashboard_counts"));
+});
