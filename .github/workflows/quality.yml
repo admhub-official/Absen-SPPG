@@ -28,3 +28,63 @@ jobs:
 
       - name: Quality and release contracts
         run: deno task ci
+
+  browser-smoke:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: deno-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Chromium smoke runtime
+        run: |
+          npm install --no-save playwright@1.54.2
+          npx playwright install --with-deps chromium
+
+      - name: Start local application shell
+        shell: bash
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/hadirly-smoke-server.log 2>&1 &
+          echo $! > /tmp/hadirly-smoke-server.pid
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/hadirly-smoke-server.log
+          exit 1
+
+      - name: Browser auth and navigation smoke
+        env:
+          SMOKE_BASE_URL: http://127.0.0.1:4173
+        run: node tests/browser_public_smoke.mjs
+
+      - name: Show server log on failure
+        if: failure()
+        run: cat /tmp/hadirly-smoke-server.log || true
+
+  production-readiness:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [deno-quality, browser-smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Record quality-gated deployable commit
+        run: |
+          mkdir -p artifacts
+          printf 'commit=%s\nquality=passed\nbrowser_smoke=passed\nstatus=deployable\n' "${GITHUB_SHA}" > artifacts/production-readiness.txt
+
+      - name: Upload production readiness marker
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-readiness-${{ github.sha }}
+          path: artifacts/production-readiness.txt
+          retention-days: 14
