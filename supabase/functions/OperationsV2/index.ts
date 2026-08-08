@@ -29,6 +29,7 @@ const USER_SAFE_COLUMNS = [
 ].join(",");
 
 const ATTENDANCE_VALIDATION_ACTIONS = new Set(["VALID", "PERLU_KOREKSI", "DITOLAK"]);
+const ATTENDANCE_VIEW_STATUSES = new Set(["LENGKAP", "PUNCH_TUNGGAL", "BELUM_LENGKAP"]);
 const normalize = (value: unknown) => String(value ?? "").trim().toUpperCase().replace(/_/g, " ");
 const activeValue = (value: unknown) =>
   value === true || value === 1 || ["TRUE", "1", "ACTIVE", "AKTIF"].includes(normalize(value));
@@ -40,6 +41,39 @@ const jakartaDate = () => new Intl.DateTimeFormat("en-CA", {
   timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit",
 }).format(new Date());
 const dateOnly = (value: unknown) => String(value ?? "").slice(0, 10);
+
+function requiredBoolean(value: unknown, field: string): boolean {
+  if (typeof value !== "boolean") {
+    throw new ValidationError("INVALID_BOOLEAN", `${field} wajib berupa boolean.`, field);
+  }
+  return value;
+}
+
+function plainObject(value: unknown, field: string): Record<string, unknown> {
+  if (value === undefined || value === null) return {};
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new ValidationError("INVALID_OBJECT", `${field} wajib berupa object.`, field);
+  }
+  return value as Record<string, unknown>;
+}
+
+function optionalIsoDateTime(value: unknown, field: string): string | null {
+  if (value === undefined || value === null || String(value).trim() === "") return null;
+  const raw = requiredString(value, field, { max: 80 });
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new ValidationError("INVALID_DATETIME", `${field} tidak valid.`, field);
+  }
+  return parsed.toISOString();
+}
+
+function workflowStatus(value: unknown, field: string): string {
+  const raw = requiredString(value, field, { max: 50 }).trim().toUpperCase().replace(/\s+/g, "_");
+  if (!/^[A-Z0-9_]{2,50}$/.test(raw)) {
+    throw new ValidationError("INVALID_WORKFLOW_STATUS", `${field} tidak valid.`, field);
+  }
+  return raw;
+}
 
 async function actorProfile(auth: AuthenticatedUser) {
   const result = await db.from("Users").select("ID_User,Email,SPPG,Role").eq("ID_User", auth.idUser).maybeSingle();
@@ -150,6 +184,9 @@ async function operationalUsers(body: Record<string, unknown>, auth: Authenticat
   const sppg = String(body.sppg || "").trim();
   const division = String(body.division || "").trim();
   const account = normalize(body.account);
+  if (account && !["ACTIVE", "INACTIVE"].includes(account)) {
+    throw new ValidationError("INVALID_ACCOUNT_FILTER", "Filter status akun tidak valid.", "account");
+  }
   let filtered = allUsers.filter((row) => {
     if (search) {
       const haystack = [row.Nama_Lengkap, row.Email, row.Username, row.SPPG, row.Jabatan_Divisi]
@@ -304,8 +341,11 @@ async function groupedAttendanceV2(body: Record<string, unknown>, auth: Authenti
   if (body.endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) throw new ValidationError("INVALID_END_DATE", "Tanggal akhir tidak valid.", "endDate");
   if (startDate && endDate && endDate < startDate) throw new ValidationError("INVALID_DATE_RANGE", "Tanggal akhir tidak boleh sebelum tanggal mulai.", "endDate");
   const sppg = String(body.sppg || "").trim();
-  const source = String(body.source || "").trim().toUpperCase();
-  const status = String(body.status || "").trim().toUpperCase();
+  const source = body.source ? requiredString(body.source, "source", { max: 100 }).toUpperCase() : "";
+  const status = body.status ? requiredString(body.status, "status", { max: 40 }).toUpperCase() : "";
+  if (status && !ATTENDANCE_VIEW_STATUSES.has(status)) {
+    throw new ValidationError("INVALID_ATTENDANCE_STATUS", "Filter status absensi tidak valid.", "status");
+  }
 
   const filtered = allRows.filter((row) => {
     const date = dateOnly(row.Tanggal || row.tanggal);
@@ -413,9 +453,9 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
     requireSuperAdminRole(auth);
     const result = await db.from("Release_Feature_Flags").upsert({
       Flag_Key: requiredString(body.key, "key", { max: 100 }),
-      Enabled: Boolean(body.enabled),
+      Enabled: requiredBoolean(body.enabled, "enabled"),
       Scope_SPPG: optionalString(body.scopeSppg, 200),
-      Config: typeof body.config === "object" && body.config ? body.config : {},
+      Config: plainObject(body.config, "config"),
       Updated_By: auth.idUser,
       Updated_At: new Date().toISOString(),
     }).select().maybeSingle();
@@ -427,7 +467,7 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
     const result = await db.rpc("transition_payroll_workflow", {
       p_slip_id: requiredString(body.slipId, "slipId", { max: 200 }),
       p_user_id: requiredString(body.userId, "userId", { max: 100 }),
-      p_to_status: requiredString(body.toStatus, "toStatus", { max: 50 }).toUpperCase(),
+      p_to_status: workflowStatus(body.toStatus, "toStatus"),
       p_actor_id: auth.idUser,
       p_reason: optionalString(body.reason, 2000),
       p_idempotency_key: optionalString(body.idempotencyKey, 200),
@@ -438,7 +478,9 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
   if (action === "listPayrollWorkflow") {
     requireOperationalRole(auth);
     let query = db.from("Payroll_Workflow_State").select("*").order("Updated_At", { ascending: false }).limit(200);
-    if (body.status) query = query.eq("Status", String(body.status).toUpperCase());
+    if (body.status !== undefined && body.status !== null && String(body.status).trim() !== "") {
+      query = query.eq("Status", workflowStatus(body.status, "status"));
+    }
     const result = await query;
     if (result.error) throw result.error;
     return result.data || [];
@@ -464,7 +506,9 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
   if (action === "listUserAccess") {
     requireOperationalRole(auth);
     let query = db.from("User_SPPG_Access_V2").select("*").order("Created_At", { ascending: false }).limit(500);
-    if (body.userId) query = query.eq("ID_User", String(body.userId));
+    if (body.userId !== undefined && body.userId !== null && String(body.userId).trim() !== "") {
+      query = query.eq("ID_User", requiredString(body.userId, "userId", { max: 100 }));
+    }
     const result = await query;
     if (result.error) throw result.error;
     return result.data || [];
@@ -476,7 +520,7 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
       SPPG: requiredString(body.sppg, "sppg", { max: 200 }),
       Role_Scope: optionalString(body.roleScope, 100),
       Active: true,
-      Valid_Until: body.validUntil || null,
+      Valid_Until: optionalIsoDateTime(body.validUntil, "validUntil"),
       Granted_By: auth.idUser,
     }, { onConflict: "ID_User,SPPG,Role_Scope" }).select().maybeSingle();
     if (result.error) throw result.error;
@@ -490,8 +534,8 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
       Actor_ID: auth.idUser,
       Session_ID: optionalString(body.sessionId, 200),
       Device_ID: optionalString(body.deviceId, 200),
-      Before_Data: body.beforeData || {},
-      After_Data: body.afterData || {},
+      Before_Data: plainObject(body.beforeData, "beforeData"),
+      After_Data: plainObject(body.afterData, "afterData"),
       Reason: optionalString(body.reason, 2000),
     }).select().maybeSingle();
     if (result.error) throw result.error;
