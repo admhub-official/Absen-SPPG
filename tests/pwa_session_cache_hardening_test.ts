@@ -29,8 +29,8 @@ Deno.test('PWA release version has one canonical source', async () => {
   const sw = await read('sw.js');
   const config = await read('supabase-config.js');
 
-  if (!release.includes("version = '26.11.53'")) throw new Error('release version mismatch');
-  if (!release.includes("cacheName = 'absen-sppg-hadirly-v94'")) throw new Error('release cache mismatch');
+  if (!release.includes("version = '26.11.54'")) throw new Error('release version mismatch');
+  if (!release.includes("cacheName = 'absen-sppg-hadirly-v95'")) throw new Error('release cache mismatch');
   for (const [name, source] of [['bootstrap', bootstrap], ['runtime', runtime]] as const) {
     if (!source.includes('HADIRLY_RELEASE?.version')) throw new Error(`${name} must read shared release version`);
   }
@@ -86,6 +86,15 @@ Deno.test('service worker never serves index HTML as JS or CSS fallback', async 
 
   const codeBranch = sw.slice(sw.indexOf('if (isCodeAsset)'), sw.indexOf("event.respondWith(\n    caches.match(request)", sw.indexOf('if (isCodeAsset)')));
   if (codeBranch.includes("caches.match('./index.html')")) throw new Error('JS/CSS branch must never fall back to index.html');
+});
+
+Deno.test('service worker bypasses same-origin BFF and auth routes completely', async () => {
+  const sw = await read('sw.js');
+  const apiBypass = "if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return;";
+  if (!sw.includes(apiBypass)) throw new Error('service worker must bypass /api auth/BFF traffic');
+  if (sw.indexOf(apiBypass) > sw.indexOf("if (request.mode === 'navigate')")) {
+    throw new Error('/api bypass must happen before navigation/cache strategies');
+  }
 });
 
 Deno.test('PWA activation is deferred while user has unsaved form or signature work', async () => {
