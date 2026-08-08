@@ -12,6 +12,6 @@ Deno.test("front ID Card renders Kepala SPPG signature and keeps PDF canvas in s
   const masterRendererIndex = assets.indexOf("'./src/app/digital-id-card-master-renderer.js'");
   if (frontRendererIndex < 0 || masterRendererIndex < 0 || frontRendererIndex > masterRendererIndex) throw new Error("front signature renderer must load before master renderer");
   if (!assets.includes("'./src/styles/pages/id-card-front-signature.css'")) throw new Error("front signature stylesheet is not loaded");
-  if (!release.includes("version = '26.11.53'") || !release.includes("cacheName = 'absen-sppg-hadirly-v94'")) throw new Error("frontend release/cache must match current release");
+  if (!release.includes("version = '26.11.54'") || !release.includes("cacheName = 'absen-sppg-hadirly-v95'")) throw new Error("frontend release/cache must match current release");
   if (!sw.includes('...ASSETS.scripts.map(versioned)') || !assets.includes("id-card-front-signature-renderer.js")) throw new Error("PWA shell does not cache front signature renderer");
 });
