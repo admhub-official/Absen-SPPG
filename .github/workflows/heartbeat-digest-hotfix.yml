@@ -1,0 +1,64 @@
+name: Heartbeat digest hotfix
+on:
+  push:
+    paths:
+      - '.github/workflows/heartbeat-digest-hotfix.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Patch gateway-forwarded heartbeat token handling
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          p = Path('supabase/functions/AbsenV2/index.ts')
+          s = p.read_text()
+          s = s.replace('import { authenticateUserSession } from "../_shared/auth.ts";\n', '')
+          if 'const DIGEST_RE = /^[0-9a-f]{64}$/i;' not in s:
+              s = s.replace('const MAX_ACCURACY_M = 60;\n', 'const MAX_ACCURACY_M = 60;\nconst DIGEST_RE = /^[0-9a-f]{64}$/i;\n')
+          s = s.replace('if (text.includes("SESI_HABIS")) return { status: 401, code: "SESSION_EXPIRED", message: "Sesi telah berakhir. Silakan login kembali." };', 'if (text.includes("SESI_HABIS") || text.includes("SESSION_EXPIRED")) return { status: 401, code: "SESSION_EXPIRED", message: "Sesi telah berakhir. Silakan login kembali." };')
+          pattern = re.compile(r'async function handlePresenceHeartbeat\(body: Record<string, unknown>, id: string, headers: Record<string, string>\): Promise<Response> \{.*?\n\}', re.S)
+          replacement = '''async function handlePresenceHeartbeat(body: Record<string, unknown>, id: string, headers: Record<string, string>): Promise<Response> {
+            const forwardedTokenHash = String(body.token || "").trim().toLowerCase();
+            if (!DIGEST_RE.test(forwardedTokenHash)) throw new Error("SESSION_EXPIRED");
+            const sessionResult = await supabase.from("Sessions")
+              .select("ID_User,Type,Expires_At")
+              .eq("Token_Hash", forwardedTokenHash)
+              .maybeSingle();
+            const session = sessionResult.data;
+            if (sessionResult.error || !session?.ID_User || String(session.Type || "").toLowerCase() !== "user" || new Date(String(session.Expires_At || "")).getTime() <= Date.now()) {
+              throw new Error("SESSION_EXPIRED");
+            }
+            const requestedState = String(body.clientState || "ACTIVE").toUpperCase();
+            const clientState = requestedState === "HIDDEN" ? "HIDDEN" : "ACTIVE";
+            const { error } = await supabase.from("Sessions").update({
+              Last_Activity_At: new Date().toISOString(),
+              Client_State: clientState,
+            }).eq("Token_Hash", forwardedTokenHash);
+            if (error) throw new Error("HEARTBEAT_UPDATE_FAILED");
+            return respond({ success: true, result: { online: clientState === "ACTIVE", clientState }, requestId: id }, 200, id, headers);
+          }'''
+          s2, n = pattern.subn(replacement, s, count=1)
+          if n != 1:
+              raise SystemExit(f'heartbeat function replacement count={n}')
+          p.write_text(s2)
+      - name: Full CI
+        run: deno task ci
+      - name: Commit guarded hotfix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/heartbeat-digest-hotfix.yml
+          git add supabase/functions/AbsenV2/index.ts
+          git commit -m "fix: accept gateway session digest for heartbeat"
+          git push origin HEAD:main
