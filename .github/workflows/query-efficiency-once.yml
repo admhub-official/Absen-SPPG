@@ -1,8 +1,8 @@
 name: Query Efficiency One Shot
 on:
-  push:
+  pull_request:
     branches: [main]
-    paths: ['.github/workflows/query-efficiency-once.yml']
+    types: [opened, synchronize, reopened]
 permissions:
   contents: write
 jobs:
@@ -11,6 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Apply targeted query efficiency patch
         shell: bash
@@ -44,9 +45,15 @@ jobs:
             const filterOptions = { sppg: [...new Set(users.map((row) => String(row.SPPG || "").trim()).filter(Boolean))].sort() };
             if (!scopedIds.length) return { absensi: [], total: 0, page, pageSize, filterOptions };
             const result = await db.rpc("get_absensi_grouped_page_v2", {
-              p_user_ids: scopedIds, p_page: page, p_page_size: pageSize, p_search: search || null,
-              p_start_date: startDate || null, p_end_date: endDate || null, p_sppg: sppg || null,
-              p_status: status || null, p_source: source || null,
+              p_user_ids: scopedIds,
+              p_page: page,
+              p_page_size: pageSize,
+              p_search: search || null,
+              p_start_date: startDate || null,
+              p_end_date: endDate || null,
+              p_sppg: sppg || null,
+              p_status: status || null,
+              p_source: source || null,
             });
             if (result.error) throw new Error(`ATTENDANCE_QUERY_FAILED:${result.error.message}`);
             const rows = (result.data || []).map((item: any) => normalizeAttendanceRow(item.row_data || {}));
@@ -76,9 +83,15 @@ jobs:
           let scansRead = Number(stats.scansRead || 0);
           if (body.saveMappings === true && roleConfig.Can_Save_Mapping) {
             const mappingRows = employees.filter((employee:any) => employee.mappingMode !== 'IGNORE').map((employee:any) => ({
-              SPPG: sppg, Source_Name_Normalized: normalizeName(employee.sourceName), Source_Machine_ID: employee.machineId || null,
-              Source_Department: employee.department, Mapping_Mode: employee.mappingMode, Target_User_IDs: employee.targetUserIds,
-              Is_Active: true, Created_By: user.ID_User, Updated_At: new Date().toISOString(),
+              SPPG: sppg,
+              Source_Name_Normalized: normalizeName(employee.sourceName),
+              Source_Machine_ID: employee.machineId || null,
+              Source_Department: employee.department,
+              Mapping_Mode: employee.mappingMode,
+              Target_User_IDs: employee.targetUserIds,
+              Is_Active: true,
+              Created_By: user.ID_User,
+              Updated_At: new Date().toISOString(),
             }));
             if (mappingRows.length) {
               const mappingSave = await db.from('Attendance_Name_Mappings').upsert(mappingRows, { onConflict: 'SPPG,Source_Name_Normalized,Source_Machine_ID' });
@@ -132,7 +145,7 @@ jobs:
           if src.count(anchor) != 2: raise SystemExit(f'deno.json anchor expected twice, found {src.count(anchor)}')
           path.write_text(src.replace(anchor, anchor + ' tests/query_efficiency_contract_test.ts'))
           PY
-          rm .github/workflows/query-efficiency-once.yml
+          rm -f .github/workflows/query-efficiency-once.yml .github/workflows/query-efficiency-kick.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
