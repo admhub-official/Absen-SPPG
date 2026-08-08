@@ -34,14 +34,13 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import textwrap
           source=Path('.github/workflows/frontend-structure-finalize.yml').read_text(encoding='utf-8')
           start="          python3 - <<'PY'\n"
           end="\n          PY\n"
           if start not in source:
               raise SystemExit('embedded finalizer start marker missing')
           block=source.split(start,1)[1].split(end,1)[0]
-          code=textwrap.dedent(block)
+          code='\n'.join(line[10:] if line.startswith('          ') else line for line in block.splitlines())
           exec(compile(code,'frontend-structure-finalizer','exec'))
           PY
           node --check src/legacy/index-app.js
