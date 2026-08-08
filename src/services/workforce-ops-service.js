@@ -1,7 +1,7 @@
 import { ApiClientError } from './api-client.js';
 
 const endpoint = () => `${window.ABSEN_SUPABASE_CONFIG?.projectUrl || ''}/functions/v1/WorkforceOps`;
-const token = () => window.HadirlySessionContext?.token?.() || localStorage.getItem('auth_token') || '';
+const token = () => window.HadirlySessionContext?.token?.() || '';
 
 async function call(action, payload = {}) {
   const authToken = token();
