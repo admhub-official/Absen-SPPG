@@ -91,19 +91,32 @@ Deno.test("service worker bypasses same-origin BFF API completely", async () => 
   }
 });
 
-Deno.test("root Cloudflare Workers build binds canonical BFF to hadirly api route", async () => {
+Deno.test("root Cloudflare Workers build separates frontend from canonical BFF", async () => {
   const wrangler = await read("wrangler.toml");
+  const rootWorker = await read("bff/cloudflare/root-worker.ts");
   for (const marker of [
     'name = "hadirly"',
-    'main = "bff/cloudflare/worker.ts"',
+    'main = "bff/cloudflare/root-worker.ts"',
     'workers_dev = false',
     'pattern = "hadirly.org/api/*"',
     'zone_name = "hadirly.org"',
     'HADIRLY_ORIGIN = "https://hadirly.org"',
+    'STATIC_ORIGIN = "https://absen-sppg.pages.dev"',
     'SUPABASE_URL = "https://szwwpnbbsmjsbzzcecyj.supabase.co"',
     'ALLOW_LEGACY_EXCHANGE = "true"',
   ]) {
-    if (!wrangler.includes(marker)) throw new Error(`root Cloudflare BFF route missing ${marker}`);
+    if (!wrangler.includes(marker)) throw new Error(`root Cloudflare config missing ${marker}`);
+  }
+  for (const marker of [
+    'import bffWorker from "./worker.ts";',
+    'const DEFAULT_STATIC_ORIGIN = "https://absen-sppg.pages.dev";',
+    'return normalized === "/api" || normalized.startsWith("/api/");',
+    'if (isApiPath(url.pathname)) return bffWorker.fetch(request, env);',
+    'return serveStatic(request, env);',
+    'headers.delete("cookie");',
+    'headers.delete("set-cookie");',
+  ]) {
+    if (!rootWorker.includes(marker)) throw new Error(`root Cloudflare router missing ${marker}`);
   }
 });
 
