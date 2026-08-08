@@ -6,7 +6,7 @@ const db = createClient(
   { auth: { persistSession: false } },
 );
 
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const ALLOWED_KEYS = [
   'menu.user.complaints',
   'menu.admin.payroll',
@@ -76,7 +76,7 @@ function serialize(row: any) {
     Description: row.Description || '',
     Updated_At: row.Updated_At || null,
     Updated_By: row.Updated_By || null,
-    Enabled: Boolean(row.Setting_Value?.enabled),
+    _enabled: Boolean(row.Setting_Value?.enabled),
   };
 }
 
@@ -132,7 +132,7 @@ Deno.serve(async (request) => {
         .single();
       if (verifyError) throw verifyError;
       const item = serialize(verified);
-      if (item.Enabled !== body.enabled) throw new Error('Verifikasi nilai backend tidak sesuai.');
+      if (item._enabled !== body.enabled) throw new Error('Verifikasi nilai backend tidak sesuai.');
       return respond({ success: true, result: { version: VERSION, item, rpc: data } });
     }
 
