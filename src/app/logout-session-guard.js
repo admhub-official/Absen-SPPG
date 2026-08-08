@@ -38,6 +38,9 @@
     busy = true;
     const token = window.AppState?.token || localStorage.getItem('auth_token') || '';
     try {
+      // Putus request privat dari sesi lama terlebih dahulu, lalu gunakan controller
+      // generasi baru untuk request revoke logout itu sendiri.
+      try { window.HadirlySessionRequestAbort?.rotate?.('LOGOUT_START'); } catch {}
       if (token && typeof window.apiCall === 'function') {
         await Promise.race([
           window.apiCall('logout', { token }, { force: true }),
