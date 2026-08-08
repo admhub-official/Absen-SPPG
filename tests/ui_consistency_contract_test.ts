@@ -3,17 +3,25 @@ import { assert, assertEquals } from "jsr:@std/assert@1";
 const read = (path: string) => Deno.readTextFile(path);
 
 Deno.test("UI shell uses aligned tokens and reusable variants", async () => {
-  const [index, shell, tokens, components] = await Promise.all([
+  const [index, shell, tokens, components, branding, icon, manifest, logoutGuard, assets] = await Promise.all([
     read("index.html"),
     read("src/legacy/index-shell.css"),
     read("src/styles/foundation/tokens.css"),
     read("src/styles/foundation/components.css"),
+    read("src/styles/branding/hadirly.css"),
+    read("icons/app-icon.svg"),
+    read("manifest.webmanifest"),
+    read("src/app/logout-session-guard.js"),
+    read("src/app/pwa-shell-assets.js"),
   ]);
 
   for (const marker of ["--success:#059669", "--danger:#dc2626", "--radius:.625rem", "--radius-lg:1rem"]) {
     assert(shell.includes(marker));
   }
   for (const marker of [
+    "--ui-brand-blue-start: #12a8ec",
+    "--ui-brand-blue: #079fe7",
+    "--ui-brand-blue-end: #0798e2",
     "--ui-primary-300",
     "--ui-danger-200",
     "--ui-danger-800",
@@ -31,6 +39,23 @@ Deno.test("UI shell uses aligned tokens and reusable variants", async () => {
     ".trend-legend-dot--pulang{",
     ".dash-section--spaced{",
   ]) assert(components.includes(marker));
+
+  assert(icon.toLowerCase().includes('stop-color="#12a8ec"'));
+  assert(icon.toLowerCase().includes('stop-color="#0798e2"'));
+  assert(manifest.toLowerCase().includes('"theme_color": "#079fe7"'));
+  assert(branding.includes("--primary: var(--ui-brand-blue, #079fe7)"));
+  assert(branding.includes("background-color: var(--ui-brand-blue, #079fe7)"));
+
+  for (const marker of [
+    "window.appConfirm",
+    "title: 'Keluar dari akun?'",
+    "confirmText: 'Ya, logout'",
+    "cancelText: 'Batal'",
+    "const approved = await confirmManualLogout();",
+    "await logout();",
+  ]) assert(logoutGuard.includes(marker));
+  assert(!logoutGuard.includes("window.confirm("));
+  assert(assets.indexOf("'./src/app/in-app-confirm.js'") < assets.indexOf("'./src/app/logout-session-guard.js'"));
 
   assert(index.includes("<span>Presence SPPG</span>"));
   assert(!index.includes('<div style="flex:1"></div>'));
