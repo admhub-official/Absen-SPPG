@@ -11,5 +11,9 @@
   "compatibilityMarker": "__HADIRLY_HTTP_ONLY_SESSION__",
   "legacyExchangeEnabled": true,
   "routeSource": "functions/api/[[path]].ts",
-  "note": "Canonical production is fail-closed to the same-origin BFF. localStorage auth_token is retained only as a non-secret compatibility marker while legacy consumers are removed incrementally. External Cloudflare runtime smoke-test is not available through the connected tools in this session."
+  "workerEntrypoint": "bff/cloudflare/root-worker.ts",
+  "workerApiEntrypoint": "bff/cloudflare/worker.ts",
+  "staticOrigin": "https://absen-sppg.pages.dev",
+  "routing": "root worker delegates /api to the hardened BFF and proxies non-api frontend requests to the static Pages origin without forwarding session cookies",
+  "note": "Canonical production remains fail-closed for API authentication. The root Cloudflare Worker is safe even if a dashboard custom-domain binding captures the entire hadirly.org host: non-API requests are served from the static Pages origin, while /api stays on the HttpOnly-cookie BFF. deploymentVerified remains false until an external runtime smoke-test is observed."
 }
