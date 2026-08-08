@@ -7,12 +7,14 @@
   const FULL_NAME = `${APP_NAME} — ${TAGLINE}`;
   const ICON = './icons/app-icon.svg';
   const LOGO = './icons/hadirly-logo-horizontal.svg';
+  const BRAND_BLUE = '#079fe7';
 
   function updateHead() {
     document.title = FULL_NAME;
     const values = {
       'application-name': APP_NAME,
       'apple-mobile-web-app-title': APP_NAME,
+      'theme-color': BRAND_BLUE,
       description: `${APP_NAME} — ${TAGLINE}`
     };
     Object.entries(values).forEach(([name, content]) => {
@@ -106,5 +108,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refresh, { once: true });
   window.addEventListener('absen:app-ready', refresh);
   window.addEventListener('absen:session-changed', refresh);
-  window.HadirlyBranding = Object.freeze({ apply, refresh, APP_NAME, TAGLINE, FULL_NAME, ICON, LOGO });
+  window.HadirlyBranding = Object.freeze({ apply, refresh, APP_NAME, TAGLINE, FULL_NAME, ICON, LOGO, BRAND_BLUE });
 })();
