@@ -1,0 +1,69 @@
+name: Frontend Helper Restore Once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    if: contains(github.event.head_commit.message, '[frontend-helper-restore-once]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Restore UI helpers and validate
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          needle="""async function handleLogout(){
+            try{if(AppState.token)await apiCall('logout',{token:AppState.token});}
+            catch(error){console.warn('Server session revoke failed during logout.',error);}
+            finally{localStorage.removeItem('auth_token');localStorage.removeItem('auth_user');sessionStorage.clear();AppState.token=null;AppState.user=null;clearApiResponseCache();showAuth();navigateTo('login');}
+          }
+          function confirmRiskAction"""
+          replacement="""async function handleLogout(){
+            try{if(AppState.token)await apiCall('logout',{token:AppState.token});}
+            catch(error){console.warn('Server session revoke failed during logout.',error);}
+            finally{localStorage.removeItem('auth_token');localStorage.removeItem('auth_user');sessionStorage.clear();AppState.token=null;AppState.user=null;clearApiResponseCache();showAuth();navigateTo('login');}
+          }
+          function navigateTo(p){$$('.auth-page').forEach(e=>e.classList.add('hidden'));const t=$(`#page-${p}`);if(t)t.classList.remove('hidden');history.pushState({p},'',`#${p}`);}
+          function showAlert(m,t='info'){const i={success:'✓',error:'✕',warning:'⚠',info:'ℹ'},a=document.createElement('div');a.className=`alert ${t}`,a.innerHTML=`<span>${i[t]||i.info}</span><div style="flex:1">${m}</div><button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer">✕</button>`,$('#alert-box').appendChild(a),setTimeout(()=>{a.style.opacity='0';setTimeout(()=>a.remove(),300)},5000);}
+
+          let RiskConfirmation=null;
+          function closeRiskConfirmation(value=null){
+            const modal=$('#modal-risk-confirm');
+            modal?.classList.remove('active');
+            if(RiskConfirmation?.resolve)RiskConfirmation.resolve(value);
+            RiskConfirmation=null;
+          }
+          function confirmRiskAction"""
+          if s.count(needle)!=1:
+              raise SystemExit(f'helper restore anchor count={s.count(needle)}')
+          p.write_text(s.replace(needle,replacement,1),encoding='utf-8')
+
+          t=Path('tests/codebase_hygiene_test.ts')
+          q=t.read_text(encoding='utf-8')
+          marker='frontend retains canonical navigation alert and risk helpers'
+          if marker not in q:
+              q += '''\n\nDeno.test("frontend retains canonical navigation alert and risk helpers", async () => {\n  const index = await read("index.html");\n  for (const helper of ["function navigateTo(p)","function showAlert(m,t='info')","let RiskConfirmation=null","function closeRiskConfirmation(value=null)"]) {\n    if (!index.includes(helper)) throw new Error(`required frontend helper missing ${helper}`);\n  }\n});\n'''
+              t.write_text(q,encoding='utf-8')
+          PY
+          deno task ci
+          rm -f .github/workflows/frontend-helper-restore-once.yml .github/frontend-helper-restore.trigger
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: restore frontend navigation and risk helpers"
+          git push origin HEAD:main
+          git push origin --delete automation/frontend-finalize-debug || true
