@@ -289,16 +289,16 @@ function confirmRiskAction({title='Konfirmasi tindakan',impact='Tindakan ini aka
   $('#risk-alert').textContent='';
   $('#risk-stage-impact').classList.add('active');
   $('#risk-stage-reason').classList.remove('active');
-  $('#btn-risk-next').style.display='';
-  $('#btn-risk-confirm').style.display='none';
+  $('#btn-risk-next').hidden=false;
+  $('#btn-risk-confirm').hidden=true;
   $('#modal-risk-confirm').classList.add('active');
   return new Promise(resolve=>{RiskConfirmation={resolve};});
 }
 function advanceRiskConfirmation(){
   $('#risk-stage-impact').classList.remove('active');
   $('#risk-stage-reason').classList.add('active');
-  $('#btn-risk-next').style.display='none';
-  $('#btn-risk-confirm').style.display='';
+  $('#btn-risk-next').hidden=true;
+  $('#btn-risk-confirm').hidden=false;
   $('#risk-reason').focus();
 }
 function finishRiskConfirmation(){
