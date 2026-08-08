@@ -1,7 +1,7 @@
 const read = (path: string) => Deno.readTextFile(path);
 
 Deno.test("index keeps one application configuration entrypoint", async () => {
-  const index = await read("index.html");
+  const index = (await read("index.html")) + "\n" + (await read("src/legacy/index-app.js"));
   const configReferences = index.match(/supabase-config\.js/g) ?? [];
   if (configReferences.length !== 1) {
     throw new Error(`index.html must reference supabase-config.js once; found ${configReferences.length}`);
@@ -21,7 +21,7 @@ Deno.test("index keeps one application configuration entrypoint", async () => {
 });
 
 Deno.test("PWA uses one implementation with a controlled legacy shim", async () => {
-  const index = await read("index.html");
+  const index = (await read("index.html")) + "\n" + (await read("src/legacy/index-app.js"));
   const config = await read("supabase-config.js");
   const assets = await read("src/app/pwa-shell-assets.js");
   const runtime = await read("pwa-runtime.js");
@@ -53,7 +53,7 @@ Deno.test("PWA uses one implementation with a controlled legacy shim", async () 
 });
 
 Deno.test("responsive overrides are loaded only by shared bootstrap manifest", async () => {
-  const index = await read("index.html");
+  const index = (await read("index.html")) + "\n" + (await read("src/legacy/index-app.js"));
   const assets = await read("src/app/pwa-shell-assets.js");
   if (index.includes("responsive-overrides.css") || index.includes("layout-enhancements.js")) {
     throw new Error("legacy index must not load modular layout assets directly");

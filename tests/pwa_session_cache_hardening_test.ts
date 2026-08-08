@@ -157,9 +157,10 @@ Deno.test('private signed storage assets use browser no-store fetch policy', asy
   if (!policy.includes('window.open = function guardedWindowOpen')) throw new Error('programmatic private asset opens must be guarded');
 });
 
-Deno.test('mandatory install detector exists before inline app boot', async () => {
+Deno.test('mandatory install detector exists before legacy app boot', async () => {
   const config = await read('supabase-config.js');
   const index = await read('index.html');
+  const legacy = await read('src/legacy/index-app.js');
   for (const required of [
     'function isInstalledApp()',
     "'standalone', 'fullscreen', 'minimal-ui', 'window-controls-overlay'",
@@ -168,8 +169,8 @@ Deno.test('mandatory install detector exists before inline app boot', async () =
   ]) {
     if (!config.includes(required)) throw new Error(`installed-app detector missing ${required}`);
   }
-  if (!index.includes('if(isInstalledApp())return true;')) throw new Error('mandatory install gate must call installed-app detector');
+  if (!legacy.includes('if(isInstalledApp())return true;')) throw new Error('mandatory install gate must call installed-app detector');
   const configScript = index.indexOf('<script src="supabase-config.js"></script>');
-  const inlineScript = index.indexOf('<script>', configScript);
-  if (configScript < 0 || inlineScript < 0 || configScript > inlineScript) throw new Error('supabase-config must load before inline app boot script');
+  const appScript = index.indexOf('<script src="./src/legacy/index-app.js"></script>');
+  if (configScript < 0 || appScript < 0 || configScript > appScript) throw new Error('supabase-config must load before external legacy app boot script');
 });

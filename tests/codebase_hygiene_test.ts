@@ -123,7 +123,7 @@ Deno.test("Supabase deployment uses a production-only function allowlist", async
 
 
 Deno.test("frontend duplication hotspots use shared helpers", async () => {
-  const index = await read("index.html");
+  const index = (await read("index.html")) + "\n" + (await read("src/legacy/index-app.js"));
   for (const marker of [
     "function parseApiError(error,fallback='Terjadi kesalahan')",
     "async function withBusyButton(button,loadingHtml,task)",
@@ -143,7 +143,7 @@ Deno.test("frontend duplication hotspots use shared helpers", async () => {
 
 
 Deno.test("frontend retains canonical navigation alert and risk helpers", async () => {
-  const index = await read("index.html");
+  const index = (await read("index.html")) + "\n" + (await read("src/legacy/index-app.js"));
   for (const helper of ["function navigateTo(p)","function showAlert(m,t='info')","let RiskConfirmation=null","function closeRiskConfirmation(value=null)"]) {
     if (!index.includes(helper)) throw new Error(`required frontend helper missing ${helper}`);
   }
@@ -151,7 +151,7 @@ Deno.test("frontend retains canonical navigation alert and risk helpers", async 
 
 
 Deno.test("frontend residual duplication is centralized", async () => {
-  const index = await read("index.html");
+  const index = (await read("index.html")) + "\n" + (await read("src/legacy/index-app.js"));
   for (const helper of ["function bindPaginationControls(","function dismissModal(modalId)","function skeletonCardsMarkup(count=1)","function skeletonRowsMarkup(count=1)","function tableMessageMarkup(message,style='')"]) {
     if (!index.includes(helper)) throw new Error(`residual shared helper missing ${helper}`);
   }
