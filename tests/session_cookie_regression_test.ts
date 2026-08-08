@@ -90,3 +90,19 @@ Deno.test("service worker bypasses same-origin BFF API completely", async () => 
     throw new Error("service worker must not intercept BFF /api requests");
   }
 });
+
+Deno.test("root Cloudflare Workers build binds canonical BFF to hadirly api route", async () => {
+  const wrangler = await read("wrangler.toml");
+  for (const marker of [
+    'name = "hadirly"',
+    'main = "bff/cloudflare/worker.ts"',
+    'workers_dev = false',
+    'pattern = "hadirly.org/api/*"',
+    'zone_name = "hadirly.org"',
+    'HADIRLY_ORIGIN = "https://hadirly.org"',
+    'SUPABASE_URL = "https://szwwpnbbsmjsbzzcecyj.supabase.co"',
+    'ALLOW_LEGACY_EXCHANGE = "true"',
+  ]) {
+    if (!wrangler.includes(marker)) throw new Error(`root Cloudflare BFF route missing ${marker}`);
+  }
+});
