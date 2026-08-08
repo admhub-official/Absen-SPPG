@@ -28,10 +28,9 @@ Deno.test("payroll workflow checks audit, cleanup, and final status persistence"
     "cleanupRowsBestEffort",
     "PAYROLL_FINAL_STATUS_DEFERRED",
     "if (result.error) throw result.error;",
+    'const payrollUpdate = await supabase.from("Payroll")',
+    "if (payrollUpdate.error)",
   ]) if (!payroll.includes(marker)) throw new Error(`payroll persistence hardening missing ${marker}`);
-  if (payroll.includes('await supabase.from("Payroll")\n        .update({ Status_Penerbitan: "DITERBITKAN" })')) {
-    throw new Error("final payroll status update must inspect the returned error");
-  }
 });
 
 Deno.test("digital identity no longer masks database failures as missing data", async () => {
