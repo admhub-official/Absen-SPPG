@@ -24,13 +24,14 @@ type SuperAdminIdentity = {
   email: string;
 };
 
-function response(body: unknown, status = 200): Response {
+function response(body: unknown, status = 200, requestId?: string): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       ...CORS_HEADERS,
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
+      ...(requestId ? { "X-Request-Id": requestId } : {}),
     },
   });
 }
@@ -87,7 +88,7 @@ async function requireSuperAdmin(tokenValue: unknown): Promise<SuperAdminIdentit
     throw new Error("AKUN_NONAKTIF");
   }
   if (normalizeRole(user.Role) !== "SUPER ADMIN") {
-    throw new Error("Akses ditolak. Konfigurasi lokasi hanya untuk SUPER ADMIN.");
+    throw new Error("FORBIDDEN");
   }
 
   return {
@@ -217,33 +218,42 @@ async function saveConfiguration(data: Record<string, unknown>): Promise<unknown
   };
 }
 
+function errorResponse(error: unknown) {
+  const raw = error instanceof Error ? error.message : String(error);
+  if (raw === "SESI_HABIS") return { status: 401, code: "SESSION_EXPIRED", message: "Sesi telah berakhir. Silakan login kembali." };
+  if (raw === "AKUN_NONAKTIF" || raw === "FORBIDDEN") return { status: 403, code: raw === "FORBIDDEN" ? "FORBIDDEN" : "ACCOUNT_INACTIVE", message: "Akses konfigurasi lokasi ditolak." };
+  if (/tidak valid|harus antara|belum dipilih|tidak ditemukan pada master/i.test(raw)) return { status: 422, code: "VALIDATION_ERROR", message: raw };
+  return { status: 500, code: "INTERNAL_ERROR", message: "Layanan konfigurasi lokasi gagal memproses permintaan." };
+}
+
 Deno.serve(async (request: Request) => {
+  const requestId = `LOC_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
   if (request.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
   }
   if (request.method !== "POST") {
-    return response({ success: false, error: "Method tidak didukung." }, 405);
+    return response({ success: false, code: "METHOD_NOT_ALLOWED", message: "Method tidak didukung.", requestId }, 405, requestId);
   }
 
   let body: RequestBody;
   try {
     body = await request.json();
   } catch {
-    return response({ success: false, error: "Body request harus berupa JSON valid." }, 400);
+    return response({ success: false, code: "INVALID_JSON", message: "Body request harus berupa JSON valid.", requestId }, 400, requestId);
   }
 
   try {
     const data = body.data || {};
     if (body.function === "getSppgLocationConfiguration") {
-      return response({ success: true, result: await getConfiguration(data) });
+      return response({ success: true, result: await getConfiguration(data), requestId }, 200, requestId);
     }
     if (body.function === "saveSppgLocationConfiguration") {
-      return response({ success: true, result: await saveConfiguration(data) });
+      return response({ success: true, result: await saveConfiguration(data), requestId }, 200, requestId);
     }
-    return response({ success: false, error: "Fungsi tidak dikenali." }, 404);
+    return response({ success: false, code: "FUNCTION_NOT_FOUND", message: "Fungsi tidak dikenali.", requestId }, 404, requestId);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(`SppgLocationConfig error (${body.function || "unknown"})`, error);
-    return response({ success: false, error: message });
+    const mapped = errorResponse(error);
+    console.error(JSON.stringify({ requestId, function: body.function || "unknown", code: mapped.code, status: mapped.status, error: error instanceof Error ? error.message : String(error) }));
+    return response({ success: false, code: mapped.code, message: mapped.message, requestId }, mapped.status, requestId);
   }
 });
