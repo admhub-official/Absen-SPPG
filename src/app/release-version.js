@@ -1,6 +1,6 @@
 (() => {
-  const version = '26.11.66';
-  const cacheName = 'absen-sppg-hadirly-v107';
+  const version = '26.11.67';
+  const cacheName = 'absen-sppg-hadirly-v108';
   globalThis.HADIRLY_RELEASE = Object.freeze({ version, cacheName });
 })();
 
