@@ -170,13 +170,64 @@
     });
   }
 
+  function responseWithJson(original, payload, statusOverride = null) {
+    const headers = new Headers(original.headers);
+    headers.set('Content-Type', 'application/json; charset=utf-8');
+    headers.set('Cache-Control', 'no-store, max-age=0');
+    const status = Number.isInteger(statusOverride) ? statusOverride : original.status;
+    return new Response(JSON.stringify(payload), {
+      status,
+      statusText: status === original.status ? original.statusText : '',
+      headers
+    });
+  }
+
+  async function readJsonPayload(response) {
+    let text = '';
+    try { text = await response.clone().text(); } catch {}
+    if (!String(text || '').trim()) {
+      return { valid: false, code: 'BFF_EMPTY_RESPONSE', payload: null };
+    }
+    try {
+      const payload = JSON.parse(text);
+      if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        return { valid: false, code: 'BFF_INVALID_RESPONSE', payload: null };
+      }
+      return { valid: true, code: '', payload };
+    } catch {
+      return { valid: false, code: 'BFF_INVALID_RESPONSE', payload: null };
+    }
+  }
+
+  function normalizedBffFailure(response, code, message) {
+    const status = response.status >= 400 && response.status <= 599 ? response.status : 502;
+    return responseWithJson(response, { success: false, code, error: message, message }, status);
+  }
+
+  async function normalizeBffResponse(response, fallbackMessage) {
+    const parsed = await readJsonPayload(response);
+    if (!parsed.valid) {
+      return {
+        response: normalizedBffFailure(
+          response,
+          parsed.code,
+          fallbackMessage || 'Layanan aplikasi tidak mengembalikan respons yang valid. Muat ulang lalu coba lagi.'
+        ),
+        payload: null,
+        valid: false
+      };
+    }
+    return { response: responseWithJson(response, parsed.payload), payload: parsed.payload, valid: true };
+  }
+
   async function restoreCookieSession() {
     if (!isCanonicalProduction()) return false;
     if (restorePromise) return restorePromise;
     restorePromise = (async () => {
       try {
         const response = await readCookieSession();
-        const payload = await response.clone().json().catch(() => ({}));
+        const parsed = await readJsonPayload(response);
+        const payload = parsed.valid ? parsed.payload : null;
         if (response.ok && payload?.authenticated === true) {
           setMarker();
           persistSafeUser(payload.result);
@@ -209,7 +260,8 @@
           method: 'POST',
           body: JSON.stringify({ token: stored })
         });
-        const body = await response.clone().json().catch(() => ({}));
+        const parsed = await readJsonPayload(response);
+        const body = parsed.valid ? parsed.payload : null;
         if (response.ok && body?.success !== false) {
           setMarker();
           window.dispatchEvent(new CustomEvent('absen:session-changed', { detail: { authenticated: true, source: 'http-only-bff' } }));
@@ -243,19 +295,9 @@
     return String(body?.function || body?.functionName || body?.action || '').trim();
   }
 
-  function responseWithJson(original, payload) {
-    const headers = new Headers(original.headers);
-    headers.set('Content-Type', 'application/json; charset=utf-8');
-    return new Response(JSON.stringify(payload), {
-      status: original.status,
-      statusText: original.statusText,
-      headers
-    });
-  }
-
   async function bffLogin(body) {
     const data = body?.data && typeof body.data === 'object' ? body.data : body;
-    const response = await sameOriginApi('/api/auth/login', {
+    const rawResponse = await sameOriginApi('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({
         email: data?.email || data?.username || '',
@@ -263,26 +305,33 @@
         password: data?.password || ''
       })
     });
-    const payload = await response.clone().json().catch(() => ({}));
-    if (response.ok && payload?.success !== false && payload?.result && typeof payload.result === 'object') {
+    const normalized = await normalizeBffResponse(rawResponse, 'Layanan login belum mengembalikan respons yang valid. Muat ulang aplikasi lalu coba lagi.');
+    if (!normalized.valid) return normalized.response;
+    const payload = normalized.payload;
+    if (rawResponse.ok && payload?.success !== false && payload?.result && typeof payload.result === 'object') {
       setMarker();
       persistSafeUser(payload.result);
       payload.result = { ...payload.result, token: sessionMarker };
       window.dispatchEvent(new CustomEvent('absen:session-changed', { detail: { authenticated: true, source: 'http-only-bff' } }));
-      return responseWithJson(response, payload);
+      return responseWithJson(rawResponse, payload);
     }
-    return response;
+    return normalized.response;
   }
 
   async function bffSessionCheck() {
     const stored = currentStoredToken();
     if (stored && stored !== sessionMarker) await exchangeLegacySession();
-    const response = await readCookieSession();
-    const payload = await response.clone().json().catch(() => ({}));
-    if (response.ok && payload?.authenticated === true) {
+    const rawResponse = await readCookieSession();
+    const parsed = await readJsonPayload(rawResponse);
+    if (!parsed.valid) {
+      if (rawResponse.status === 401) clearClientAuth();
+      return normalizedBffFailure(rawResponse, parsed.code, 'Layanan sesi belum mengembalikan respons yang valid. Silakan login kembali.');
+    }
+    const payload = parsed.payload;
+    if (rawResponse.ok && payload?.authenticated === true) {
       setMarker();
       persistSafeUser(payload.result);
-      return responseWithJson(response, {
+      return responseWithJson(rawResponse, {
         success: true,
         result: {
           valid: true,
@@ -292,8 +341,8 @@
         }
       });
     }
-    if (response.status === 401) clearClientAuth();
-    return responseWithJson(response, {
+    if (rawResponse.status === 401) clearClientAuth();
+    return responseWithJson(rawResponse, {
       success: false,
       error: payload?.message || 'Sesi tidak valid atau telah berakhir.',
       code: payload?.code || 'SESSION_EXPIRED'
@@ -303,9 +352,10 @@
   async function bffLogout() {
     const stored = currentStoredToken();
     if (stored && stored !== sessionMarker) await exchangeLegacySession();
-    const response = await sameOriginApi('/api/auth/logout', { method: 'POST', body: '{}' });
+    const rawResponse = await sameOriginApi('/api/auth/logout', { method: 'POST', body: '{}' });
+    const normalized = await normalizeBffResponse(rawResponse, 'Layanan logout tidak mengembalikan respons yang valid.');
     clearClientAuth();
-    return response;
+    return normalized.response;
   }
 
   async function bffProxy(target, body, sourceHeaders) {
@@ -321,7 +371,7 @@
       }
     }
     const headers = mutationHeaders(sourceHeaders);
-    const response = await downstreamFetch(`/api/functions/${encodeURIComponent(target)}`, {
+    const rawResponse = await downstreamFetch(`/api/functions/${encodeURIComponent(target)}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body || {}),
@@ -329,11 +379,12 @@
       cache: 'no-store',
       referrerPolicy: 'same-origin'
     });
-    if (response.status === 401) {
-      const payload = await response.clone().json().catch(() => ({}));
-      if (['SESSION_MISSING','SESSION_EXPIRED'].includes(String(payload?.code || ''))) clearClientAuth();
+    const normalized = await normalizeBffResponse(rawResponse, 'Layanan aplikasi belum mengembalikan respons yang valid. Muat ulang lalu coba lagi.');
+    const payload = normalized.payload;
+    if (rawResponse.status === 401 && payload && ['SESSION_MISSING','SESSION_EXPIRED'].includes(String(payload.code || ''))) {
+      clearClientAuth();
     }
-    return response;
+    return normalized.response;
   }
 
   window.fetch = async function hadirlyHttpOnlyFetch(input, init = {}) {
