@@ -14,6 +14,7 @@ Deno.test("UI shell uses aligned tokens and reusable variants", async () => {
     assert(shell.includes(marker));
   }
   for (const marker of [
+    "--ui-primary-300",
     "--ui-danger-200",
     "--ui-danger-800",
     "--ui-bottomnav-height",
@@ -26,6 +27,9 @@ Deno.test("UI shell uses aligned tokens and reusable variants", async () => {
     ".modal-card--compact",
     ".signature-panel-actions",
     ".profile-photo-editor",
+    ".trend-legend-dot--datang{",
+    ".trend-legend-dot--pulang{",
+    ".dash-section--spaced{",
   ]) assert(components.includes(marker));
 
   assert(index.includes("<span>Presence SPPG</span>"));
@@ -34,6 +38,11 @@ Deno.test("UI shell uses aligned tokens and reusable variants", async () => {
   assert(!/<div class="modal-card" style="max-width:(?:400|420|500|520|620)px"/.test(index));
   assert(!index.includes('<span style="color:var(--danger)">*</span>'));
   assert(!index.includes('style="background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5"'));
+  assert(!index.includes(' style="'));
+  assert(index.includes("trend-legend-dot trend-legend-dot--datang"));
+  assert(index.includes("trend-legend-dot trend-legend-dot--pulang"));
+  assert(index.includes("dash-section dash-section--spaced"));
+  assert(index.includes('id="btn-risk-confirm" type="button" hidden'));
 });
 
 Deno.test("mobile topbar and bottomnav share responsive geometry", async () => {
@@ -76,9 +85,12 @@ Deno.test("mobile topbar and bottomnav share responsive geometry", async () => {
     "pg.hidden = false;",
     "pagination.hidden=false;",
     "badge.hidden=!count",
+    "$('#btn-risk-confirm').hidden=true",
+    "$('#btn-risk-confirm').hidden=false",
   ]) assert(app.includes(marker));
   assert(!app.includes("document.querySelectorAll('.admin-only-nav').forEach(el => el.style.display"));
   assert(!app.includes("pagination.style.display='flex'"));
+  assert(!app.includes("$('#btn-risk-confirm').style.display"));
 
   for (const marker of [
     ".nav-role-hidden{display:none!important}",

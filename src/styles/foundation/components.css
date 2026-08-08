@@ -192,3 +192,7 @@
 .app-bottomnav[data-nav-role="admin"] .app-bottomnav-item-scan{order:3}
 .app-bottomnav[data-nav-role="admin"] [data-view="admin-payroll"]{order:4}
 .app-bottomnav[data-nav-role="admin"] .app-bottomnav-more{order:5}
+
+.trend-legend-dot--datang{background:var(--ui-primary-600)}
+.trend-legend-dot--pulang{background:var(--ui-primary-300)}
+.dash-section--spaced{margin-bottom:var(--ui-space-5)}

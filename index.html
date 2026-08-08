@@ -619,7 +619,7 @@
           </div>
           <div class="admin-card"><div class="admin-card-header"><div><div class="admin-card-title">Perbandingan SPPG</div><div class="helper-text">Klik nama SPPG untuk membuka Data Users dan melakukan drill-down</div></div></div><div class="data-table-wrap mobile-card-table"><table class="data-table"><thead><tr><th>SPPG</th><th>Karyawan</th><th>Kehadiran</th><th>Punch lengkap</th><th>Payroll</th><th>Slip menunggu</th><th>Pengaduan</th></tr></thead><tbody id="super-sppg-body"><tr><td colspan="7"><div class="loading-state"><span class="spinner"></span>Memuat data global...</div></td></tr></tbody></table></div></div>
         </section>
-        <div class="dash-section" style="margin-bottom:1.25rem">
+        <div class="dash-section dash-section--spaced">
           <div class="dash-card"><div class="dash-card-title">Prioritas Kehadiran Hari Ini</div><div class="exception-list" id="ops-attendance-list"><div class="belum-absen-empty">Memuat prioritas...</div></div></div>
           <div class="dash-card"><div class="dash-card-title">Kualitas Data Pengguna</div><div class="exception-list" id="ops-profile-list"><div class="belum-absen-empty">Memuat kualitas data...</div></div></div>
         </div>
@@ -632,8 +632,8 @@
             </div>
             <div class="trend-chart" id="dash-trend-chart"></div>
             <div class="trend-legend">
-              <div class="trend-legend-item"><span class="trend-legend-dot" style="background:var(--primary)"></span> Datang</div>
-              <div class="trend-legend-item"><span class="trend-legend-dot" style="background:#a5b4fc"></span> Pulang</div>
+              <div class="trend-legend-item"><span class="trend-legend-dot trend-legend-dot--datang"></span> Datang</div>
+              <div class="trend-legend-item"><span class="trend-legend-dot trend-legend-dot--pulang"></span> Pulang</div>
             </div>
           </div>
           <div class="dash-card">
@@ -1115,7 +1115,7 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" id="btn-cancel-risk" type="button">Batal</button>
       <button class="btn btn-primary" id="btn-risk-next" type="button">Lanjut</button>
-      <button class="btn btn-danger" id="btn-risk-confirm" type="button" style="display:none">Konfirmasi Tindakan</button>
+      <button class="btn btn-danger" id="btn-risk-confirm" type="button" hidden>Konfirmasi Tindakan</button>
     </div>
   </div>
 </div>
