@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: frontend-performance-refactor
+  cancel-in-progress: true
+
 jobs:
   refactor:
     runs-on: ubuntu-latest
@@ -34,7 +38,6 @@ jobs:
           legacy_dir = root / 'src' / 'legacy'
           legacy_dir.mkdir(parents=True, exist_ok=True)
 
-          # Externalize the single large inline stylesheet so it can be cached independently.
           style_match = re.search(r'<style>\s*(.*?)\s*</style>', index, flags=re.S)
           if not style_match:
               raise SystemExit('inline <style> block not found')
@@ -42,14 +45,11 @@ jobs:
           (legacy_dir / 'index-shell.css').write_text(css, encoding='utf-8')
           index = index[:style_match.start()] + '<link rel="stylesheet" href="./src/legacy/index-shell.css">' + index[style_match.end():]
 
-          # Externalize the legacy application script while preserving classic-script semantics.
           script_match = re.search(r'<script>\s*(const APP_CONFIG=.*?)\s*</script>\s*</body>', index, flags=re.S)
           if not script_match:
               raise SystemExit('legacy inline application script not found')
           js = script_match.group(1).rstrip() + '\n'
 
-          # Cropper: coalesce pointer/zoom redraws to one paint per animation frame and
-          # do not reset the canvas backing store unless the dimensions actually changed.
           crop_pattern = re.compile(r"function drawCropCanvas\(\)\{.*?\n\}\n\nfunction clampCropOffset", re.S)
           crop_replacement = r'''let CropDrawFrame=0;
 function drawCropCanvas(){
@@ -78,19 +78,11 @@ function clampCropOffset'''
           if crop_count != 1:
               raise SystemExit(f'cropper replacement count={crop_count}')
 
-          # Payroll selection: remove per-row rerender handler. A delegated listener below
-          # updates selection state and controls without rebuilding the entire table.
-          row_listener_pattern = re.compile(
-              r"\n  body\.querySelectorAll\('\.payroll-row-check'\)\.forEach\(input=>input\.addEventListener\('change',\(\)=>\{\n"
-              r"    if\(input\.checked\)FeatureState\.payrollSelected\.add\(input\.dataset\.payrollId\);else FeatureState\.payrollSelected\.delete\(input\.dataset\.payrollId\);\n"
-              r"    renderAdminPayroll\(\);\n"
-              r"  \}\)\);"
-          )
-          js, row_listener_count = row_listener_pattern.subn('', js, count=1)
-          if row_listener_count != 1:
-              raise SystemExit(f'payroll row listener replacement count={row_listener_count}')
+          old_row_listener = """\n  body.querySelectorAll('.payroll-row-check').forEach(input=>input.addEventListener('change',()=>{\n    if(input.checked)FeatureState.payrollSelected.add(input.dataset.payrollId);else FeatureState.payrollSelected.delete(input.dataset.payrollId);\n    renderAdminPayroll();\n  }));"""
+          if old_row_listener not in js:
+              raise SystemExit('payroll row listener block not found')
+          js = js.replace(old_row_listener, '', 1)
 
-          # Payroll adjustment: remove N listeners and use one delegated listener.
           money_listener = "\n  body.querySelectorAll('.payroll-money-input').forEach(input=>input.addEventListener('input',updatePayrollAdjustmentTotals));"
           if money_listener not in js:
               raise SystemExit('payroll money listener block not found')
@@ -129,8 +121,6 @@ function closePayrollPublishModal'''
 '''
           js = js.replace(delegation_anchor, delegated + delegation_anchor, 1)
 
-          # Keep face-api genuinely lazy: the CDN URL must remain code-only and must not
-          # become an eager script tag during externalization.
           if js.count("const FACEAPI_CDN_URL=") != 1:
               raise SystemExit('face-api lazy loader invariant failed')
 
@@ -139,7 +129,6 @@ function closePayrollPublishModal'''
           index = index[:script_match.start()] + replacement + index[script_match.end():]
           index_path.write_text(index, encoding='utf-8')
 
-          # Make the newly externalized shell available offline through the existing SW.
           sw_path = root / 'sw.js'
           sw = sw_path.read_text(encoding='utf-8')
           sw_anchor = "  './supabase-config.js',\n"
@@ -148,7 +137,6 @@ function closePayrollPublishModal'''
           sw = sw.replace(sw_anchor, sw_anchor + "  './src/legacy/index-shell.css',\n  './src/legacy/index-app.js',\n", 1)
           sw_path.write_text(sw, encoding='utf-8')
 
-          # Bump release/cache so installed PWAs activate the new shell deterministically.
           release_path = root / 'src' / 'app' / 'release-version.js'
           release = release_path.read_text(encoding='utf-8')
           version_match = re.search(r"const version = '(\d+)\.(\d+)\.(\d+)';", release)
@@ -158,11 +146,10 @@ function closePayrollPublishModal'''
           major, minor, patch = map(int, version_match.groups())
           next_version = f'{major}.{minor}.{patch + 1}'
           next_cache = int(cache_match.group(1)) + 1
-          release = version_match.re.sub(f"const version = '{next_version}';", release, count=1)
-          release = cache_match.re.sub(f"const cacheName = 'absen-sppg-hadirly-v{next_cache}';", release, count=1)
+          release = re.sub(r"const version = '\d+\.\d+\.\d+';", f"const version = '{next_version}';", release, count=1)
+          release = re.sub(r"const cacheName = 'absen-sppg-hadirly-v\d+';", f"const cacheName = 'absen-sppg-hadirly-v{next_cache}';", release, count=1)
           release_path.write_text(release, encoding='utf-8')
 
-          # Static invariants.
           final_index = index_path.read_text(encoding='utf-8')
           if '<style>' in final_index:
               raise SystemExit('inline style block still present')
