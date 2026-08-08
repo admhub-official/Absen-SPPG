@@ -1,5 +1,5 @@
 name = "hadirly"
-main = "bff/cloudflare/worker.ts"
+main = "bff/cloudflare/root-worker.ts"
 compatibility_date = "2026-08-07"
 workers_dev = false
 
@@ -9,6 +9,7 @@ routes = [
 
 [vars]
 HADIRLY_ORIGIN = "https://hadirly.org"
+STATIC_ORIGIN = "https://absen-sppg.pages.dev"
 SUPABASE_URL = "https://szwwpnbbsmjsbzzcecyj.supabase.co"
 SESSION_MAX_AGE_SECONDS = "28800"
 ALLOW_LEGACY_EXCHANGE = "true"
