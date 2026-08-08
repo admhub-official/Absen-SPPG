@@ -19,6 +19,60 @@ const corsOptions = {
   localOrigins: ["http://localhost:4173", "http://127.0.0.1:4173"],
 };
 
+const activeValue = (value: unknown) => value === true || value === 1 || ["TRUE", "1", "ACTIVE", "AKTIF"].includes(String(value ?? "").trim().toUpperCase());
+
+async function allowedSppg(auth: AuthenticatedUser): Promise<string[] | null> {
+  if (auth.role === "SUPER ADMIN") return null;
+  const actor = await db.from("Users").select("Email,SPPG").eq("ID_User", auth.idUser).maybeSingle();
+  if (actor.error || !actor.data) throw new Error("ACCOUNT_INACTIVE");
+  const values = new Set<string>();
+  const direct = String(actor.data.SPPG || "").trim();
+  if (direct) values.add(direct);
+  const email = String(actor.data.Email || "").trim();
+  if (email) {
+    const access = await db.from("Akses_Email").select("SPPG,Aktif").ilike("Email", email);
+    if (access.error) throw new Error("SCOPE_QUERY_FAILED");
+    for (const row of access.data || []) {
+      if (!activeValue(row.Aktif)) continue;
+      const sppg = String(row.SPPG || "").trim();
+      if (sppg) values.add(sppg);
+    }
+  }
+  return [...values];
+}
+
+async function targetUser(auth: AuthenticatedUser, userId: string) {
+  const user = await db.from("Users").select("ID_User,SPPG,Status_Aktif").eq("ID_User", userId).maybeSingle();
+  if (user.error || !user.data || !activeValue(user.data.Status_Aktif)) throw new Error("USER_NOT_FOUND");
+  if (auth.role !== "SUPER ADMIN") {
+    const scope = await allowedSppg(auth);
+    if (!scope?.includes(String(user.data.SPPG || "").trim())) throw new Error("FORBIDDEN");
+  }
+  return user.data;
+}
+
+async function scopedUserIds(auth: AuthenticatedUser): Promise<string[] | null> {
+  const scope = await allowedSppg(auth);
+  if (scope === null) return null;
+  if (!scope.length) return [];
+  const users = await db.from("Users").select("ID_User").in("SPPG", scope);
+  if (users.error) throw new Error("SCOPE_QUERY_FAILED");
+  return (users.data || []).map((row) => String(row.ID_User || "")).filter(Boolean);
+}
+
+async function scopedSppg(auth: AuthenticatedUser, requested: unknown, field = "sppg"): Promise<string | null> {
+  const value = optionalString(requested, 200);
+  if (auth.role === "SUPER ADMIN") return value;
+  const scope = await allowedSppg(auth);
+  if (!scope?.length) throw new Error("FORBIDDEN");
+  if (value) {
+    if (!scope.includes(value)) throw new Error("FORBIDDEN");
+    return value;
+  }
+  if (scope.length === 1) return scope[0];
+  throw new ValidationError("SPPG_REQUIRED", `${field} wajib dipilih untuk akun dengan akses ke beberapa SPPG.`, field);
+}
+
 function integerInRange(value: unknown, field: string, fallback: number, min: number, max: number): number {
   if (value === undefined || value === null || value === "") return fallback;
   const parsed = Number(value);
@@ -122,10 +176,15 @@ async function assignShift(auth: AuthenticatedUser, body: Record<string, unknown
   if (validUntil && validUntil < validFrom) {
     throw new ValidationError("INVALID_DATE_RANGE", "validUntil tidak boleh sebelum validFrom.", "validUntil");
   }
+  const userId = requiredString(body.userId, "userId", { max: 100 });
+  const user = await targetUser(auth, userId);
+  const targetSppg = String(user.SPPG || "").trim();
+  const requestedSppg = optionalString(body.sppg, 200);
+  if (requestedSppg && requestedSppg !== targetSppg) throw new Error("FORBIDDEN");
   const row = {
-    ID_User: requiredString(body.userId, "userId", { max: 100 }),
+    ID_User: userId,
     Shift_ID: requiredString(body.shiftId, "shiftId", { max: 100 }),
-    SPPG: optionalString(body.sppg, 200),
+    SPPG: targetSppg || null,
     Valid_From: validFrom,
     Valid_Until: validUntil,
     Assigned_By: auth.idUser,
@@ -144,8 +203,15 @@ async function listShiftAssignments(auth: AuthenticatedUser, body: Record<string
     .select("*")
     .order("Valid_From", { ascending: false })
     .limit(200);
-  if (body.userId) query = query.eq("ID_User", requiredString(body.userId, "userId", { max: 100 }));
-  if (body.sppg) query = query.eq("SPPG", requiredString(body.sppg, "sppg", { max: 200 }));
+  const ids = await scopedUserIds(auth);
+  if (ids && !ids.length) return [];
+  if (ids) query = query.in("ID_User", ids);
+  if (body.userId) {
+    const userId = requiredString(body.userId, "userId", { max: 100 });
+    await targetUser(auth, userId);
+    query = query.eq("ID_User", userId);
+  }
+  if (body.sppg) query = query.eq("SPPG", await scopedSppg(auth, body.sppg));
   const result = await query;
   if (result.error) throw new Error("SHIFT_QUERY_FAILED");
   return result.data || [];
@@ -156,10 +222,11 @@ async function analytics(auth: AuthenticatedUser, body: Record<string, unknown>)
   const from = dateOnly(body.from, "from")!;
   const to = dateOnly(body.to, "to")!;
   if (to < from) throw new ValidationError("INVALID_DATE_RANGE", "to tidak boleh sebelum from.", "to");
+  const sppg = await scopedSppg(auth, body.sppg);
   const result = await db.rpc("attendance_analytics_summary", {
     p_from: from,
     p_to: to,
-    p_sppg: optionalString(body.sppg, 200),
+    p_sppg: sppg,
   });
   if (result.error) throw new Error("ANALYTICS_QUERY_FAILED");
   return result.data;
@@ -184,14 +251,15 @@ async function scheduleReport(auth: AuthenticatedUser, body: Record<string, unkn
   if (!["CSV", "PDF", "XLSX", "EXCEL"].includes(format)) {
     throw new ValidationError("INVALID_FORMAT", "Format laporan tidak valid.", "format");
   }
+  const sppg = await scopedSppg(auth, body.sppg);
   const row = {
     Name: requiredString(body.name, "name", { min: 3, max: 200 }),
     Report_Type: requiredString(body.reportType, "reportType", { max: 30 }).toUpperCase(),
-    SPPG: optionalString(body.sppg, 200),
+    SPPG: sppg,
     Frequency: requiredString(body.frequency, "frequency", { max: 20 }).toUpperCase(),
     Format: format,
     Recipients: recipients.map((value) => String(value).trim()),
-    Filters: body.filters || {},
+    Filters: { ...(body.filters as Record<string, unknown> || {}), ...(sppg ? { sppg } : {}) },
     Next_Run_At: nextRunAt,
     Created_By: auth.idUser,
   };
@@ -227,29 +295,14 @@ Deno.serve(async (req) => {
     let result: unknown;
 
     switch (action) {
-      case "listNotifications":
-        result = await listNotifications(auth, body);
-        break;
-      case "markNotificationRead":
-        result = await markRead(auth, body);
-        break;
-      case "notificationPreferences":
-        result = await preferences(auth, body);
-        break;
-      case "assignShift":
-        result = await assignShift(auth, body);
-        break;
-      case "listShiftAssignments":
-        result = await listShiftAssignments(auth, body);
-        break;
-      case "analyticsSummary":
-        result = await analytics(auth, body);
-        break;
-      case "scheduleReport":
-        result = await scheduleReport(auth, body);
-        break;
-      default:
-        throw new ValidationError("ACTION_NOT_SUPPORTED", "Action tidak valid.", "action");
+      case "listNotifications": result = await listNotifications(auth, body); break;
+      case "markNotificationRead": result = await markRead(auth, body); break;
+      case "notificationPreferences": result = await preferences(auth, body); break;
+      case "assignShift": result = await assignShift(auth, body); break;
+      case "listShiftAssignments": result = await listShiftAssignments(auth, body); break;
+      case "analyticsSummary": result = await analytics(auth, body); break;
+      case "scheduleReport": result = await scheduleReport(auth, body); break;
+      default: throw new ValidationError("ACTION_NOT_SUPPORTED", "Action tidak valid.", "action");
     }
 
     return jsonResponse({ success: true, result, requestId }, 200, requestId, headers);
@@ -259,21 +312,13 @@ Deno.serve(async (req) => {
     let code = "INTERNAL_ERROR";
     let message = "Terjadi kesalahan pada server.";
     if (error instanceof ValidationError) {
-      status = 422;
-      code = error.code;
-      message = error.message;
+      status = 422; code = error.code; message = error.message;
     } else if (raw === "SESSION_EXPIRED") {
-      status = 401;
-      code = raw;
-      message = "Sesi telah berakhir. Silakan login kembali.";
+      status = 401; code = raw; message = "Sesi telah berakhir. Silakan login kembali.";
     } else if (raw === "ACCOUNT_INACTIVE" || raw === "FORBIDDEN") {
-      status = 403;
-      code = raw;
-      message = "Akses ditolak.";
-    } else if (raw === "NOTIFICATION_NOT_FOUND") {
-      status = 404;
-      code = raw;
-      message = "Notifikasi tidak ditemukan.";
+      status = 403; code = raw; message = "Akses ditolak.";
+    } else if (raw === "NOTIFICATION_NOT_FOUND" || raw === "USER_NOT_FOUND") {
+      status = 404; code = raw; message = raw === "USER_NOT_FOUND" ? "User tidak ditemukan." : "Notifikasi tidak ditemukan.";
     }
     console.error(JSON.stringify({ requestId, code, status, error: raw }));
     return jsonResponse({
