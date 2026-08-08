@@ -27,9 +27,9 @@ async function authTokenConsumers(): Promise<string[]> {
   return found.sort();
 }
 
-// Baseline captured by Engineering Quality #437. This list is intentionally explicit:
-// adding a new browser auth_token consumer fails CI, while final cookie cutover must reduce it to zero.
-const expectedLegacyConsumers = [
+// Transitional compatibility inventory. Raw bearer material is no longer allowed in browser
+// storage on canonical production; these consumers receive only a fixed non-secret marker.
+const expectedCompatibilityConsumers = [
   "index.html",
   "security-operations-ui.js",
   "security-ops-client.js",
@@ -39,6 +39,7 @@ const expectedLegacyConsumers = [
   "src/app/digital-id-card.js",
   "src/app/employment-contract-navigation.js",
   "src/app/employment-contracts.js",
+  "src/app/http-only-session-bridge.js",
   "src/app/in-app-confirm.js",
   "src/app/logout-session-guard.js",
   "src/app/notification-publisher.js",
@@ -57,10 +58,10 @@ const expectedLegacyConsumers = [
   "supabase-config.js",
 ].sort();
 
-Deno.test("browser auth_token inventory is explicit until production cookie cutover", async () => {
+Deno.test("browser auth_token inventory is explicit during non-secret marker compatibility phase", async () => {
   const actual = await authTokenConsumers();
-  if (JSON.stringify(actual) !== JSON.stringify(expectedLegacyConsumers)) {
-    throw new Error(`auth_token consumer inventory changed. expected=${JSON.stringify(expectedLegacyConsumers)} actual=${JSON.stringify(actual)}`);
+  if (JSON.stringify(actual) !== JSON.stringify(expectedCompatibilityConsumers)) {
+    throw new Error(`auth_token compatibility inventory changed. expected=${JSON.stringify(expectedCompatibilityConsumers)} actual=${JSON.stringify(actual)}`);
   }
 });
 
@@ -94,9 +95,19 @@ Deno.test("BFF uses a __Host HttpOnly Secure Strict cookie and never browser sto
   }
 });
 
-Deno.test("BFF route configuration is same-origin and does not claim production activation", async () => {
+Deno.test("Cloudflare Pages route exposes the BFF on canonical same-origin /api", async () => {
+  const pages = await read("functions/api/[[path]].ts");
   const wrangler = await read("bff/cloudflare/wrangler.toml");
   const status = JSON.parse(await read("bff/runtime-status.json"));
+  for (const marker of [
+    'import worker from "../../bff/cloudflare/worker.ts"',
+    'HADIRLY_ORIGIN: "https://hadirly.org"',
+    'SUPABASE_URL: "https://szwwpnbbsmjsbzzcecyj.supabase.co"',
+    'SESSION_MAX_AGE_SECONDS: "28800"',
+    'ALLOW_LEGACY_EXCHANGE: "true"',
+  ]) {
+    if (!pages.includes(marker)) throw new Error(`Cloudflare Pages BFF route missing ${marker}`);
+  }
   for (const marker of [
     'pattern = "hadirly.org/api/*"',
     'zone_name = "hadirly.org"',
@@ -106,28 +117,43 @@ Deno.test("BFF route configuration is same-origin and does not claim production 
   ]) {
     if (!wrangler.includes(marker)) throw new Error(`Cloudflare BFF config missing ${marker}`);
   }
-  if (status.productionEnabled !== false || status.mode !== "source-only") {
-    throw new Error("BFF must remain source-only until hadirly.org /api is actually deployed and smoke-tested");
+  if (status.productionEnabled !== true || status.mode !== "cloudflare-pages-function") {
+    throw new Error("runtime status must describe the canonical Pages Function cutover");
   }
   if (status.cookieName !== "__Host-hadirly_session" || status.sameSite !== "Strict") {
     throw new Error("runtime status cookie contract is inconsistent");
   }
+  if (status.secretStorage !== "http-only-cookie" || status.compatibilityMarkerInLocalStorage !== true) {
+    throw new Error("runtime status must document secret-cookie plus non-secret marker compatibility");
+  }
 });
 
-Deno.test("final localStorage cutover gate becomes strict when production BFF is enabled", async () => {
+Deno.test("canonical browser cutover is fail-closed and localStorage receives only a non-secret marker", async () => {
+  const bridge = await read("src/app/http-only-session-bridge.js");
+  const bootstrap = await read("src/app/bootstrap.js");
   const status = JSON.parse(await read("bff/runtime-status.json"));
-  const consumers = await authTokenConsumers();
-  const index = await read("index.html");
-  if (status.productionEnabled === true) {
-    if (consumers.length) throw new Error(`production cookie mode forbids auth_token consumers: ${consumers.join(", ")}`);
-    if (index.includes("localStorage.setItem('auth_token'") || index.includes('localStorage.setItem("auth_token"')) {
-      throw new Error("production cookie mode forbids writing auth_token to localStorage");
-    }
-    if (index.includes("localStorage.getItem('auth_token'") || index.includes('localStorage.getItem("auth_token"')) {
-      throw new Error("production cookie mode forbids reading auth_token from localStorage");
-    }
-  } else if (!consumers.length) {
-    throw new Error("source-only BFF status is stale: browser token consumers are already gone");
+  for (const marker of [
+    "const canonicalOrigin = 'https://hadirly.org'",
+    "const sessionMarker = '__HADIRLY_HTTP_ONLY_SESSION__'",
+    "localStorage.setItem('auth_token', sessionMarker)",
+    "if (!isCanonicalProduction()) return downstreamFetch(input, init)",
+    "'/api/auth/exchange'",
+    "'/api/auth/login'",
+    "'/api/auth/session'",
+    "'/api/auth/logout'",
+    "`/api/functions/${encodeURIComponent(target)}`",
+    "productionRequired: true",
+  ]) {
+    if (!bridge.includes(marker)) throw new Error(`HttpOnly bridge missing marker: ${marker}`);
+  }
+  if (!bootstrap.startsWith("import './http-only-session-bridge.js';")) {
+    throw new Error("HttpOnly bridge must initialize before the app bootstrap body");
+  }
+  if (status.productionEnabled !== true || status.compatibilityMarker !== "__HADIRLY_HTTP_ONLY_SESSION__") {
+    throw new Error("runtime status does not match browser compatibility marker contract");
+  }
+  if (bridge.includes("localStorage.setItem('auth_token', stored)") || bridge.includes('localStorage.setItem("auth_token", stored)')) {
+    throw new Error("legacy bearer material must never be written back to browser storage");
   }
 });
 
