@@ -62,8 +62,8 @@
     const data = await window.SecurityOpsClient.getDashboard();
     const s = data.summary || {};
     const cards = [
-      ['Security event', s.securityEvents ?? s.security_events ?? 0], ['Risiko tinggi', s.highRiskEvents ?? s.high_risk_events ?? 0], ['Insiden terbuka', s.openIncidents ?? s.open_incidents ?? 0], ['Insiden kritis', s.criticalIncidents ?? s.critical_incidents ?? 0],
-      ['Device pending', s.pendingDevices ?? s.pending_devices ?? 0], ['Device diblokir', s.blockedDevices ?? s.blocked_devices ?? 0], ['Challenge gagal', s.failedChallenges ?? s.failed_challenges ?? 0], ['Request ditolak', s.rejectedEvents ?? s.rejected_events ?? 0]
+      ['Security event', s.securityEvents ?? 0], ['Risiko tinggi', s.highRiskEvents ?? 0], ['Insiden terbuka', s.openIncidents ?? 0], ['Insiden kritis', s.criticalIncidents ?? 0],
+      ['Device pending', s.pendingDevices ?? 0], ['Device diblokir', s.blockedDevices ?? 0], ['Challenge gagal', s.failedChallenges ?? 0], ['Request ditolak', s.rejectedEvents ?? 0]
     ];
     content(`<div class="security-ui-grid">${cards.map(([label, value]) => `<article class="security-ui-card"><div class="security-ui-kpi-label">${esc(label)}</div><div class="security-ui-kpi-value">${esc(value)}</div></article>`).join('')}</div>
       <section class="security-ui-section"><h3 class="security-ui-section-title">Insiden terbaru</h3>${incidentTable(data.incidents || [])}</section>
