@@ -30,11 +30,40 @@ jobs:
           from pathlib import Path
           p = Path('scripts/frontend_finalize_once.py')
           s = p.read_text(encoding='utf-8')
-          old = "pattern = rf'^{prefix}function\\s+{re.escape(name)}\\([^\\n]*\\)\\{{.*?^\\}}\\n'"
-          new = "pattern = rf'^[ \\t]*{prefix}function\\s+{re.escape(name)}\\([^\\n]*\\)\\{{.*?^[ \\t]*\\}}\\n'"
-          if old not in s:
-              raise SystemExit('replace_function matcher source not found')
-          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          start = s.index('def replace_function(')
+          end = s.index('\n\n# ---------------------------------------------------------------------------', start)
+          helper = '''def replace_function(text, name, new_source, async_fn=None):
+              if async_fn is True:
+                  needle = f"async function {name}("
+              elif async_fn is False:
+                  needle = f"function {name}("
+              else:
+                  async_needle = f"async function {name}("
+                  plain_needle = f"function {name}("
+                  if async_needle in text:
+                      needle = async_needle
+                  elif plain_needle in text:
+                      needle = plain_needle
+                  else:
+                      raise RuntimeError(f"function {name}: declaration not found")
+              if text.count(needle) != 1:
+                  raise RuntimeError(f"function {name}: expected one declaration, found {text.count(needle)}")
+              pos = text.index(needle)
+              line_start = text.rfind("\\n", 0, pos) + 1
+              indent = text[line_start:pos]
+              if indent.strip():
+                  raise RuntimeError(f"function {name}: unexpected declaration prefix {indent!r}")
+              brace = text.index("{", pos)
+              marker = "\\n" + indent + "}"
+              close = text.find(marker, brace)
+              if close < 0:
+                  raise RuntimeError(f"function {name}: closing boundary not found")
+              end_pos = close + len(marker)
+              if end_pos < len(text) and text[end_pos] == "\\n":
+                  end_pos += 1
+              return text[:line_start] + new_source.rstrip() + "\\n" + text[end_pos:]
+          '''
+          p.write_text(s[:start] + helper + s[end:], encoding='utf-8')
           PY
 
           set +e
