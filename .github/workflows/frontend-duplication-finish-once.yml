@@ -1,0 +1,180 @@
+name: Frontend Duplication Finish Once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  finish:
+    if: contains(github.event.head_commit.message, '[frontend-duplication-finish-once]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Consolidate remaining duplication and validate
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          def once(old,new,label):
+              global s
+              count=s.count(old)
+              if count!=1: raise SystemExit(f'{label}: expected 1 match, found {count}')
+              s=s.replace(old,new,1)
+
+          anchor="""function bindAccessibleActivation(element,handler){
+            if(!element)return;
+            element.addEventListener('click',handler);
+            element.addEventListener('keydown',event=>{
+              if(event.key!=='Enter'&&event.key!==' ')return;
+              event.preventDefault();handler(event);
+            });
+          }
+          function parseDateValue(value){"""
+          replacement="""function bindAccessibleActivation(element,handler){
+            if(!element)return;
+            element.addEventListener('click',handler);
+            element.addEventListener('keydown',event=>{
+              if(event.key!=='Enter'&&event.key!==' ')return;
+              event.preventDefault();handler(event);
+            });
+          }
+          function dismissModal(modalId){document.getElementById(modalId)?.classList.remove('active');}
+          function bindPaginationControls({prevId,nextId,canPrev,canNext,onPrev,onNext}){
+            document.getElementById(prevId)?.addEventListener('click',()=>{if(canPrev())onPrev();});
+            document.getElementById(nextId)?.addEventListener('click',()=>{if(canNext())onNext();});
+          }
+          function skeletonCardsMarkup(count=1){
+            const card='<div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>';
+            return Array(count).fill(card).join('');
+          }
+          function skeletonRowsMarkup(count=1){
+            const row='<div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>';
+            return Array(count).fill(row).join('');
+          }
+          function tableMessageMarkup(message,style=''){
+            const styleAttr=style?` style="${style}"`:'';
+            return `<div class="table-empty"${styleAttr}>${escapeHtml(message)}</div>`;
+          }
+          function parseDateValue(value){"""
+          once(anchor,replacement,'shared residual helpers')
+
+          old_users="""  container.innerHTML = Array(8).fill(`<div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>`).join('');"""
+          once(old_users,"  container.innerHTML = skeletonCardsMarkup(8);",'user loading skeleton')
+          once("    container.innerHTML = `<div class=\"table-empty\" style=\"grid-column:1/-1\">Gagal memuat data: ${e.message}</div>`;","    container.innerHTML = tableMessageMarkup(`Gagal memuat data: ${e.message}`,'grid-column:1/-1');",'user load error')
+
+          pattern=r"  container\.innerHTML = `<div class=\"skel-row\">.*?</div>`;\n  try \{"
+          s2,count=re.subn(pattern,"  container.innerHTML = skeletonRowsMarkup(3);\n  try {",s,count=1,flags=re.S)
+          if count!=1: raise SystemExit(f'log loading skeleton: expected 1 match, found {count}')
+          s=s2
+          once("    container.innerHTML = `<div class=\"table-empty\">Gagal memuat log: ${e.message}</div>`;","    container.innerHTML = tableMessageMarkup(`Gagal memuat log: ${e.message}`);",'log load error')
+
+          old_user_activation="""  container.querySelectorAll('[data-user-index]').forEach(row=>{
+            const open=()=>openUserDetail(Number(row.dataset.userIndex));row.addEventListener('click',open);row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}});
+          });"""
+          new_user_activation="""  container.querySelectorAll('[data-user-index]').forEach(row=>bindAccessibleActivation(row,()=>openUserDetail(Number(row.dataset.userIndex))));"""
+          once(old_user_activation,new_user_activation,'user accessible activation')
+
+          old_log_activation="""  container.querySelectorAll('[data-log-index]').forEach(item=>{
+            const open=()=>openLogDetail(Number(item.dataset.logIndex));
+            item.addEventListener('click',open);
+            item.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}});
+          });"""
+          new_log_activation="""  container.querySelectorAll('[data-log-index]').forEach(item=>bindAccessibleActivation(item,()=>openLogDetail(Number(item.dataset.logIndex))));"""
+          once(old_log_activation,new_log_activation,'log accessible activation')
+
+          old_waktu="""function formatWaktu(v){
+            if(!v) return '-';
+            const d = new Date(v);
+            if(isNaN(d)) return v;
+            return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) + ' ' +
+                   d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+          }"""
+          new_waktu="""function formatWaktu(v){
+            const d=parseDateValue(v);if(!d)return v||'-';
+            return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+          }"""
+          once(old_waktu,new_waktu,'formatWaktu parser')
+
+          old_dt="""function formatDateTime(value){
+            if(!value)return'-';
+            const date=new Date(value);
+            return Number.isNaN(date.getTime())?'-':date.toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'});
+          }"""
+          new_dt="""function formatDateTime(value){
+            const date=parseDateValue(value);return date?date.toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
+          }"""
+          once(old_dt,new_dt,'formatDateTime parser')
+
+          old_profile_error="""function profilePasswordErrorMessage(error,fallback){
+            const raw=error&&error.message?error.message:fallback;
+            const parts=String(raw).split('::');
+            return parts.length>1?parts.slice(1).join('::'):raw;
+          }"""
+          once(old_profile_error,"function profilePasswordErrorMessage(error,fallback){return parseApiError(error,fallback).message;}",'profile password error parser')
+
+          start=s.index('async function handleConfirmDeleteUser(reason){')
+          end=s.index('\n\n/* ---- Load Log Aktivitas ---- */',start)
+          new_delete="""async function handleConfirmDeleteUser(reason){
+            const u=AdminState.selectedUser;if(!u)return;
+            const userId=u.ID_User;
+            await withBusyButton($('#btn-admin-delete-user'),'<div class="spinner" style="width:18px;height:18px;border-width:2px"></div>',async()=>{
+              try{
+                const r=await apiCall('deleteData',{token:AppState.token,menu:'users',id:userId,reason});
+                if(r&&r.success){showAlert('User berhasil dihapus','success');dismissModal('modal-admin-delete-user');AdminState.selectedUser=null;switchView('admin-users');loadAdminUsers();}
+                else showAlert(r?.message||'Gagal menghapus user','error');
+              }catch(error){showAlert(parseApiError(error).message,'error');}
+            });
+          }"""
+          s=s[:start]+new_delete+s[end:]
+
+          once("  $('#btn-close-admin-update-user')?.addEventListener('click',()=>$('#modal-admin-update-user').classList.remove('active'));\n  $('#btn-cancel-admin-update-user')?.addEventListener('click',()=>$('#modal-admin-update-user').classList.remove('active'));","  bindClicks(['btn-close-admin-update-user','btn-cancel-admin-update-user'],()=>dismissModal('modal-admin-update-user'));",'admin update dismiss')
+          once("  $('#btn-close-log-detail')?.addEventListener('click',()=>$('#modal-log-detail').classList.remove('active'));\n  $('#btn-close-log-detail-footer')?.addEventListener('click',()=>$('#modal-log-detail').classList.remove('active'));","  bindClicks(['btn-close-log-detail','btn-close-log-detail-footer'],()=>dismissModal('modal-log-detail'));",'log dismiss')
+
+          old_pagination="""  $('#absen-prev-btn')?.addEventListener('click',()=>{ if(AdminState.absenPage>1){AdminState.absenPage--;loadAdminAbsen();} });
+            $('#absen-next-btn')?.addEventListener('click',()=>{ if(AdminState.absenPage<Math.ceil(AdminState.absenTotal/AdminState.absenPageSize)){AdminState.absenPage++;loadAdminAbsen();} });
+            $('#users-prev-btn')?.addEventListener('click',()=>{if(AdminState.userPage>1){AdminState.userPage--;loadAdminUsers();}});
+            $('#users-next-btn')?.addEventListener('click',()=>{if(AdminState.userPage<Math.ceil(AdminState.userTotal/AdminState.userPageSize)){AdminState.userPage++;loadAdminUsers();}});
+            $('#log-prev-btn')?.addEventListener('click',()=>{ AdminState.logPage--; renderLogList(); });
+            $('#log-next-btn')?.addEventListener('click',()=>{ AdminState.logPage++; renderLogList(); });"""
+          new_pagination="""  bindPaginationControls({prevId:'absen-prev-btn',nextId:'absen-next-btn',canPrev:()=>AdminState.absenPage>1,canNext:()=>AdminState.absenPage<Math.ceil(AdminState.absenTotal/AdminState.absenPageSize),onPrev:()=>{AdminState.absenPage--;loadAdminAbsen();},onNext:()=>{AdminState.absenPage++;loadAdminAbsen();}});
+            bindPaginationControls({prevId:'users-prev-btn',nextId:'users-next-btn',canPrev:()=>AdminState.userPage>1,canNext:()=>AdminState.userPage<Math.ceil(AdminState.userTotal/AdminState.userPageSize),onPrev:()=>{AdminState.userPage--;loadAdminUsers();},onNext:()=>{AdminState.userPage++;loadAdminUsers();}});
+            bindPaginationControls({prevId:'log-prev-btn',nextId:'log-next-btn',canPrev:()=>AdminState.logPage>1,canNext:()=>AdminState.logPage<Math.max(1,Math.ceil(AdminState.filteredLogs.length/AdminState.logPageSize)),onPrev:()=>{AdminState.logPage--;renderLogList();},onNext:()=>{AdminState.logPage++;renderLogList();}});"""
+          once(old_pagination,new_pagination,'pagination consolidation')
+
+          p.write_text(s,encoding='utf-8')
+
+          release=Path('src/app/release-version.js')
+          r=release.read_text(encoding='utf-8').replace('26.11.55','26.11.56').replace('absen-sppg-hadirly-v96','absen-sppg-hadirly-v97')
+          release.write_text(r,encoding='utf-8')
+          for test in Path('tests').glob('*.ts'):
+              q=test.read_text(encoding='utf-8').replace('26.11.55','26.11.56').replace('absen-sppg-hadirly-v96','absen-sppg-hadirly-v97')
+              test.write_text(q,encoding='utf-8')
+
+          h=Path('tests/codebase_hygiene_test.ts')
+          q=h.read_text(encoding='utf-8')
+          marker='frontend residual duplication is centralized'
+          if marker not in q:
+              q += '''\n\nDeno.test("frontend residual duplication is centralized", async () => {\n  const index = await read("index.html");\n  for (const helper of ["function bindPaginationControls(","function dismissModal(modalId)","function skeletonCardsMarkup(count=1)","function skeletonRowsMarkup(count=1)","function tableMessageMarkup(message,style='')"]) {\n    if (!index.includes(helper)) throw new Error(`residual shared helper missing ${helper}`);\n  }\n  for (const obsolete of ["row.addEventListener('click',open);row.addEventListener('keydown'","item.addEventListener('click',open);","$('#absen-prev-btn')?.addEventListener","$('#users-prev-btn')?.addEventListener","$('#log-prev-btn')?.addEventListener"]) {\n    if (index.includes(obsolete)) throw new Error(`duplicated frontend pattern remains ${obsolete}`);\n  }\n  if (!index.includes("function profilePasswordErrorMessage(error,fallback){return parseApiError(error,fallback).message;}")) throw new Error("profile password errors must use canonical parser");\n  if (!index.includes("container.innerHTML = skeletonCardsMarkup(8)") || !index.includes("container.innerHTML = skeletonRowsMarkup(3)")) throw new Error("loading skeleton markup must use shared helpers");\n});\n'''
+              h.write_text(q,encoding='utf-8')
+          PY
+          deno task ci
+          rm -f .github/workflows/frontend-duplication-finish-once.yml .github/frontend-duplication-finish.trigger
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "refactor: finish frontend duplication consolidation"
+          git push origin HEAD:main
