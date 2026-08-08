@@ -41,18 +41,57 @@ async function sha256(value: string): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-type Auth = { idUser: string; role: string; token: string };
+type Auth = { idUser: string; role: string; token: string; email: string; sppg: string };
 async function authenticate(tokenValue: unknown): Promise<Auth> {
   const token = String(tokenValue || "").trim();
   if (!token) throw new Error("SESSION_EXPIRED");
   const sessionResult = await supabase.from("Sessions").select("ID_User,Type,Expires_At").eq("Token", token).maybeSingle();
   const session = sessionResult.data;
   if (sessionResult.error || !session?.ID_User || String(session.Type || "").toLowerCase() !== "user" || new Date(session.Expires_At).getTime() <= Date.now()) throw new Error("SESSION_EXPIRED");
-  const userResult = await supabase.from("Users").select("ID_User,Role,Status_Aktif").eq("ID_User", session.ID_User).maybeSingle();
+  const userResult = await supabase.from("Users").select("ID_User,Role,Status_Aktif,Email,SPPG").eq("ID_User", session.ID_User).maybeSingle();
   const user = userResult.data;
   const active = user?.Status_Aktif === true || ["TRUE", "1"].includes(String(user?.Status_Aktif || "").toUpperCase());
   if (userResult.error || !user || !active) throw new Error("ACCOUNT_INACTIVE");
-  return { idUser: String(user.ID_User), role: String(user.Role || "").toUpperCase().replace(/_/g, " "), token };
+  return {
+    idUser: String(user.ID_User),
+    role: String(user.Role || "").toUpperCase().replace(/_/g, " "),
+    token,
+    email: String(user.Email || "").trim(),
+    sppg: String(user.SPPG || "").trim(),
+  };
+}
+
+async function allowedSppg(auth: Auth): Promise<string[] | null> {
+  if (auth.role === "SUPER ADMIN") return null;
+  const values = new Set<string>();
+  if (auth.sppg) values.add(auth.sppg);
+  if (auth.email) {
+    const access = await supabase.from("Akses_Email").select("SPPG,Aktif").ilike("Email", auth.email);
+    if (access.error) throw new Error("DEVICE_SCOPE_QUERY_FAILED");
+    for (const row of access.data || []) {
+      if (row.Aktif !== true) continue;
+      const sppg = String(row.SPPG || "").trim();
+      if (sppg) values.add(sppg);
+    }
+  }
+  return [...values];
+}
+
+async function scopedUserIds(auth: Auth): Promise<string[] | null> {
+  const scope = await allowedSppg(auth);
+  if (scope === null) return null;
+  if (!scope.length) return [];
+  const users = await supabase.from("Users").select("ID_User").in("SPPG", scope);
+  if (users.error) throw new Error("DEVICE_SCOPE_QUERY_FAILED");
+  return (users.data || []).map((row) => String(row.ID_User || "")).filter(Boolean);
+}
+
+async function assertDeviceInScope(auth: Auth, deviceId: string): Promise<void> {
+  if (auth.role === "SUPER ADMIN") return;
+  const device = await supabase.from("Attendance_Devices").select("ID_User").eq("Device_ID", deviceId).maybeSingle();
+  if (device.error || !device.data?.ID_User) throw new Error("DEVICE_NOT_FOUND");
+  const allowedIds = await scopedUserIds(auth);
+  if (!allowedIds?.includes(String(device.data.ID_User))) throw new Error("FORBIDDEN");
 }
 
 function clientIp(request: Request): string {
@@ -140,8 +179,11 @@ async function listReviewQueue(auth: Auth, body: Record<string, unknown>) {
   if (!Number.isInteger(rawLimit) || rawLimit < 10 || rawLimit > 100) throw new Error("DEVICE_LIMIT_INVALID");
   let query = supabase.from("Attendance_Devices")
     .select("Device_ID,ID_User,Device_Name,Platform,Browser,Status,Risk_Score,First_Seen_At,Last_Seen_At,Last_Attendance_At,Last_IP,Trust_Reason")
+    .eq("Status", status)
     .order("Risk_Score", { ascending: false }).order("Last_Seen_At", { ascending: false }).limit(rawLimit);
-  query = query.eq("Status", status);
+  const ids = await scopedUserIds(auth);
+  if (ids && !ids.length) return [];
+  if (ids) query = query.in("ID_User", ids);
   const { data, error } = await query;
   if (error) throw new Error("DEVICE_REVIEW_LIST_FAILED");
   return data || [];
@@ -153,6 +195,7 @@ async function reviewDevice(auth: Auth, body: Record<string, unknown>) {
   const status = String(body.status || "").trim().toUpperCase();
   if (!["TRUSTED", "REVOKED", "BLOCKED"].includes(status)) throw new Error("DEVICE_STATUS_INVALID");
   const reason = requiredText(body.reason, "DEVICE_REASON_REQUIRED", 10, 1000);
+  await assertDeviceInScope(auth, deviceId);
   const { data, error } = await supabase.rpc("review_attendance_device", {
     p_actor_user_id: auth.idUser,
     p_device_id: deviceId,
