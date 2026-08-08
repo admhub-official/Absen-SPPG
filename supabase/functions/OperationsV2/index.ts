@@ -28,6 +28,7 @@ const USER_SAFE_COLUMNS = [
   "Akun_Dibekukan", "NIK", "Alamat",
 ].join(",");
 
+const ATTENDANCE_VALIDATION_ACTIONS = new Set(["VALID", "PERLU_KOREKSI", "DITOLAK"]);
 const normalize = (value: unknown) => String(value ?? "").trim().toUpperCase().replace(/_/g, " ");
 const activeValue = (value: unknown) =>
   value === true || value === 1 || ["TRUE", "1", "ACTIVE", "AKTIF"].includes(normalize(value));
@@ -38,6 +39,7 @@ const clampInt = (value: unknown, fallback: number, min: number, max: number) =>
 const jakartaDate = () => new Intl.DateTimeFormat("en-CA", {
   timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit",
 }).format(new Date());
+const dateOnly = (value: unknown) => String(value ?? "").slice(0, 10);
 
 async function actorProfile(auth: AuthenticatedUser) {
   const result = await db.from("Users").select("ID_User,Email,SPPG,Role").eq("ID_User", auth.idUser).maybeSingle();
@@ -93,8 +95,7 @@ async function presenceFor(ids: string[]) {
   const latest = new Map<string, string>();
   const online = new Set<string>();
   if (!ids.length) return { latest, online };
-  const sessionTable = db.from("Sessions");
-  const sessions = await sessionTable
+  const sessions = await db.from("Sessions")
     .select("ID_User,Expires_At,Last_Activity_At,Created_At")
     .in("ID_User", ids)
     .gt("Expires_At", new Date().toISOString());
@@ -242,9 +243,166 @@ async function operationalDashboard(auth: AuthenticatedUser) {
   };
 }
 
+function attendanceSources(row: Record<string, any>): string[] {
+  const direct = Array.isArray(row.sumber) ? row.sumber : [];
+  const fromPunches = Array.isArray(row.punches)
+    ? row.punches.map((punch: Record<string, any>) => punch.sumber || punch.Sumber_Data).filter(Boolean)
+    : [];
+  return [...new Set([...direct, ...fromPunches].map((value) => String(value || "").trim()).filter(Boolean))];
+}
+
+function normalizeAttendanceRow(row: Record<string, any>): Record<string, any> {
+  const punches = (Array.isArray(row.punches) ? row.punches : []).map((punch: Record<string, any>) => {
+    const rawStatus = String(punch.status || punch.Status_Validasi || "").trim().toUpperCase();
+    const status = ["INVALID", "TIDAK_VALID", "TIDAK VALID"].includes(rawStatus) ? "DITOLAK" : rawStatus;
+    return { ...punch, ...(status ? { status } : {}) };
+  });
+  return { ...row, punches, sumber: attendanceSources({ ...row, punches }) };
+}
+
+async function allGroupedAttendance(auth: AuthenticatedUser, search: string): Promise<Record<string, any>[]> {
+  requireOperationalRole(auth);
+  const scope = await allowedSppg(auth);
+  const users = await scopedUsers(scope);
+  const scopedIds = users.map((row) => String(row.ID_User || "")).filter(Boolean);
+  if (!scopedIds.length) return [];
+
+  const rows: Record<string, any>[] = [];
+  const rpcPageSize = 500;
+  let rpcPage = 1;
+  let total = Number.POSITIVE_INFINITY;
+  while (rows.length < total && rpcPage <= 200) {
+    const result = await db.rpc("get_absensi_grouped_page", {
+      p_user_ids: scopedIds,
+      p_page: rpcPage,
+      p_page_size: rpcPageSize,
+      p_search: search || null,
+    });
+    if (result.error) throw new Error(`ATTENDANCE_QUERY_FAILED:${result.error.message}`);
+    const batch = result.data || [];
+    if (!batch.length) break;
+    if (!Number.isFinite(total)) total = Number(batch[0]?.total_count || 0);
+    rows.push(...batch.map((item: any) => normalizeAttendanceRow(item.row_data || {})));
+    rpcPage += 1;
+  }
+  if (Number.isFinite(total) && rows.length < total) throw new Error("ATTENDANCE_RESULT_TOO_LARGE");
+  return rows;
+}
+
+async function groupedAttendanceV2(body: Record<string, unknown>, auth: AuthenticatedUser) {
+  const page = clampInt(body.page, 1, 1, 100000);
+  const pageSize = clampInt(body.pageSize, 20, 1, 100);
+  const search = String(body.search || "").trim();
+  const allRows = await allGroupedAttendance(auth, search);
+  const filterOptions = {
+    sppg: [...new Set(allRows.map((row) => String(row.sppg || row.SPPG || "").trim()).filter(Boolean))].sort(),
+  };
+
+  const startDate = body.startDate ? dateOnly(body.startDate) : "";
+  const endDate = body.endDate ? dateOnly(body.endDate) : "";
+  if (body.startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) throw new ValidationError("INVALID_START_DATE", "startDate");
+  if (body.endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) throw new ValidationError("INVALID_END_DATE", "endDate");
+  if (startDate && endDate && endDate < startDate) throw new ValidationError("INVALID_DATE_RANGE", "endDate");
+  const sppg = String(body.sppg || "").trim();
+  const source = String(body.source || "").trim().toUpperCase();
+  const status = String(body.status || "").trim().toUpperCase();
+
+  const filtered = allRows.filter((row) => {
+    const date = dateOnly(row.Tanggal || row.tanggal);
+    if (startDate && date < startDate) return false;
+    if (endDate && date > endDate) return false;
+    if (sppg && String(row.sppg || row.SPPG || "") !== sppg) return false;
+    const sources = attendanceSources(row).map((value) => value.toUpperCase());
+    if (source && !sources.includes(source)) return false;
+    const punches = Array.isArray(row.punches) ? row.punches : [];
+    const complete = Boolean(row.jamMasuk && row.jamPulang);
+    const single = punches.length === 1 || punches.some((punch: Record<string, any>) => normalize(punch.jenis || punch.Jenis_Absen) === "PUNCH TUNGGAL");
+    if (status === "LENGKAP" && !complete) return false;
+    if (status === "PUNCH_TUNGGAL" && !single) return false;
+    if (status === "BELUM_LENGKAP" && (complete || single)) return false;
+    return true;
+  });
+
+  const total = filtered.length;
+  const from = (page - 1) * pageSize;
+  return { absensi: filtered.slice(from, from + pageSize), total, page, pageSize, filterOptions };
+}
+
+async function validateAttendanceBulkV3(body: Record<string, unknown>, auth: AuthenticatedUser) {
+  requireOperationalRole(auth);
+  const action = String(body.action || "").trim().toUpperCase();
+  if (!ATTENDANCE_VALIDATION_ACTIONS.has(action)) throw new ValidationError("INVALID_ATTENDANCE_ACTION", "action");
+  const reason = requiredString(body.reason, "reason", { min: 10, max: 2000 });
+  if (!Array.isArray(body.items) || !body.items.length || body.items.length > 100) {
+    throw new ValidationError("INVALID_ATTENDANCE_ITEMS", "items");
+  }
+
+  const scope = await allowedSppg(auth);
+  const allowedIds = new Set((await scopedUsers(scope)).map((row) => String(row.ID_User || "")));
+  const items = body.items.map((item: any) => ({
+    idUser: requiredString(item?.idUser, "idUser", { max: 120 }),
+    tanggal: dateOnly(item?.tanggal),
+  }));
+  for (const item of items) {
+    if (!allowedIds.has(item.idUser)) throw new Error("FORBIDDEN");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(item.tanggal)) throw new ValidationError("INVALID_ATTENDANCE_DATE", "tanggal");
+  }
+
+  const dbStatus = action === "DITOLAK" ? "INVALID" : action;
+  let updatedRows = 0;
+  for (const item of items) {
+    const update = await db.from("Absensi")
+      .update({ Status_Validasi: dbStatus })
+      .eq("ID_User", item.idUser)
+      .eq("Tanggal", item.tanggal)
+      .select("ID_Absen");
+    if (update.error) throw new Error(`ATTENDANCE_UPDATE_FAILED:${update.error.message}`);
+    updatedRows += (update.data || []).length;
+  }
+
+  const audit = await db.from("Audit_Log").insert({
+    ID_Log: `AUD_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`,
+    Waktu: new Date().toISOString(),
+    ID_User_Pelaku: auth.idUser,
+    Jenis_Aktivitas: "VALIDASI_ABSENSI_MASSAL",
+    Detail: { action, storedStatus: dbStatus, reason, items, updatedRows },
+  });
+  if (audit.error) console.error(JSON.stringify({ code: "ATTENDANCE_AUDIT_DEFERRED", error: audit.error.message }));
+  return { success: true, action, updatedRows, groups: items.length };
+}
+
+async function superAdminAuditV3(body: Record<string, unknown>, auth: AuthenticatedUser) {
+  requireSuperAdminRole(auth);
+  const limit = clampInt(body.limit, 100, 1, 500);
+  const logs = await db.from("Audit_Log").select("*").order("Waktu", { ascending: false }).limit(limit);
+  if (logs.error) throw logs.error;
+  const actorIds = [...new Set((logs.data || []).map((row: any) => String(row.ID_User_Pelaku || "")).filter((id) => id && id !== "SYSTEM"))];
+  const users = actorIds.length
+    ? await db.from("Users").select("ID_User,Nama_Lengkap,Email,Role,SPPG").in("ID_User", actorIds)
+    : { data: [], error: null };
+  if (users.error) throw users.error;
+  const userMap = new Map((users.data || []).map((row: any) => [String(row.ID_User), row]));
+  return {
+    logs: (logs.data || []).map((row: any) => {
+      const actor: any = userMap.get(String(row.ID_User_Pelaku || ""));
+      const system = String(row.ID_User_Pelaku || "") === "SYSTEM";
+      return {
+        ...row,
+        _pelakuNama: actor?.Nama_Lengkap || (system ? "Sistem" : row.ID_User_Pelaku || "Tidak diketahui"),
+        _pelakuEmail: actor?.Email || "",
+        _pelakuRole: actor?.Role || (system ? "SYSTEM" : ""),
+        _pelakuSppg: actor?.SPPG || "",
+      };
+    }),
+  };
+}
+
 async function route(action: string, body: Record<string, unknown>, auth: AuthenticatedUser) {
   if (action === "getOperationalUsersV2") return await operationalUsers(body, auth);
   if (action === "getOperationalDashboardV2") return await operationalDashboard(auth);
+  if (action === "getAbsensiGroupedDataV2") return await groupedAttendanceV2(body, auth);
+  if (action === "validateAttendanceBulkV3") return await validateAttendanceBulkV3(body, auth);
+  if (action === "getSuperAdminAuditV3") return await superAdminAuditV3(body, auth);
   if (action === "listFeatureFlags") {
     requireOperationalRole(auth);
     const result = await db.from("Release_Feature_Flags").select("*").order("Flag_Key");
@@ -368,6 +526,8 @@ Deno.serve(async (req) => {
       status = 401; code = rawMessage; message = "Sesi telah berakhir.";
     } else if (rawMessage === "ACCOUNT_INACTIVE" || rawMessage === "FORBIDDEN") {
       status = 403; code = rawMessage; message = "Akses ditolak.";
+    } else if (rawMessage === "ATTENDANCE_RESULT_TOO_LARGE") {
+      status = 422; code = rawMessage; message = "Data absensi terlalu besar. Gunakan filter pencarian agar hasil lebih spesifik.";
     } else if (rawMessage.includes("FINAL_STATE") || rawMessage.includes("IDEMPOTENCY")) {
       status = 409; code = rawMessage; message = "Status workflow tidak dapat diubah.";
     }
