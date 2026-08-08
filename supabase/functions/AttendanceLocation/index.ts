@@ -10,9 +10,9 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST,OPTIONS',
 };
 
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+const json = (body: unknown, status = 200, requestId?: string) => new Response(JSON.stringify(body), {
   status,
-  headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+  headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...(requestId ? { 'X-Request-Id': requestId } : {}) },
 });
 
 const normalizeRole = (value: unknown) => String(value || '').trim().toUpperCase().replace(/_/g, ' ').replace(/\s+/g, ' ');
@@ -239,6 +239,29 @@ function faceScore(reference: number[] | null, scan: unknown): number {
   return (1 - Math.sqrt(sumSquare)) * 100;
 }
 
+function validateRecordInput(body: Record<string, unknown>): void {
+  const descriptor = body.faceDescriptorScan;
+  if (!Array.isArray(descriptor) || descriptor.length < 1 || descriptor.length > 1024 || descriptor.some((value) => !Number.isFinite(Number(value)))) {
+    throw new Error('VALIDATION_FACE_DESCRIPTOR');
+  }
+  if (body.idUser !== undefined) {
+    const idUser = String(body.idUser || '').trim();
+    if (!idUser || idUser.length > 120) throw new Error('VALIDATION_ID_USER');
+  }
+  if (body.accuracy !== undefined && body.accuracy !== null && body.accuracy !== '') {
+    const accuracy = Number(body.accuracy);
+    if (!Number.isFinite(accuracy) || accuracy <= 0 || accuracy > 10000) throw new Error('VALIDATION_ACCURACY');
+  }
+  if (body.lat !== undefined && body.lat !== null) {
+    const lat = Number(body.lat);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) throw new Error('VALIDATION_LATITUDE');
+  }
+  if (body.lng !== undefined && body.lng !== null) {
+    const lng = Number(body.lng);
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) throw new Error('VALIDATION_LONGITUDE');
+  }
+}
+
 function jakartaDate(): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -374,13 +397,40 @@ async function recordAttendance(user: AuthenticatedUser, data: Record<string, un
   }
 }
 
+function mappedError(error: unknown) {
+  const raw = error instanceof Error ? error.message : String(error);
+  if (raw === 'SESI_HABIS') return { status: 401, code: 'SESSION_EXPIRED', message: 'Sesi telah berakhir. Silakan login kembali.' };
+  if (raw === 'AKUN_NONAKTIF') return { status: 403, code: 'ACCOUNT_INACTIVE', message: 'Akun tidak aktif.' };
+  if (/Akses ditolak/i.test(raw)) return { status: 403, code: 'FORBIDDEN', message: raw };
+  if (raw.startsWith('VALIDATION_') || /tidak dikenali/i.test(raw)) return { status: 422, code: 'VALIDATION_ERROR', message: raw.startsWith('VALIDATION_') ? 'Data presensi tidak valid.' : raw };
+  return { status: 500, code: 'INTERNAL_ERROR', message: 'Layanan lokasi absensi gagal memproses permintaan.' };
+}
+
+function attendanceRejection(result: Record<string, unknown>) {
+  const message = String(result.message || 'Presensi ditolak.');
+  if (/sedang diproses|sudah absen Datang & Pulang/i.test(message)) return { status: 409, code: 'ATTENDANCE_CONFLICT', message };
+  if (/dinonaktifkan/i.test(message)) return { status: 409, code: 'ATTENDANCE_DISABLED', message };
+  if (/wajah referensi|Wajah tidak dikenali/i.test(message)) return { status: 422, code: 'FACE_VALIDATION_FAILED', message };
+  if (/lokasi|radius|GPS/i.test(message)) return { status: 422, code: 'LOCATION_VALIDATION_FAILED', message };
+  return { status: 422, code: 'ATTENDANCE_REJECTED', message };
+}
+
 Deno.serve(async (request: Request) => {
+  const requestId = `ATL_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS_HEADERS });
-  if (request.method !== 'POST') return json({ success: false, message: 'Method tidak didukung.' }, 405);
+  if (request.method !== 'POST') return json({ success: false, code: 'METHOD_NOT_ALLOWED', message: 'Method tidak didukung.', requestId }, 405, requestId);
+
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json() as Record<string, unknown>;
+  } catch {
+    return json({ success: false, code: 'INVALID_JSON', message: 'Body JSON tidak valid.', requestId }, 400, requestId);
+  }
 
   try {
-    const body = await request.json();
     const action = String(body.action || '').trim();
+    if (!action) return json({ success: false, code: 'ACTION_REQUIRED', message: 'Action wajib diisi.', requestId }, 422, requestId);
+    if (action === 'record') validateRecordInput(body);
     const user = await authenticate(body.token);
 
     if (action === 'policy') {
@@ -392,7 +442,7 @@ Deno.serve(async (request: Request) => {
         referenceName: policy.referenceName,
         radius: policy.radius,
         message: policy.message,
-      } });
+      }, requestId }, 200, requestId);
     }
 
     if (action === 'check') {
@@ -418,16 +468,22 @@ Deno.serve(async (request: Request) => {
         geofenceRequired: result.required,
         configured: result.configured,
         source: result.source,
-      } });
+      }, requestId }, 200, requestId);
     }
 
     if (action === 'record') {
-      return json({ success: true, result: await recordAttendance(user, body) });
+      const result = await recordAttendance(user, body);
+      if (result.success === false) {
+        const rejected = attendanceRejection(result);
+        return json({ success: false, code: rejected.code, message: rejected.message, requestId }, rejected.status, requestId);
+      }
+      return json({ success: true, result, requestId }, 200, requestId);
     }
 
-    throw new Error('Aksi lokasi absensi tidak dikenali.');
+    return json({ success: false, code: 'ACTION_NOT_SUPPORTED', message: 'Aksi lokasi absensi tidak dikenali.', requestId }, 422, requestId);
   } catch (error) {
-    console.error('AttendanceLocation error', error);
-    return json({ success: false, message: error instanceof Error ? error.message : 'Terjadi kesalahan.' }, 400);
+    const mapped = mappedError(error);
+    console.error(JSON.stringify({ requestId, code: mapped.code, status: mapped.status, error: error instanceof Error ? error.message : String(error) }));
+    return json({ success: false, code: mapped.code, message: mapped.message, requestId }, mapped.status, requestId);
   }
 });
