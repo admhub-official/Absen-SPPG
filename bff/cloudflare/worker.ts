@@ -132,13 +132,10 @@ function sameOriginReference(value: string | null, origin: string): boolean {
   }
 }
 
-function isApiNavigation(request: Request, path: string, method: string): boolean {
+function isApiNavigation(_request: Request, path: string, method: string): boolean {
   if (method !== "GET") return false;
-  if (path === "/api") return true;
-  if (!path.startsWith("/api/")) return false;
-  const fetchMode = (request.headers.get("sec-fetch-mode") || "").toLowerCase();
-  const accept = (request.headers.get("accept") || "").toLowerCase();
-  return fetchMode === "navigate" || accept.includes("text/html");
+  if (path === "/api/auth/session") return false;
+  return path === "/api" || path.startsWith("/api/");
 }
 
 function validateBrowserSource(request: Request, env: Env, mutation: boolean): string | null {
