@@ -19,15 +19,51 @@ const corsOptions = {
   localOrigins: ["http://localhost:4173", "http://127.0.0.1:4173"],
 };
 
+function integerInRange(value: unknown, field: string, fallback: number, min: number, max: number): number {
+  if (value === undefined || value === null || value === "") return fallback;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
+    throw new ValidationError("INVALID_INTEGER", `${field} harus bilangan bulat ${min}-${max}.`, field);
+  }
+  return parsed;
+}
+
+function dateOnly(value: unknown, field: string, required = true): string | null {
+  if ((value === undefined || value === null || value === "") && !required) return null;
+  const raw = requiredString(value, field, { max: 10 });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw) || Number.isNaN(new Date(`${raw}T00:00:00Z`).getTime())) {
+    throw new ValidationError("INVALID_DATE", `${field} tidak valid.`, field);
+  }
+  return raw;
+}
+
+function optionalBoolean(value: unknown, field: string): boolean | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "boolean") throw new ValidationError("INVALID_BOOLEAN", `${field} wajib boolean.`, field);
+  return value;
+}
+
+function quietHour(value: unknown, field: string): string | null {
+  const raw = optionalString(value, 5);
+  if (!raw) return null;
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(raw)) {
+    throw new ValidationError("INVALID_TIME", `${field} harus berformat HH:MM.`, field);
+  }
+  return raw;
+}
+
 async function listNotifications(auth: AuthenticatedUser, body: Record<string, unknown>) {
-  const limit = Math.min(100, Math.max(1, Number(body.limit || 30)));
+  const limit = integerInRange(body.limit, "limit", 30, 1, 100);
+  if (body.unreadOnly !== undefined && typeof body.unreadOnly !== "boolean") {
+    throw new ValidationError("INVALID_BOOLEAN", "unreadOnly wajib boolean.", "unreadOnly");
+  }
   let query = db
     .from("Notifications")
     .select("*")
     .or(`ID_User.eq.${auth.idUser},Target_Role.eq.${auth.role}`)
     .order("Created_At", { ascending: false })
     .limit(limit);
-  if (body.unreadOnly) query = query.is("Read_At", null);
+  if (body.unreadOnly === true) query = query.is("Read_At", null);
   const result = await query;
   if (result.error) throw new Error("NOTIFICATION_QUERY_FAILED");
   return result.data || [];
@@ -44,14 +80,20 @@ async function markRead(auth: AuthenticatedUser, body: Record<string, unknown>) 
 }
 
 async function preferences(auth: AuthenticatedUser, body: Record<string, unknown>) {
-  if (body.save) {
+  if (body.save !== undefined && typeof body.save !== "boolean") {
+    throw new ValidationError("INVALID_BOOLEAN", "save wajib boolean.", "save");
+  }
+  if (body.save === true) {
+    const inAppEnabled = optionalBoolean(body.inAppEnabled, "inAppEnabled");
+    const pushEnabled = optionalBoolean(body.pushEnabled, "pushEnabled");
+    const soundEnabled = optionalBoolean(body.soundEnabled, "soundEnabled");
     const row = {
       ID_User: auth.idUser,
-      In_App_Enabled: body.inAppEnabled !== false,
-      Push_Enabled: body.pushEnabled !== false,
-      Sound_Enabled: body.soundEnabled === true,
-      Quiet_Hours_Start: body.quietHoursStart || null,
-      Quiet_Hours_End: body.quietHoursEnd || null,
+      In_App_Enabled: inAppEnabled ?? true,
+      Push_Enabled: pushEnabled ?? true,
+      Sound_Enabled: soundEnabled ?? false,
+      Quiet_Hours_Start: quietHour(body.quietHoursStart, "quietHoursStart"),
+      Quiet_Hours_End: quietHour(body.quietHoursEnd, "quietHoursEnd"),
       Updated_At: new Date().toISOString(),
     };
     const result = await db.from("Notification_Preferences").upsert(row).select().single();
@@ -75,12 +117,17 @@ async function preferences(auth: AuthenticatedUser, body: Record<string, unknown
 
 async function assignShift(auth: AuthenticatedUser, body: Record<string, unknown>) {
   requireOperationalRole(auth);
+  const validFrom = dateOnly(body.validFrom, "validFrom")!;
+  const validUntil = dateOnly(body.validUntil, "validUntil", false);
+  if (validUntil && validUntil < validFrom) {
+    throw new ValidationError("INVALID_DATE_RANGE", "validUntil tidak boleh sebelum validFrom.", "validUntil");
+  }
   const row = {
     ID_User: requiredString(body.userId, "userId", { max: 100 }),
     Shift_ID: requiredString(body.shiftId, "shiftId", { max: 100 }),
     SPPG: optionalString(body.sppg, 200),
-    Valid_From: requiredString(body.validFrom, "validFrom", { max: 10 }),
-    Valid_Until: optionalString(body.validUntil, 10),
+    Valid_From: validFrom,
+    Valid_Until: validUntil,
     Assigned_By: auth.idUser,
     Notes: optionalString(body.notes, 1000),
     Is_Active: true,
@@ -97,8 +144,8 @@ async function listShiftAssignments(auth: AuthenticatedUser, body: Record<string
     .select("*")
     .order("Valid_From", { ascending: false })
     .limit(200);
-  if (body.userId) query = query.eq("ID_User", String(body.userId));
-  if (body.sppg) query = query.eq("SPPG", String(body.sppg));
+  if (body.userId) query = query.eq("ID_User", requiredString(body.userId, "userId", { max: 100 }));
+  if (body.sppg) query = query.eq("SPPG", requiredString(body.sppg, "sppg", { max: 200 }));
   const result = await query;
   if (result.error) throw new Error("SHIFT_QUERY_FAILED");
   return result.data || [];
@@ -106,12 +153,13 @@ async function listShiftAssignments(auth: AuthenticatedUser, body: Record<string
 
 async function analytics(auth: AuthenticatedUser, body: Record<string, unknown>) {
   requireOperationalRole(auth);
-  const from = requiredString(body.from, "from", { max: 10 });
-  const to = requiredString(body.to, "to", { max: 10 });
+  const from = dateOnly(body.from, "from")!;
+  const to = dateOnly(body.to, "to")!;
+  if (to < from) throw new ValidationError("INVALID_DATE_RANGE", "to tidak boleh sebelum from.", "to");
   const result = await db.rpc("attendance_analytics_summary", {
     p_from: from,
     p_to: to,
-    p_sppg: body.sppg ? String(body.sppg) : null,
+    p_sppg: optionalString(body.sppg, 200),
   });
   if (result.error) throw new Error("ANALYTICS_QUERY_FAILED");
   return result.data;
@@ -119,15 +167,32 @@ async function analytics(auth: AuthenticatedUser, body: Record<string, unknown>)
 
 async function scheduleReport(auth: AuthenticatedUser, body: Record<string, unknown>) {
   requireOperationalRole(auth);
+  const recipients = body.recipients === undefined ? [] : body.recipients;
+  if (!Array.isArray(recipients) || recipients.length > 100 || recipients.some((value) => typeof value !== "string" || !value.trim())) {
+    throw new ValidationError("INVALID_RECIPIENTS", "recipients wajib berupa array string valid maksimal 100 item.", "recipients");
+  }
+  if (body.filters !== undefined && (!body.filters || typeof body.filters !== "object" || Array.isArray(body.filters))) {
+    throw new ValidationError("INVALID_FILTERS", "filters wajib berupa object.", "filters");
+  }
+  let nextRunAt: string | null = null;
+  if (body.nextRunAt) {
+    const parsed = new Date(String(body.nextRunAt));
+    if (Number.isNaN(parsed.getTime())) throw new ValidationError("INVALID_DATETIME", "nextRunAt tidak valid.", "nextRunAt");
+    nextRunAt = parsed.toISOString();
+  }
+  const format = requiredString(body.format || "CSV", "format", { max: 20 }).toUpperCase();
+  if (!["CSV", "PDF", "XLSX", "EXCEL"].includes(format)) {
+    throw new ValidationError("INVALID_FORMAT", "Format laporan tidak valid.", "format");
+  }
   const row = {
     Name: requiredString(body.name, "name", { min: 3, max: 200 }),
     Report_Type: requiredString(body.reportType, "reportType", { max: 30 }).toUpperCase(),
     SPPG: optionalString(body.sppg, 200),
     Frequency: requiredString(body.frequency, "frequency", { max: 20 }).toUpperCase(),
-    Format: String(body.format || "CSV").toUpperCase(),
-    Recipients: Array.isArray(body.recipients) ? body.recipients : [],
+    Format: format,
+    Recipients: recipients.map((value) => String(value).trim()),
     Filters: body.filters || {},
-    Next_Run_At: body.nextRunAt || null,
+    Next_Run_At: nextRunAt,
     Created_By: auth.idUser,
   };
   const result = await db.from("Report_Schedules").insert(row).select().single();
@@ -156,9 +221,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
+    const body = await req.json() as Record<string, unknown>;
     const auth = await authenticateUserSession(db, body.token);
-    const action = String(body.action || "");
+    const action = requiredString(body.action, "action", { max: 80 });
     let result: unknown;
 
     switch (action) {
@@ -184,20 +249,39 @@ Deno.serve(async (req) => {
         result = await scheduleReport(auth, body);
         break;
       default:
-        throw new ValidationError("Action tidak valid.", "action");
+        throw new ValidationError("ACTION_NOT_SUPPORTED", "Action tidak valid.", "action");
     }
 
     return jsonResponse({ success: true, result, requestId }, 200, requestId, headers);
   } catch (error) {
-    const code = error instanceof Error ? error.message : String(error);
-    const status = code === "SESSION_EXPIRED"
-      ? 401
-      : code === "ACCOUNT_INACTIVE" || code === "FORBIDDEN"
-      ? 403
-      : error instanceof ValidationError
-      ? 422
-      : 500;
-    const message = status === 500 ? "Terjadi kesalahan pada server." : code;
-    return jsonResponse({ success: false, code, message, requestId }, status, requestId, headers);
+    const raw = error instanceof Error ? error.message : String(error);
+    let status = 500;
+    let code = "INTERNAL_ERROR";
+    let message = "Terjadi kesalahan pada server.";
+    if (error instanceof ValidationError) {
+      status = 422;
+      code = error.code;
+      message = error.message;
+    } else if (raw === "SESSION_EXPIRED") {
+      status = 401;
+      code = raw;
+      message = "Sesi telah berakhir. Silakan login kembali.";
+    } else if (raw === "ACCOUNT_INACTIVE" || raw === "FORBIDDEN") {
+      status = 403;
+      code = raw;
+      message = "Akses ditolak.";
+    } else if (raw === "NOTIFICATION_NOT_FOUND") {
+      status = 404;
+      code = raw;
+      message = "Notifikasi tidak ditemukan.";
+    }
+    console.error(JSON.stringify({ requestId, code, status, error: raw }));
+    return jsonResponse({
+      success: false,
+      code,
+      message,
+      requestId,
+      ...(error instanceof ValidationError && error.field ? { details: { field: error.field } } : {}),
+    }, status, requestId, headers);
   }
 });
