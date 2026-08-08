@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   frontend-structure-finalize:
-    if: github.event_name == 'pull_request' && github.event.pull_request.title == 'perf(frontend): finalize legacy structure'
+    if: "${{ github.event_name == 'pull_request' && github.event.pull_request.title == 'perf(frontend): finalize legacy structure' }}"
     permissions:
       contents: write
     runs-on: ubuntu-latest
