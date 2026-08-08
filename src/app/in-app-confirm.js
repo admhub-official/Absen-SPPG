@@ -108,7 +108,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'saveFacePolicy',
-          token: localStorage.getItem('auth_token'),
+          token: window.HadirlySessionContext?.token?.() || '',
           scope: isSppg ? 'SPPG' : 'USER',
           enabled: false,
           ...(isSppg ? { sppg: selected } : { userIds: selected }),
