@@ -42,6 +42,7 @@ const expectedCompatibilityConsumers = [
   "src/app/http-only-session-bridge.js",
   "src/app/in-app-confirm.js",
   "src/app/logout-session-guard.js",
+  "src/app/navigation-state-guard.js",
   "src/app/notification-publisher.js",
   "src/app/operational-notifications.js",
   "src/app/profile-contract-identity.js",
