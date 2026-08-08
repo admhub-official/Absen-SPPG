@@ -27,7 +27,7 @@
   }
 
   async function locationCall(action, payload = {}) {
-    const token = payload.token || localStorage.getItem('auth_token');
+    const token = payload.token || window.HadirlySessionContext?.token?.() || '';
     if (!token) throw new Error('Sesi login tidak tersedia.');
     const response = await fetch(endpoint(), {
       method: 'POST',
