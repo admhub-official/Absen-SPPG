@@ -1,0 +1,57 @@
+name: Frontend Residual Finalize Once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: contains(github.event.head_commit.message, '[frontend-residual-finalize-once]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Apply and validate residual consolidation
+        shell: bash
+        run: |
+          set +e
+          python scripts/final_duplication_patch.py > frontend-residual-finalize.log 2>&1
+          patch_status=$?
+          ci_status=99
+          if [ "$patch_status" -eq 0 ]; then
+            deno task ci >> frontend-residual-finalize.log 2>&1
+            ci_status=$?
+          fi
+          set -e
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ "$patch_status" -ne 0 ] || [ "$ci_status" -ne 0 ]; then
+            echo "patch_status=$patch_status ci_status=$ci_status" >> frontend-residual-finalize.log
+            git checkout -B automation/frontend-residual-debug
+            git add -A
+            git commit -m "debug: residual frontend finalizer failure" || true
+            git push --force origin automation/frontend-residual-debug
+            cat frontend-residual-finalize.log
+            exit 1
+          fi
+
+          rm -f scripts/final_duplication_patch.py \
+            .github/workflows/frontend-residual-finalize-once.yml \
+            .github/frontend-residual-finalize.trigger \
+            .github/workflows/frontend-duplication-finish-once.yml \
+            .github/frontend-duplication-finish.trigger \
+            frontend-residual-finalize.log
+          git add -A
+          git commit -m "refactor: complete remaining frontend consolidation"
+          git push origin HEAD:main
+          git push origin --delete automation/frontend-residual-debug || true
