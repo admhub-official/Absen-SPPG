@@ -633,18 +633,27 @@ function isSuperAdminUser(){
   return !!u && normalizeRole(u.role||u.Role)==='SUPER ADMIN';
 }
 
+function setNavVisibility(selector,visible){
+  document.querySelectorAll(selector).forEach(el=>el.classList.toggle('nav-role-hidden',!visible));
+}
+function setBottomNavRole(role){
+  const nav=document.querySelector('.app-bottomnav');
+  if(nav)nav.dataset.navRole=role;
+}
 function showAdminNav(){
-  document.querySelectorAll('.admin-only-nav').forEach(el => el.style.display = '');
-  document.querySelectorAll('.user-only-nav').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.super-admin-only-nav').forEach(el => el.style.display = isSuperAdminUser() ? '' : 'none');
-  document.querySelectorAll('.non-super-admin-only-nav').forEach(el => el.style.display = isSuperAdminUser() ? 'none' : '');
+  setNavVisibility('.admin-only-nav',true);
+  setNavVisibility('.user-only-nav',false);
+  setNavVisibility('.super-admin-only-nav',isSuperAdminUser());
+  setNavVisibility('.non-super-admin-only-nav',!isSuperAdminUser());
+  setBottomNavRole('admin');
   closeNavigationMenus();
 }
 
 function showUserNav(){
-  document.querySelectorAll('.admin-only-nav').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.super-admin-only-nav').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.user-only-nav').forEach(el => el.style.display = '');
+  setNavVisibility('.admin-only-nav',false);
+  setNavVisibility('.super-admin-only-nav',false);
+  setNavVisibility('.user-only-nav',true);
+  setBottomNavRole('user');
   closeNavigationMenus();
 }
 
@@ -807,7 +816,7 @@ function renderAbsenTable(){
   updateAttendanceSelectionBar();
 
   if(pg){
-    pg.style.display = 'flex';
+    pg.hidden = false;
     $('#absen-pagination-info').textContent = `${start+1}–${Math.min(start+ps,total)} dari ${total} data`;
     $('#absen-prev-btn').disabled = page <= 1;
     $('#absen-next-btn').disabled = page >= totalPages;
@@ -895,7 +904,7 @@ function renderUsersGrid(){
   const users = AdminState.filteredUsers;
   const pagination=$('#users-pagination'),totalPages=Math.max(1,Math.ceil(AdminState.userTotal/AdminState.userPageSize));
   if(pagination){
-    pagination.style.display='flex';
+    pagination.hidden=false;
     const start=(AdminState.userPage-1)*AdminState.userPageSize;
     $('#users-pagination-info').textContent=`${AdminState.userTotal?start+1:0}â€“${Math.min(start+AdminState.userPageSize,AdminState.userTotal)} dari ${AdminState.userTotal} pengguna`;
     $('#users-prev-btn').disabled=AdminState.userPage<=1;
@@ -1121,7 +1130,7 @@ function renderLogList(){
   }).join('');
 
   if(pg){
-    pg.style.display = 'flex';
+    pg.hidden = false;
     const totalPages = Math.max(1, Math.ceil(total/ps));
     $('#log-pagination-info').textContent = `${start+1}–${Math.min(start+ps,total)} dari ${total} log`;
     $('#log-prev-btn').disabled = page <= 1;
@@ -1520,7 +1529,7 @@ async function handleSendComplaint(event){
 
 async function loadComplaintNotification(){
   if(!isAdmin())return;
-  try{const result=await apiCall('getNotifikasiAdmin',{token:AppState.token});const count=Number(result?.jumlah)||0;$$('[data-complaint-count],#complaint-nav-count').forEach(badge=>{badge.textContent=count>99?'99+':String(count);badge.style.display=count?'inline-flex':'none';});}catch(error){console.error('Gagal memuat notifikasi pengaduan',error);}
+  try{const result=await apiCall('getNotifikasiAdmin',{token:AppState.token});const count=Number(result?.jumlah)||0;$$('[data-complaint-count],#complaint-nav-count').forEach(badge=>{badge.textContent=count>99?'99+':String(count);badge.hidden=!count;});}catch(error){console.error('Gagal memuat notifikasi pengaduan',error);}
 }
 
 async function loadAdminComplaints(){

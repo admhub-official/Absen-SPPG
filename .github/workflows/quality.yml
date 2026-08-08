@@ -14,52 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ui-consistency-finalize:
-    if: "${{ github.event_name == 'pull_request' && github.event.pull_request.title == 'refactor(ui): finish consistency cleanup' }}"
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout PR head
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-
-      - name: Apply and validate final UI consistency cleanup
-        shell: bash
-        run: |
-          python3 tools/ui_consistency_final_cleanup.py
-          git checkout origin/main -- .github/workflows/quality.yml deno.lock
-          git rm tools/ui_consistency_final_cleanup.py
-          git diff --check
-          deno task ci
-          git checkout origin/main -- deno.lock
-          git diff --check
-
-      - name: Commit finalized source
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No source changes to commit"
-            exit 1
-          fi
-          git commit -m "refactor(ui): finish consistency cleanup"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
-
   deno-quality:
-    if: "${{ github.event_name != 'pull_request' || github.event.pull_request.title != 'refactor(ui): finish consistency cleanup' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

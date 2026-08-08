@@ -55,7 +55,15 @@ Deno.test("mobile topbar and bottomnav share responsive geometry", async () => {
   assert(responsive.includes("scroll-margin-bottom:var(--ui-bottomnav-clearance)"));
 
   const scanButtons = index.match(/class="app-bottomnav-item app-bottomnav-item-scan/g) ?? [];
-  assertEquals(scanButtons.length, 2);
+  assertEquals(scanButtons.length, 1);
   const scanLabels = index.match(/<span class="app-bottomnav-scan-label">Absen<\/span>/g) ?? [];
-  assertEquals(scanLabels.length, 2);
+  assertEquals(scanLabels.length, 1);
+  assert(index.includes('data-nav-role="user"'));
+  assert(!/admin-only-nav[^"]*"[^>]*style="display:none"/.test(index));
+  assert(!index.includes('id="absen-pagination" style="display:none"'));
+  assert(!index.includes('id="users-pagination" style="display:none"'));
+  assert(!index.includes('id="log-pagination" style="display:none"'));
+  assert(!index.includes('id="crop-zoom" min="100" max="300" value="100" style='));
+  assert(index.includes('class="crop-zoom-row"'));
+  assert(index.includes('class="crop-zoom-hint"'));
 });

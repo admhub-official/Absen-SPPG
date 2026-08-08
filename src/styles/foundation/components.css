@@ -176,3 +176,19 @@
 .signature-legal--spaced{margin-top:var(--ui-space-4)}.helper-text--spaced{margin-top:.8rem}
 .profile-photo-editor{display:flex;flex-direction:column;align-items:center;gap:var(--ui-space-3);margin-bottom:var(--ui-space-6)}
 .profile-avatar--editor{width:6rem;height:6rem;font-size:1.875rem;position:static}.profile-photo-button{display:inline-flex;align-items:center}.profile-photo-input{display:none}
+
+
+/* Final legacy UI consistency cleanup: state, cropper controls, and shared scan action. */
+.nav-role-hidden{display:none!important}
+.app-nav-section-label{padding:.5rem .9rem .25rem;font-size:var(--ui-text-xs);font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgb(255 255 255/.3);cursor:default}
+.crop-zoom-row{display:flex;align-items:center;gap:var(--ui-space-3);margin-top:var(--ui-space-5)}
+.crop-zoom-icon{flex-shrink:0;color:var(--ui-text-muted)}
+.crop-zoom-range{flex:1;min-width:0}
+.crop-zoom-hint{text-align:center;color:var(--ui-text-muted);font-size:var(--ui-text-sm);margin-top:var(--ui-space-2)}
+.crop-photo-picker{margin-top:var(--ui-space-3)}
+.app-bottomnav[data-nav-role="admin"] [data-view="super-dashboard"],
+.app-bottomnav[data-nav-role="admin"] [data-view="admin-dashboard"]{order:1}
+.app-bottomnav[data-nav-role="admin"] [data-view="admin-users"]{order:2}
+.app-bottomnav[data-nav-role="admin"] .app-bottomnav-item-scan{order:3}
+.app-bottomnav[data-nav-role="admin"] [data-view="admin-payroll"]{order:4}
+.app-bottomnav[data-nav-role="admin"] .app-bottomnav-more{order:5}
