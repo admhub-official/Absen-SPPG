@@ -98,6 +98,7 @@ async function signedUrl(path: unknown): Promise<string> {
   const storagePath = clean(path, 900);
   if (!storagePath) return "";
   const result = await db.storage.from(BUCKET).createSignedUrl(storagePath, SIGNED_URL_SECONDS);
+  if (result.error) throw new Error("Tautan dokumen gagal dibuat: " + result.error.message);
   return result.data?.signedUrl || "";
 }
 
@@ -162,6 +163,7 @@ async function resolveContractSources(profile: Record<string, unknown>, employme
   if (templateResult.error || !templateResult.data) throw new Error("Master Template Perjanjian aktif belum tersedia.");
 
   const compResult = await db.from("Master_Contract_Compensation").select("*").eq("Aktif", true).eq("ID_Master_Jabatan", job.ID_Master_Jabatan).limit(1).maybeSingle();
+  if (compResult.error) throw new Error("Master kompensasi gagal dibaca: " + compResult.error.message);
   return { sppg, job, jobDescription: jobDescResult.data, hours: hoursResult.data, term: termResult.data, template: templateResult.data, compensation: compResult.data || null };
 }
 

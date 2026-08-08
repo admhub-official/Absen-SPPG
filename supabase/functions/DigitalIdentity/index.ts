@@ -351,7 +351,8 @@ async function getProfile(idUser: string): Promise<UserProfile> {
     .select(PROFILE_COLUMNS)
     .eq("ID_User", idUser)
     .maybeSingle();
-  if (result.error || !result.data) throw new Error("ACCOUNT_INACTIVE");
+  if (result.error) throw result.error;
+  if (!result.data) throw new Error("ACCOUNT_INACTIVE");
   return result.data as UserProfile;
 }
 
@@ -805,7 +806,8 @@ async function uploadArtifacts(paths: Record<string, string>, artifacts: CardArt
 
 async function removeArtifacts(paths: string[]): Promise<void> {
   try {
-    await db.storage.from(BUCKET).remove(paths);
+    const result = await db.storage.from(BUCKET).remove(paths);
+    if (result.error) throw result.error;
   } catch (error) {
     console.error(JSON.stringify({
       code: "DIGITAL_ID_ARTIFACT_CLEANUP_DEFERRED",
@@ -889,8 +891,10 @@ async function generateMyDigitalIdentity(
     if (insert.error) throw insert.error;
   } catch (error) {
     await removeArtifacts(Object.values(paths));
-    const pendingAfterRace = await getCardByStatus(auth.idUser, "PENDING").catch(() => null);
     const errorCode = (error as { code?: string })?.code;
+    const pendingAfterRace = errorCode === "23505"
+      ? await getCardByStatus(auth.idUser, "PENDING")
+      : null;
     if (pendingAfterRace && errorCode === "23505") {
       return await responseFor(profile, existing, pendingAfterRace);
     }
@@ -1110,8 +1114,16 @@ async function verifyDigitalIdentity(payload: Record<string, unknown>) {
   if (cardResult.error) throw cardResult.error;
   if (!cardResult.data) return { valid: false, status: "INVALID" };
 
-  const profile = await getProfile(String(cardResult.data.ID_User)).catch(() => null);
-  if (!profile || profile.Status_Aktif === false) return { valid: false, status: "INACTIVE" };
+  let profile: UserProfile;
+  try {
+    profile = await getProfile(String(cardResult.data.ID_User));
+  } catch (error) {
+    if (error instanceof Error && error.message === "ACCOUNT_INACTIVE") {
+      return { valid: false, status: "INACTIVE" };
+    }
+    throw error;
+  }
+  if (profile.Status_Aktif === false) return { valid: false, status: "INACTIVE" };
 
   const verifiedAt = nowIso();
   const count = Number(cardResult.data.Verification_Count || 0) + 1;
