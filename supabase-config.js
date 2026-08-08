@@ -11,6 +11,17 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   operationsV2FunctionName: 'OperationsV2'
 });
 
+function isInstalledApp() {
+  const displayModes = ['standalone', 'fullscreen', 'minimal-ui', 'window-controls-overlay'];
+  const displayModeInstalled = displayModes.some((mode) => {
+    try { return window.matchMedia?.(`(display-mode: ${mode})`)?.matches === true; }
+    catch { return false; }
+  });
+  const iosStandalone = navigator.standalone === true;
+  const trustedWebActivity = String(document.referrer || '').startsWith('android-app://');
+  return displayModeInstalled || iosStandalone || trustedWebActivity;
+}
+
 (() => {
   if (window.__HADIRLY_SESSION_GATEWAY_FETCH__) return;
   window.__HADIRLY_SESSION_GATEWAY_FETCH__ = true;

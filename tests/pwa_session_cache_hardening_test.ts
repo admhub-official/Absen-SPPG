@@ -29,8 +29,8 @@ Deno.test('PWA release version has one canonical source', async () => {
   const sw = await read('sw.js');
   const config = await read('supabase-config.js');
 
-  if (!release.includes("version = '26.11.56'")) throw new Error('release version mismatch');
-  if (!release.includes("cacheName = 'absen-sppg-hadirly-v97'")) throw new Error('release cache mismatch');
+  if (!release.includes("version = '26.11.57'")) throw new Error('release version mismatch');
+  if (!release.includes("cacheName = 'absen-sppg-hadirly-v98'")) throw new Error('release cache mismatch');
   for (const [name, source] of [['bootstrap', bootstrap], ['runtime', runtime]] as const) {
     if (!source.includes('HADIRLY_RELEASE?.version')) throw new Error(`${name} must read shared release version`);
   }
@@ -129,4 +129,22 @@ Deno.test('private signed storage assets use browser no-store fetch policy', asy
     if (!policy.includes(marker)) throw new Error(`private asset policy missing ${marker}`);
   }
   if (!policy.includes('window.open = function guardedWindowOpen')) throw new Error('programmatic private asset opens must be guarded');
+});
+
+
+Deno.test('mandatory install detector exists before inline app boot', async () => {
+  const config = await read('supabase-config.js');
+  const index = await read('index.html');
+  for (const required of [
+    'function isInstalledApp()',
+    "'standalone', 'fullscreen', 'minimal-ui', 'window-controls-overlay'",
+    'navigator.standalone === true',
+    "startsWith('android-app://')",
+  ]) {
+    if (!config.includes(required)) throw new Error(`installed-app detector missing ${required}`);
+  }
+  if (!index.includes('if(isInstalledApp())return true;')) throw new Error('mandatory install gate must call installed-app detector');
+  const configScript = index.indexOf('<script src="supabase-config.js"></script>');
+  const inlineScript = index.indexOf('<script>', configScript);
+  if (configScript < 0 || inlineScript < 0 || configScript > inlineScript) throw new Error('supabase-config must load before inline app boot script');
 });
