@@ -14,7 +14,14 @@ function excelDateToISO(value: unknown, year: number, month: number): string | n
 function parsePeriod(rows: unknown[][]) {
   const text = rows.slice(0, 5).flat().map(String).join(' ');
   const match = text.match(/(\d{1,2})\s+Juli\s*[–-]\s*(\d{1,2})\s+Agustus\s+(20\d{2})/i);
-  if (match) return { year: Number(match[3]), month: 7, start: `${match[3]}-07-${match[1].padStart(2, '0')}`, end: `${match[3]}-08-${match[2].padStart(2, '0')}` };
+  if (match) {
+    const startDay = match[1];
+    const endDay = match[2];
+    const yearText = match[3];
+    if (startDay && endDay && yearText) {
+      return { year: Number(yearText), month: 7, start: `${yearText}-07-${startDay.padStart(2, '0')}`, end: `${yearText}-08-${endDay.padStart(2, '0')}` };
+    }
+  }
   const year = Number(text.match(/20\d{2}/)?.[0] || new Date().getFullYear());
   return { year, month: 7, start: null, end: null };
 }
