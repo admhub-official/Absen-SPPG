@@ -246,26 +246,13 @@ async function operationalDashboard(auth: AuthenticatedUser) {
     if (missing.length) profilBelumLengkap.push({ ...summary, missing, score: profileScore(row) });
   }
 
-  let complaintQuery = db.from("Pengaduan").select("ID_Pengaduan,SPPG,Status_Tiket").limit(5000);
-  let slipQuery = db.from("Slip_Gaji")
-    .select("ID_Slip,ID_User,SPPG,Status_Penerbitan")
-    .eq("Status_Penerbitan", "MENUNGGU_TTD_PENERIMA")
-    .limit(5000);
-  if (scope) {
-    if (!scope.length) {
-      complaintQuery = complaintQuery.eq("ID_Pengaduan", "__NO_SCOPE__");
-      slipQuery = slipQuery.eq("ID_Slip", "__NO_SCOPE__");
-    } else {
-      complaintQuery = complaintQuery.in("SPPG", scope);
-      slipQuery = slipQuery.in("SPPG", scope);
-    }
-  }
-  const [complaints, slips] = await Promise.all([complaintQuery, slipQuery]);
-  if (complaints.error) throw complaints.error;
-  if (slips.error) throw slips.error;
-  const openTickets = (complaints.data || []).filter((row) =>
-    !["SELESAI", "DITUTUP", "CLOSED", "CLOSE"].includes(normalize(row.Status_Tiket))
-  ).length;
+  const dashboardCounts = await db.rpc("get_operational_dashboard_counts", {
+  p_sppg: scope,
+});
+if (dashboardCounts.error) throw dashboardCounts.error;
+const countData = (dashboardCounts.data || {}) as Record<string, unknown>;
+const openTickets = Number(countData.openTickets || 0);
+const pendingRecipientSignatures = Number(countData.pendingRecipientSignatures || 0);
   return {
     totals: {
       employees: employees.length,
@@ -274,7 +261,7 @@ async function operationalDashboard(auth: AuthenticatedUser) {
       notDeparted: belumPulang.length,
       incompleteProfiles: profilBelumLengkap.length,
       openTickets,
-      pendingRecipientSignatures: (slips.data || []).length,
+      pendingRecipientSignatures,
     },
     exceptions: { belumDatang, belumPulang, profilBelumLengkap },
   };
