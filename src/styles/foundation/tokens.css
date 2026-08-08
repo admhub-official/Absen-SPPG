@@ -9,7 +9,9 @@
   --ui-warning-50: #fffbeb;
   --ui-warning-500: #f59e0b;
   --ui-danger-50: #fef2f2;
+  --ui-danger-200: #fecaca;
   --ui-danger-600: #dc2626;
+  --ui-danger-800: #991b1b;
   --ui-info-50: #eff6ff;
   --ui-info-600: #2563eb;
 
@@ -62,6 +64,10 @@
   --ui-sidebar-width: 15rem;
   --ui-topbar-height: 4rem;
   --ui-content-max: 90rem;
+  --ui-bottomnav-height: 4.25rem;
+  --ui-bottomnav-clearance: 5.125rem;
+  --ui-bottomnav-scan-size: 3.25rem;
+  --ui-bottomnav-scan-lift: 1.625rem;
 
   /* Backward-compatible aliases for legacy styles */
   --primary: var(--ui-primary-600);

@@ -261,9 +261,8 @@
     <div class="app-topbar">
       <div class="app-topbar-brand">
         <img src="https://szwwpnbbsmjsbzzcecyj.supabase.co/storage/v1/object/public/icon%20aplikasi/icon%20aplikasi.png" alt="">
-        Presence SPPG
+        <span>Presence SPPG</span>
       </div>
-      <div style="flex:1"></div>
       <div class="notification-wrap" id="notification-wrap">
         <button class="notification-button" id="btn-notifications" type="button" aria-label="Notifikasi" aria-expanded="false" aria-controls="notification-panel">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
@@ -274,7 +273,7 @@
           <div id="notification-list"><div class="loading-state">Memuat notifikasi...</div></div>
         </div>
       </div>
-      <div class="app-topbar-profile-wrap" style="position:relative">
+      <div class="app-topbar-profile-wrap">
         <div class="app-topbar-profile" id="btn-topbar-profile" role="button" tabindex="0" aria-expanded="false" aria-controls="topbar-dropdown">
           <div class="app-topbar-avatar" id="topbar-avatar">-</div>
           <div class="app-topbar-profile-info">
@@ -327,7 +326,7 @@
           </div>
         </div>
 
-        <div class="dash-card" id="dashboard-notification-card" style="margin-bottom:1.5rem">
+        <div class="dash-card section-card-gap" id="dashboard-notification-card">
           <div class="dash-card-title">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/></svg>
             Perlu Perhatian
@@ -335,7 +334,7 @@
           <div id="dashboard-notification-list"><div class="belum-absen-empty">Memuat notifikasi...</div></div>
         </div>
 
-        <div class="dash-card" style="margin-bottom:1.5rem">
+        <div class="dash-card section-card-gap">
           <div class="dash-card-title">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             Status Absen Hari Ini
@@ -416,11 +415,11 @@
             <div class="profile-action-row">
               <button class="btn btn-primary" id="btn-open-edit-profil">Update Profil</button>
               <button class="btn btn-secondary" id="btn-open-profile-password" type="button">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.35rem;vertical-align:-2px"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 Ganti Password
               </button>
               <button class="btn btn-secondary" id="btn-open-daftar-wajah">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.35rem;vertical-align:-2px"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg>
                 <span id="btn-daftar-wajah-label">Perbarui Wajah</span>
               </button>
             </div>
@@ -654,7 +653,7 @@
 
       <!-- ===== VIEW: ADMIN DATA ABSEN ===== -->
       <div id="view-admin-absen" class="app-view hidden">
-        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">
+        <div class="page-header page-header--split">
           <div>
             <div class="page-title">Data Absensi</div>
             <div class="page-subtitle">Seluruh data absensi dari semua pengguna</div>
@@ -663,7 +662,7 @@
             <span class="realtime-dot"></span> Realtime aktif
           </div>
         </div>
-        <div class="validation-tabs" role="tablist" aria-label="Pusat validasi absensi" style="margin-bottom:.85rem">
+        <div class="validation-tabs validation-tabs--spaced" role="tablist" aria-label="Pusat validasi absensi">
           <button class="validation-tab active" type="button" data-validation-tab="ALL">Semua</button>
           <button class="validation-tab" type="button" data-validation-tab="INCOMPLETE">Tidak lengkap</button>
           <button class="validation-tab" type="button" data-validation-tab="SINGLE">Punch tunggal</button>
@@ -708,16 +707,16 @@
                 </tr>
               </thead>
               <tbody id="absen-table-body">
-                <tr><td colspan="7" style="padding:0"><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-line short"></div></div></td></tr>
+                <tr><td colspan="7" class="table-cell-flush"><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-line short"></div></div></td></tr>
               </tbody>
             </table>
           </div>
           <div class="attendance-selection-bar" id="attendance-selection-bar">
             <strong><span id="attendance-selected-count">0</span> data dipilih</strong>
-            <div style="display:flex;gap:.45rem;flex-wrap:wrap">
+            <div class="attendance-selection-actions">
               <button class="btn btn-sm btn-primary" type="button" data-attendance-action="VALID">Validasi</button>
               <button class="btn btn-sm btn-secondary" type="button" data-attendance-action="PERLU_KOREKSI">Perlu Koreksi</button>
-              <button class="btn btn-sm" style="background:var(--danger);color:#fff" type="button" data-attendance-action="DITOLAK">Tolak</button>
+              <button class="btn btn-sm btn-danger" type="button" data-attendance-action="DITOLAK">Tolak</button>
             </div>
           </div>
           <div class="pagination" id="absen-pagination" style="display:none">
@@ -747,13 +746,13 @@
               <input type="text" id="users-search" placeholder="Cari nama / SPPG / jabatan...">
             </div>
           </div>
-          <div class="user-filter-toolbar" style="padding:0 1rem 1rem">
+          <div class="user-filter-toolbar">
             <select class="form-input" id="users-operational-filter" aria-label="Filter status operasional"><option value="">Semua kondisi</option><option value="ONLINE">Sedang online</option><option value="INCOMPLETE">Profil belum lengkap</option></select>
             <select class="form-input" id="users-role-filter" aria-label="Filter role"><option value="">Semua role</option></select>
             <select class="form-input" id="users-sppg-filter" aria-label="Filter SPPG"><option value="">Semua SPPG</option></select>
             <select class="form-input" id="users-division-filter" aria-label="Filter divisi"><option value="">Semua divisi</option></select>
             <select class="form-input" id="users-account-filter" aria-label="Filter akun"><option value="">Semua akun</option><option value="ACTIVE">Aktif</option><option value="INACTIVE">Nonaktif</option></select>
-            <div style="margin-left:auto;display:flex;gap:.35rem"><button class="view-toggle active" type="button" data-user-view="cards">Kartu</button><button class="view-toggle" type="button" data-user-view="list">Daftar</button></div>
+            <div class="view-toggle-group"><button class="view-toggle active" type="button" data-user-view="cards">Kartu</button><button class="view-toggle" type="button" data-user-view="list">Daftar</button></div>
           </div>
           <div id="users-grid-container" class="users-grid">
             <div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>
@@ -789,8 +788,8 @@
         <div class="feature-card payroll-period-card">
           <div class="payroll-command">
             <div class="payroll-command-title"><strong><span class="desktop-only">1. Tentukan periode payroll</span><span class="mobile-only">1. Periode</span></strong><span>Hari kerja dihitung dari absensi VALID. Punch tunggal impor yang valid tetap dihitung satu hari kerja.</span></div>
-            <div class="form-group" style="margin:0"><label class="form-label" for="payroll-period-start"><span class="desktop-only">Tanggal mulai</span><span class="mobile-only">Mulai</span></label><input id="payroll-period-start" type="date" class="form-input"></div>
-            <div class="form-group" style="margin:0"><label class="form-label" for="payroll-period-end"><span class="desktop-only">Tanggal akhir</span><span class="mobile-only">Akhir</span></label><input id="payroll-period-end" type="date" class="form-input"></div>
+            <div class="form-group form-group--flush"><label class="form-label" for="payroll-period-start"><span class="desktop-only">Tanggal mulai</span><span class="mobile-only">Mulai</span></label><input id="payroll-period-start" type="date" class="form-input"></div>
+            <div class="form-group form-group--flush"><label class="form-label" for="payroll-period-end"><span class="desktop-only">Tanggal akhir</span><span class="mobile-only">Akhir</span></label><input id="payroll-period-end" type="date" class="form-input"></div>
             <button class="btn btn-secondary" id="btn-payroll-preview" type="button"><span class="desktop-only">Hitung Hari Kerja</span><span class="mobile-only">Hitung</span></button>
           </div>
         </div>
@@ -799,7 +798,7 @@
             <div><div class="admin-card-title">2. Pilih karyawan</div><div class="helper-text">Hanya karyawan dengan gaji harian yang dapat dipilih</div></div>
             <div class="admin-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="payroll-search" type="search" placeholder="Cari nama, jabatan, atau SPPG..."></div>
           </div>
-          <div style="padding:0 1rem">
+          <div class="payroll-selection-shell">
             <div class="payroll-selection-bar">
               <div class="payroll-selection-count"><strong id="payroll-selected-count">0</strong> karyawan dipilih</div>
               <button class="btn btn-primary btn-sm" id="btn-open-payroll-publish" type="button" disabled>Atur Bonus & Terbitkan</button>
@@ -819,7 +818,7 @@
       <!-- ===== VIEW: INBOX PENGADUAN ===== -->
       <div id="view-admin-pengaduan" class="app-view hidden">
         <div class="feature-toolbar"><div><div class="page-title">Inbox Pengaduan</div><div class="page-subtitle">Baca, tindak lanjuti, dan balas laporan pengguna</div></div><button class="btn btn-secondary btn-sm" id="btn-refresh-admin-complaints" type="button">Muat Ulang</button></div>
-        <div class="feature-card"><div class="feature-toolbar" style="margin:0"><select id="admin-complaint-status" class="form-input"><option value="">Semua Status Tiket</option><option value="BARU">Baru</option><option value="DIPROSES">Diproses</option><option value="MENUNGGU_USER">Menunggu User</option><option value="SELESAI">Selesai</option></select><select id="admin-complaint-category" class="form-input"><option value="">Semua Kategori</option><option>Absensi</option><option>Payroll / Gaji</option><option>Akun dan Profil</option><option>Fasilitas Kerja</option><option>Etika / Perilaku</option><option>Keamanan</option><option>Lainnya</option></select><input id="admin-complaint-search" type="search" class="form-input" placeholder="Cari isi, tiket, atau pengirim..."></div></div>
+        <div class="feature-card"><div class="feature-toolbar feature-toolbar--flush"><select id="admin-complaint-status" class="form-input"><option value="">Semua Status Tiket</option><option value="BARU">Baru</option><option value="DIPROSES">Diproses</option><option value="MENUNGGU_USER">Menunggu User</option><option value="SELESAI">Selesai</option></select><select id="admin-complaint-category" class="form-input"><option value="">Semua Kategori</option><option>Absensi</option><option>Payroll / Gaji</option><option>Akun dan Profil</option><option>Fasilitas Kerja</option><option>Etika / Perilaku</option><option>Keamanan</option><option>Lainnya</option></select><input id="admin-complaint-search" type="search" class="form-input" placeholder="Cari isi, tiket, atau pengirim..."></div></div>
         <div class="complaint-list" id="admin-complaint-list"><div class="loading-state"><span class="spinner"></span>Memuat inbox...</div></div>
       </div>
 
@@ -829,7 +828,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
           Kembali ke Data Users
         </button>
-        <div class="page-header" style="margin-bottom:1rem">
+        <div class="page-header page-header--compact">
           <div class="page-title" id="user-detail-title">Detail User</div>
         </div>
         <div class="action-bar">
@@ -837,7 +836,7 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             Update Data
           </button>
-          <button class="btn" id="btn-admin-delete-user" style="background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5">
+          <button class="btn btn-danger-soft" id="btn-admin-delete-user">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             Hapus User
           </button>
@@ -962,8 +961,8 @@
           <div class="feature-toolbar"><div><strong>Berikan Cakupan SPPG</strong><div class="helper-text">Satu akun dapat menerima akses ke lebih dari satu SPPG</div></div></div>
           <div class="config-section-note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".5" fill="currentColor"/></svg><div>ADMIN dan AKUNTAN hanya dapat melihat pengguna, absensi, payroll, dan pengaduan dari SPPG yang ditetapkan di sini. SUPER ADMIN tetap memiliki akses global.</div></div>
           <div class="config-form-grid">
-            <div class="form-group" style="margin:0"><label class="form-label" for="config-admin-account">Akun ADMIN / AKUNTAN</label><select id="config-admin-account" class="form-input"><option value="">Pilih akun</option></select></div>
-            <div class="form-group" style="margin:0"><label class="form-label" for="config-admin-sppg">Cakupan SPPG</label><select id="config-admin-sppg" class="form-input"><option value="">Pilih SPPG</option></select></div>
+            <div class="form-group form-group--flush"><label class="form-label" for="config-admin-account">Akun ADMIN / AKUNTAN</label><select id="config-admin-account" class="form-input"><option value="">Pilih akun</option></select></div>
+            <div class="form-group form-group--flush"><label class="form-label" for="config-admin-sppg">Cakupan SPPG</label><select id="config-admin-sppg" class="form-input"><option value="">Pilih SPPG</option></select></div>
             <button class="btn btn-primary" id="btn-save-admin-access" type="button">Tambahkan Akses</button>
           </div>
         </div>
@@ -1049,21 +1048,21 @@
         <div class="signature-approval-grid">
           <div class="signature-panel">
             <div class="form-group">
-              <label class="form-label" for="payroll-accountant-name">Mengetahui - Nama Akuntan <span style="color:var(--danger)">*</span></label>
+              <label class="form-label" for="payroll-accountant-name">Mengetahui - Nama Akuntan <span class="form-required">*</span></label>
               <input id="payroll-accountant-name" class="form-input" maxlength="120" placeholder="Nama lengkap Akuntan">
             </div>
-            <div class="form-label">Tanda tangan Akuntan <span style="color:var(--danger)">*</span></div>
+            <div class="form-label">Tanda tangan Akuntan <span class="form-required">*</span></div>
             <div class="signature-canvas-wrap"><canvas id="payroll-accountant-signature-canvas" width="900" height="300" aria-label="Canvas tanda tangan Akuntan"></canvas></div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-top:.55rem"><div class="signature-help">Tanda tangan ini ditampilkan sebagai pihak yang mengetahui.</div><button class="btn btn-secondary btn-sm" id="btn-clear-accountant-signature" type="button">Hapus</button></div>
+            <div class="signature-panel-actions"><div class="signature-help">Tanda tangan ini ditampilkan sebagai pihak yang mengetahui.</div><button class="btn btn-secondary btn-sm" id="btn-clear-accountant-signature" type="button">Hapus</button></div>
           </div>
           <div class="signature-panel">
             <div class="form-group">
-              <label class="form-label" for="payroll-head-name">Menyetujui - Nama Kepala SPPG <span style="color:var(--danger)">*</span></label>
+              <label class="form-label" for="payroll-head-name">Menyetujui - Nama Kepala SPPG <span class="form-required">*</span></label>
               <input id="payroll-head-name" class="form-input" maxlength="120" placeholder="Nama lengkap Kepala SPPG">
             </div>
-            <div class="form-label">Tanda tangan Kepala SPPG <span style="color:var(--danger)">*</span></div>
+            <div class="form-label">Tanda tangan Kepala SPPG <span class="form-required">*</span></div>
             <div class="signature-canvas-wrap"><canvas id="payroll-head-signature-canvas" width="900" height="300" aria-label="Canvas tanda tangan Kepala SPPG"></canvas></div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-top:.55rem"><div class="signature-help">Tanda tangan ini ditampilkan sebagai pihak yang menyetujui.</div><button class="btn btn-secondary btn-sm" id="btn-clear-head-signature" type="button">Hapus</button></div>
+            <div class="signature-panel-actions"><div class="signature-help">Tanda tangan ini ditampilkan sebagai pihak yang menyetujui.</div><button class="btn btn-secondary btn-sm" id="btn-clear-head-signature" type="button">Hapus</button></div>
           </div>
         </div>
         <div class="signature-legal"><strong>Konfirmasi penerbitan</strong>Logo BGN akan diambil dari Storage. Setelah diterbitkan, setiap slip masuk ke akun karyawan dengan status Menunggu TTD Penerima. PDF final dan tombol unduh baru tersedia setelah karyawan menandatangani slip pada akunnya sendiri.</div>
@@ -1078,7 +1077,7 @@
 
 <!-- ===== MODAL TANDA TANGAN PENERIMA SLIP ===== -->
 <div class="modal-overlay modal-overlay-top" id="modal-payroll-recipient-signature">
-  <div class="modal-card" style="max-width:620px">
+  <div class="modal-card modal-card--wide">
     <div class="modal-header">
       <div><h3>Tanda Tangan Penerima</h3><div class="helper-text" id="recipient-signature-period">Periksa slip sebelum menandatangani</div></div>
       <button class="modal-close" id="btn-close-recipient-signature" type="button" aria-label="Tutup">✕</button>
@@ -1086,11 +1085,11 @@
     <div class="modal-body">
       <div id="recipient-signature-alert" class="inline-alert"></div>
       <div class="signature-panel">
-        <div class="form-label">Tanda tangan penerima <span style="color:var(--danger)">*</span></div>
+        <div class="form-label">Tanda tangan penerima <span class="form-required">*</span></div>
         <div class="signature-canvas-wrap"><canvas id="payroll-recipient-signature-canvas" width="900" height="300" aria-label="Canvas tanda tangan penerima"></canvas></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-top:.55rem"><div class="signature-help">Dengan menandatangani, Anda mengonfirmasi penerimaan slip gaji pada periode tersebut.</div><button class="btn btn-secondary btn-sm" id="btn-clear-recipient-signature" type="button">Hapus</button></div>
+        <div class="signature-panel-actions"><div class="signature-help">Dengan menandatangani, Anda mengonfirmasi penerimaan slip gaji pada periode tersebut.</div><button class="btn btn-secondary btn-sm" id="btn-clear-recipient-signature" type="button">Hapus</button></div>
       </div>
-      <div class="signature-legal" style="margin-top:1rem"><strong>Persetujuan penerima</strong>Tanda tangan, waktu, dan ID akun Anda akan dicatat pada slip. PDF final berlogo BGN dengan tanda tangan Akuntan, Kepala SPPG, dan Penerima akan dibuat setelah konfirmasi.</div>
+      <div class="signature-legal signature-legal--spaced"><strong>Persetujuan penerima</strong>Tanda tangan, waktu, dan ID akun Anda akan dicatat pada slip. PDF final berlogo BGN dengan tanda tangan Akuntan, Kepala SPPG, dan Penerima akan dibuat setelah konfirmasi.</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" id="btn-cancel-recipient-signature" type="button">Batal</button>
@@ -1101,12 +1100,12 @@
 
 <!-- ===== MODAL PENGAMAN TINDAKAN BERISIKO ===== -->
 <div class="modal-overlay" id="modal-risk-confirm">
-  <div class="modal-card" style="max-width:520px">
+  <div class="modal-card modal-card--medium">
     <div class="modal-header"><h3 id="risk-title">Konfirmasi tindakan</h3><button class="modal-close" id="btn-close-risk" type="button" aria-label="Tutup">✕</button></div>
     <div class="modal-body">
       <div class="risk-stage active" id="risk-stage-impact">
         <p class="risk-impact" id="risk-impact"></p>
-        <p class="helper-text" style="margin-top:.8rem">Tinjau dampak dan objek yang akan berubah sebelum melanjutkan.</p>
+        <p class="helper-text helper-text--spaced">Tinjau dampak dan objek yang akan berubah sebelum melanjutkan.</p>
       </div>
       <div class="risk-stage" id="risk-stage-reason">
         <div class="form-group"><label class="form-label" for="risk-reason">Alasan perubahan (minimal 10 karakter)</label><textarea class="form-input" id="risk-reason" rows="4" maxlength="500" placeholder="Jelaskan alasan tindakan ini..." required></textarea></div>
@@ -1117,7 +1116,7 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" id="btn-cancel-risk" type="button">Batal</button>
       <button class="btn btn-primary" id="btn-risk-next" type="button">Lanjut</button>
-      <button class="btn" id="btn-risk-confirm" type="button" style="display:none;background:var(--danger);color:#fff">Konfirmasi Tindakan</button>
+      <button class="btn btn-danger" id="btn-risk-confirm" type="button" style="display:none">Konfirmasi Tindakan</button>
     </div>
   </div>
 </div>
@@ -1150,7 +1149,7 @@
         <div class="form-group"><label class="form-label">Gaji Harian</label><input type="number" id="auu-gaji" class="form-input"></div>
         <div class="form-group"><label class="form-label">Nama Bank</label><input type="text" id="auu-bank" class="form-input"></div>
         <div class="form-group"><label class="form-label">Nomor Rekening</label><input type="text" id="auu-nomor-rekening" class="form-input" inputmode="numeric"></div>
-        <div class="form-group" style="grid-column:1/-1"><label class="form-label">Atas Nama Rekening</label><input type="text" id="auu-rekening" class="form-input"></div>
+        <div class="form-group modal-grid-full"><label class="form-label">Atas Nama Rekening</label><input type="text" id="auu-rekening" class="form-input"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1162,7 +1161,7 @@
 
 <!-- ===== MODAL LOG DETAIL ===== -->
 <div class="modal-overlay" id="modal-log-detail">
-  <div class="modal-card" style="max-width:500px">
+  <div class="modal-card modal-card--narrow">
     <div class="modal-header">
       <h3>Detail Log Aktivitas</h3>
       <button class="modal-close" id="btn-close-log-detail">✕</button>
@@ -1183,13 +1182,13 @@
     </div>
     <div class="modal-body">
       <div id="edit-profil-alert" class="inline-alert"></div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:0.75rem;margin-bottom:1.5rem">
-        <div class="profile-avatar" id="edit-profil-avatar" style="width:96px;height:96px;font-size:1.875rem;position:static">-</div>
-        <button type="button" class="btn btn-secondary" id="btn-ubah-foto-profil" style="font-size:0.8125rem;padding:0.5rem 1rem;display:inline-flex;align-items:center;gap:0.4rem">
+      <div class="profile-photo-editor">
+        <div class="profile-avatar profile-avatar--editor" id="edit-profil-avatar">-</div>
+        <button type="button" class="btn btn-secondary btn-sm profile-photo-button" id="btn-ubah-foto-profil">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           Ubah Foto Profil
         </button>
-        <input type="file" id="input-foto-profil" accept="image/*" style="display:none">
+        <input type="file" id="input-foto-profil" class="profile-photo-input" accept="image/*">
       </div>
       <div class="modal-grid">
         <div class="form-group"><label class="form-label">Nama Lengkap</label><input type="text" id="edit-nama" class="form-input"></div>
@@ -1218,7 +1217,7 @@
 </div>
 
 <div class="modal-overlay modal-overlay-top" id="modal-profile-password">
-  <div class="modal-card" style="max-width:500px">
+  <div class="modal-card modal-card--narrow">
     <div class="modal-header">
       <div><h3>Ganti Password</h3><div class="helper-text">Verifikasi email akun sebelum membuat password baru</div></div>
       <button class="modal-close" id="btn-close-profile-password" type="button" aria-label="Tutup">✕</button>
@@ -1275,7 +1274,7 @@
 </div>
 
 <div class="modal-overlay modal-overlay-top" id="modal-crop-foto">
-  <div class="modal-card" style="max-width:420px">
+  <div class="modal-card modal-card--compact">
     <div class="modal-header">
       <h3>Atur Foto Profil</h3>
       <button class="modal-close" id="btn-close-crop-foto">✕</button>
@@ -1303,7 +1302,7 @@
 </div>
 
 <div class="modal-overlay modal-overlay-top" id="modal-daftar-wajah">
-  <div class="modal-card" style="max-width:400px">
+  <div class="modal-card modal-card--face">
     <div class="modal-header">
       <h3>Daftarkan Wajah</h3>
       <button class="modal-close" id="btn-close-daftar-wajah">✕</button>
