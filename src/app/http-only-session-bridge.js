@@ -29,14 +29,31 @@
     try { return localStorage.getItem('auth_token') || ''; } catch { return ''; }
   }
 
+  function syncRuntimeToken(value) {
+    try {
+      if (typeof AppState !== 'undefined' && AppState) AppState.token = value;
+    } catch {}
+    try {
+      if (window.AppState) window.AppState.token = value;
+    } catch {}
+  }
+
   function setMarker() {
     try { localStorage.setItem('auth_token', sessionMarker); } catch {}
+    syncRuntimeToken(sessionMarker);
   }
 
   function clearClientAuth() {
     try {
       if (localStorage.getItem('auth_token') === sessionMarker) localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
+    } catch {}
+    syncRuntimeToken(null);
+    try {
+      if (typeof AppState !== 'undefined' && AppState) AppState.user = null;
+    } catch {}
+    try {
+      if (window.AppState) window.AppState.user = null;
     } catch {}
     try { window.clearApiResponseCache?.(); } catch {}
     try { window.HadirlySecurityContext?.resetDeviceContext?.(); } catch {}
@@ -63,7 +80,10 @@
   async function exchangeLegacySession() {
     if (!isCanonicalProduction()) return false;
     const stored = currentStoredToken();
-    if (!stored || stored === sessionMarker) return stored === sessionMarker;
+    if (!stored || stored === sessionMarker) {
+      if (stored === sessionMarker) syncRuntimeToken(sessionMarker);
+      return stored === sessionMarker;
+    }
     if (exchangePromise) return exchangePromise;
 
     exchangePromise = (async () => {
@@ -222,6 +242,7 @@
 
   if (isCanonicalProduction()) {
     const stored = currentStoredToken();
-    if (stored && stored !== sessionMarker) exchangeLegacySession().catch(() => {});
+    if (stored === sessionMarker) syncRuntimeToken(sessionMarker);
+    else if (stored) exchangeLegacySession().catch(() => {});
   }
 })();
