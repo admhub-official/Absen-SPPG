@@ -6,6 +6,12 @@ import { optionalString, requiredString, ValidationError } from "../_shared/vali
 const url = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const db = createClient(url, serviceKey, { auth: { persistSession: false } });
+const corsOptions = {
+  allowedOriginsEnv: Deno.env.get("ABSEN_ALLOWED_ORIGINS") || "",
+  productionOrigin: "https://hadirly.org",
+  previewSuffix: ".pages.dev",
+  localOrigins: ["http://localhost:4173", "http://127.0.0.1:4173"],
+};
 
 type Actor = { idUser: string; role: string };
 
@@ -89,8 +95,8 @@ async function recordAudit(body: Record<string, unknown>, actor: Actor) {
 Deno.serve(async (request) => {
   const requestId = createRequestId("RDY");
   const origin = request.headers.get("origin");
-  const headers = corsHeaders(origin);
-  if (origin && !isOriginAllowed(origin)) {
+  const headers = corsHeaders(origin, corsOptions);
+  if (origin && !isOriginAllowed(origin, corsOptions)) {
     return jsonResponse({ success: false, code: "ORIGIN_NOT_ALLOWED", message: "Origin tidak diizinkan.", requestId }, 403, requestId, headers);
   }
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
