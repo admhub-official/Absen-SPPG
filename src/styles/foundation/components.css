@@ -93,7 +93,12 @@
 .info-section,
 .modal-card,
 .complaint-card,
-.operational-card {
+.operational-card,
+.admin-card,
+.profile-card,
+.user-card,
+.config-stat,
+.facecam-page-card {
   border-color: var(--ui-border);
   border-radius: var(--ui-radius-lg);
   box-shadow: var(--ui-shadow-1);
@@ -103,7 +108,10 @@
 .badge-neutral,
 .badge-primary,
 .badge-count,
-.punch-chip {
+.punch-chip,
+.profile-role,
+.face-status-badge {
+  border-radius: var(--ui-radius-pill);
   line-height: 1;
 }
 
@@ -143,3 +151,28 @@
     height: var(--ui-touch-height);
   }
 }
+
+
+/* Shared semantic variants and layout utilities used by the legacy shell. */
+.btn-danger{background:var(--ui-danger-600);color:#fff;border:1px solid var(--ui-danger-600)}
+.btn-danger:hover{background:#b91c1c}
+.btn-danger-soft{background:var(--ui-danger-50);color:var(--ui-danger-800);border:1px solid var(--ui-danger-200)}
+.btn-danger-soft:hover{background:#fee2e2}
+.form-required{color:var(--ui-danger-600)}
+.section-card-gap{margin-bottom:var(--ui-space-6)}
+.page-header--split{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:var(--ui-space-3)}
+.page-header--compact{margin-bottom:var(--ui-space-4)}
+.validation-tabs--spaced{margin-bottom:var(--ui-space-3)}
+.table-cell-flush{padding:0!important}
+.attendance-selection-actions{display:flex;gap:var(--ui-space-2);flex-wrap:wrap}
+.user-filter-toolbar{padding:0 var(--ui-space-4) var(--ui-space-4)}
+.view-toggle-group{margin-left:auto;display:flex;gap:var(--ui-space-1)}
+.form-group--flush{margin:0}
+.payroll-selection-shell{padding-inline:var(--ui-space-4)}
+.feature-toolbar--flush{margin:0}
+.modal-card--face{max-width:25rem}.modal-card--compact{max-width:26.25rem}.modal-card--narrow{max-width:31.25rem}.modal-card--medium{max-width:32.5rem}.modal-card--wide{max-width:38.75rem}
+.modal-grid-full{grid-column:1/-1}
+.signature-panel-actions{display:flex;align-items:center;justify-content:space-between;gap:var(--ui-space-3);flex-wrap:wrap;margin-top:.55rem}
+.signature-legal--spaced{margin-top:var(--ui-space-4)}.helper-text--spaced{margin-top:.8rem}
+.profile-photo-editor{display:flex;flex-direction:column;align-items:center;gap:var(--ui-space-3);margin-bottom:var(--ui-space-6)}
+.profile-avatar--editor{width:6rem;height:6rem;font-size:1.875rem;position:static}.profile-photo-button{display:inline-flex;align-items:center}.profile-photo-input{display:none}
