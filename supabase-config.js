@@ -68,6 +68,9 @@ function isInstalledApp() {
   window.__ABSEN_SECURITY_CONFIGURED__ = true;
 
   let registeredDevice = null;
+  let deviceRegistrationPromise = null;
+  let deviceRegistrationRetryAfter = 0;
+  let deviceRegistrationWarnedAt = 0;
   const IDEMPOTENT_FUNCTIONS = new Set(['recordAbsensiSelf', 'recordAbsensi']);
   const PAYROLL_WORKFLOW_FUNCTIONS = new Set(['prosesPayroll','getMyPayroll','getSlipDownloadUrl','signPayrollReceipt']);
   const COMPLAINT_WORKFLOW_FUNCTIONS = new Set(['kirimPengaduan','getRiwayatPengaduanSaya','getNotifikasiAdmin','getDaftarPengaduan','tandaiSudahDibaca','simpanTanggapanAdmin','updateComplaintTicketV2','closeMyComplaintTicketV2']);
@@ -123,8 +126,21 @@ function isInstalledApp() {
   const callDigitalIdentityWorkflow = (name,payload={}) => callWorkflow(window.ABSEN_SUPABASE_CONFIG.digitalIdentityFunctionName || 'DigitalIdentity', name, payload, 'Layanan QR dan ID Card tidak tersedia.');
   const callEmploymentContractWorkflow = (name,payload={}) => callWorkflow(window.ABSEN_SUPABASE_CONFIG.employmentContractsFunctionName || 'EmploymentContracts', name, payload, 'Layanan Perjanjian Kerja tidak tersedia.');
 
-  async function ensureDeviceRegistered() { if (registeredDevice) return registeredDevice; registeredDevice = await callDeviceTrust('registerDevice', deviceMetadata()); return registeredDevice; }
-  function resetDeviceContext(){ registeredDevice = null; }
+  async function ensureDeviceRegistered() {
+    if (registeredDevice) return registeredDevice;
+    if (Date.now() < deviceRegistrationRetryAfter) return null;
+    if (deviceRegistrationPromise) return deviceRegistrationPromise;
+    deviceRegistrationPromise = callDeviceTrust('registerDevice', deviceMetadata())
+      .then((device)=>{registeredDevice=device||null;deviceRegistrationRetryAfter=0;return registeredDevice;})
+      .catch((error)=>{
+        deviceRegistrationRetryAfter=Date.now()+60_000;
+        if(Date.now()-deviceRegistrationWarnedAt>60_000){deviceRegistrationWarnedAt=Date.now();console.warn('Device registration deferred',error);}
+        return null;
+      })
+      .finally(()=>{deviceRegistrationPromise=null;});
+    return deviceRegistrationPromise;
+  }
+  function resetDeviceContext(){ registeredDevice = null; deviceRegistrationPromise = null; deviceRegistrationRetryAfter = 0; }
   function getOrCreateIdempotencyKey(functionName) { const storageKey=`absen:idempotency:${functionName}`; try { const current=JSON.parse(sessionStorage.getItem(storageKey)||'null'); if(current?.key&&Number(current.expiresAt)>Date.now())return current.key; const key=crypto.randomUUID();sessionStorage.setItem(storageKey,JSON.stringify({key,expiresAt:Date.now()+2*60*1000}));return key;} catch{return crypto.randomUUID();} }
   function clearIdempotencyKey(functionName){try{sessionStorage.removeItem(`absen:idempotency:${functionName}`);}catch{}}
 
@@ -148,12 +164,12 @@ function isInstalledApp() {
         if (DIGITAL_IDENTITY_WORKFLOW_FUNCTIONS.has(functionName)) return callDigitalIdentityWorkflow(functionName,payload);
         if (COMPLAINT_WORKFLOW_FUNCTIONS.has(functionName)) return callComplaintWorkflow(functionName,payload);
         if (PAYROLL_WORKFLOW_FUNCTIONS.has(functionName)) return callPayrollWorkflow(functionName,payload);
-        if (localStorage.getItem('auth_token')) { try { await ensureDeviceRegistered(); } catch (error) { console.warn('Device registration deferred', error); } }
+        if (localStorage.getItem('auth_token')) await ensureDeviceRegistered();
         const securedPayload = { ...payload, deviceKey, deviceId:registeredDevice?.Device_ID || registeredDevice?.deviceId || null, ...(IDEMPOTENT_FUNCTIONS.has(functionName) ? { idempotencyKey:payload.idempotencyKey || getOrCreateIdempotencyKey(functionName) } : {}) };
         const result = await originalApiCall(functionName, securedPayload); if (IDEMPOTENT_FUNCTIONS.has(functionName)) clearIdempotencyKey(functionName); return result;
       };
     }
-    if (localStorage.getItem('auth_token')) ensureDeviceRegistered().catch((error)=>console.warn('Device registration pending',error));
+    if (localStorage.getItem('auth_token')) void ensureDeviceRegistered();
   });
 })();
 

@@ -1,4 +1,5 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { authenticateUserSession } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -205,6 +206,20 @@ function replay(row: Stored, id: string, headers: Record<string, string>): Respo
   return respond(row.Response_Body, Number(row.HTTP_Status || (row.Status === "FAILED" ? 500 : 200)), id, headers);
 }
 
+async function handlePresenceHeartbeat(body: Record<string, unknown>, id: string, headers: Record<string, string>): Promise<Response> {
+  const token = String(body.token || "").trim();
+  await authenticateUserSession(supabase, token);
+  const tokenHash = await sha256(token);
+  const requestedState = String(body.clientState || "ACTIVE").toUpperCase();
+  const clientState = requestedState === "HIDDEN" ? "HIDDEN" : "ACTIVE";
+  const { error } = await supabase.from("Sessions").update({
+    Last_Activity_At: new Date().toISOString(),
+    Client_State: clientState,
+  }).eq("Token_Hash", tokenHash);
+  if (error) throw new Error("HEARTBEAT_UPDATE_FAILED");
+  return respond({ success: true, result: { online: clientState === "ACTIVE", clientState }, requestId: id }, 200, id, headers);
+}
+
 Deno.serve(async (request) => {
   const id = requestId();
   const origin = request.headers.get("origin");
@@ -218,6 +233,10 @@ Deno.serve(async (request) => {
   const functionName = String(body.functionName || body.function || "").trim();
   if (functionName === "createAttendanceChallenge") {
     try { return await issueChallenge(body, request, id, headers); }
+    catch (error) { const e = normalizedError(error instanceof Error ? error.message : error); return respond({ success: false, code: e.code, message: e.message, requestId: id }, e.status, id, headers); }
+  }
+  if (functionName === "presenceHeartbeat") {
+    try { return await handlePresenceHeartbeat(body, id, headers); }
     catch (error) { const e = normalizedError(error instanceof Error ? error.message : error); return respond({ success: false, code: e.code, message: e.message, requestId: id }, e.status, id, headers); }
   }
 

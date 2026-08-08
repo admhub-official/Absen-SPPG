@@ -122,3 +122,9 @@ Deno.test("HttpOnly BFF cutover requires canonical same-origin Cloudflare runtim
     throw new Error("runtime verification state must remain explicit until an external smoke-test is recorded");
   }
 });
+
+
+Deno.test('presence heartbeat is owned by the modern gateway',async()=>{
+  const gateway=await read('supabase/functions/AbsenV2/index.ts');
+  for(const marker of ['handlePresenceHeartbeat','functionName === "presenceHeartbeat"','Client_State','Token_Hash','authenticateUserSession'])if(!gateway.includes(marker))throw new Error(`modern heartbeat missing ${marker}`);
+});

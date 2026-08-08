@@ -25,3 +25,9 @@ Deno.test('Device Trust settings use compact responsive styling',async()=>{
   if(!css.includes('.compact-form-grid'))throw new Error('Compact Device Trust layout missing');
   if(!css.includes('@media(max-width:640px)'))throw new Error('Mobile Device Trust layout missing');
 });
+
+
+Deno.test('runtime Device Trust registration is single-flight and rate-bounded',async()=>{
+  const config=await read('supabase-config.js');
+  for(const marker of ['deviceRegistrationPromise','deviceRegistrationRetryAfter','60_000','void ensureDeviceRegistered()'])if(!config.includes(marker))throw new Error(`Device Trust retry guard missing ${marker}`);
+});
