@@ -5,13 +5,14 @@ const KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const db = createClient(URL, KEY, { auth: { persistSession: false } });
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization,x-client-info,apikey,content-type",
+  "Access-Control-Allow-Methods": "POST,OPTIONS",
 };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json", "Cache-Control": "no-store" } });
 const active = (value: unknown) => value === true || value === 1 || ["TRUE", "1"].includes(String(value || "").toUpperCase());
 const roleName = (value: unknown) => String(value || "").trim().toUpperCase().replace(/_/g, " ");
 const messageOf = (error: any) => error?.message || error?.details || error?.hint || String(error || "Terjadi kesalahan");
+const ok = (result: unknown) => json({ success: true, result });
 
 async function authenticate(token: unknown) {
   const cleanToken = String(token || "").trim();
@@ -51,7 +52,7 @@ Deno.serve(async (req) => {
     const pageSize = Math.min(30, Math.max(1, Number(body.pageSize) || 30));
     const status = String(body.status || "HISTORY").trim().toUpperCase();
     if (!["HISTORY", "DITERBITKAN", "MENUNGGU_TTD_PENERIMA"].includes(status)) throw new Error("Status slip tidak valid");
-    if (!userIds.length) return json({ success: true, items: [], total: 0, page, pageSize, totalPages: 0 });
+    if (!userIds.length) return ok({ items: [], total: 0, page, pageSize, totalPages: 0 });
 
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
@@ -83,7 +84,7 @@ Deno.serve(async (req) => {
       };
     });
     const total = Number(count || 0);
-    return json({ success: true, items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) });
+    return ok({ items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) });
   } catch (error) {
     return json({ success: false, error: messageOf(error) }, 400);
   }
