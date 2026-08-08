@@ -2,7 +2,7 @@ import { ApiClientError } from './api-client.js';
 
 async function call(action, payload = {}) {
   const config = window.ABSEN_SUPABASE_CONFIG || {};
-  const token = localStorage.getItem('auth_token');
+  const token = window.HadirlySessionContext?.token?.() || '';
   if (!token) throw new ApiClientError('Sesi login tidak tersedia.', { code: 'SESSION_REQUIRED' });
   const response = await fetch(`${config.projectUrl}/functions/v1/OperationsV2`, {
     method: 'POST',
