@@ -63,6 +63,10 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
 
+  // Authentication/BFF traffic must always use the browser network stack directly.
+  // Never let Cache Storage, navigation fallback, or offline behavior answer /api requests.
+  if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return;
+
   if (request.mode === 'navigate' && LEGACY_HOSTS.has(url.hostname.toLowerCase())) {
     const target = new URL(url.pathname + url.search + url.hash, CANONICAL_ORIGIN);
     event.respondWith(Response.redirect(target.href, 308));
