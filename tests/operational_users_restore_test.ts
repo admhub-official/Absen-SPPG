@@ -3,7 +3,7 @@ const read = (path: string) => Deno.readTextFile(path);
 Deno.test("Data Users and operational dashboard are served safely by OperationsV2", async () => {
   const endpoint = await read("supabase/functions/OperationsV2/index.ts");
   const config = await read("supabase-config.js");
-  const index = await read("index.html");
+  const index = (await read("index.html")) + "\n" + (await read("src/legacy/index-app.js"));
   const deploy = await read("deploy-supabase.ps1");
 
   for (const marker of [
