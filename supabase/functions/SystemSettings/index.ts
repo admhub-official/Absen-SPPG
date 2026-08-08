@@ -36,15 +36,19 @@ const cors = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-function respond(body: unknown, status = 200) {
+function respond(body: unknown, status = 200, requestId?: string) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...(requestId ? { 'X-Request-Id': requestId } : {}) },
   });
 }
 
 function normalizeRole(value: unknown) {
   return String(value || '').trim().toUpperCase().replace(/_/g, ' ').replace(/\s+/g, ' ');
+}
+
+function isActive(value: unknown) {
+  return value === true || value === 1 || ['TRUE', '1'].includes(String(value || '').toUpperCase());
 }
 
 async function authenticate(tokenValue: unknown) {
@@ -64,8 +68,8 @@ async function authenticate(tokenValue: unknown) {
     .select('ID_User,Role,Status_Aktif')
     .eq('ID_User', session.ID_User)
     .maybeSingle();
-  if (userError || !user || user.Status_Aktif !== true) throw new Error('AKUN_NONAKTIF');
-  if (normalizeRole(user.Role) !== 'SUPER ADMIN') throw new Error('Akses hanya untuk SUPER ADMIN.');
+  if (userError || !user || !isActive(user.Status_Aktif)) throw new Error('AKUN_NONAKTIF');
+  if (normalizeRole(user.Role) !== 'SUPER ADMIN') throw new Error('FORBIDDEN');
   return { idUser: String(user.ID_User) };
 }
 
@@ -89,25 +93,42 @@ async function readSettings() {
   const items = (data || []).map(serialize);
   const returned = new Set(items.map((item) => item.Setting_Key));
   const missing = ALLOWED_KEYS.filter((key) => !returned.has(key));
-  if (missing.length) throw new Error(`Pengaturan backend belum lengkap: ${missing.join(', ')}`);
+  if (missing.length) throw new Error(`BACKEND_SETTINGS_INCOMPLETE:${missing.join(', ')}`);
   return items;
 }
 
+function mapError(raw: string) {
+  if (raw === 'SESI_HABIS') return { status: 401, code: 'SESSION_EXPIRED', message: 'Sesi telah berakhir. Silakan login kembali.' };
+  if (raw === 'AKUN_NONAKTIF') return { status: 403, code: 'ACCOUNT_INACTIVE', message: 'Akun tidak aktif.' };
+  if (raw === 'FORBIDDEN') return { status: 403, code: 'FORBIDDEN', message: 'Akses hanya untuk SUPER ADMIN.' };
+  if (/Kunci pengaturan tidak diizinkan|wajib berupa boolean|Alasan perubahan wajib|Aksi tidak dikenali/i.test(raw)) {
+    return { status: 422, code: 'VALIDATION_ERROR', message: raw };
+  }
+  return { status: 500, code: 'INTERNAL_ERROR', message: 'Layanan pengaturan sistem gagal memproses permintaan.' };
+}
+
 Deno.serve(async (request) => {
+  const requestId = `SET_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
-  if (request.method !== 'POST') return respond({ success: false, message: 'Method tidak didukung.' }, 405);
+  if (request.method !== 'POST') return respond({ success: false, code: 'METHOD_NOT_ALLOWED', message: 'Method tidak didukung.', requestId }, 405, requestId);
+
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json() as Record<string, unknown>;
+  } catch {
+    return respond({ success: false, code: 'INVALID_JSON', message: 'Body JSON tidak valid.', requestId }, 400, requestId);
+  }
 
   try {
-    const body = await request.json();
     const user = await authenticate(body.token);
     const action = String(body.action || 'getSettings');
 
     if (action === 'health') {
-      return respond({ success: true, result: { version: VERSION, ready: true, settings: ALLOWED_KEYS.length } });
+      return respond({ success: true, result: { version: VERSION, ready: true, settings: ALLOWED_KEYS.length }, requestId }, 200, requestId);
     }
 
     if (action === 'getSettings') {
-      return respond({ success: true, result: { version: VERSION, items: await readSettings() } });
+      return respond({ success: true, result: { version: VERSION, items: await readSettings() }, requestId }, 200, requestId);
     }
 
     if (action === 'updateSetting') {
@@ -133,13 +154,14 @@ Deno.serve(async (request) => {
       if (verifyError) throw verifyError;
       const item = serialize(verified);
       if (item._enabled !== body.enabled) throw new Error('Verifikasi nilai backend tidak sesuai.');
-      return respond({ success: true, result: { version: VERSION, item, rpc: data } });
+      return respond({ success: true, result: { version: VERSION, item, rpc: data }, requestId }, 200, requestId);
     }
 
     throw new Error('Aksi tidak dikenali.');
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Terjadi kesalahan.';
-    const status = message === 'SESI_HABIS' ? 401 : /Akses hanya|AKUN_NONAKTIF/.test(message) ? 403 : 400;
-    return respond({ success: false, message }, status);
+    const raw = error instanceof Error ? error.message : String(error);
+    const mapped = mapError(raw);
+    console.error(JSON.stringify({ requestId, code: mapped.code, status: mapped.status, error: raw }));
+    return respond({ success: false, code: mapped.code, message: mapped.message, requestId }, mapped.status, requestId);
   }
 });
