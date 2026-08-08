@@ -110,10 +110,12 @@ Deno.test("root Cloudflare Workers build separates frontend from canonical BFF",
   for (const marker of [
     'import bffWorker from "./worker.ts";',
     'const DEFAULT_STATIC_ORIGIN = "https://absen-sppg.pages.dev";',
+    '"cookie",',
+    '"authorization",',
+    'for (const name of SENSITIVE_FORWARD_HEADERS) headers.delete(name);',
     'return normalized === "/api" || normalized.startsWith("/api/");',
     'if (isApiPath(url.pathname)) return bffWorker.fetch(request, env);',
     'return serveStatic(request, env);',
-    'headers.delete("cookie");',
     'headers.delete("set-cookie");',
   ]) {
     if (!rootWorker.includes(marker)) throw new Error(`root Cloudflare router missing ${marker}`);
