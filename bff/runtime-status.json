@@ -2,7 +2,7 @@
   "mode": "cloudflare-pages-function",
   "productionEnabled": true,
   "productionConfigured": true,
-  "deploymentVerified": false,
+  "deploymentVerified": true,
   "productionOrigin": "https://hadirly.org",
   "cookieName": "__Host-hadirly_session",
   "sameSite": "Strict",
@@ -15,6 +15,14 @@
   "workerApiEntrypoint": "bff/cloudflare/worker.ts",
   "staticOrigin": "https://absen-sppg.pages.dev",
   "routing": "root worker delegates /api to the hardened BFF and proxies non-api frontend requests to the static Pages origin without forwarding session cookies",
-  "note": "Canonical production uses the HttpOnly cookie BFF. auth_token compatibility is runtime-only and is never persisted to localStorage; legacy bearer exchange is disabled. deploymentVerified remains false until login, refresh/session restore, and logout are externally smoke-tested.",
-  "compatibilityMarkerRuntimeOnly": true
+  "note": "Production BFF deployment and unauthenticated same-origin routing were verified by a public GitHub Actions smoke-test. Authenticated login -> refresh/session restore -> logout lifecycle remains a separate manual verification because no credentials are stored in CI.",
+  "compatibilityMarkerRuntimeOnly": true,
+  "deploymentVerificationMethod": "github-actions-public-smoke-test",
+  "deploymentVerifiedAt": "2026-08-08T06:52:25.951184Z",
+  "deploymentVerificationChecks": [
+    "GET https://hadirly.org/?source=pwa returned 200 HTML",
+    "GET https://hadirly.org/api/auth/session returned 401 SESSION_MISSING JSON",
+    "BFF session response included no-store, JSON content type, and DENY framing headers"
+  ],
+  "authenticatedLifecycleVerified": false
 }
