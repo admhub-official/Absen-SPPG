@@ -1,5 +1,5 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { corsHeaders, isOriginAllowed, jsonResponse, newRequestId } from "../_shared/http.ts";
+import { corsHeaders, createRequestId, isOriginAllowed, jsonResponse } from "../_shared/http.ts";
 import { normalizeRole } from "../_shared/contracts.ts";
 import { optionalString, requiredString, ValidationError } from "../_shared/validation.ts";
 
@@ -37,10 +37,16 @@ async function evaluate(body: Record<string, unknown>) {
   const latitude = Number(body.latitude);
   const longitude = Number(body.longitude);
   const accuracy = Number(body.accuracy);
-  const deviceId = optionalString(body.deviceId, "deviceId", { max: 100 });
-  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) throw new ValidationError("INVALID_LATITUDE", "latitude", "Latitude tidak valid.");
-  if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) throw new ValidationError("INVALID_LONGITUDE", "longitude", "Longitude tidak valid.");
-  if (!Number.isFinite(accuracy) || accuracy <= 0) throw new ValidationError("INVALID_ACCURACY", "accuracy", "Akurasi tidak valid.");
+  const deviceId = optionalString(body.deviceId, 100);
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
+    throw new ValidationError("INVALID_LATITUDE", "Latitude tidak valid.", "latitude");
+  }
+  if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+    throw new ValidationError("INVALID_LONGITUDE", "Longitude tidak valid.", "longitude");
+  }
+  if (!Number.isFinite(accuracy) || accuracy <= 0) {
+    throw new ValidationError("INVALID_ACCURACY", "Akurasi tidak valid.", "accuracy");
+  }
 
   const result = await db.rpc("evaluate_attendance_readiness", {
     p_user_id: userId,
@@ -59,12 +65,16 @@ async function recordAudit(body: Record<string, unknown>, actor: Actor) {
   const component = requiredString(body.component, "component", { min: 2, max: 120 });
   const checkName = requiredString(body.checkName, "checkName", { min: 2, max: 200 });
   const status = requiredString(body.status, "status", { min: 4, max: 4 }).toUpperCase();
-  if (!["DEVELOPMENT", "STAGING", "PRODUCTION"].includes(environment)) throw new ValidationError("INVALID_ENVIRONMENT", "environment", "Environment tidak valid.");
-  if (!["PASS", "WARN", "FAIL"].includes(status)) throw new ValidationError("INVALID_STATUS", "status", "Status audit tidak valid.");
+  if (!["DEVELOPMENT", "STAGING", "PRODUCTION"].includes(environment)) {
+    throw new ValidationError("INVALID_ENVIRONMENT", "Environment tidak valid.", "environment");
+  }
+  if (!["PASS", "WARN", "FAIL"].includes(status)) {
+    throw new ValidationError("INVALID_STATUS", "Status audit tidak valid.", "status");
+  }
 
   const result = await db.from("Deployment_Audit").insert({
     Release_Name: releaseName,
-    Commit_SHA: optionalString(body.commitSha, "commitSha", { max: 80 }) || null,
+    Commit_SHA: optionalString(body.commitSha, 80) || null,
     Environment: environment,
     Component: component,
     Check_Name: checkName,
@@ -77,12 +87,16 @@ async function recordAudit(body: Record<string, unknown>, actor: Actor) {
 }
 
 Deno.serve(async (request) => {
-  const requestId = newRequestId();
+  const requestId = createRequestId("RDY");
   const origin = request.headers.get("origin");
   const headers = corsHeaders(origin);
-  if (origin && !isOriginAllowed(origin)) return jsonResponse({ success: false, code: "ORIGIN_NOT_ALLOWED", message: "Origin tidak diizinkan.", requestId }, 403, requestId, headers);
+  if (origin && !isOriginAllowed(origin)) {
+    return jsonResponse({ success: false, code: "ORIGIN_NOT_ALLOWED", message: "Origin tidak diizinkan.", requestId }, 403, requestId, headers);
+  }
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
-  if (request.method !== "POST") return jsonResponse({ success: false, code: "METHOD_NOT_ALLOWED", message: "Gunakan POST.", requestId }, 405, requestId, headers);
+  if (request.method !== "POST") {
+    return jsonResponse({ success: false, code: "METHOD_NOT_ALLOWED", message: "Gunakan POST.", requestId }, 405, requestId, headers);
+  }
 
   try {
     const body = await request.json() as Record<string, unknown>;
@@ -92,12 +106,13 @@ Deno.serve(async (request) => {
     if (action === "report") result = await readinessReport();
     else if (action === "evaluateAttendance") result = await evaluate(body);
     else if (action === "recordDeploymentAudit") result = await recordAudit(body, actor);
-    else throw new ValidationError("ACTION_NOT_SUPPORTED", "action", "Action tidak didukung.");
+    else throw new ValidationError("ACTION_NOT_SUPPORTED", "Action tidak didukung.", "action");
     return jsonResponse({ success: true, result, requestId }, 200, requestId, headers);
   } catch (error) {
     const message = error instanceof Error ? error.message : "INTERNAL_ERROR";
     const validation = error instanceof ValidationError;
     const status = validation ? 422 : message === "SESSION_EXPIRED" ? 401 : ["ACCOUNT_INACTIVE", "FORBIDDEN"].includes(message) ? 403 : 500;
+    console.error(JSON.stringify({ requestId, code: validation ? error.code : message, status, error: message }));
     return jsonResponse({
       success: false,
       code: validation ? error.code : message,
