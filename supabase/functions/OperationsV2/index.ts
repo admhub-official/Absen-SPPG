@@ -300,9 +300,9 @@ async function groupedAttendanceV2(body: Record<string, unknown>, auth: Authenti
 
   const startDate = body.startDate ? dateOnly(body.startDate) : "";
   const endDate = body.endDate ? dateOnly(body.endDate) : "";
-  if (body.startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) throw new ValidationError("INVALID_START_DATE", "startDate");
-  if (body.endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) throw new ValidationError("INVALID_END_DATE", "endDate");
-  if (startDate && endDate && endDate < startDate) throw new ValidationError("INVALID_DATE_RANGE", "endDate");
+  if (body.startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) throw new ValidationError("INVALID_START_DATE", "Tanggal mulai tidak valid.", "startDate");
+  if (body.endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) throw new ValidationError("INVALID_END_DATE", "Tanggal akhir tidak valid.", "endDate");
+  if (startDate && endDate && endDate < startDate) throw new ValidationError("INVALID_DATE_RANGE", "Tanggal akhir tidak boleh sebelum tanggal mulai.", "endDate");
   const sppg = String(body.sppg || "").trim();
   const source = String(body.source || "").trim().toUpperCase();
   const status = String(body.status || "").trim().toUpperCase();
@@ -331,10 +331,10 @@ async function groupedAttendanceV2(body: Record<string, unknown>, auth: Authenti
 async function validateAttendanceBulkV3(body: Record<string, unknown>, auth: AuthenticatedUser) {
   requireOperationalRole(auth);
   const action = String(body.action || "").trim().toUpperCase();
-  if (!ATTENDANCE_VALIDATION_ACTIONS.has(action)) throw new ValidationError("INVALID_ATTENDANCE_ACTION", "action");
+  if (!ATTENDANCE_VALIDATION_ACTIONS.has(action)) throw new ValidationError("INVALID_ATTENDANCE_ACTION", "Aksi validasi absensi tidak valid.", "action");
   const reason = requiredString(body.reason, "reason", { min: 10, max: 2000 });
   if (!Array.isArray(body.items) || !body.items.length || body.items.length > 100) {
-    throw new ValidationError("INVALID_ATTENDANCE_ITEMS", "items");
+    throw new ValidationError("INVALID_ATTENDANCE_ITEMS", "Pilih 1 sampai 100 data absensi.", "items");
   }
 
   const scope = await allowedSppg(auth);
@@ -345,10 +345,10 @@ async function validateAttendanceBulkV3(body: Record<string, unknown>, auth: Aut
   }));
   for (const item of items) {
     if (!allowedIds.has(item.idUser)) throw new Error("FORBIDDEN");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(item.tanggal)) throw new ValidationError("INVALID_ATTENDANCE_DATE", "tanggal");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(item.tanggal)) throw new ValidationError("INVALID_ATTENDANCE_DATE", "Tanggal absensi tidak valid.", "tanggal");
   }
 
-  const dbStatus = action === "DITOLAK" ? "INVALID" : action;
+  const dbStatus = action === "DITOLAK" ? "TIDAK_VALID" : action;
   let updatedRows = 0;
   for (const item of items) {
     const update = await db.from("Absensi")
@@ -497,7 +497,7 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
     if (result.error) throw result.error;
     return result.data;
   }
-  throw new ValidationError("ACTION_NOT_SUPPORTED", "action");
+  throw new ValidationError("ACTION_NOT_SUPPORTED", "Action tidak didukung.", "action");
 }
 
 Deno.serve(async (req) => {
