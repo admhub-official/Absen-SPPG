@@ -95,3 +95,29 @@ Deno.test("logout rotates stale requests before server revoke and bootstrap init
     throw new Error("service worker shell must precache the session request abort runtime");
   }
 });
+
+Deno.test("main push quality requires browser smoke before production readiness marker", async () => {
+  const workflow = await read(".github/workflows/quality.yml");
+  const browserSmoke = await read("tests/browser_public_smoke.mjs");
+
+  for (const marker of [
+    "browser-smoke:",
+    "needs: deno-quality",
+    "node tests/browser_public_smoke.mjs",
+    "production-readiness:",
+    "needs: [deno-quality, browser-smoke]",
+    "status=deployable",
+  ]) {
+    if (!workflow.includes(marker)) throw new Error(`quality workflow missing gated marker: ${marker}`);
+  }
+  for (const marker of [
+    "#register",
+    "#btn-to-login",
+    "#btn-to-register",
+    "page.goBack",
+    "#route-that-does-not-exist",
+    "expectOnlyAuthPage('page-login')",
+  ]) {
+    if (!browserSmoke.includes(marker)) throw new Error(`browser smoke missing navigation assertion: ${marker}`);
+  }
+});
