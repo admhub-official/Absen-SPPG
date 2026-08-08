@@ -20,6 +20,7 @@
   ]);
 
   let exchangePromise = null;
+  let restorePromise = null;
 
   function isCanonicalProduction() {
     return location.origin === canonicalOrigin;
@@ -38,9 +39,25 @@
     } catch {}
   }
 
+  function syncRuntimeUser(value) {
+    try {
+      if (typeof AppState !== 'undefined' && AppState) AppState.user = value;
+    } catch {}
+    try {
+      if (window.AppState) window.AppState.user = value;
+    } catch {}
+  }
+
   function setMarker() {
     try { localStorage.setItem('auth_token', sessionMarker); } catch {}
     syncRuntimeToken(sessionMarker);
+  }
+
+  function persistSafeUser(value) {
+    if (!value || typeof value !== 'object') return;
+    const user = value.user && typeof value.user === 'object' ? value.user : value;
+    try { localStorage.setItem('auth_user', JSON.stringify(user)); } catch {}
+    syncRuntimeUser(user);
   }
 
   function clearClientAuth() {
@@ -49,12 +66,7 @@
       localStorage.removeItem('auth_user');
     } catch {}
     syncRuntimeToken(null);
-    try {
-      if (typeof AppState !== 'undefined' && AppState) AppState.user = null;
-    } catch {}
-    try {
-      if (window.AppState) window.AppState.user = null;
-    } catch {}
+    syncRuntimeUser(null);
     try { window.clearApiResponseCache?.(); } catch {}
     try { window.HadirlySecurityContext?.resetDeviceContext?.(); } catch {}
     window.dispatchEvent(new CustomEvent('absen:session-changed', { detail: { authenticated: false, source: 'http-only-bff' } }));
@@ -75,6 +87,39 @@
       cache: 'no-store',
       referrerPolicy: 'same-origin'
     });
+  }
+
+  async function readCookieSession() {
+    return downstreamFetch('/api/auth/session', {
+      method: 'GET',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      referrerPolicy: 'same-origin'
+    });
+  }
+
+  async function restoreCookieSession() {
+    if (!isCanonicalProduction()) return false;
+    if (restorePromise) return restorePromise;
+    restorePromise = (async () => {
+      try {
+        const response = await readCookieSession();
+        const payload = await response.clone().json().catch(() => ({}));
+        if (response.ok && payload?.authenticated === true) {
+          setMarker();
+          persistSafeUser(payload.result);
+          window.dispatchEvent(new CustomEvent('absen:session-changed', { detail: { authenticated: true, source: 'http-only-bff' } }));
+          return true;
+        }
+        if (response.status === 401) clearClientAuth();
+        return false;
+      } catch {
+        return false;
+      } finally {
+        restorePromise = null;
+      }
+    })();
+    return restorePromise;
   }
 
   async function exchangeLegacySession() {
@@ -146,6 +191,7 @@
     const payload = await response.clone().json().catch(() => ({}));
     if (response.ok && payload?.success !== false && payload?.result && typeof payload.result === 'object') {
       setMarker();
+      persistSafeUser(payload.result);
       payload.result = { ...payload.result, token: sessionMarker };
       window.dispatchEvent(new CustomEvent('absen:session-changed', { detail: { authenticated: true, source: 'http-only-bff' } }));
       return responseWithJson(response, payload);
@@ -154,16 +200,13 @@
   }
 
   async function bffSessionCheck() {
-    await exchangeLegacySession();
-    const response = await downstreamFetch('/api/auth/session', {
-      method: 'GET',
-      credentials: 'same-origin',
-      cache: 'no-store',
-      referrerPolicy: 'same-origin'
-    });
+    const stored = currentStoredToken();
+    if (stored && stored !== sessionMarker) await exchangeLegacySession();
+    const response = await readCookieSession();
     const payload = await response.clone().json().catch(() => ({}));
     if (response.ok && payload?.authenticated === true) {
       setMarker();
+      persistSafeUser(payload.result);
       return responseWithJson(response, {
         success: true,
         result: {
@@ -183,14 +226,16 @@
   }
 
   async function bffLogout() {
-    await exchangeLegacySession();
+    const stored = currentStoredToken();
+    if (stored && stored !== sessionMarker) await exchangeLegacySession();
     const response = await sameOriginApi('/api/auth/logout', { method: 'POST', body: '{}' });
     clearClientAuth();
     return response;
   }
 
   async function bffProxy(target, body, sourceHeaders) {
-    await exchangeLegacySession();
+    const stored = currentStoredToken();
+    if (stored && stored !== sessionMarker) await exchangeLegacySession();
     const headers = mutationHeaders(sourceHeaders);
     const response = await downstreamFetch(`/api/functions/${encodeURIComponent(target)}`, {
       method: 'POST',
@@ -236,13 +281,17 @@
     marker: sessionMarker,
     productionRequired: true,
     exchangeLegacySession,
+    restoreCookieSession,
     clearClientAuth,
     hasCompatibilityMarker: () => currentStoredToken() === sessionMarker
   });
 
   if (isCanonicalProduction()) {
     const stored = currentStoredToken();
-    if (stored === sessionMarker) syncRuntimeToken(sessionMarker);
-    else if (stored) exchangeLegacySession().catch(() => {});
+    if (stored && stored !== sessionMarker) {
+      exchangeLegacySession().then((ok) => { if (ok) restoreCookieSession().catch(() => {}); }).catch(() => {});
+    } else {
+      restoreCookieSession().catch(() => {});
+    }
   }
 })();
