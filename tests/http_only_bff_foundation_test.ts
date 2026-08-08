@@ -151,7 +151,12 @@ Deno.test("canonical browser cutover keeps auth_token runtime-only and disables 
   if (bridge.includes("/api/auth/exchange") || bridge.includes("exchangeLegacySession")) {
     throw new Error("browser bridge must not retain legacy bearer exchange after final cutover");
   }
-  if (!bootstrap.startsWith("import './http-only-session-bridge.js';")) throw new Error("HttpOnly bridge must initialize first");
+  const abortImport = bootstrap.indexOf("import './session-request-abort.js';");
+  const bridgeImport = bootstrap.indexOf("import './http-only-session-bridge.js';");
+  const routerImport = bootstrap.indexOf("import { createRouter } from './router.js';");
+  if (abortImport !== 0 || bridgeImport < 0 || routerImport < 0 || !(abortImport < bridgeImport && bridgeImport < routerImport)) {
+    throw new Error("bootstrap must initialize session abort first, then HttpOnly bridge before application modules");
+  }
   if (status.productionEnabled !== true || status.compatibilityMarkerInLocalStorage !== false || status.compatibilityMarkerRuntimeOnly !== true || status.legacyExchangeEnabled !== false) {
     throw new Error("runtime status does not match final runtime-only marker contract");
   }
@@ -187,7 +192,7 @@ Deno.test("persistent auth_user storage excludes sensitive profile and payroll f
     "JSON.stringify(sanitizePersistentUser(JSON.parse(String(value))))",
     "localStorage.setItem('auth_user', JSON.stringify(sanitizePersistentUser(user)))",
   ]) {
-    if (!bridge.includes(marker)) throw new Error(`auth_user storage guard missing ${marker}`);
+    if (!bridge.includes(marker)) throw new Error(`auth_user storage guard missing marker: ${marker}`);
   }
   const allowlist = bridge.slice(bridge.indexOf('const persistentUserKeys'), bridge.indexOf('const persistentDeviceKeys'));
   for (const sensitive of ['NIK','Alamat','Nomor_Rekening','Atas_Nama_Rekening','Gaji_Harian','Tanggal_Lahir','No_Whatsapp']) {
