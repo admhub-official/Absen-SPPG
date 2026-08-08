@@ -21,6 +21,18 @@ const TARGETS: Record<string, string> = Object.freeze({
   SppgLocationConfig: "SppgLocationConfigCore",
   SystemSettings: "SystemSettingsCore",
 });
+const PUBLIC_UNAUTHENTICATED_ABSEN_FUNCTIONS = new Set([
+  "getPublicConfig",
+  "getMasterData",
+  "checkUsernameUnique",
+  "registerUser",
+  "verifyRegistrationOtp",
+  "requestResetPassword",
+  "requestResetPasswordByEmail",
+  "verifyResetPasswordOtp",
+  "resetPassword",
+  "resendConfirmationEmail",
+]);
 const DIGEST_RE = /^[0-9a-f]{64}$/i;
 
 const configuredOrigins = new Set(
@@ -66,6 +78,12 @@ function collectTokenCandidates(value: unknown, output = new Set<string>()): Set
 }
 function isServiceRequest(request: Request): boolean {
   return request.headers.get("authorization") === `Bearer ${SERVICE_KEY}`;
+}
+function functionNameOfPayload(payload: Record<string, unknown>): string {
+  return String(payload.function || payload.functionName || payload.action || "").trim();
+}
+function isPublicUnauthenticatedPayload(target: string, payload: Record<string, unknown>): boolean {
+  return target === "AbsenV2" && PUBLIC_UNAUTHENTICATED_ABSEN_FUNCTIONS.has(functionNameOfPayload(payload));
 }
 
 async function sessionForwardMap(
@@ -166,7 +184,9 @@ Deno.serve(async (request) => {
       : body.payload && typeof body.payload === "object"
       ? body.payload as Record<string, unknown>
       : {};
-    const replacements = await sessionForwardMap(payload, isServiceRequest(request));
+    const replacements = isPublicUnauthenticatedPayload(target, payload)
+      ? new Map<string, string>()
+      : await sessionForwardMap(payload, isServiceRequest(request));
     const forwardedPayload = replaceSessionTokens(payload, replacements);
     const upstream = await fetch(`${SUPABASE_URL}/functions/v1/${core}`, {
       method: "POST",
