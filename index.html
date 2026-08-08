@@ -2272,6 +2272,16 @@ async function handleLogout(){
   catch(error){console.warn('Server session revoke failed during logout.',error);}
   finally{localStorage.removeItem('auth_token');localStorage.removeItem('auth_user');sessionStorage.clear();AppState.token=null;AppState.user=null;clearApiResponseCache();showAuth();navigateTo('login');}
 }
+function navigateTo(p){$$('.auth-page').forEach(e=>e.classList.add('hidden'));const t=$(`#page-${p}`);if(t)t.classList.remove('hidden');history.pushState({p},'',`#${p}`);}
+function showAlert(m,t='info'){const i={success:'✓',error:'✕',warning:'⚠',info:'ℹ'},a=document.createElement('div');a.className=`alert ${t}`,a.innerHTML=`<span>${i[t]||i.info}</span><div style="flex:1">${m}</div><button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer">✕</button>`,$('#alert-box').appendChild(a),setTimeout(()=>{a.style.opacity='0';setTimeout(()=>a.remove(),300)},5000);}
+
+let RiskConfirmation=null;
+function closeRiskConfirmation(value=null){
+  const modal=$('#modal-risk-confirm');
+  modal?.classList.remove('active');
+  if(RiskConfirmation?.resolve)RiskConfirmation.resolve(value);
+  RiskConfirmation=null;
+}
 function confirmRiskAction({title='Konfirmasi tindakan',impact='Tindakan ini akan mengubah data sistem.'}={}){
   if(RiskConfirmation)closeRiskConfirmation(null);
   $('#risk-title').textContent=title;

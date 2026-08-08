@@ -140,3 +140,11 @@ Deno.test("frontend duplication hotspots use shared helpers", async () => {
   if (faceCalls !== 1) throw new Error(`face detection engine must have one canonical detectSingleFace call, got ${faceCalls}`);
   if ((index.match(/new faceapi\.TinyFaceDetectorOptions\(/g)?.length || 0) !== 1) throw new Error("face detector options must be centralized");
 });
+
+
+Deno.test("frontend retains canonical navigation alert and risk helpers", async () => {
+  const index = await read("index.html");
+  for (const helper of ["function navigateTo(p)","function showAlert(m,t='info')","let RiskConfirmation=null","function closeRiskConfirmation(value=null)"]) {
+    if (!index.includes(helper)) throw new Error(`required frontend helper missing ${helper}`);
+  }
+});
