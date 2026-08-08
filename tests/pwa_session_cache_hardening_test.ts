@@ -29,8 +29,8 @@ Deno.test('PWA release version has one canonical source', async () => {
   const sw = await read('sw.js');
   const config = await read('supabase-config.js');
 
-  if (!release.includes("version = '26.11.52'")) throw new Error('release version mismatch');
-  if (!release.includes("cacheName = 'absen-sppg-hadirly-v93'")) throw new Error('release cache mismatch');
+  if (!release.includes("version = '26.11.53'")) throw new Error('release version mismatch');
+  if (!release.includes("cacheName = 'absen-sppg-hadirly-v94'")) throw new Error('release cache mismatch');
   for (const [name, source] of [['bootstrap', bootstrap], ['runtime', runtime]] as const) {
     if (!source.includes('HADIRLY_RELEASE?.version')) throw new Error(`${name} must read shared release version`);
   }
@@ -55,6 +55,7 @@ Deno.test('PWA shell is the same manifest consumed by bootstrap and all entries 
     throw new Error('service worker must precache shared PWA asset manifest');
   }
   for (const required of [
+    "'./src/app/http-only-session-bridge.js'",
     "'./src/app/logout-session-guard.js'",
     "'./src/app/pwa-update-safety.js'",
     "'./src/app/private-asset-policy.js'",
@@ -65,7 +66,7 @@ Deno.test('PWA shell is the same manifest consumed by bootstrap and all entries 
   const paths = [...manifest.matchAll(/'((?:\.\/)[^']+\.(?:js|css))'/g)]
     .map((match) => (match[1] ?? '').replace(/^\.\//, ''))
     .filter(Boolean);
-  if (paths.length < 62) throw new Error(`unexpectedly small PWA asset manifest: ${paths.length}`);
+  if (paths.length < 63) throw new Error(`unexpectedly small PWA asset manifest: ${paths.length}`);
   for (const path of paths) {
     try {
       const stat = await Deno.stat(path);
