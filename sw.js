@@ -17,6 +17,8 @@ const SHELL = [
   './verify-contract.html',
   './manifest.webmanifest',
   './supabase-config.js',
+  './src/legacy/index-shell.css',
+  './src/legacy/index-app.js',
   './src/app/release-version.js',
   './src/app/pwa-shell-assets.js',
   './src/app/navigation-state-guard.js',
