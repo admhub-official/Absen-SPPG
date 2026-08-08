@@ -161,6 +161,44 @@ Deno.test("canonical browser cutover is fail-closed and localStorage receives on
   }
 });
 
+Deno.test("public registration and password recovery stay available before login", async () => {
+  const bridge = await read("src/app/http-only-session-bridge.js");
+  for (const fn of [
+    'getPublicConfig',
+    'getMasterData',
+    'checkUsernameUnique',
+    'registerUser',
+    'verifyRegistrationOtp',
+    'requestResetPassword',
+    'requestResetPasswordByEmail',
+    'verifyResetPasswordOtp',
+    'resetPassword',
+    'resendConfirmationEmail',
+  ]) {
+    if (!bridge.includes(`'${fn}'`)) throw new Error(`public pre-login allowlist missing ${fn}`);
+  }
+  if (!bridge.includes("publicUnauthenticatedFunctions.has(name)")) {
+    throw new Error('canonical bridge must bypass cookie BFF for explicitly public pre-login functions');
+  }
+});
+
+Deno.test("persistent auth_user storage excludes sensitive profile and payroll fields", async () => {
+  const bridge = await read("src/app/http-only-session-bridge.js");
+  for (const marker of [
+    'function sanitizePersistentUser(value)',
+    'function installAuthUserStorageGuard()',
+    "String(key) === 'auth_user'",
+    "JSON.stringify(sanitizePersistentUser(JSON.parse(String(value))))",
+    "localStorage.setItem('auth_user', JSON.stringify(sanitizePersistentUser(user)))",
+  ]) {
+    if (!bridge.includes(marker)) throw new Error(`auth_user storage guard missing ${marker}`);
+  }
+  const allowlist = bridge.slice(bridge.indexOf('const persistentUserKeys'), bridge.indexOf('const persistentDeviceKeys'));
+  for (const sensitive of ['NIK','Alamat','Nomor_Rekening','Atas_Nama_Rekening','Gaji_Harian','Tanggal_Lahir','No_Whatsapp']) {
+    if (allowlist.includes(`'${sensitive}'`)) throw new Error(`sensitive persistent auth_user field must not be allowlisted: ${sensitive}`);
+  }
+});
+
 Deno.test("session database and gateway contracts remain digest-only", async () => {
   const migration = await read("supabase/migrations/20260807220000_session_token_hash_at_rest_final.sql");
   const auth = await read("supabase/functions/_shared/auth.ts");
@@ -181,6 +219,9 @@ Deno.test("session database and gateway contracts remain digest-only", async () 
 Deno.test("PWA does not cache API/auth responses and keeps code fallback safe", async () => {
   const sw = await read("sw.js");
   if (!sw.includes("fetch(request, { cache: 'no-store' })")) throw new Error("PWA navigation/code fetch must remain no-store aware");
+  if (!sw.includes("if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return;")) {
+    throw new Error("service worker must bypass same-origin BFF/auth requests");
+  }
   if (!sw.includes("offlineAssetResponse(request)")) throw new Error("PWA JS/CSS must retain non-HTML offline fallback");
   if (/isCodeAsset[\s\S]{0,1200}caches\.match\('\.\/index\.html'\)/.test(sw)) {
     throw new Error("JS/CSS must never fall back to index.html");
