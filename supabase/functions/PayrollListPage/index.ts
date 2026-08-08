@@ -8,11 +8,10 @@ const CORS = {
   "Access-Control-Allow-Headers": "authorization,x-client-info,apikey,content-type",
   "Access-Control-Allow-Methods": "POST,OPTIONS",
 };
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json", "Cache-Control": "no-store" } });
+const json = (body: unknown, status = 200, requestId?: string) => new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json", "Cache-Control": "no-store", ...(requestId ? { "X-Request-Id": requestId } : {}) } });
 const active = (value: unknown) => value === true || value === 1 || ["TRUE", "1"].includes(String(value || "").toUpperCase());
 const roleName = (value: unknown) => String(value || "").trim().toUpperCase().replace(/_/g, " ");
 const messageOf = (error: any) => error?.message || error?.details || error?.hint || String(error || "Terjadi kesalahan");
-const ok = (result: unknown) => json({ success: true, result });
 
 async function authenticate(token: unknown) {
   const cleanToken = String(token || "").trim();
@@ -22,7 +21,7 @@ async function authenticate(token: unknown) {
   const { data: user, error: userError } = await db.from("Users").select("ID_User,Email,Role,SPPG,Status_Aktif").eq("ID_User", session.ID_User).maybeSingle();
   if (userError || !user || !active(user.Status_Aktif)) throw new Error("AKUN_NONAKTIF");
   const role = roleName(user.Role);
-  if (!["ADMIN", "SUPER ADMIN", "AKUNTAN"].includes(role)) throw new Error("Akses ditolak");
+  if (!["ADMIN", "SUPER ADMIN", "AKUNTAN"].includes(role)) throw new Error("FORBIDDEN");
   return { ...user, role };
 }
 
@@ -41,18 +40,42 @@ async function scopedUserIds(auth: any): Promise<string[]> {
   return (data || []).filter((row: any) => roleName(row.Role) !== "SUPER ADMIN").map((row: any) => String(row.ID_User));
 }
 
+function positiveInt(value: unknown, field: string, fallback: number, max: number): number {
+  if (value === undefined || value === null || value === "") return fallback;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > max) throw new Error(`VALIDATION_ERROR:${field}`);
+  return parsed;
+}
+
+function mapError(raw: string) {
+  if (raw === "SESI_HABIS") return { status: 401, code: "SESSION_EXPIRED", message: "Sesi telah berakhir. Silakan login kembali." };
+  if (raw === "AKUN_NONAKTIF") return { status: 403, code: "ACCOUNT_INACTIVE", message: "Akun tidak aktif." };
+  if (raw === "FORBIDDEN" || /Akses ditolak/i.test(raw)) return { status: 403, code: "FORBIDDEN", message: "Akses ditolak." };
+  if (raw.startsWith("VALIDATION_ERROR:")) return { status: 422, code: "VALIDATION_ERROR", message: `${raw.split(":")[1]} tidak valid.` };
+  if (/tidak valid/i.test(raw)) return { status: 422, code: "VALIDATION_ERROR", message: raw };
+  return { status: 500, code: "INTERNAL_ERROR", message: "Layanan daftar payroll gagal memproses permintaan." };
+}
+
 Deno.serve(async (req) => {
+  const requestId = `PLS_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
-  if (req.method !== "POST") return json({ success: false, error: "Method tidak didukung" }, 405);
+  if (req.method !== "POST") return json({ success: false, code: "METHOD_NOT_ALLOWED", message: "Method tidak didukung", requestId }, 405, requestId);
+
+  let body: Record<string, unknown>;
   try {
-    const body = await req.json();
+    body = await req.json() as Record<string, unknown>;
+  } catch {
+    return json({ success: false, code: "INVALID_JSON", message: "Body JSON tidak valid.", requestId }, 400, requestId);
+  }
+
+  try {
     const auth = await authenticate(body.token);
     const userIds = await scopedUserIds(auth);
-    const page = Math.max(1, Number(body.page) || 1);
-    const pageSize = Math.min(30, Math.max(1, Number(body.pageSize) || 30));
+    const page = positiveInt(body.page, "page", 1, 100000);
+    const pageSize = positiveInt(body.pageSize, "pageSize", 30, 30);
     const status = String(body.status || "HISTORY").trim().toUpperCase();
     if (!["HISTORY", "DITERBITKAN", "MENUNGGU_TTD_PENERIMA"].includes(status)) throw new Error("Status slip tidak valid");
-    if (!userIds.length) return ok({ items: [], total: 0, page, pageSize, totalPages: 0 });
+    if (!userIds.length) return json({ success: true, result: { items: [], total: 0, page, pageSize, totalPages: 0 }, requestId }, 200, requestId);
 
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
@@ -84,8 +107,11 @@ Deno.serve(async (req) => {
       };
     });
     const total = Number(count || 0);
-    return ok({ items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) });
+    return json({ success: true, result: { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) }, requestId }, 200, requestId);
   } catch (error) {
-    return json({ success: false, error: messageOf(error) }, 400);
+    const raw = messageOf(error);
+    const mapped = mapError(raw);
+    console.error(JSON.stringify({ requestId, code: mapped.code, status: mapped.status, error: raw }));
+    return json({ success: false, code: mapped.code, message: mapped.message, requestId }, mapped.status, requestId);
   }
 });
