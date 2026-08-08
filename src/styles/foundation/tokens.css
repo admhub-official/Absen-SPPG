@@ -1,10 +1,13 @@
 :root {
   /* Brand and semantic colors */
-  --ui-primary-50: #eef2ff;
-  --ui-primary-100: #e0e7ff;
-  --ui-primary-300: #a5b4fc;
-  --ui-primary-600: #4f46e5;
-  --ui-primary-700: #4338ca;
+  --ui-brand-blue-start: #12a8ec;
+  --ui-brand-blue: #079fe7;
+  --ui-brand-blue-end: #0798e2;
+  --ui-primary-50: #effaff;
+  --ui-primary-100: #dff4fd;
+  --ui-primary-300: #7fd2f5;
+  --ui-primary-600: var(--ui-brand-blue);
+  --ui-primary-700: #0678b5;
   --ui-success-50: #ecfdf5;
   --ui-success-600: #059669;
   --ui-warning-50: #fffbeb;
@@ -59,7 +62,7 @@
   --ui-shadow-3: 0 20px 45px rgb(15 23 42 / 0.16);
 
   /* Interaction and layout */
-  --ui-focus-ring: 0 0 0 3px rgb(79 70 229 / 0.22);
+  --ui-focus-ring: 0 0 0 3px rgb(7 159 231 / 0.22);
   --ui-control-height: 2.5rem;
   --ui-touch-height: 2.75rem;
   --ui-sidebar-width: 15rem;
@@ -74,7 +77,7 @@
   --primary: var(--ui-primary-600);
   --primary-dark: var(--ui-primary-700);
   --primary-light: var(--ui-primary-50);
-  --primary-ring: rgb(79 70 229 / 0.18);
+  --primary-ring: rgb(7 159 231 / 0.20);
   --success: var(--ui-success-600);
   --danger: var(--ui-danger-600);
   --warning: var(--ui-warning-500);
