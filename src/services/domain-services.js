@@ -1,7 +1,8 @@
 import { apiClient } from './api-client.js';
 
+const sessionToken = () => window.HadirlySessionContext?.token?.() || '';
 const withToken = (payload = {}) => {
-  const token = apiClient.token();
+  const token = sessionToken();
   return token && payload.token === undefined ? { ...payload, token } : payload;
 };
 const call = (name) => (payload = {}) => apiClient.call(name, withToken(payload));
@@ -50,7 +51,7 @@ async function listPayrollSlips({ status = 'DITERBITKAN', page = 1, pageSize = 3
   const response = await fetch('https://szwwpnbbsmjsbzzcecyj.supabase.co/functions/v1/PayrollListPage', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token: apiClient.token(), status, page, pageSize }),
+    body: JSON.stringify({ token: sessionToken(), status, page, pageSize }),
     cache: 'no-store',
   });
   const payload = await response.json().catch(() => ({ success: false, error: 'Respons daftar payroll tidak valid.' }));
