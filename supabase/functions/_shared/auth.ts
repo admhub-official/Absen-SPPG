@@ -8,13 +8,18 @@ export type AuthenticatedUser = Readonly<{
   role: string;
 }>;
 
+const DIGEST_RE = /^[0-9a-f]{64}$/i;
+
 function isActiveAccount(value: unknown): boolean {
   if (value === true || value === 1) return true;
   return ["TRUE", "1", "ACTIVE", "AKTIF"].includes(String(value ?? "").trim().toUpperCase());
 }
 
 async function findSession(db: SupabaseClient, token: string) {
-  const tokenHash = await sha256Hex(token);
+  // SessionGateway forwards an already-verified SHA-256 digest to JWT-only Core
+  // functions after the database cutover. Keep raw browser tokens hash-only while
+  // avoiding an accidental second hash of that internal forwarded digest.
+  const tokenHash = DIGEST_RE.test(token) ? token.toLowerCase() : await sha256Hex(token);
   const result = await db
     .from("Sessions")
     .select("Token_Hash,ID_User,Type,Expires_At,Last_Activity_At")
