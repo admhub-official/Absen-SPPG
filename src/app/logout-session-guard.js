@@ -22,6 +22,8 @@
       sessionStorage.clear();
     } catch {}
 
+    try { window.HadirlyNavigationState?.resetSessionState?.(); } catch {}
+
     if (window.AppState) {
       window.AppState.token = null;
       window.AppState.user = null;
