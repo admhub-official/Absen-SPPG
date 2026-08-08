@@ -1,0 +1,1 @@
+Temporary CI observability probe for v105 session-context validation. Do not merge.
