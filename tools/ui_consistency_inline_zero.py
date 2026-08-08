@@ -23,6 +23,7 @@ def replace_once(text, old, new, label):
 
 index = replace_once(index, '<span class="trend-legend-dot" style="background:var(--primary)"></span>', '<span class="trend-legend-dot trend-legend-dot--datang"></span>', 'trend datang dot')
 index = replace_once(index, '<span class="trend-legend-dot" style="background:#a5b4fc"></span>', '<span class="trend-legend-dot trend-legend-dot--pulang"></span>', 'trend pulang dot')
+index = replace_once(index, '<div class="dash-section" style="margin-bottom:1.25rem">', '<div class="dash-section dash-section--spaced">', 'dashboard section spacing')
 index = replace_once(index, '<button class="btn btn-danger" id="btn-risk-confirm" type="button" style="display:none">', '<button class="btn btn-danger" id="btn-risk-confirm" type="button" hidden>', 'risk confirm initial state')
 
 app = replace_once(app, "$('#btn-risk-next').style.display='';\n  $('#btn-risk-confirm').style.display='none';", "$('#btn-risk-next').hidden=false;\n  $('#btn-risk-confirm').hidden=true;", 'risk modal initial state')
@@ -32,14 +33,14 @@ if '--ui-primary-300:' not in tokens:
     tokens = replace_once(tokens, '  --ui-primary-100: #e0e7ff;\n', '  --ui-primary-100: #e0e7ff;\n  --ui-primary-300: #a5b4fc;\n', 'primary 300 token')
 
 if '.trend-legend-dot--datang{' not in components:
-    components += '\n.trend-legend-dot--datang{background:var(--ui-primary-600)}\n.trend-legend-dot--pulang{background:var(--ui-primary-300)}\n'
+    components += '\n.trend-legend-dot--datang{background:var(--ui-primary-600)}\n.trend-legend-dot--pulang{background:var(--ui-primary-300)}\n.dash-section--spaced{margin-bottom:var(--ui-space-5)}\n'
 
 remaining = [(i + 1, line.strip()) for i, line in enumerate(index.splitlines()) if ' style="' in line]
 if remaining:
     raise SystemExit('static inline styles remain: ' + repr(remaining))
 
 marker = '  assert(!index.includes(\'style="background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5"\'));\n'
-extra = '  assert(!index.includes(\' style="\'));\n  assert(index.includes("trend-legend-dot trend-legend-dot--datang"));\n  assert(index.includes("trend-legend-dot trend-legend-dot--pulang"));\n'
+extra = '  assert(!index.includes(\' style="\'));\n  assert(index.includes("trend-legend-dot trend-legend-dot--datang"));\n  assert(index.includes("trend-legend-dot trend-legend-dot--pulang"));\n  assert(index.includes("dash-section dash-section--spaced"));\n'
 if extra.strip() not in test:
     test = replace_once(test, marker, marker + extra, 'static inline style contract')
 marker2 = '    "badge.hidden=!count",\n'
