@@ -91,9 +91,34 @@ Deno.test("database cutover safely initializes idle state and revokes on passwor
   }
 });
 
-Deno.test("HttpOnly BFF activation remains blocked until same-origin runtime is deployed", async () => {
+Deno.test("HttpOnly BFF cutover requires canonical same-origin Cloudflare runtime configuration", async () => {
   const status = JSON.parse(await read("bff/runtime-status.json"));
-  if (status.productionEnabled !== false || status.mode !== "source-only") {
-    throw new Error("do not activate frontend cookie cutover without verified hadirly.org runtime");
+  const pagesRoute = await read("functions/api/[[path]].ts");
+
+  if (
+    status.productionEnabled !== true ||
+    status.productionConfigured !== true ||
+    status.mode !== "cloudflare-pages-function"
+  ) {
+    throw new Error("HttpOnly cookie cutover requires configured Cloudflare Pages Functions production mode");
+  }
+  if (status.productionOrigin !== "https://hadirly.org") {
+    throw new Error("HttpOnly BFF production origin must remain canonical hadirly.org");
+  }
+  if (
+    status.routeSource !== "functions/api/[[path]].ts" ||
+    !pagesRoute.includes('import worker from "../../bff/cloudflare/worker.ts"')
+  ) {
+    throw new Error("same-origin /api route must remain backed by the hardened BFF worker");
+  }
+  if (
+    status.cookieName !== "__Host-hadirly_session" ||
+    status.sameSite !== "Strict" ||
+    status.secretStorage !== "http-only-cookie"
+  ) {
+    throw new Error("HttpOnly BFF cookie security contract is inconsistent");
+  }
+  if (typeof status.deploymentVerified !== "boolean") {
+    throw new Error("runtime verification state must remain explicit until an external smoke-test is recorded");
   }
 });
