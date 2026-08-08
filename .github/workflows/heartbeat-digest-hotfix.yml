@@ -62,3 +62,4 @@ jobs:
           git add supabase/functions/AbsenV2/index.ts
           git commit -m "fix: accept gateway session digest for heartbeat"
           git push origin HEAD:main
+# retrigger 2
