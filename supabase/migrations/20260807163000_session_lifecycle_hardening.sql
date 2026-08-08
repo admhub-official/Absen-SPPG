@@ -63,19 +63,18 @@ WHEN (
 )
 EXECUTE FUNCTION public.revoke_user_sessions_after_password_change();
 
+-- Preserve the pre-existing void return contract so this migration can run on
+-- production databases that already have cleanup_expired_sessions().
 CREATE OR REPLACE FUNCTION public.cleanup_expired_sessions()
-RETURNS bigint
+RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $function$
-DECLARE
-  v_removed bigint := 0;
 BEGIN
-  DELETE FROM public."Sessions"
-  WHERE "Expires_At" <= clock_timestamp();
-  GET DIAGNOSTICS v_removed = ROW_COUNT;
-  RETURN v_removed;
+  DELETE FROM public."Sessions" WHERE "Expires_At" <= clock_timestamp();
+  DELETE FROM public."Rate_Limits" WHERE "Expires_At" <= clock_timestamp();
+  DELETE FROM public."Absen_Locks" WHERE "Expires_At" <= clock_timestamp();
 END
 $function$;
 
