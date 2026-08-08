@@ -42,6 +42,7 @@
   ];
 
   const scripts = [
+    './src/app/http-only-session-bridge.js',
     './src/app/hadirly-branding.js',
     './src/app/remove-legacy-notifications.js',
     './src/app/attendance-location-flow.js',
