@@ -109,6 +109,21 @@ async function scopedUsers(scope: string[] | null): Promise<Record<string, unkno
   return (result.data || []) as unknown as Record<string, unknown>[];
 }
 
+async function assertUserInScope(
+  auth: AuthenticatedUser,
+  userId: string,
+): Promise<Record<string, unknown>> {
+  const result = await db.from("Users")
+    .select("ID_User,SPPG,Status_Aktif")
+    .eq("ID_User", userId)
+    .maybeSingle();
+  if (result.error) throw result.error;
+  if (!result.data || !activeValue(result.data.Status_Aktif)) throw new Error("USER_NOT_FOUND");
+  const scope = await allowedSppg(auth);
+  if (scope && !scope.includes(String(result.data.SPPG || "").trim())) throw new Error("FORBIDDEN");
+  return result.data as Record<string, unknown>;
+}
+
 function profileMissing(row: Record<string, unknown>): string[] {
   const missing: string[] = [];
   if (!String(row.Nama_Lengkap || "").trim()) missing.push("Nama");
@@ -247,12 +262,12 @@ async function operationalDashboard(auth: AuthenticatedUser) {
   }
 
   const dashboardCounts = await db.rpc("get_operational_dashboard_counts", {
-  p_sppg: scope,
-});
-if (dashboardCounts.error) throw dashboardCounts.error;
-const countData = (dashboardCounts.data || {}) as Record<string, unknown>;
-const openTickets = Number(countData.openTickets || 0);
-const pendingRecipientSignatures = Number(countData.pendingRecipientSignatures || 0);
+    p_sppg: scope,
+  });
+  if (dashboardCounts.error) throw dashboardCounts.error;
+  const countData = (dashboardCounts.data || {}) as Record<string, unknown>;
+  const openTickets = Number(countData.openTickets || 0);
+  const pendingRecipientSignatures = Number(countData.pendingRecipientSignatures || 0);
   return {
     totals: {
       employees: employees.length,
@@ -291,22 +306,38 @@ async function groupedAttendanceV2(body: Record<string, unknown>, auth: Authenti
   const search = String(body.search || "").trim();
   const startDate = body.startDate ? dateOnly(body.startDate) : "";
   const endDate = body.endDate ? dateOnly(body.endDate) : "";
-  if (body.startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) throw new ValidationError("INVALID_START_DATE", "Tanggal mulai tidak valid.", "startDate");
-  if (body.endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) throw new ValidationError("INVALID_END_DATE", "Tanggal akhir tidak valid.", "endDate");
-  if (startDate && endDate && endDate < startDate) throw new ValidationError("INVALID_DATE_RANGE", "Tanggal akhir tidak boleh sebelum tanggal mulai.", "endDate");
+  if (body.startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+    throw new ValidationError("INVALID_START_DATE", "Tanggal mulai tidak valid.", "startDate");
+  }
+  if (body.endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    throw new ValidationError("INVALID_END_DATE", "Tanggal akhir tidak valid.", "endDate");
+  }
+  if (startDate && endDate && endDate < startDate) {
+    throw new ValidationError("INVALID_DATE_RANGE", "Tanggal akhir tidak boleh sebelum tanggal mulai.", "endDate");
+  }
   const sppg = String(body.sppg || "").trim();
   const source = body.source ? requiredString(body.source, "source", { max: 100 }).toUpperCase() : "";
   const status = body.status ? requiredString(body.status, "status", { max: 40 }).toUpperCase() : "";
-  if (status && !ATTENDANCE_VIEW_STATUSES.has(status)) throw new ValidationError("INVALID_ATTENDANCE_STATUS", "Filter status absensi tidak valid.", "status");
+  if (status && !ATTENDANCE_VIEW_STATUSES.has(status)) {
+    throw new ValidationError("INVALID_ATTENDANCE_STATUS", "Filter status absensi tidak valid.", "status");
+  }
   const scope = await allowedSppg(auth);
   const users = await scopedUsers(scope);
   const scopedIds = users.map((row) => String(row.ID_User || "")).filter(Boolean);
-  const filterOptions = { sppg: [...new Set(users.map((row) => String(row.SPPG || "").trim()).filter(Boolean))].sort() };
+  const filterOptions = {
+    sppg: [...new Set(users.map((row) => String(row.SPPG || "").trim()).filter(Boolean))].sort(),
+  };
   if (!scopedIds.length) return { absensi: [], total: 0, page, pageSize, filterOptions };
   const result = await db.rpc("get_absensi_grouped_page_v2", {
-    p_user_ids: scopedIds, p_page: page, p_page_size: pageSize, p_search: search || null,
-    p_start_date: startDate || null, p_end_date: endDate || null, p_sppg: sppg || null,
-    p_status: status || null, p_source: source || null,
+    p_user_ids: scopedIds,
+    p_page: page,
+    p_page_size: pageSize,
+    p_search: search || null,
+    p_start_date: startDate || null,
+    p_end_date: endDate || null,
+    p_sppg: sppg || null,
+    p_status: status || null,
+    p_source: source || null,
   });
   if (result.error) throw new Error(`ATTENDANCE_QUERY_FAILED:${result.error.message}`);
   const rows = (result.data || []).map((item: any) => normalizeAttendanceRow(item.row_data || {}));
@@ -316,7 +347,9 @@ async function groupedAttendanceV2(body: Record<string, unknown>, auth: Authenti
 async function validateAttendanceBulkV3(body: Record<string, unknown>, auth: AuthenticatedUser) {
   requireOperationalRole(auth);
   const action = String(body.action || "").trim().toUpperCase();
-  if (!ATTENDANCE_VALIDATION_ACTIONS.has(action)) throw new ValidationError("INVALID_ATTENDANCE_ACTION", "Aksi validasi absensi tidak valid.", "action");
+  if (!ATTENDANCE_VALIDATION_ACTIONS.has(action)) {
+    throw new ValidationError("INVALID_ATTENDANCE_ACTION", "Aksi validasi absensi tidak valid.", "action");
+  }
   const reason = requiredString(body.reason, "reason", { min: 10, max: 2000 });
   if (!Array.isArray(body.items) || !body.items.length || body.items.length > 100) {
     throw new ValidationError("INVALID_ATTENDANCE_ITEMS", "Pilih 1 sampai 100 data absensi.", "items");
@@ -330,7 +363,9 @@ async function validateAttendanceBulkV3(body: Record<string, unknown>, auth: Aut
   }));
   for (const item of items) {
     if (!allowedIds.has(item.idUser)) throw new Error("FORBIDDEN");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(item.tanggal)) throw new ValidationError("INVALID_ATTENDANCE_DATE", "Tanggal absensi tidak valid.", "tanggal");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(item.tanggal)) {
+      throw new ValidationError("INVALID_ATTENDANCE_DATE", "Tanggal absensi tidak valid.", "tanggal");
+    }
   }
 
   const dbStatus = action === "DITOLAK" ? "TIDAK_VALID" : action;
@@ -352,7 +387,9 @@ async function validateAttendanceBulkV3(body: Record<string, unknown>, auth: Aut
     Jenis_Aktivitas: "VALIDASI_ABSENSI_MASSAL",
     Detail: { action, storedStatus: dbStatus, reason, items, updatedRows },
   });
-  if (audit.error) console.error(JSON.stringify({ code: "ATTENDANCE_AUDIT_DEFERRED", error: audit.error.message }));
+  if (audit.error) {
+    console.error(JSON.stringify({ code: "ATTENDANCE_AUDIT_DEFERRED", error: audit.error.message }));
+  }
   return { success: true, action, updatedRows, groups: items.length };
 }
 
@@ -361,7 +398,10 @@ async function superAdminAuditV3(body: Record<string, unknown>, auth: Authentica
   const limit = clampInt(body.limit, 100, 1, 500);
   const logs = await db.from("Audit_Log").select("*").order("Waktu", { ascending: false }).limit(limit);
   if (logs.error) throw logs.error;
-  const actorIds = [...new Set((logs.data || []).map((row: any) => String(row.ID_User_Pelaku || "")).filter((id) => id && id !== "SYSTEM"))];
+  const actorIds = [...new Set(
+    (logs.data || []).map((row: any) => String(row.ID_User_Pelaku || ""))
+      .filter((id) => id && id !== "SYSTEM"),
+  )];
   const users = actorIds.length
     ? await db.from("Users").select("ID_User,Nama_Lengkap,Email,Role,SPPG").in("ID_User", actorIds)
     : { data: [], error: null };
@@ -409,9 +449,18 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
   }
   if (action === "transitionPayroll") {
     requireOperationalRole(auth);
+    const slipId = requiredString(body.slipId, "slipId", { max: 200 });
+    const userId = requiredString(body.userId, "userId", { max: 100 });
+    await assertUserInScope(auth, userId);
+    const slip = await db.from("Slip_Gaji")
+      .select("ID_Slip,ID_User,SPPG")
+      .eq("ID_Slip", slipId)
+      .maybeSingle();
+    if (slip.error) throw slip.error;
+    if (!slip.data || String(slip.data.ID_User || "") !== userId) throw new Error("PAYROLL_NOT_FOUND");
     const result = await db.rpc("transition_payroll_workflow", {
-      p_slip_id: requiredString(body.slipId, "slipId", { max: 200 }),
-      p_user_id: requiredString(body.userId, "userId", { max: 100 }),
+      p_slip_id: slipId,
+      p_user_id: userId,
       p_to_status: workflowStatus(body.toStatus, "toStatus"),
       p_actor_id: auth.idUser,
       p_reason: optionalString(body.reason, 2000),
@@ -422,7 +471,11 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
   }
   if (action === "listPayrollWorkflow") {
     requireOperationalRole(auth);
+    const scope = await allowedSppg(auth);
+    const ids = (await scopedUsers(scope)).map((row) => String(row.ID_User || "")).filter(Boolean);
+    if (scope && !ids.length) return [];
     let query = db.from("Payroll_Workflow_State").select("*").order("Updated_At", { ascending: false }).limit(200);
+    if (scope) query = query.in("ID_User", ids);
     if (body.status !== undefined && body.status !== null && String(body.status).trim() !== "") {
       query = query.eq("Status", workflowStatus(body.status, "status"));
     }
@@ -450,9 +503,14 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
   }
   if (action === "listUserAccess") {
     requireOperationalRole(auth);
+    const scope = await allowedSppg(auth);
+    if (scope && !scope.length) return [];
     let query = db.from("User_SPPG_Access_V2").select("*").order("Created_At", { ascending: false }).limit(500);
+    if (scope) query = query.in("SPPG", scope);
     if (body.userId !== undefined && body.userId !== null && String(body.userId).trim() !== "") {
-      query = query.eq("ID_User", requiredString(body.userId, "userId", { max: 100 }));
+      const userId = requiredString(body.userId, "userId", { max: 100 });
+      await assertUserInScope(auth, userId);
+      query = query.eq("ID_User", userId);
     }
     const result = await query;
     if (result.error) throw result.error;
@@ -473,8 +531,10 @@ async function route(action: string, body: Record<string, unknown>, auth: Authen
   }
   if (action === "recordUserSecurityEvent") {
     requireOperationalRole(auth);
+    const userId = requiredString(body.userId, "userId", { max: 100 });
+    await assertUserInScope(auth, userId);
     const result = await db.from("User_Security_Events").insert({
-      ID_User: requiredString(body.userId, "userId", { max: 100 }),
+      ID_User: userId,
       Event_Type: requiredString(body.eventType, "eventType", { max: 100 }),
       Actor_ID: auth.idUser,
       Session_ID: optionalString(body.sessionId, 200),
@@ -497,7 +557,12 @@ Deno.serve(async (req) => {
     return new Response(null, { status: origin && isOriginAllowed(origin, corsOptions) ? 204 : 403, headers });
   }
   if (req.method !== "POST") {
-    return jsonResponse({ success: false, code: "METHOD_NOT_ALLOWED", message: "Gunakan POST.", requestId }, 405, requestId, headers);
+    return jsonResponse(
+      { success: false, code: "METHOD_NOT_ALLOWED", message: "Gunakan POST.", requestId },
+      405,
+      requestId,
+      headers,
+    );
   }
   try {
     const body = await req.json();
@@ -510,15 +575,29 @@ Deno.serve(async (req) => {
     let code = "INTERNAL_ERROR";
     let message = "Terjadi kesalahan pada server.";
     if (error instanceof ValidationError) {
-      status = 422; code = error.code; message = error.message;
+      status = 422;
+      code = error.code;
+      message = error.message;
     } else if (rawMessage === "SESSION_EXPIRED") {
-      status = 401; code = rawMessage; message = "Sesi telah berakhir.";
+      status = 401;
+      code = rawMessage;
+      message = "Sesi telah berakhir.";
     } else if (rawMessage === "ACCOUNT_INACTIVE" || rawMessage === "FORBIDDEN") {
-      status = 403; code = rawMessage; message = "Akses ditolak.";
+      status = 403;
+      code = rawMessage;
+      message = "Akses ditolak.";
+    } else if (rawMessage === "USER_NOT_FOUND" || rawMessage === "PAYROLL_NOT_FOUND") {
+      status = 404;
+      code = rawMessage;
+      message = rawMessage === "USER_NOT_FOUND" ? "User tidak ditemukan." : "Slip payroll tidak ditemukan.";
     } else if (rawMessage === "ATTENDANCE_RESULT_TOO_LARGE") {
-      status = 422; code = rawMessage; message = "Data absensi terlalu besar. Gunakan filter pencarian agar hasil lebih spesifik.";
+      status = 422;
+      code = rawMessage;
+      message = "Data absensi terlalu besar. Gunakan filter pencarian agar hasil lebih spesifik.";
     } else if (rawMessage.includes("FINAL_STATE") || rawMessage.includes("IDEMPOTENCY")) {
-      status = 409; code = rawMessage; message = "Status workflow tidak dapat diubah.";
+      status = 409;
+      code = rawMessage;
+      message = "Status workflow tidak dapat diubah.";
     }
     console.error(JSON.stringify({ requestId, code, error: rawMessage }));
     return jsonResponse({ success: false, code, message, requestId }, status, requestId, headers);
