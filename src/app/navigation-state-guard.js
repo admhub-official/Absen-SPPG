@@ -6,18 +6,12 @@ if (!globalThis[GUARD_KEY]) {
   const initialAuthHash = window.location.hash.replace(/^#/, '');
   let preserveRegisterBootRoute = initialAuthHash === 'register';
   let bootSessionResult = null;
-  let logoutInProgress = false;
   let scanGeneration = 0;
   let faceRegistrationGeneration = 0;
 
   function legacyBinding(name) {
     try { return (0, eval)(name); }
     catch { return null; }
-  }
-
-  function activeToken() {
-    const state = legacyBinding('AppState');
-    return String(state?.token || localStorage.getItem('auth_token') || '');
   }
 
   function clearTimer(value, interval = false) {
@@ -446,55 +440,47 @@ if (!globalThis[GUARD_KEY]) {
     window.addEventListener('popstate', syncAuthRoute);
     window.addEventListener('hashchange', syncAuthRoute);
 
+    if (preserveRegisterBootRoute && !appState.token) {
+      const authLayout = document.getElementById('auth-layout');
+      if (authLayout && !authLayout.classList.contains('hidden')) {
+        preserveRegisterBootRoute = false;
+        globalThis.navigateTo('register', { replace: true });
+      }
+    }
+
     return true;
   }
 
-  async function guardedLogout() {
-    if (logoutInProgress) return;
-    logoutInProgress = true;
-    const appState = legacyBinding('AppState');
-    const token = String(appState?.token || localStorage.getItem('auth_token') || '');
+  function installSessionLifecycleBridge() {
+    if (globalThis.__ABSEN_SESSION_STATE_BRIDGE__) return;
+    globalThis.__ABSEN_SESSION_STATE_BRIDGE__ = true;
 
-    try {
-      try { globalThis.stopAbsenRealtime?.(); } catch {}
-      try { globalThis.closeAbsenScan?.(); } catch {}
-      try { globalThis.closeDaftarWajah?.(); } catch {}
-      clearAbsenRedirectTimer();
+    const originalHandleLogout = globalThis.handleLogout;
+    globalThis.handleLogout = function delegatedLogout(...args) {
+      if (globalThis.HadirlyLogout?.logout) return globalThis.HadirlyLogout.logout(...args);
+      if (typeof originalHandleLogout === 'function') return originalHandleLogout.apply(this, args);
+    };
 
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
-      sessionStorage.clear();
-      resetLegacyState();
-      window.dispatchEvent(new CustomEvent('absen:session-changed', { detail: { authenticated: false } }));
-      globalThis.showAuth?.();
-      globalThis.navigateTo?.('login', { replace: true });
+    window.addEventListener('absen:session-changed', (event) => {
+      if (event.detail?.authenticated === false) resetLegacyState();
+    });
 
-      if (token) {
-        try { await globalThis.apiCall?.('logout', { token }); }
-        catch (error) { console.warn('Server session revoke failed during logout.', error); }
+    window.addEventListener('absen:app-ready', () => {
+      if (globalThis.HadirlyLogout?.logout) {
+        globalThis.handleLogout = (...args) => globalThis.HadirlyLogout.logout(...args);
       }
-    } finally {
-      logoutInProgress = false;
-    }
+    });
   }
 
-  function installLogoutInterceptor() {
-    if (globalThis.__ABSEN_LOGOUT_INTERCEPTOR__) return;
-    globalThis.__ABSEN_LOGOUT_INTERCEPTOR__ = true;
-    globalThis.handleLogout = guardedLogout;
-    document.addEventListener('click', (event) => {
-      const target = event.target instanceof Element ? event.target.closest('#btn-logout') : null;
-      if (!target) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      void guardedLogout();
-    }, true);
-  }
+  globalThis.HadirlyNavigationState = Object.freeze({
+    resetSessionState: resetLegacyState,
+    clearAbsenRedirectTimer
+  });
 
   function install(attempt = 0) {
     installApiSessionGuard();
     const navigationReady = installNavigationGuard();
-    installLogoutInterceptor();
+    installSessionLifecycleBridge();
     if (!navigationReady && attempt < 40) window.setTimeout(() => install(attempt + 1), 25);
   }
 
