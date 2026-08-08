@@ -47,6 +47,19 @@ function dateOnly(value: unknown): string | null {
   return raw;
 }
 
+// Kept as an explicit compatibility contract for employment/profile workflows.
+// Self-service profile updates no longer call this because SPPG/Yayasan are protected fields.
+async function resolveFoundation(sppg: string, requestedFoundation: string): Promise<string> {
+  if (!sppg) return requestedFoundation;
+  const master = await db.from("Master_SPPG").select("Nama_SPPG,Yayasan,Aktif").ilike("Nama_SPPG", sppg).limit(1).maybeSingle();
+  if (master.error) {
+    console.warn(JSON.stringify({ code: "PROFILE_MASTER_SPPG_LOOKUP_DEFERRED", sppg, error: master.error.message }));
+    return requestedFoundation;
+  }
+  if (master.data && active(master.data.Aktif)) return clean(master.data.Yayasan, 180) || requestedFoundation;
+  return requestedFoundation;
+}
+
 async function getProfile(user: SessionUser) {
   const result = await db.from("Users").select("ID_User,Nama_Lengkap,NIK,Tempat_Lahir,Tanggal_Lahir,Jenis_Kelamin,Alamat,Email,No_Whatsapp,SPPG,Yayasan,Jabatan_Divisi,Tanggal_Mulai_Kerja,Gaji_Harian,Nama_Bank,Nomor_Rekening,Atas_Nama_Rekening").eq("ID_User", user.ID_User).maybeSingle();
   if (result.error) throw new Error(`PROFILE_QUERY_FAILED:${result.error.message}`);
@@ -57,6 +70,19 @@ async function getProfile(user: SessionUser) {
 async function updateProfile(user: SessionUser, updatesValue: unknown) {
   if (!updatesValue || typeof updatesValue !== "object" || Array.isArray(updatesValue)) throw new Error("Updates profil wajib berupa object.");
   const updates = updatesValue as Record<string, unknown>;
+
+  // Explicit guards are intentionally retained because these are long-standing
+  // security contracts consumed by employment and digital-identity workflows.
+  if (Object.prototype.hasOwnProperty.call(updates, "Gaji_Harian")) {
+    throw new Error("Gaji Harian hanya dapat diubah oleh ADMIN/SUPER ADMIN melalui manajemen user.");
+  }
+  if (
+    Object.prototype.hasOwnProperty.call(updates, "Role") ||
+    Object.prototype.hasOwnProperty.call(updates, "Status_Aktif")
+  ) {
+    throw new Error("Role dan status akun tidak dapat diubah dari Profil.");
+  }
+
   const protectedFields = SELF_PROTECTED_FIELDS.filter((field) => Object.prototype.hasOwnProperty.call(updates, field));
   if (protectedFields.length) {
     throw new Error(`Field kepegawaian tidak dapat diubah dari Profil: ${protectedFields.join(", ")}. Gunakan manajemen user dengan otorisasi yang sesuai.`);
