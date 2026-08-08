@@ -107,13 +107,12 @@ Deno.test("root Cloudflare Workers build binds canonical BFF to hadirly api rout
   }
 });
 
-Deno.test("direct BFF navigation returns to app while PWA mutations retain CSRF protection", async () => {
+Deno.test("invalid BFF GET routes recover to app while session GET and mutations stay protected", async () => {
   const worker = await read("bff/cloudflare/worker.ts");
   for (const marker of [
-    'function isApiNavigation(request: Request, path: string, method: string): boolean',
-    'if (path === "/api") return true;',
-    'if (!path.startsWith("/api/")) return false;',
-    'return fetchMode === "navigate" || accept.includes("text/html")',
+    'function isApiNavigation(_request: Request, path: string, method: string): boolean',
+    'if (path === "/api/auth/session") return false;',
+    'return path === "/api" || path.startsWith("/api/");',
     'if (isApiNavigation(request, path, method)) return redirectToApp(env, id);',
     'headers.set("Location", `${configuredOrigin(env)}/`)',
     'const mutation = !["GET", "HEAD", "OPTIONS"].includes(method);',
