@@ -169,6 +169,18 @@ async function forwardLocation(body: any, request: Request, requestId: string): 
   return forwardResponse(result, requestId);
 }
 
+async function optimizedMyAttendance(user: any, data: any) {
+  const month = String(data?.filterBulan || '').trim();
+  if (month && !/^\d{4}-\d{2}$/.test(month)) throw new Error('Filter bulan tidak valid.');
+  const result = await db.rpc('get_my_absensi_grouped', { p_user_id: user.ID_User, p_month: month || null });
+  if (result.error) throw new Error(`ATTENDANCE_QUERY_FAILED:${result.error.message}`);
+  return result.data || { rows: [], totalHariKerja: 0, totalDatang: 0, totalPulang: 0 };
+}
+async function optimizedUserDashboard(user: any) {
+  const result = await db.rpc('get_user_dashboard_summary', { p_user_id: user.ID_User });
+  if (result.error) throw new Error(`DASHBOARD_QUERY_FAILED:${result.error.message}`);
+  return result.data || { role: 'USER', totalHariKerja: 0, totalSlip: 0, totalGajiDiterima: 0, riwayat: [], sudahDatang: false, sudahPulang: false };
+}
 function notificationMatches(notification: any, user: any) {
   const mode = String(notification.Target_Mode || 'ALL').toUpperCase();
   if (mode === 'ALL') return true;
@@ -330,7 +342,17 @@ Deno.serve(async (request) => {
     const locationResponse = await forwardLocation(body, request, requestId);
     if (locationResponse) return locationResponse;
 
-    if (functionName === 'getSuperAdminOverviewV3') {
+    if (functionName === 'getMyAbsensi') {
+    const user = await authenticate(body.data?.token);
+    return json({ success: true, result: await optimizedMyAttendance(user, body.data || {}), requestId }, 200, requestId);
+  }
+  if (functionName === 'getDashboardData') {
+    const user = await authenticate(body.data?.token);
+    if (user.role === 'USER') return json({ success: true, result: await optimizedUserDashboard(user), requestId }, 200, requestId);
+    const legacyDashboard = await forward(LEGACY_CORE_URL, body, request);
+    return forwardResponse(legacyDashboard, requestId);
+  }
+  if (functionName === 'getSuperAdminOverviewV3') {
       const user = await authenticate(body.data?.token);
       return json({ success: true, result: await superAdminOverview(user), requestId }, 200, requestId);
     }
