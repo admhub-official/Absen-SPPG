@@ -27,10 +27,9 @@ async function authTokenConsumers(): Promise<string[]> {
   return found.sort();
 }
 
-// Compatibility inventory while the inline legacy application is still being decomposed.
+// Compatibility inventory while the legacy application is still being decomposed.
 // Canonical production virtualizes the fixed marker in memory; no raw auth token is persisted.
 const expectedCompatibilityConsumers = [
-  "index.html",
   "src/app/attendance-import.js",
   "src/app/config-center.js",
   "src/app/digital-id-card.js",
@@ -47,6 +46,7 @@ const expectedCompatibilityConsumers = [
   "src/app/system-settings.js",
   "src/features/notifications/app-announcements.js",
   "src/features/payroll/payroll-history.js",
+  "src/legacy/index-app.js",
   "supabase-config.js",
 ].sort();
 
@@ -232,7 +232,7 @@ Deno.test("session database and gateway contracts remain digest-only", async () 
     '"Token" = "Token_Hash"',
     "Raw bearer tokens must never be persisted",
     "sessions_token_digest_at_rest_check",
-  ]) if (!migration.includes(marker)) throw new Error(`digest-only migration contract missing ${marker}`);
+  ]) if (!migration.includes(marker)) throw new Error(`digest-only migration contract missing marker: ${marker}`);
   if (!auth.includes('.eq("Token_Hash", tokenHash)') || auth.includes('.eq("Token", token)')) {
     throw new Error("shared auth must remain Token_Hash-only");
   }
