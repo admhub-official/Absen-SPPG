@@ -21,6 +21,7 @@ const SHELL = [
   './src/app/pwa-shell-assets.js',
   './src/app/navigation-state-guard.js',
   './src/app/session-request-abort.js',
+  './src/app/session-context.js',
   './icons/app-icon.svg',
   './icons/app-icon-maskable.svg',
   './icons/hadirly-logo-horizontal.svg',
