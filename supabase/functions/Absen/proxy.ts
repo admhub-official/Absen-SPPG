@@ -14,13 +14,65 @@ const headers = {
   'cache-control': 'no-store',
 };
 
-const json = (body: unknown, status = 200, requestId?: string) => new Response(JSON.stringify(body), {
+const json = (
+  body: unknown,
+  status = 200,
+  requestId?: string,
+  extraHeaders: Record<string, string> = {},
+) => new Response(JSON.stringify(body), {
   status,
-  headers: { ...headers, ...(requestId ? { 'x-request-id': requestId } : {}) },
+  headers: { ...headers, ...extraHeaders, ...(requestId ? { 'x-request-id': requestId } : {}) },
 });
 const normalize = (value: unknown) => String(value || '').trim().toUpperCase().replace(/_/g, ' ');
 const isActive = (value: unknown) => value === true || value === 1 || ['TRUE', '1'].includes(String(value || '').toUpperCase());
 const numeric = (value: unknown) => Number(value || 0);
+
+function clientIp(request: Request): string {
+  return (
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'NO_IP'
+  ).slice(0, 128);
+}
+
+async function sha256(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function consumeRateLimit(rateKey: string, action: string, limit: number, windowSeconds: number) {
+  const { data, error } = await db.rpc('consume_api_rate_limit', {
+    p_rate_key: rateKey,
+    p_action: action,
+    p_limit: limit,
+    p_window_seconds: windowSeconds,
+  });
+  if (error) throw new Error('RATE_LIMIT_CHECK_FAILED');
+  return {
+    allowed: Boolean(data?.allowed),
+    retryAfter: Math.max(1, Number(data?.retryAfterSeconds || windowSeconds)),
+  };
+}
+
+async function resetOtpRateLimit(body: any, request: Request) {
+  const data = body?.data || body || {};
+  const email = String(data.email || '').trim().toLowerCase();
+  const ipHash = await sha256(clientIp(request));
+  const checks = [
+    consumeRateLimit(`OTP_RESET_IP:${ipHash}`, 'VERIFY_RESET_OTP_IP', 20, 600),
+  ];
+  if (email) {
+    const emailHash = await sha256(email);
+    checks.push(consumeRateLimit(`OTP_RESET_EMAIL:${emailHash}`, 'VERIFY_RESET_OTP_EMAIL', 8, 600));
+  }
+  const results = await Promise.all(checks);
+  const blocked = results.filter((result) => !result.allowed);
+  return {
+    allowed: blocked.length === 0,
+    retryAfter: blocked.length ? Math.max(...blocked.map((result) => result.retryAfter)) : 0,
+  };
+}
 
 async function authenticate(tokenValue: unknown) {
   const token = String(tokenValue || '').trim();
@@ -388,29 +440,41 @@ Deno.serve(async (request) => {
   }
 
   try {
+    if (functionName === 'verifyResetPasswordOtp') {
+      const rate = await resetOtpRateLimit(body, request);
+      if (!rate.allowed) {
+        return json({
+          success: false,
+          code: 'RATE_LIMITED',
+          message: 'Terlalu banyak percobaan verifikasi OTP. Tunggu sebentar lalu coba lagi.',
+          requestId,
+        }, 429, requestId, { 'retry-after': String(rate.retryAfter) });
+      }
+    }
+
     const locationResponse = await forwardLocation(body, request, requestId);
     if (locationResponse) return locationResponse;
 
     if (functionName === 'getAuditLogEnriched') {
-    const user = await authenticate(body.data?.token);
-    return json({ success: true, result: await optimizedAuditLog(user, body.data || {}), requestId }, 200, requestId);
-  }
-  if (functionName === 'getAllSlipGajiList') {
-    const user = await authenticate(body.data?.token);
-    return json({ success: true, result: await optimizedSlipList(user), requestId }, 200, requestId);
-  }
+      const user = await authenticate(body.data?.token);
+      return json({ success: true, result: await optimizedAuditLog(user, body.data || {}), requestId }, 200, requestId);
+    }
+    if (functionName === 'getAllSlipGajiList') {
+      const user = await authenticate(body.data?.token);
+      return json({ success: true, result: await optimizedSlipList(user), requestId }, 200, requestId);
+    }
 
-  if (functionName === 'getMyAbsensi') {
-    const user = await authenticate(body.data?.token);
-    return json({ success: true, result: await optimizedMyAttendance(user, body.data || {}), requestId }, 200, requestId);
-  }
-  if (functionName === 'getDashboardData') {
-    const user = await authenticate(body.data?.token);
-    if (user.role === 'USER') return json({ success: true, result: await optimizedUserDashboard(user), requestId }, 200, requestId);
-    const legacyDashboard = await forward(LEGACY_CORE_URL, body, request);
-    return forwardResponse(legacyDashboard, requestId);
-  }
-  if (functionName === 'getSuperAdminOverviewV3') {
+    if (functionName === 'getMyAbsensi') {
+      const user = await authenticate(body.data?.token);
+      return json({ success: true, result: await optimizedMyAttendance(user, body.data || {}), requestId }, 200, requestId);
+    }
+    if (functionName === 'getDashboardData') {
+      const user = await authenticate(body.data?.token);
+      if (user.role === 'USER') return json({ success: true, result: await optimizedUserDashboard(user), requestId }, 200, requestId);
+      const legacyDashboard = await forward(LEGACY_CORE_URL, body, request);
+      return forwardResponse(legacyDashboard, requestId);
+    }
+    if (functionName === 'getSuperAdminOverviewV3') {
       const user = await authenticate(body.data?.token);
       return json({ success: true, result: await superAdminOverview(user), requestId }, 200, requestId);
     }
