@@ -59,6 +59,12 @@ function clientIp(request: Request): string {
   return (request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "").slice(0, 128);
 }
 
+function requiredText(value: unknown, code: string, min = 1, max = 500): string {
+  const text = String(value || "").trim();
+  if (text.length < min || text.length > max) throw new Error(code);
+  return text;
+}
+
 function normalizeDevice(body: Record<string, unknown>, request: Request) {
   const deviceKey = String(body.deviceKey || "").trim();
   if (deviceKey.length < 32 || deviceKey.length > 200) throw new Error("DEVICE_KEY_INVALID");
@@ -117,8 +123,7 @@ async function listMyDevices(auth: Auth) {
 }
 
 async function revokeMyDevice(auth: Auth, body: Record<string, unknown>) {
-  const id = String(body.deviceId || "").trim();
-  if (!id) throw new Error("DEVICE_ID_REQUIRED");
+  const id = requiredText(body.deviceId, "DEVICE_ID_REQUIRED", 1, 160);
   const { data, error } = await supabase.from("Attendance_Devices").update({
     Status: "REVOKED", Revoked_At: new Date().toISOString(), Updated_At: new Date().toISOString(), Trust_Reason: "Dicabut oleh pemilik perangkat",
   }).eq("Device_ID", id).eq("ID_User", auth.idUser)
@@ -129,12 +134,14 @@ async function revokeMyDevice(auth: Auth, body: Record<string, unknown>) {
 
 async function listReviewQueue(auth: Auth, body: Record<string, unknown>) {
   if (!["ADMIN", "SUPER ADMIN"].includes(auth.role)) throw new Error("FORBIDDEN");
-  const status = String(body.status || "PENDING").toUpperCase();
-  const limit = Math.min(100, Math.max(10, Number(body.limit) || 50));
+  const status = String(body.status || "PENDING").trim().toUpperCase();
+  if (!["PENDING", "TRUSTED", "REVOKED", "BLOCKED"].includes(status)) throw new Error("DEVICE_STATUS_INVALID");
+  const rawLimit = body.limit === undefined ? 50 : Number(body.limit);
+  if (!Number.isInteger(rawLimit) || rawLimit < 10 || rawLimit > 100) throw new Error("DEVICE_LIMIT_INVALID");
   let query = supabase.from("Attendance_Devices")
     .select("Device_ID,ID_User,Device_Name,Platform,Browser,Status,Risk_Score,First_Seen_At,Last_Seen_At,Last_Attendance_At,Last_IP,Trust_Reason")
-    .order("Risk_Score", { ascending: false }).order("Last_Seen_At", { ascending: false }).limit(limit);
-  if (["PENDING","TRUSTED","REVOKED","BLOCKED"].includes(status)) query = query.eq("Status", status);
+    .order("Risk_Score", { ascending: false }).order("Last_Seen_At", { ascending: false }).limit(rawLimit);
+  query = query.eq("Status", status);
   const { data, error } = await query;
   if (error) throw new Error("DEVICE_REVIEW_LIST_FAILED");
   return data || [];
@@ -142,9 +149,10 @@ async function listReviewQueue(auth: Auth, body: Record<string, unknown>) {
 
 async function reviewDevice(auth: Auth, body: Record<string, unknown>) {
   if (!["ADMIN", "SUPER ADMIN"].includes(auth.role)) throw new Error("FORBIDDEN");
-  const deviceId = String(body.deviceId || "").trim();
-  const status = String(body.status || "").toUpperCase();
-  const reason = String(body.reason || "").trim();
+  const deviceId = requiredText(body.deviceId, "DEVICE_ID_REQUIRED", 1, 160);
+  const status = String(body.status || "").trim().toUpperCase();
+  if (!["TRUSTED", "REVOKED", "BLOCKED"].includes(status)) throw new Error("DEVICE_STATUS_INVALID");
+  const reason = requiredText(body.reason, "DEVICE_REASON_REQUIRED", 10, 1000);
   const { data, error } = await supabase.rpc("review_attendance_device", {
     p_actor_user_id: auth.idUser,
     p_device_id: deviceId,
@@ -175,6 +183,7 @@ Deno.serve(async (request) => {
     const body = await request.json() as Record<string, unknown>;
     const auth = await authenticate(body.token);
     const action = String(body.action || "").trim();
+    if (!action) throw new Error("ACTION_REQUIRED");
     let result: unknown;
     if (action === "registerDevice") result = await registerDevice(auth, body, request);
     else if (action === "listMyDevices") result = await listMyDevices(auth);
@@ -185,6 +194,7 @@ Deno.serve(async (request) => {
     return response({ success: true, result }, 200, origin);
   } catch (error) {
     const mapped = mapError(error);
+    console.error(JSON.stringify({ service: "DeviceTrust", code: mapped.code, status: mapped.status, error: error instanceof Error ? error.message : String(error) }));
     return response({ success: false, code: mapped.code, message: mapped.message }, mapped.status, origin);
   }
 });
