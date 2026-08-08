@@ -1,5 +1,6 @@
 import './session-request-abort.js';
 import './http-only-session-bridge.js';
+import './session-context.js';
 import './navigation-state-guard.js';
 import { createRouter } from './router.js';
 import { createAppStore } from '../stores/app-store.js';
