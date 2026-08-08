@@ -28,7 +28,7 @@ export function createApiClient() {
       }
     },
     token() {
-      return localStorage.getItem('auth_token') || '';
+      return window.HadirlySessionContext?.token?.() || '';
     }
   });
 }
