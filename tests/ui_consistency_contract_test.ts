@@ -37,11 +37,13 @@ Deno.test("UI shell uses aligned tokens and reusable variants", async () => {
 });
 
 Deno.test("mobile topbar and bottomnav share responsive geometry", async () => {
-  const [index, shell, mobile, responsive] = await Promise.all([
+  const [index, shell, mobile, responsive, app, components] = await Promise.all([
     read("index.html"),
     read("src/legacy/index-shell.css"),
     read("src/styles/mobile-ui-refresh.css"),
     read("src/styles/responsive-overrides.css"),
+    read("src/legacy/index-app.js"),
+    read("src/styles/foundation/components.css"),
   ]);
 
   assert(shell.includes(".app-topbar-profile-wrap{position:relative;flex-shrink:0}"));
@@ -55,7 +57,33 @@ Deno.test("mobile topbar and bottomnav share responsive geometry", async () => {
   assert(responsive.includes("scroll-margin-bottom:var(--ui-bottomnav-clearance)"));
 
   const scanButtons = index.match(/class="app-bottomnav-item app-bottomnav-item-scan/g) ?? [];
-  assertEquals(scanButtons.length, 2);
+  assertEquals(scanButtons.length, 1);
   const scanLabels = index.match(/<span class="app-bottomnav-scan-label">Absen<\/span>/g) ?? [];
-  assertEquals(scanLabels.length, 2);
+  assertEquals(scanLabels.length, 1);
+  assert(index.includes('data-nav-role="user"'));
+  assert(!/admin-only-nav[^"]*"[^>]*style="display:none"/.test(index));
+  assert(!index.includes('id="absen-pagination" style="display:none"'));
+  assert(!index.includes('id="users-pagination" style="display:none"'));
+  assert(!index.includes('id="log-pagination" style="display:none"'));
+  assert(!index.includes('id="crop-zoom" min="100" max="300" value="100" style='));
+  assert(index.includes('class="crop-zoom-row"'));
+  assert(index.includes('class="crop-zoom-hint"'));
+
+  for (const marker of [
+    "function setNavVisibility(selector,visible)",
+    "setBottomNavRole('admin')",
+    "setBottomNavRole('user')",
+    "pg.hidden = false;",
+    "pagination.hidden=false;",
+    "badge.hidden=!count",
+  ]) assert(app.includes(marker));
+  assert(!app.includes("document.querySelectorAll('.admin-only-nav').forEach(el => el.style.display"));
+  assert(!app.includes("pagination.style.display='flex'"));
+
+  for (const marker of [
+    ".nav-role-hidden{display:none!important}",
+    ".app-nav-section-label{",
+    ".crop-zoom-row{",
+    '.app-bottomnav[data-nav-role="admin"] .app-bottomnav-item-scan{order:3}',
+  ]) assert(components.includes(marker));
 });

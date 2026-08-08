@@ -8,7 +8,7 @@ Deno.test("sidebar navigation has one canonical shell and no dead collapse alias
   const count = (source: string, marker: string) => source.split(marker).length - 1;
   if (count(index, '<aside class="app-sidebar">') !== 1) throw new Error("app must render exactly one sidebar shell");
   if (count(index, '<nav class="app-nav">') !== 1) throw new Error("app must render exactly one desktop navigation list");
-  if (count(index, '<nav class="app-bottomnav">') !== 1) throw new Error("app must render exactly one mobile bottom navigation");
+  if (count(index, '<nav class="app-bottomnav"') !== 1) throw new Error("app must render exactly one mobile bottom navigation");
   for (const dead of ["sidebar-is-collapsed", "sidebar-toggle-button", ".mobile-bottom-nav"]) if (shell.includes(dead)) throw new Error(`app shell still contains dead navigation code: ${dead}`);
   for (const marker of ["--app-sidebar-expanded:248px","--app-sidebar-tablet:76px","@media(min-width:768px) and (max-width:1023px)","@media(max-width:767px)"]) if (!shell.includes(marker)) throw new Error(`app shell missing canonical responsive marker: ${marker}`);
   if (!mobileCss.includes("html.mobile-ui-active .app-bottomnav")) throw new Error("mobile refresh must target canonical app-bottomnav");

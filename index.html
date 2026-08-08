@@ -221,36 +221,36 @@
         <span>Pengaduan</span>
       </button>
       <!-- ADMIN ONLY NAV -->
-      <div class="app-nav-item admin-only-nav" style="padding:0.5rem 0.9rem 0.25rem;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:rgba(255,255,255,.3);cursor:default;display:none">Admin</div>
-      <button class="app-nav-item admin-only-nav super-admin-only-nav" data-view="super-dashboard" style="display:none">
+      <div class="app-nav-item app-nav-section-label admin-only-nav nav-role-hidden">Admin</div>
+      <button class="app-nav-item admin-only-nav super-admin-only-nav nav-role-hidden" data-view="super-dashboard">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
         <span>Dashboard Global</span>
       </button>
-      <button class="app-nav-item admin-only-nav non-super-admin-only-nav" data-view="admin-dashboard" style="display:none">
+      <button class="app-nav-item admin-only-nav non-super-admin-only-nav nav-role-hidden" data-view="admin-dashboard">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
         <span>Dashboard</span>
       </button>
-      <button class="app-nav-item admin-only-nav" data-view="admin-users" style="display:none">
+      <button class="app-nav-item admin-only-nav nav-role-hidden" data-view="admin-users">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>
         <span>Data Users</span>
       </button>
-      <button class="app-nav-item admin-only-nav" data-view="admin-payroll" style="display:none">
+      <button class="app-nav-item admin-only-nav nav-role-hidden" data-view="admin-payroll">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>
         <span>Payroll</span>
       </button>
-      <button class="app-nav-item admin-only-nav" data-view="admin-absen" style="display:none">
+      <button class="app-nav-item admin-only-nav nav-role-hidden" data-view="admin-absen">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <span>Data Absensi</span>
       </button>
-      <button class="app-nav-item admin-only-nav" data-view="admin-pengaduan" style="display:none">
+      <button class="app-nav-item admin-only-nav nav-role-hidden" data-view="admin-pengaduan">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
-        <span>Inbox Pengaduan</span><span class="badge-count" id="complaint-nav-count" style="display:none">0</span>
+        <span>Inbox Pengaduan</span><span class="badge-count" id="complaint-nav-count" hidden>0</span>
       </button>
-      <button class="app-nav-item admin-only-nav" data-view="admin-log" style="display:none">
+      <button class="app-nav-item admin-only-nav nav-role-hidden" data-view="admin-log">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         <span>Log Aktivitas</span>
       </button>
-      <button class="app-nav-item admin-only-nav super-admin-only-nav" data-view="admin-config" style="display:none">
+      <button class="app-nav-item admin-only-nav super-admin-only-nav nav-role-hidden" data-view="admin-config">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.12.37.34.7.64.94.3.24.67.38 1.05.4H21v4h-.09A1.7 1.7 0 0 0 19.4 15z"/></svg>
         <span>Pengaturan Sistem</span>
       </button>
@@ -719,7 +719,7 @@
               <button class="btn btn-sm btn-danger" type="button" data-attendance-action="DITOLAK">Tolak</button>
             </div>
           </div>
-          <div class="pagination" id="absen-pagination" style="display:none">
+          <div class="pagination" id="absen-pagination" hidden>
             <span class="pagination-info" id="absen-pagination-info"></span>
             <div class="pagination-btns">
               <button class="pagination-btn" id="absen-prev-btn">← Prev</button>
@@ -757,7 +757,7 @@
           <div id="users-grid-container" class="users-grid">
             <div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-card"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>
           </div>
-          <div class="pagination" id="users-pagination" style="display:none">
+          <div class="pagination" id="users-pagination" hidden>
             <span class="pagination-info" id="users-pagination-info"></span>
             <div class="pagination-btns">
               <button class="pagination-btn" id="users-prev-btn" type="button">â† Prev</button>
@@ -912,7 +912,7 @@
           <div class="log-list" id="log-list-container">
             <div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div></div>
           </div>
-          <div class="pagination" id="log-pagination" style="display:none">
+          <div class="pagination" id="log-pagination" hidden>
             <span class="pagination-info" id="log-pagination-info"></span>
             <div class="pagination-btns">
               <button class="pagination-btn" id="log-prev-btn">← Prev</button>
@@ -1003,23 +1003,22 @@
       </div>
     </div>
 
-    <nav class="app-bottomnav">
+    <nav class="app-bottomnav" data-nav-role="user">
       <button class="app-bottomnav-item user-only-nav active" data-view="dashboard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
-      <button class="app-bottomnav-item app-bottomnav-item-scan user-only-nav" data-view="absen-scan" aria-label="Absen dengan wajah"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg><span class="app-bottomnav-scan-label">Absen</span></button>
+      <button class="app-bottomnav-item app-bottomnav-item-scan" type="button" data-view="absen-scan" aria-label="Absen dengan wajah"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg><span class="app-bottomnav-scan-label">Absen</span></button>
       <button class="app-bottomnav-item user-only-nav" data-view="pengaduan"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>Aduan</button>
-      <button class="app-bottomnav-item admin-only-nav super-admin-only-nav" data-view="super-dashboard" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>Global</button>
-      <button class="app-bottomnav-item admin-only-nav non-super-admin-only-nav" data-view="admin-dashboard" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
-      <button class="app-bottomnav-item admin-only-nav" data-view="admin-users" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>Users</button>
-      <button class="app-bottomnav-item app-bottomnav-item-scan admin-only-nav" data-view="absen-scan" style="display:none" aria-label="Absen dengan wajah"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a2 2 0 0 1 2-2h2M4 17v2a2 2 0 0 0 2 2h2M20 7V5a2 2 0 0 0-2-2h-2M20 17v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3"/></svg><span class="app-bottomnav-scan-label">Absen</span></button>
-      <button class="app-bottomnav-item admin-only-nav" data-view="admin-payroll" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Payroll</button>
-      <button class="app-bottomnav-item app-bottomnav-more admin-only-nav" id="btn-mobile-more" type="button" style="display:none" aria-expanded="false" aria-controls="mobile-more-menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>Lainnya<span class="badge-count" data-complaint-count style="display:none">0</span></button>
+      <button class="app-bottomnav-item admin-only-nav super-admin-only-nav nav-role-hidden" data-view="super-dashboard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>Global</button>
+      <button class="app-bottomnav-item admin-only-nav non-super-admin-only-nav nav-role-hidden" data-view="admin-dashboard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
+      <button class="app-bottomnav-item admin-only-nav nav-role-hidden" data-view="admin-users"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>Users</button>
+      <button class="app-bottomnav-item admin-only-nav nav-role-hidden" data-view="admin-payroll"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Payroll</button>
+      <button class="app-bottomnav-item app-bottomnav-more admin-only-nav nav-role-hidden" id="btn-mobile-more" type="button" aria-expanded="false" aria-controls="mobile-more-menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>Lainnya<span class="badge-count" data-complaint-count hidden>0</span></button>
     </nav>
-    <div class="mobile-more-menu admin-only-nav" id="mobile-more-menu" style="display:none">
+    <div class="mobile-more-menu admin-only-nav nav-role-hidden" id="mobile-more-menu">
       <div class="mobile-more-menu-title">Menu Admin Lainnya</div>
       <button class="mobile-more-menu-item" data-view="admin-absen" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Data Absensi</button>
-      <button class="mobile-more-menu-item" data-view="admin-pengaduan" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>Inbox Pengaduan<span class="badge-count" data-complaint-count style="display:none">0</span></button>
+      <button class="mobile-more-menu-item" data-view="admin-pengaduan" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>Inbox Pengaduan<span class="badge-count" data-complaint-count hidden>0</span></button>
       <button class="mobile-more-menu-item" data-view="admin-log" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Log Aktivitas</button>
-      <button class="mobile-more-menu-item super-admin-only-nav" data-view="admin-config" type="button" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.12.37.34.7.64.94.3.24.67.38 1.05.4H21v4h-.09A1.7 1.7 0 0 0 19.4 15z"/></svg>Konfigurasi Admin</button>
+      <button class="mobile-more-menu-item super-admin-only-nav nav-role-hidden" data-view="admin-config" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.12.37.34.7.64.94.3.24.67.38 1.05.4H21v4h-.09A1.7 1.7 0 0 0 19.4 15z"/></svg>Konfigurasi Admin</button>
     </div>
   </div>
 </div>
@@ -1284,12 +1283,12 @@
         <canvas id="crop-canvas" width="320" height="320"></canvas>
         <div class="crop-circle-overlay"></div>
       </div>
-      <div style="display:flex;align-items:center;gap:0.75rem;margin-top:1.25rem">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:var(--text-muted)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="range" id="crop-zoom" min="100" max="300" value="100" style="flex:1">
+      <div class="crop-zoom-row">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="crop-zoom-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="range" id="crop-zoom" class="crop-zoom-range" min="100" max="300" value="100">
       </div>
-      <p style="text-align:center;color:var(--text-muted);font-size:0.8125rem;margin-top:0.5rem">Geser gambar dan atur zoom untuk memposisikan foto</p>
-      <button type="button" class="btn btn-secondary" id="btn-pilih-foto-baru" style="width:100%;margin-top:0.75rem;font-size:0.8125rem;display:inline-flex;align-items:center;justify-content:center;gap:0.4rem">
+      <p class="crop-zoom-hint">Geser gambar dan atur zoom untuk memposisikan foto</p>
+      <button type="button" class="btn btn-secondary btn-block btn-sm crop-photo-picker" id="btn-pilih-foto-baru">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         Pilih Foto Lain
       </button>
