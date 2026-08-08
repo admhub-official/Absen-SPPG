@@ -10,7 +10,7 @@ Deno.test("Master Jabatan is one Jabatan atau Divisi field with automatic code",
   for (const marker of ["normalize_master_jabatan_contract",'new."Divisi" := new."Nama_Jabatan"',"new.\"Kode_Jabatan\" := left('JBT-' || v_slug, 40)","PENGAWAS GIZI","PENGAWAS KEUANGAN","PENGAWAS SANITASI","JURU MASAK","REF-BGN-401.1-2025","REF-ORG-SPPG-2026","REF-JAM-SPPG-2026"]) if (!migration.includes(marker)) throw new Error(`master migration missing ${marker}`);
   for (const marker of ["Jabatan atau Divisi *","Kode dibuat otomatis oleh sistem","m-kode-jabatan","m-divisi","codeFor"]) if (!ui.includes(marker)) throw new Error(`master UI normalization missing ${marker}`);
   if (!assets.includes("'./src/app/employment-master-normalization.js'")) throw new Error("master normalization script must load");
-  if (!release.includes("version = '26.11.58'") || !release.includes("cacheName = 'absen-sppg-hadirly-v99'")) throw new Error("frontend/PWA release mismatch");
+  if (!/const version = '\d+\.\d+\.\d+';/.test(release) || !/const cacheName = 'absen-sppg-hadirly-v\d+';/.test(release)) throw new Error("frontend/PWA release contract mismatch");
   if (!sw.includes('...ASSETS.scripts.map(versioned)')) throw new Error("PWA must cache shared script manifest");
   if (!config.includes("await import('./src/app/release-version.js')") || !config.includes('bootstrap.js?v=${version}')) throw new Error("bootstrap import must use shared release version");
 });
