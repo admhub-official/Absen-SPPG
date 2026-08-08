@@ -1,0 +1,327 @@
+name: Frontend Structure Finalize
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: frontend-structure-finalize-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  finalize:
+    if: github.event.pull_request.title == 'perf(frontend): finalize legacy structure'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Externalize legacy shell and delegate dynamic events
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root=Path('.')
+          index_path=root/'index.html'
+          index=index_path.read_text(encoding='utf-8')
+          if './src/legacy/index-app.js' in index:
+              raise SystemExit('legacy shell already externalized')
+
+          def replace_once(text, old, new, label):
+              count=text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected 1 occurrence, found {count}')
+              return text.replace(old,new,1)
+
+          legacy=root/'src'/'legacy'
+          legacy.mkdir(parents=True,exist_ok=True)
+
+          style=re.search(r'<style>\s*(.*?)\s*</style>',index,re.S)
+          if not style:
+              raise SystemExit('inline style block not found')
+          css=style.group(1).rstrip()+'\n'
+          (legacy/'index-shell.css').write_text(css,encoding='utf-8')
+          index=index[:style.start()]+'<link rel="stylesheet" href="./src/legacy/index-shell.css">'+index[style.end():]
+
+          script=re.search(r'<script>\s*(const APP_CONFIG=.*?)\s*</script>\s*</body>',index,re.S)
+          if not script:
+              raise SystemExit('legacy inline application script not found')
+          js=script.group(1).rstrip()+'\n'
+
+          # Canvas cropper: one redraw per animation frame and no backing-store reset per pointer move.
+          old='''function drawCropCanvas(){
+  const canvas=$(\'#crop-canvas\');
+  const ctx=canvas.getContext(\'2d\');
+  const size=CropState.canvasSize;
+  canvas.width=size;canvas.height=size;
+  ctx.clearRect(0,0,size,size);
+  const img=CropState.img;
+  if(!img)return;
+  const w=img.width*CropState.scale;
+  const h=img.height*CropState.scale;
+  const x=(size-w)/2+CropState.offsetX;
+  const y=(size-h)/2+CropState.offsetY;
+  ctx.drawImage(img,x,y,w,h);
+}'''
+          new='''let CropDrawFrame=0;
+function drawCropCanvas(){
+  if(CropDrawFrame)return;
+  CropDrawFrame=requestAnimationFrame(()=>{
+    CropDrawFrame=0;
+    const canvas=$(\'#crop-canvas\');
+    if(!canvas)return;
+    const ctx=canvas.getContext(\'2d\');
+    const size=CropState.canvasSize;
+    if(canvas.width!==size)canvas.width=size;
+    if(canvas.height!==size)canvas.height=size;
+    ctx.clearRect(0,0,size,size);
+    const img=CropState.img;
+    if(!img)return;
+    const w=img.width*CropState.scale;
+    const h=img.height*CropState.scale;
+    const x=(size-w)/2+CropState.offsetX;
+    const y=(size-h)/2+CropState.offsetY;
+    ctx.drawImage(img,x,y,w,h);
+  });
+}'''
+          js=replace_once(js,old,new,'cropper')
+
+          # Remove per-render notification listeners; events are delegated once in initApp.
+          old='''function bindNotificationActions(container){
+  container?.querySelectorAll('[data-notification-view]').forEach(button=>button.addEventListener('click',()=>{
+    $('#notification-panel')?.classList.remove('active');
+    $('#btn-notifications')?.setAttribute('aria-expanded','false');
+    switchView(button.dataset.notificationView||'dashboard');
+  }));
+}
+'''
+          js=replace_once(js,old,'','notification helper')
+          js=replace_once(js,"const panelList=$('#notification-list');if(panelList){panelList.innerHTML=notificationMarkup(AppState.notifications);bindNotificationActions(panelList);}","const panelList=$('#notification-list');if(panelList)panelList.innerHTML=notificationMarkup(AppState.notifications);",'notification panel render')
+          js=replace_once(js,"const dashboardList=$('#dashboard-notification-list');if(dashboardList){dashboardList.innerHTML=notificationMarkup(AppState.notifications,true);bindNotificationActions(dashboardList);}","const dashboardList=$('#dashboard-notification-list');if(dashboardList)dashboardList.innerHTML=notificationMarkup(AppState.notifications,true);",'notification dashboard render')
+
+          # Attendance row listener churn.
+          old='''  tbody.querySelectorAll('.attendance-row-check').forEach(input=>input.addEventListener('change',()=>{
+    if(input.checked)AdminState.attendanceSelected.set(input.dataset.key,{idUser:input.dataset.user,tanggal:input.dataset.date});
+    else AdminState.attendanceSelected.delete(input.dataset.key);
+    updateAttendanceSelectionBar();
+  }));
+'''
+          js=replace_once(js,old,'','attendance row listeners')
+
+          # User and audit list activation churn.
+          js=replace_once(js,"  container.querySelectorAll('[data-user-index]').forEach(row=>bindAccessibleActivation(row,()=>openUserDetail(Number(row.dataset.userIndex))));\n",'', 'user row listeners')
+          js=replace_once(js,"  container.querySelectorAll('[data-log-index]').forEach(item=>bindAccessibleActivation(item,()=>openLogDetail(Number(item.dataset.logIndex))));\n",'', 'log item listeners')
+
+          # Super dashboard, system settings, configuration dynamic controls.
+          js=replace_once(js,"    body.querySelectorAll('.super-sppg-drilldown').forEach(button=>button.addEventListener('click',()=>{switchView('admin-users');setTimeout(()=>{const search=$('#users-search');if(search){search.value=button.dataset.sppg||'';search.dispatchEvent(new Event('input'));}},0);}));\n",'', 'super sppg listeners')
+          js=replace_once(js,"  body.querySelectorAll('[data-setting-key]').forEach(button=>button.addEventListener('click',()=>toggleSystemSetting(button)));\n",'', 'setting listeners')
+          js=replace_once(js,"    accessBody.querySelectorAll('.config-delete-access').forEach(button=>button.addEventListener('click',()=>deleteAdminAccess(button.dataset.accessId,button)));\n",'', 'access delete listeners')
+          js=replace_once(js,"  body.querySelectorAll('.config-role-select').forEach(select=>select.addEventListener('change',()=>changeConfiguredRole(select)));\n",'', 'role select listeners')
+
+          # Payroll / complaint per-render controls.
+          js=replace_once(js,"    body.querySelectorAll('[data-slip-download]').forEach(button=>button.addEventListener('click',()=>downloadPayrollSlip(button.dataset.slipDownload,button)));\n    body.querySelectorAll('[data-slip-sign]').forEach(button=>button.addEventListener('click',()=>openRecipientSignatureModal(button.dataset.slipSign,button.dataset.slipPeriod)));\n",'', 'my payroll listeners')
+          js=replace_once(js,"    list.querySelectorAll('[data-my-complaint-id]').forEach(card=>card.querySelector('.my-complaint-close-btn')?.addEventListener('click',()=>closeMyComplaintTicket(card.dataset.myComplaintId)));\n",'', 'my complaint listeners')
+          old='''  list.querySelectorAll('.complaint-card').forEach(card=>{
+    const id=card.dataset.complaintId;
+    card.querySelector('.complaint-status-btn')?.addEventListener('click',()=>updateComplaintTicket(id,card.querySelector('.ticket-status-select').value,card.querySelector('.ticket-priority-select').value));
+    card.querySelector('.complaint-reply-btn')?.addEventListener('click',()=>replyComplaint(id,card.querySelector('.complaint-response-input').value,card.querySelector('.ticket-priority-select').value));
+  });
+'''
+          js=replace_once(js,old,'','admin complaint listeners')
+          old='''  body.querySelectorAll('.payroll-row-check').forEach(input=>input.addEventListener('change',()=>{
+    if(input.checked)FeatureState.payrollSelected.add(input.dataset.payrollId);else FeatureState.payrollSelected.delete(input.dataset.payrollId);
+    renderAdminPayroll();
+  }));
+'''
+          js=replace_once(js,old,'','payroll row listeners')
+          js=replace_once(js,"  body.querySelectorAll('.payroll-money-input').forEach(input=>input.addEventListener('input',updatePayrollAdjustmentTotals));\n",'', 'payroll money listeners')
+          js=replace_once(js,"    body.querySelectorAll('[data-slip-download]').forEach(button=>button.addEventListener('click',()=>downloadPayrollSlip(button.dataset.slipDownload,button)));\n",'', 'admin payroll download listeners')
+
+          old='''function updatePayrollAdjustmentTotals(){
+  $('#payroll-adjustment-body').querySelectorAll('[data-payroll-adjustment]').forEach(row=>{
+    const subtotal=Number(row.dataset.subtotal)||0,bonus=Math.max(0,Number(row.querySelector('.payroll-bonus-input').value)||0),deduction=Math.max(0,Number(row.querySelector('.payroll-deduction-input').value)||0);
+    row.querySelector('.payroll-total').textContent=formatRupiah(Math.max(0,subtotal+bonus-deduction));
+  });
+}'''
+          new='''function updatePayrollAdjustmentTotals(event){
+  const targetRow=event?.target?.closest?.('[data-payroll-adjustment]');
+  const rows=targetRow?[targetRow]:[...$('#payroll-adjustment-body').querySelectorAll('[data-payroll-adjustment]')];
+  rows.forEach(row=>{
+    const subtotal=Number(row.dataset.subtotal)||0,bonus=Math.max(0,Number(row.querySelector('.payroll-bonus-input').value)||0),deduction=Math.max(0,Number(row.querySelector('.payroll-deduction-input').value)||0);
+    row.querySelector('.payroll-total').textContent=formatRupiah(Math.max(0,subtotal+bonus-deduction));
+  });
+}'''
+          js=replace_once(js,old,new,'payroll adjustment calculation')
+
+          # One-time delegated event ownership for dynamic render containers.
+          anchor='''  $('#btn-dashboard-absen-cta')?.addEventListener('click',()=>{
+    switchView('absen-scan');
+  });
+
+'''
+          delegated='''  $('#btn-dashboard-absen-cta')?.addEventListener('click',()=>{
+    switchView('absen-scan');
+  });
+
+  ['notification-list','dashboard-notification-list'].forEach(id=>document.getElementById(id)?.addEventListener('click',event=>{
+    const button=event.target?.closest?.('[data-notification-view]');if(!button)return;
+    $('#notification-panel')?.classList.remove('active');
+    $('#btn-notifications')?.setAttribute('aria-expanded','false');
+    switchView(button.dataset.notificationView||'dashboard');
+  }));
+  $('#absen-table-body')?.addEventListener('change',event=>{
+    const input=event.target?.closest?.('.attendance-row-check');if(!input)return;
+    if(input.checked)AdminState.attendanceSelected.set(input.dataset.key,{idUser:input.dataset.user,tanggal:input.dataset.date});
+    else AdminState.attendanceSelected.delete(input.dataset.key);
+    updateAttendanceSelectionBar();
+  });
+  const activateDelegatedRow=(event,containerSelector,rowSelector,handler)=>{
+    if(event.type==='keydown'&&!['Enter',' '].includes(event.key))return;
+    const container=$(containerSelector),row=event.target?.closest?.(rowSelector);if(!container||!row||!container.contains(row))return;
+    if(event.type==='keydown')event.preventDefault();handler(row);
+  };
+  $('#users-grid-container')?.addEventListener('click',event=>activateDelegatedRow(event,'#users-grid-container','[data-user-index]',row=>openUserDetail(Number(row.dataset.userIndex))));
+  $('#users-grid-container')?.addEventListener('keydown',event=>activateDelegatedRow(event,'#users-grid-container','[data-user-index]',row=>openUserDetail(Number(row.dataset.userIndex))));
+  $('#log-list-container')?.addEventListener('click',event=>activateDelegatedRow(event,'#log-list-container','[data-log-index]',row=>openLogDetail(Number(row.dataset.logIndex))));
+  $('#log-list-container')?.addEventListener('keydown',event=>activateDelegatedRow(event,'#log-list-container','[data-log-index]',row=>openLogDetail(Number(row.dataset.logIndex))));
+  $('#super-sppg-body')?.addEventListener('click',event=>{
+    const button=event.target?.closest?.('.super-sppg-drilldown');if(!button)return;
+    switchView('admin-users');setTimeout(()=>{const search=$('#users-search');if(search){search.value=button.dataset.sppg||'';search.dispatchEvent(new Event('input'));}},0);
+  });
+  $('#system-settings-body')?.addEventListener('click',event=>{const button=event.target?.closest?.('[data-setting-key]');if(button)toggleSystemSetting(button);});
+  $('#config-access-body')?.addEventListener('click',event=>{const button=event.target?.closest?.('.config-delete-access');if(button)deleteAdminAccess(button.dataset.accessId,button);});
+  $('#config-role-body')?.addEventListener('change',event=>{const select=event.target?.closest?.('.config-role-select');if(select)changeConfiguredRole(select);});
+  $('#my-payroll-body')?.addEventListener('click',event=>{
+    const download=event.target?.closest?.('[data-slip-download]');if(download){downloadPayrollSlip(download.dataset.slipDownload,download);return;}
+    const sign=event.target?.closest?.('[data-slip-sign]');if(sign)openRecipientSignatureModal(sign.dataset.slipSign,sign.dataset.slipPeriod);
+  });
+  $('#my-complaint-list')?.addEventListener('click',event=>{
+    const button=event.target?.closest?.('.my-complaint-close-btn');if(!button)return;
+    const card=button.closest('[data-my-complaint-id]');if(card)closeMyComplaintTicket(card.dataset.myComplaintId);
+  });
+  $('#admin-complaint-list')?.addEventListener('click',event=>{
+    const button=event.target?.closest?.('.complaint-status-btn,.complaint-reply-btn');if(!button)return;
+    const card=button.closest('.complaint-card');if(!card)return;const id=card.dataset.complaintId;
+    if(button.classList.contains('complaint-status-btn'))updateComplaintTicket(id,card.querySelector('.ticket-status-select').value,card.querySelector('.ticket-priority-select').value);
+    else replyComplaint(id,card.querySelector('.complaint-response-input').value,card.querySelector('.ticket-priority-select').value);
+  });
+  $('#admin-payroll-body')?.addEventListener('change',event=>{
+    const input=event.target?.closest?.('.payroll-row-check');if(!input)return;
+    const id=input.dataset.payrollId;if(input.checked)FeatureState.payrollSelected.add(id);else FeatureState.payrollSelected.delete(id);
+    const count=FeatureState.payrollSelected.size;$('#payroll-selected-count').textContent=count;
+    const publish=$('#btn-open-payroll-publish');if(publish)publish.disabled=count===0;
+    const checks=[...$('#admin-payroll-body').querySelectorAll('.payroll-row-check:not(:disabled)')],selectAll=$('#payroll-select-all');
+    if(selectAll){selectAll.checked=checks.length>0&&checks.every(item=>item.checked);selectAll.indeterminate=checks.some(item=>item.checked)&&!selectAll.checked;}
+    updatePayrollWizard();
+  });
+  $('#payroll-adjustment-body')?.addEventListener('input',event=>{if(event.target?.closest?.('.payroll-money-input'))updatePayrollAdjustmentTotals(event);});
+  $('#admin-payroll-history-body')?.addEventListener('click',event=>{const button=event.target?.closest?.('[data-slip-download]');if(button)downloadPayrollSlip(button.dataset.slipDownload,button);});
+
+'''
+          js=replace_once(js,anchor,delegated,'delegated event anchor')
+
+          # Preserve lazy face-api invariant.
+          if js.count("const FACEAPI_CDN_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';") != 1:
+              raise SystemExit('face-api lazy loader invariant changed')
+
+          (legacy/'index-app.js').write_text(js,encoding='utf-8')
+          index=index[:script.start()]+'<script src="./src/legacy/index-app.js"></script>\n</body>'+index[script.end():]
+          index_path.write_text(index,encoding='utf-8')
+
+          # Remove the temporary runtime interception guard; optimized source now owns behavior.
+          config_path=root/'supabase-config.js'
+          config=config_path.read_text(encoding='utf-8')
+          config2,count=re.subn(r'\nfunction installLegacyFrontendPerformanceGuards\(\) \{.*?\n\}\n\n(?=\(\(\) => \{)', '\n', config, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit(f'performance guard removal count={count}')
+          config2=replace_once(config2,'    installLegacyFrontendPerformanceGuards();\n','', 'performance guard call')
+          config_path.write_text(config2,encoding='utf-8')
+
+          # PWA offline shell owns the new static legacy assets.
+          sw_path=root/'sw.js';sw=sw_path.read_text(encoding='utf-8')
+          sw=replace_once(sw,"  './supabase-config.js',\n","  './supabase-config.js',\n  './src/legacy/index-shell.css',\n  './src/legacy/index-app.js',\n",'service worker shell')
+          sw_path.write_text(sw,encoding='utf-8')
+
+          # Update tests that intentionally inspect the legacy frontend source, now split across HTML + JS.
+          for test_name in ['tests/frontend_entrypoint_hygiene_test.ts','tests/codebase_hygiene_test.ts']:
+              path=root/test_name;text=path.read_text(encoding='utf-8')
+              needle='const index = await read("index.html");'
+              if needle not in text:
+                  raise SystemExit(f'{test_name}: legacy index reader not found')
+              text=text.replace(needle,'const index = (await read("index.html")) + "\\n" + (await read("src/legacy/index-app.js"));')
+              path.write_text(text,encoding='utf-8')
+
+          test_path=root/'tests/frontend_performance_structure_test.ts'
+          test_path.write_text('''import { assert } from "jsr:@std/assert@1";
+const read=(path:string)=>Deno.readTextFile(path);
+Deno.test("legacy frontend shell is externalized and cacheable",async()=>{
+  const index=await read("index.html"),js=await read("src/legacy/index-app.js"),css=await read("src/legacy/index-shell.css"),sw=await read("sw.js"),config=await read("supabase-config.js");
+  assert(index.includes('./src/legacy/index-shell.css'));assert(index.includes('./src/legacy/index-app.js'));
+  assert(!index.includes('<style>'));assert(!index.includes('const APP_CONFIG='));
+  assert(js.includes("const FACEAPI_CDN_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js'"));
+  assert(!/<script[^>]+face-api/i.test(index));
+  assert(js.includes('let CropDrawFrame=0'));assert(js.includes('requestAnimationFrame'));
+  assert(!js.includes('canvas.width=size;canvas.height=size;'));
+  assert(sw.includes("'./src/legacy/index-shell.css'"));assert(sw.includes("'./src/legacy/index-app.js'"));
+  assert(!config.includes('installLegacyFrontendPerformanceGuards'));
+  assert(new TextEncoder().encode(index).length<200000);assert(css.length>1000);
+});
+Deno.test("frequently rerendered legacy lists use delegated events",async()=>{
+  const js=await read("src/legacy/index-app.js");
+  for(const forbidden of ["tbody.querySelectorAll('.attendance-row-check').forEach","container.querySelectorAll('[data-user-index]').forEach","container.querySelectorAll('[data-log-index]').forEach","body.querySelectorAll('.payroll-row-check').forEach","body.querySelectorAll('.payroll-money-input').forEach","body.querySelectorAll('[data-setting-key]').forEach","accessBody.querySelectorAll('.config-delete-access').forEach","body.querySelectorAll('.config-role-select').forEach","list.querySelectorAll('.complaint-card').forEach"]){assert(!js.includes(forbidden),`per-render listener remains: ${forbidden}`);}
+  for(const required of ["$('#absen-table-body')?.addEventListener('change'","$('#users-grid-container')?.addEventListener('click'","$('#log-list-container')?.addEventListener('click'","$('#admin-payroll-body')?.addEventListener('change'","$('#payroll-adjustment-body')?.addEventListener('input'","$('#admin-complaint-list')?.addEventListener('click'"]){assert(js.includes(required),`delegated listener missing: ${required}`);}
+});
+''',encoding='utf-8')
+
+          deno_path=root/'deno.json';deno=deno_path.read_text(encoding='utf-8')
+          anchor='tests/query_efficiency_contract_test.ts'
+          if deno.count(anchor) != 2:
+              raise SystemExit(f'deno.json query test anchor expected twice, found {deno.count(anchor)}')
+          deno=deno.replace(anchor,anchor+' tests/frontend_performance_structure_test.ts')
+          deno_path.write_text(deno,encoding='utf-8')
+
+          # Release/cache bump.
+          release_path=root/'src/app/release-version.js';release=release_path.read_text(encoding='utf-8')
+          release=replace_once(release,"const version = '26.11.68';","const version = '26.11.69';",'release version')
+          release=replace_once(release,"const cacheName = 'absen-sppg-hadirly-v109';","const cacheName = 'absen-sppg-hadirly-v110';",'cache version')
+          release_path.write_text(release,encoding='utf-8')
+
+          trigger=root/'tests/.frontend-structure-trigger'
+          if trigger.exists():trigger.unlink()
+          workflow=root/'.github/workflows/frontend-structure-finalize.yml'
+          if workflow.exists():workflow.unlink()
+
+          print('Legacy frontend files containing index.html references:')
+          for path in sorted((root/'tests').glob('*.ts')):
+              if 'index.html' in path.read_text(encoding='utf-8'):
+                  print(' -',path)
+          print('index bytes',len(index.encode()),'css bytes',len(css.encode()),'js bytes',len(js.encode()))
+          PY
+
+      - name: Validate transformed source
+        run: |
+          node --check src/legacy/index-app.js
+          git diff --check
+          test -s src/legacy/index-shell.css
+          test -s src/legacy/index-app.js
+          grep -q 'src/legacy/index-shell.css' index.html
+          grep -q 'src/legacy/index-app.js' index.html
+          ! grep -q '<style>' index.html
+          ! grep -q 'installLegacyFrontendPerformanceGuards' supabase-config.js
+
+      - name: Commit refactor to PR branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'perf(frontend): externalize legacy shell and delegate events'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
