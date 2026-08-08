@@ -1,9 +1,15 @@
 {
-  "mode": "source-only",
-  "productionEnabled": false,
+  "mode": "cloudflare-pages-function",
+  "productionEnabled": true,
+  "productionConfigured": true,
+  "deploymentVerified": false,
   "productionOrigin": "https://hadirly.org",
   "cookieName": "__Host-hadirly_session",
   "sameSite": "Strict",
-  "legacyExchangePlanned": true,
-  "reason": "No connected server-side hosting or Cloudflare runtime is available in this session; frontend cutover must remain disabled until /api is deployed and smoke-tested on hadirly.org."
+  "secretStorage": "http-only-cookie",
+  "compatibilityMarkerInLocalStorage": true,
+  "compatibilityMarker": "__HADIRLY_HTTP_ONLY_SESSION__",
+  "legacyExchangeEnabled": true,
+  "routeSource": "functions/api/[[path]].ts",
+  "note": "Canonical production is fail-closed to the same-origin BFF. localStorage auth_token is retained only as a non-secret compatibility marker while legacy consumers are removed incrementally. External Cloudflare runtime smoke-test is not available through the connected tools in this session."
 }
