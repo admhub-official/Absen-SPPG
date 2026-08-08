@@ -86,7 +86,7 @@ Deno.test("browser persists only minimal non-sensitive auth identity", async () 
 
 Deno.test("service worker bypasses same-origin BFF API completely", async () => {
   const sw = await read("sw.js");
-  if (!sw.includes("if (url.pathname.startsWith('/api/')) return;")) {
+  if (!sw.includes("if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return;")) {
     throw new Error("service worker must not intercept BFF /api requests");
   }
 });
