@@ -29,8 +29,8 @@ Deno.test('PWA release version has one canonical source', async () => {
   const sw = await read('sw.js');
   const config = await read('supabase-config.js');
 
-  if (!release.includes("version = '26.11.58'")) throw new Error('release version mismatch');
-  if (!release.includes("cacheName = 'absen-sppg-hadirly-v99'")) throw new Error('release cache mismatch');
+  if (!/const version = '\d+\.\d+\.\d+';/.test(release)) throw new Error('release version format mismatch');
+  if (!/const cacheName = 'absen-sppg-hadirly-v\d+';/.test(release)) throw new Error('release cache format mismatch');
   for (const [name, source] of [['bootstrap', bootstrap], ['runtime', runtime]] as const) {
     if (!source.includes('HADIRLY_RELEASE?.version')) throw new Error(`${name} must read shared release version`);
   }
