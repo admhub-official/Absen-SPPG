@@ -15,7 +15,9 @@ const corsOptions = {
   localOrigins: ["http://localhost:4173", "http://127.0.0.1:4173"],
 };
 
-async function auth(token: unknown) {
+type Actor = { id: string; role: string; email: string; sppg: string };
+
+async function auth(token: unknown): Promise<Actor> {
   const cleanToken = String(token || "").trim();
   if (!cleanToken || cleanToken.length > 2048) throw new Error("SESSION_EXPIRED");
   const session = await db.from("Sessions")
@@ -29,11 +31,49 @@ async function auth(token: unknown) {
   ) throw new Error("SESSION_EXPIRED");
 
   const user = await db.from("Users")
-    .select("ID_User,Role,Status_Aktif")
+    .select("ID_User,Role,Status_Aktif,Email,SPPG")
     .eq("ID_User", session.data.ID_User)
     .maybeSingle();
   if (user.error || !user.data || !active(user.data.Status_Aktif)) throw new Error("ACCOUNT_INACTIVE");
-  return { id: String(user.data.ID_User), role: roleOf(user.data.Role) };
+  return {
+    id: String(user.data.ID_User),
+    role: roleOf(user.data.Role),
+    email: String(user.data.Email || "").trim(),
+    sppg: String(user.data.SPPG || "").trim(),
+  };
+}
+
+async function allowedSppg(actor: Actor): Promise<string[] | null> {
+  if (actor.role === "SUPER ADMIN") return null;
+  const values = new Set<string>();
+  if (actor.sppg) values.add(actor.sppg);
+  if (actor.email) {
+    const access = await db.from("Akses_Email").select("SPPG,Aktif").ilike("Email", actor.email);
+    if (access.error) throw new Error("SCOPE_QUERY_FAILED");
+    for (const row of access.data || []) {
+      if (!active(row.Aktif)) continue;
+      const sppg = String(row.SPPG || "").trim();
+      if (sppg) values.add(sppg);
+    }
+  }
+  return [...values];
+}
+
+async function scopedUserIds(actor: Actor): Promise<string[] | null> {
+  const scope = await allowedSppg(actor);
+  if (scope === null) return null;
+  if (!scope.length) return [];
+  const users = await db.from("Users").select("ID_User").in("SPPG", scope);
+  if (users.error) throw new Error("SCOPE_QUERY_FAILED");
+  return (users.data || []).map((row) => String(row.ID_User || "")).filter(Boolean);
+}
+
+async function assertCorrectionInScope(actor: Actor, correctionId: string): Promise<void> {
+  if (actor.role === "SUPER ADMIN") return;
+  const correction = await db.from("Attendance_Corrections").select("ID_User").eq("Correction_ID", correctionId).maybeSingle();
+  if (correction.error || !correction.data?.ID_User) throw new Error("CORRECTION_NOT_FOUND");
+  const ids = await scopedUserIds(actor);
+  if (!ids?.includes(String(correction.data.ID_User))) throw new Error("FORBIDDEN");
 }
 
 function dateOnly(value: unknown, field: string): string {
@@ -48,6 +88,7 @@ function errorStatus(error: unknown): number {
   const message = error instanceof Error ? error.message : String(error);
   if (message === "SESSION_EXPIRED") return 401;
   if (message === "ACCOUNT_INACTIVE" || message === "FORBIDDEN") return 403;
+  if (message === "CORRECTION_NOT_FOUND") return 404;
   if (error instanceof ValidationError) return 422;
   return 500;
 }
@@ -118,6 +159,9 @@ Deno.serve(async (req) => {
         .select("*")
         .order("Submitted_At", { ascending: false })
         .limit(100);
+      const ids = await scopedUserIds(actor);
+      if (ids && !ids.length) return jsonResponse({ success: true, result: [], requestId }, 200, requestId, headers);
+      if (ids) query = query.in("ID_User", ids);
       if (body.status) {
         const status = String(body.status).trim().toUpperCase();
         if (!["PENDING", "APPROVED", "REJECTED"].includes(status)) {
@@ -138,6 +182,7 @@ Deno.serve(async (req) => {
       if (!["APPROVED", "REJECTED"].includes(status)) {
         throw new ValidationError("INVALID_STATUS", "Status review tidak valid.", "status");
       }
+      await assertCorrectionInScope(actor, correctionId);
       const result = await db.rpc("apply_attendance_correction", {
         p_correction_id: correctionId,
         p_reviewer_id: actor.id,
