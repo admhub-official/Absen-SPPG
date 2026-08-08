@@ -49,8 +49,8 @@
   ]);
   const persistentDeviceKeys = new Set(['idDevice','ID_Device','username','Username_Device','lokasi','Lokasi_SPPG']);
 
-  let exchangePromise = null;
   let restorePromise = null;
+  let virtualSessionAuthenticated = false;
 
   function isCanonicalProduction() {
     return location.origin === canonicalOrigin;
@@ -80,27 +80,44 @@
     return safe;
   }
 
-  function installAuthUserStorageGuard() {
-    if (window.__HADIRLY_AUTH_USER_STORAGE_GUARD__) return;
-    window.__HADIRLY_AUTH_USER_STORAGE_GUARD__ = true;
+  function installBrowserStorageGuards() {
+    if (window.__HADIRLY_BROWSER_STORAGE_GUARD__) return;
+    window.__HADIRLY_BROWSER_STORAGE_GUARD__ = true;
+    const nativeGetItem = Storage.prototype.getItem;
     const nativeSetItem = Storage.prototype.setItem;
+    const nativeRemoveItem = Storage.prototype.removeItem;
+    try { nativeRemoveItem.call(localStorage, 'auth_token'); } catch {}
+    Storage.prototype.getItem = function guardedStorageGetItem(key) {
+      if (this === localStorage && String(key) === 'auth_token' && isCanonicalProduction()) {
+        return virtualSessionAuthenticated ? sessionMarker : null;
+      }
+      return nativeGetItem.call(this, key);
+    };
     Storage.prototype.setItem = function guardedStorageSetItem(key, value) {
+      if (this === localStorage && String(key) === 'auth_token' && isCanonicalProduction()) {
+        virtualSessionAuthenticated = String(value) === sessionMarker;
+        try { nativeRemoveItem.call(localStorage, 'auth_token'); } catch {}
+        return;
+      }
       if (this === localStorage && String(key) === 'auth_user') {
-        try {
-          value = JSON.stringify(sanitizePersistentUser(JSON.parse(String(value))));
-        } catch {
-          value = '{}';
-        }
+        try { value = JSON.stringify(sanitizePersistentUser(JSON.parse(String(value)))); }
+        catch { value = '{}'; }
       }
       return nativeSetItem.call(this, key, value);
     };
+    Storage.prototype.removeItem = function guardedStorageRemoveItem(key) {
+      if (this === localStorage && String(key) === 'auth_token' && isCanonicalProduction()) {
+        virtualSessionAuthenticated = false;
+      }
+      return nativeRemoveItem.call(this, key);
+    };
     try {
-      const existing = localStorage.getItem('auth_user');
+      const existing = nativeGetItem.call(localStorage, 'auth_user');
       if (existing) localStorage.setItem('auth_user', existing);
     } catch {}
   }
 
-  installAuthUserStorageGuard();
+  installBrowserStorageGuards();
 
   function syncRuntimeToken(value) {
     try {
@@ -121,7 +138,7 @@
   }
 
   function setMarker() {
-    try { localStorage.setItem('auth_token', sessionMarker); } catch {}
+    virtualSessionAuthenticated = true;
     syncRuntimeToken(sessionMarker);
   }
 
@@ -245,41 +262,7 @@
     return restorePromise;
   }
 
-  async function exchangeLegacySession() {
-    if (!isCanonicalProduction()) return false;
-    const stored = currentStoredToken();
-    if (!stored || stored === sessionMarker) {
-      if (stored === sessionMarker) syncRuntimeToken(sessionMarker);
-      return stored === sessionMarker;
-    }
-    if (exchangePromise) return exchangePromise;
 
-    exchangePromise = (async () => {
-      try {
-        const response = await sameOriginApi('/api/auth/exchange', {
-          method: 'POST',
-          body: JSON.stringify({ token: stored })
-        });
-        const parsed = await readJsonPayload(response);
-        const body = parsed.valid ? parsed.payload : null;
-        if (response.ok && body?.success !== false) {
-          setMarker();
-          window.dispatchEvent(new CustomEvent('absen:session-changed', { detail: { authenticated: true, source: 'http-only-bff' } }));
-          return true;
-        }
-        clearClientAuth();
-        return false;
-      } catch {
-        // Canonical production never keeps a raw legacy bearer when the cookie exchange
-        // cannot be proven successful. Re-login is safer than retaining browser-readable secret material.
-        clearClientAuth();
-        return false;
-      } finally {
-        exchangePromise = null;
-      }
-    })();
-    return exchangePromise;
-  }
 
   function requestDetails(input, init) {
     const raw = typeof input === 'string' ? input : input instanceof URL ? input.href : input?.url;
@@ -319,8 +302,6 @@
   }
 
   async function bffSessionCheck() {
-    const stored = currentStoredToken();
-    if (stored && stored !== sessionMarker) await exchangeLegacySession();
     const rawResponse = await readCookieSession();
     const parsed = await readJsonPayload(rawResponse);
     if (!parsed.valid) {
@@ -350,8 +331,6 @@
   }
 
   async function bffLogout() {
-    const stored = currentStoredToken();
-    if (stored && stored !== sessionMarker) await exchangeLegacySession();
     const rawResponse = await sameOriginApi('/api/auth/logout', { method: 'POST', body: '{}' });
     const normalized = await normalizeBffResponse(rawResponse, 'Layanan logout tidak mengembalikan respons yang valid.');
     clearClientAuth();
@@ -359,17 +338,6 @@
   }
 
   async function bffProxy(target, body, sourceHeaders) {
-    const stored = currentStoredToken();
-    if (stored && stored !== sessionMarker) {
-      const migrated = await exchangeLegacySession();
-      if (!migrated) {
-        return responseWithJson(new Response(null, { status: 401 }), {
-          success: false,
-          code: 'SESSION_MIGRATION_REQUIRED',
-          message: 'Sesi lama tidak dapat diamankan. Silakan login kembali.'
-        });
-      }
-    }
     const headers = mutationHeaders(sourceHeaders);
     const rawResponse = await downstreamFetch(`/api/functions/${encodeURIComponent(target)}`, {
       method: 'POST',
@@ -416,20 +384,13 @@
   window.HadirlyCookieSession = Object.freeze({
     marker: sessionMarker,
     productionRequired: true,
+    runtimeMarkerOnly: true,
     publicUnauthenticatedFunctions,
-    exchangeLegacySession,
     restoreCookieSession,
     clearClientAuth,
     sanitizePersistentUser,
     hasCompatibilityMarker: () => currentStoredToken() === sessionMarker
   });
 
-  if (isCanonicalProduction()) {
-    const stored = currentStoredToken();
-    if (stored && stored !== sessionMarker) {
-      exchangeLegacySession().then((ok) => { if (ok) restoreCookieSession().catch(() => {}); }).catch(() => {});
-    } else {
-      restoreCookieSession().catch(() => {});
-    }
-  }
+  if (isCanonicalProduction()) restoreCookieSession().catch(() => {});
 })();

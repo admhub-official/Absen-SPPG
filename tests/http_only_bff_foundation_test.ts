@@ -27,8 +27,8 @@ async function authTokenConsumers(): Promise<string[]> {
   return found.sort();
 }
 
-// Transitional compatibility inventory. Raw bearer material is no longer allowed in browser
-// storage on canonical production; these consumers receive only a fixed non-secret marker.
+// Compatibility inventory while legacy call sites still read auth_token. Canonical production
+// virtualizes the fixed marker in memory; no auth_token value is persisted in browser storage.
 const expectedCompatibilityConsumers = [
   "index.html",
   "security-operations-ui.js",
@@ -58,7 +58,7 @@ const expectedCompatibilityConsumers = [
   "supabase-config.js",
 ].sort();
 
-Deno.test("browser auth_token inventory is explicit during non-secret marker compatibility phase", async () => {
+Deno.test("browser auth_token inventory is explicit during runtime-only marker compatibility phase", async () => {
   const actual = await authTokenConsumers();
   if (JSON.stringify(actual) !== JSON.stringify(expectedCompatibilityConsumers)) {
     throw new Error(`auth_token compatibility inventory changed. expected=${JSON.stringify(expectedCompatibilityConsumers)} actual=${JSON.stringify(actual)}`);
@@ -104,7 +104,7 @@ Deno.test("Cloudflare Pages route exposes the BFF on canonical same-origin /api"
     'HADIRLY_ORIGIN: "https://hadirly.org"',
     'SUPABASE_URL: "https://szwwpnbbsmjsbzzcecyj.supabase.co"',
     'SESSION_MAX_AGE_SECONDS: "28800"',
-    'ALLOW_LEGACY_EXCHANGE: "true"',
+    'ALLOW_LEGACY_EXCHANGE: "false"',
   ]) {
     if (!pages.includes(marker)) throw new Error(`Cloudflare Pages BFF route missing ${marker}`);
   }
@@ -113,7 +113,7 @@ Deno.test("Cloudflare Pages route exposes the BFF on canonical same-origin /api"
     'zone_name = "hadirly.org"',
     'HADIRLY_ORIGIN = "https://hadirly.org"',
     'SESSION_MAX_AGE_SECONDS = "28800"',
-    'ALLOW_LEGACY_EXCHANGE = "true"',
+    'ALLOW_LEGACY_EXCHANGE = "false"',
   ]) {
     if (!wrangler.includes(marker)) throw new Error(`Cloudflare BFF config missing ${marker}`);
   }
@@ -123,41 +123,36 @@ Deno.test("Cloudflare Pages route exposes the BFF on canonical same-origin /api"
   if (status.cookieName !== "__Host-hadirly_session" || status.sameSite !== "Strict") {
     throw new Error("runtime status cookie contract is inconsistent");
   }
-  if (status.secretStorage !== "http-only-cookie" || status.compatibilityMarkerInLocalStorage !== true) {
-    throw new Error("runtime status must document secret-cookie plus non-secret marker compatibility");
+  if (status.secretStorage !== "http-only-cookie" || status.compatibilityMarkerInLocalStorage !== false || status.compatibilityMarkerRuntimeOnly !== true) {
+    throw new Error("runtime status must document HttpOnly secret storage plus runtime-only compatibility");
   }
 });
 
-Deno.test("canonical browser cutover is fail-closed and localStorage receives only a non-secret marker", async () => {
+Deno.test("canonical browser cutover keeps auth_token runtime-only and disables legacy exchange", async () => {
   const bridge = await read("src/app/http-only-session-bridge.js");
   const bootstrap = await read("src/app/bootstrap.js");
   const status = JSON.parse(await read("bff/runtime-status.json"));
   for (const marker of [
     "const canonicalOrigin = 'https://hadirly.org'",
     "const sessionMarker = '__HADIRLY_HTTP_ONLY_SESSION__'",
-    "localStorage.setItem('auth_token', sessionMarker)",
-    "localStorage.removeItem('auth_token')",
-    "if (!isCanonicalProduction()) return downstreamFetch(input, init)",
-    "'/api/auth/exchange'",
+    "let virtualSessionAuthenticated = false",
+    "function installBrowserStorageGuards()",
+    "nativeRemoveItem.call(localStorage, 'auth_token')",
+    "return virtualSessionAuthenticated ? sessionMarker : null",
+    "runtimeMarkerOnly: true",
     "'/api/auth/login'",
     "'/api/auth/session'",
     "'/api/auth/logout'",
     "`/api/functions/${encodeURIComponent(target)}`",
     "restoreCookieSession",
-    "clearClientAuth();\n        return false;",
-    "SESSION_MIGRATION_REQUIRED",
     "productionRequired: true",
-  ]) {
-    if (!bridge.includes(marker)) throw new Error(`HttpOnly bridge missing marker: ${marker}`);
+  ]) if (!bridge.includes(marker)) throw new Error(`HttpOnly bridge missing marker: ${marker}`);
+  if (bridge.includes("/api/auth/exchange") || bridge.includes("exchangeLegacySession")) {
+    throw new Error("browser bridge must not retain legacy bearer exchange after final cutover");
   }
-  if (!bootstrap.startsWith("import './http-only-session-bridge.js';")) {
-    throw new Error("HttpOnly bridge must initialize before the app bootstrap body");
-  }
-  if (status.productionEnabled !== true || status.compatibilityMarker !== "__HADIRLY_HTTP_ONLY_SESSION__") {
-    throw new Error("runtime status does not match browser compatibility marker contract");
-  }
-  if (bridge.includes("localStorage.setItem('auth_token', stored)") || bridge.includes('localStorage.setItem("auth_token", stored)')) {
-    throw new Error("legacy bearer material must never be written back to browser storage");
+  if (!bootstrap.startsWith("import './http-only-session-bridge.js';")) throw new Error("HttpOnly bridge must initialize first");
+  if (status.productionEnabled !== true || status.compatibilityMarkerInLocalStorage !== false || status.compatibilityMarkerRuntimeOnly !== true || status.legacyExchangeEnabled !== false) {
+    throw new Error("runtime status does not match final runtime-only marker contract");
   }
 });
 
@@ -186,7 +181,7 @@ Deno.test("persistent auth_user storage excludes sensitive profile and payroll f
   const bridge = await read("src/app/http-only-session-bridge.js");
   for (const marker of [
     'function sanitizePersistentUser(value)',
-    'function installAuthUserStorageGuard()',
+    'function installBrowserStorageGuards()',
     "String(key) === 'auth_user'",
     "JSON.stringify(sanitizePersistentUser(JSON.parse(String(value))))",
     "localStorage.setItem('auth_user', JSON.stringify(sanitizePersistentUser(user)))",

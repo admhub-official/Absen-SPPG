@@ -120,3 +120,23 @@ Deno.test("Supabase deployment uses a production-only function allowlist", async
     if (!obsoleteBlock.includes(`\"${obsolete}\"`)) throw new Error(`obsolete function missing from cleanup list: ${obsolete}`);
   }
 });
+
+
+Deno.test("frontend duplication hotspots use shared helpers", async () => {
+  const index = await read("index.html");
+  for (const marker of [
+    "function parseApiError(error,fallback='Terjadi kesalahan')",
+    "async function withBusyButton(button,loadingHtml,task)",
+    "async function verifyOtpFlow(",
+    "async function resendOtpFlow(",
+    "function normalizeUserEditorData(user)",
+    "async function startFaceCameraSession(",
+    "function stopFaceCameraSession(",
+    "async function runFaceDetectionLoop(",
+    "function bindClicks(ids,handler)",
+    "function bindAccessibleActivation(element,handler)",
+  ]) if (!index.includes(marker)) throw new Error(`shared frontend helper missing ${marker}`);
+  const faceCalls = index.match(/faceapi\.detectSingleFace\(/g)?.length || 0;
+  if (faceCalls !== 1) throw new Error(`face detection engine must have one canonical detectSingleFace call, got ${faceCalls}`);
+  if ((index.match(/new faceapi\.TinyFaceDetectorOptions\(/g)?.length || 0) !== 1) throw new Error("face detector options must be centralized");
+});

@@ -103,7 +103,7 @@ Deno.test("root Cloudflare Workers build separates frontend from canonical BFF",
     'HADIRLY_ORIGIN = "https://hadirly.org"',
     'STATIC_ORIGIN = "https://absen-sppg.pages.dev"',
     'SUPABASE_URL = "https://szwwpnbbsmjsbzzcecyj.supabase.co"',
-    'ALLOW_LEGACY_EXCHANGE = "true"',
+    'ALLOW_LEGACY_EXCHANGE = "false"',
   ]) {
     if (!wrangler.includes(marker)) throw new Error(`root Cloudflare config missing ${marker}`);
   }
@@ -137,4 +137,21 @@ Deno.test("invalid BFF GET routes recover to app while session GET and mutations
   ]) {
     if (!worker.includes(marker)) throw new Error(`PWA BFF navigation/auth guard missing ${marker}`);
   }
+});
+
+
+Deno.test("runtime-only auth marker never persists and legacy exchange is disabled", async () => {
+  const bridge = await read("src/app/http-only-session-bridge.js");
+  const status = JSON.parse(await read("bff/runtime-status.json"));
+  const rootConfig = await read("wrangler.toml");
+  const pages = await read("functions/api/[[path]].ts");
+  for (const marker of [
+    "let virtualSessionAuthenticated = false",
+    "nativeRemoveItem.call(localStorage, 'auth_token')",
+    "return virtualSessionAuthenticated ? sessionMarker : null",
+    "runtimeMarkerOnly: true",
+  ]) if (!bridge.includes(marker)) throw new Error(`runtime marker guard missing ${marker}`);
+  if (bridge.includes("/api/auth/exchange") || bridge.includes("exchangeLegacySession")) throw new Error("legacy exchange must be absent from browser bridge");
+  if (!rootConfig.includes('ALLOW_LEGACY_EXCHANGE = "false"') || !pages.includes('ALLOW_LEGACY_EXCHANGE: "false"')) throw new Error("Cloudflare entrypoints must disable legacy exchange");
+  if (status.compatibilityMarkerInLocalStorage !== false || status.compatibilityMarkerRuntimeOnly !== true || status.legacyExchangeEnabled !== false) throw new Error("runtime status must describe final cookie cutover");
 });

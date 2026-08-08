@@ -2045,7 +2045,7 @@ async function loadFaceApiModels(){
   }
 }
 
-function formatTanggal(v){if(!v)return'-';const d=new Date(v);if(isNaN(d))return'-';return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});}
+function formatTanggal(v){const d=parseDateValue(v);if(!d)return'-';return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});}
 function formatRupiah(v){if(v===undefined||v===null||v==='')return'-';const n=Number(v);if(isNaN(n))return'-';return'Rp '+n.toLocaleString('id-ID');}
 function setInfo(id,val,formatter){const el=document.getElementById(id);if(!el)return;const v=formatter?formatter(val):val;el.textContent=(v===undefined||v===null||v==='')?'-':v;el.classList.toggle('empty',!v||v==='-');}
 function showApp(){
@@ -2267,16 +2267,10 @@ async function loadDashboardData(){
     console.error(e);
   }
 }
-function handleLogout(){localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user'),AppState.token=null,AppState.user=null;showAuth();navigateTo('login');}
-function navigateTo(p){$$('.auth-page').forEach(e=>e.classList.add('hidden'));const t=$(`#page-${p}`);if(t)t.classList.remove('hidden');history.pushState({p},'',`#${p}`);}
-function showAlert(m,t='info'){const i={success:'✓',error:'✕',warning:'⚠',info:'ℹ'},a=document.createElement('div');a.className=`alert ${t}`,a.innerHTML=`<span>${i[t]||i.info}</span><div style="flex:1">${m}</div><button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer">✕</button>`,$('#alert-box').appendChild(a),setTimeout(()=>{a.style.opacity='0';setTimeout(()=>a.remove(),300)},5000);}
-
-let RiskConfirmation=null;
-function closeRiskConfirmation(value=null){
-  const modal=$('#modal-risk-confirm');
-  modal?.classList.remove('active');
-  if(RiskConfirmation?.resolve)RiskConfirmation.resolve(value);
-  RiskConfirmation=null;
+async function handleLogout(){
+  try{if(AppState.token)await apiCall('logout',{token:AppState.token});}
+  catch(error){console.warn('Server session revoke failed during logout.',error);}
+  finally{localStorage.removeItem('auth_token');localStorage.removeItem('auth_user');sessionStorage.clear();AppState.token=null;AppState.user=null;clearApiResponseCache();showAuth();navigateTo('login');}
 }
 function confirmRiskAction({title='Konfirmasi tindakan',impact='Tindakan ini akan mengubah data sistem.'}={}){
   if(RiskConfirmation)closeRiskConfirmation(null);
@@ -2375,43 +2369,128 @@ function clearOtpRow(rowId){const row=document.getElementById(rowId);if(!row)ret
 function startResendCountdown(seconds,linkId,countdownId,timerKey){const link=document.getElementById(linkId),cd=document.getElementById(countdownId);if(!link||!cd)return;if(AppState[timerKey])clearInterval(AppState[timerKey]);let remaining=seconds;link.classList.add('disabled');function tick(){if(remaining<=0){clearInterval(AppState[timerKey]);AppState[timerKey]=null;link.classList.remove('disabled');cd.textContent='';return;}const m=Math.floor(remaining/60),s=remaining%60;cd.textContent=` (${m}:${String(s).padStart(2,'0')})`;remaining--;}
 tick();AppState[timerKey]=setInterval(tick,1000);}
 
+function parseApiError(error,fallback='Terjadi kesalahan'){
+  const raw=String(error&&error.message?error.message:fallback||'Terjadi kesalahan');
+  const parts=raw.split('::');
+  return {code:parts.length>1?parts[0]:'',message:parts.length>1?parts.slice(1).join('::'):raw};
+}
+
+async function withBusyButton(button,loadingHtml,task){
+  if(!button)return task();
+  const original=button.innerHTML;
+  button.disabled=true;
+  button.innerHTML=loadingHtml;
+  try{return await task();}
+  finally{button.disabled=false;button.innerHTML=original;}
+}
+
+function bindEvents(ids,eventName,handler){
+  ids.forEach(id=>document.getElementById(id)?.addEventListener(eventName,handler));
+}
+function bindClicks(ids,handler){bindEvents(ids,'click',handler);}
+function bindAccessibleActivation(element,handler){
+  if(!element)return;
+  element.addEventListener('click',handler);
+  element.addEventListener('keydown',event=>{
+    if(event.key!=='Enter'&&event.key!==' ')return;
+    event.preventDefault();handler(event);
+  });
+}
+function parseDateValue(value){
+  if(!value)return null;
+  const date=new Date(value);
+  return Number.isNaN(date.getTime())?null:date;
+}
+function userField(user,...keys){
+  for(const key of keys){const value=user?.[key];if(value!==undefined&&value!==null)return value;}
+  return '';
+}
+function dateInputValue(value){return value?String(value).split('T')[0]:'';}
+function normalizeUserEditorData(user){
+  return {
+    idUser:userField(user,'ID_User','idUser'),
+    nama:userField(user,'Nama_Lengkap','nama_lengkap','namaLengkap'),
+    username:userField(user,'Username','username'),
+    email:userField(user,'Email','email'),
+    wa:userField(user,'No_Whatsapp','no_whatsapp','noWhatsapp'),
+    tempatLahir:userField(user,'Tempat_Lahir','tempat_lahir','tempatLahir'),
+    tanggalLahir:dateInputValue(userField(user,'Tanggal_Lahir','tanggal_lahir','tanggalLahir')),
+    jenisKelamin:userField(user,'Jenis_Kelamin','jenis_kelamin','jenisKelamin'),
+    sppg:userField(user,'SPPG','sppg'),
+    jabatan:userField(user,'Jabatan_Divisi','jabatan_divisi','jabatanDivisi'),
+    mulaiKerja:dateInputValue(userField(user,'Tanggal_Mulai_Kerja','tanggal_mulai_kerja','tanggalMulaiKerja')),
+    gaji:userField(user,'Gaji_Harian','gaji_harian','gajiHarian'),
+    bank:userField(user,'Nama_Bank','nama_bank','namaBank'),
+    nomorRekening:userField(user,'Nomor_Rekening','nomor_rekening','nomorRekening'),
+    atasNamaRekening:userField(user,'Atas_Nama_Rekening','atas_nama_rekening','atasNamaRekening'),
+    foto:userField(user,'URL_Foto_Profil','urlFotoProfil')
+  };
+}
+function populateInputs(values){
+  Object.entries(values).forEach(([selector,value])=>{const input=$(selector);if(input)input.value=value??'';});
+}
+
+async function verifyOtpFlow({alertId,rowId,buttonId,apiFunction,payload,onSuccess,errorFallback='Kode OTP salah'}){
+  hideInlineAlert(alertId);
+  const kode=getOtpValue(rowId);
+  if(kode.length!==6){showInlineAlert(alertId,'Masukkan 6 digit kode verifikasi','warning');return false;}
+  const button=$(buttonId);
+  return withBusyButton(button,'<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Memverifikasi...',async()=>{
+    try{
+      const result=await apiCall(apiFunction,payload(kode));
+      if(result&&result.success){await onSuccess(result);return true;}
+      showInlineAlert(alertId,result?.message||'Verifikasi gagal');
+    }catch(error){
+      showInlineAlert(alertId,parseApiError(error,errorFallback).message);
+      clearOtpRow(rowId);
+    }
+    return false;
+  });
+}
+
+async function resendOtpFlow({buttonId,alertId,email,apiFunction,rowId,countdownId,timerKey}){
+  const button=$(buttonId);if(button?.classList.contains('disabled'))return false;
+  hideInlineAlert(alertId);
+  try{
+    const result=await apiCall(apiFunction,{email});
+    if(result&&result.success){
+      showAlert(result.message||'Kode berhasil dikirim ulang','success');
+      startResendCountdown(result.cooldownDetik||120,buttonId.slice(1),countdownId.slice(1),timerKey);
+      clearOtpRow(rowId);
+      return true;
+    }
+  }catch(error){
+    const parsed=parseApiError(error,'Gagal mengirim ulang kode');
+    showInlineAlert(alertId,parsed.message,'warning');
+  }
+  return false;
+}
+
 /* ===== LOGIN ===== */
 async function handleLogin(){
   hideInlineAlert('login-alert');
   $('#btn-goto-forgot').classList.remove('show');
   const e=$('#login-email').value.trim(),p=$('#login-password').value;
   if(!e||!p){showInlineAlert('login-alert','Mohon isi email dan password','warning');return;}
-  const b=$('#btn-login'),o=b.innerHTML;
-  b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Memproses...';
-  try{
-    const r=await apiCall('login',{email:e,username:e,password:p});
-    if(r&&r.token){
-      AppState.token=r.token,AppState.user=r,localStorage.setItem('auth_token',r.token),localStorage.setItem('auth_user',JSON.stringify(r));
-      showAlert('Login berhasil!','success'),showApp(),loadProfilLengkap();
-    }else{
+  const button=$('#btn-login');
+  await withBusyButton(button,'<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Memproses...',async()=>{
+    try{
+      const r=await apiCall('login',{email:e,username:e,password:p});
+      if(r&&r.token){
+        AppState.token=r.token;AppState.user=r;
+        localStorage.setItem('auth_token',r.token);localStorage.setItem('auth_user',JSON.stringify(r));
+        showAlert('Login berhasil!','success');showApp();loadProfilLengkap();
+        return;
+      }
       showInlineAlert('login-alert',r?.message||'Login gagal');
+    }catch(error){
+      const parsed=parseApiError(error);
+      showInlineAlert('login-alert',parsed.message,['AKUN_DIBEKUKAN','EMAIL_BELUM_VERIFIKASI'].includes(parsed.code)?'warning':'error');
+      if(parsed.code==='PASSWORD_SALAH_TAMPIL_RESET'){
+        $('#btn-goto-forgot').classList.add('show');$('#forgot-email').value=e;
+      }
     }
-  }catch(err){
-    const raw=err&&err.message?err.message:'Terjadi kesalahan';
-    const parts=raw.split('::');
-    const kode=parts.length>1?parts[0]:'';
-    const pesan=parts.length>1?parts[1]:raw;
-    if(kode==='AKUN_DIBEKUKAN'){
-      showInlineAlert('login-alert',pesan,'warning');
-    }else if(kode==='EMAIL_BELUM_VERIFIKASI'){
-      showInlineAlert('login-alert',pesan,'warning');
-    }else if(kode==='PASSWORD_SALAH_TAMPIL_RESET'){
-      showInlineAlert('login-alert',pesan,'warning');
-      $('#btn-goto-forgot').classList.add('show');
-      $('#forgot-email').value=e;
-    }else if(kode==='PASSWORD_SALAH'){
-      showInlineAlert('login-alert',pesan);
-    }else{
-      showInlineAlert('login-alert',pesan);
-    }
-  }finally{
-    b.disabled=false,b.innerHTML=o;
-  }
+  });
 }
 
 /* ===== REGISTRASI ===== */
@@ -2422,136 +2501,57 @@ async function handleRegister(){
   if(p!==cp){showAlert('Password konfirmasi tidak cocok','error');return;}
   if(p.length<6){showAlert('Password minimal 6 karakter','warning');return;}
   if(!s){showAlert('Anda harus menyetujui kebijakan','warning');return;}
-  const b=$('#btn-register'),o=b.innerHTML;
-  b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Mendaftar...';
-  try{
-    const r=await apiCall('registerUser',{namaLengkap:n,username:u,email:e,password:p,role:'user'});
-    if(r&&r.success){
-      AppState.pendingRegisterEmail=e;
-      $('#verify-register-email').textContent=e;
-      showAlert('Registrasi berhasil! Silakan cek email untuk kode verifikasi.','success');
-      navigateTo('verify-register');
-      startResendCountdown(120,'btn-resend-register','resend-register-countdown','resendTimerRegister');
-    }else{
-      showAlert(r?.message||'Registrasi gagal','error');
-    }
-  }catch(err){
-    showAlert(err&&err.message?err.message:'Terjadi kesalahan','error');
-  }finally{
-    b.disabled=false,b.innerHTML=o;
-  }
+  await withBusyButton($('#btn-register'),'<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Mendaftar...',async()=>{
+    try{
+      const r=await apiCall('registerUser',{namaLengkap:n,username:u,email:e,password:p,role:'user'});
+      if(r&&r.success){
+        AppState.pendingRegisterEmail=e;$('#verify-register-email').textContent=e;
+        showAlert('Registrasi berhasil! Silakan cek email untuk kode verifikasi.','success');
+        navigateTo('verify-register');startResendCountdown(120,'btn-resend-register','resend-register-countdown','resendTimerRegister');
+      }else showAlert(r?.message||'Registrasi gagal','error');
+    }catch(error){showAlert(parseApiError(error).message,'error');}
+  });
 }
 
 async function handleVerifyRegister(){
-  hideInlineAlert('verify-register-alert');
-  const kode=getOtpValue('verify-register-otp-row');
-  if(kode.length!==6){showInlineAlert('verify-register-alert','Masukkan 6 digit kode verifikasi','warning');return;}
-  const b=$('#btn-verify-register'),o=b.innerHTML;
-  b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Memverifikasi...';
-  try{
-    const r=await apiCall('verifyRegistrationOtp',{email:AppState.pendingRegisterEmail,kodeOtp:kode});
-    if(r&&r.success){
-      showAlert('Email berhasil diverifikasi! Silakan login.','success');
-      if(AppState.resendTimerRegister)clearInterval(AppState.resendTimerRegister);
-      navigateTo('login');
-    }else{
-      showInlineAlert('verify-register-alert',r?.message||'Verifikasi gagal');
-    }
-  }catch(err){
-    showInlineAlert('verify-register-alert',err&&err.message?err.message:'Kode OTP salah');
-    clearOtpRow('verify-register-otp-row');
-  }finally{
-    b.disabled=false,b.innerHTML=o;
-  }
+  return verifyOtpFlow({
+    alertId:'verify-register-alert',rowId:'verify-register-otp-row',buttonId:'#btn-verify-register',
+    apiFunction:'verifyRegistrationOtp',payload:kode=>({email:AppState.pendingRegisterEmail,kodeOtp:kode}),
+    onSuccess:()=>{showAlert('Email berhasil diverifikasi! Silakan login.','success');if(AppState.resendTimerRegister)clearInterval(AppState.resendTimerRegister);navigateTo('login');}
+  });
 }
 
 async function handleResendRegister(){
-  if($('#btn-resend-register').classList.contains('disabled'))return;
-  hideInlineAlert('verify-register-alert');
-  try{
-    const r=await apiCall('resendConfirmationEmail',{email:AppState.pendingRegisterEmail});
-    if(r&&r.success){
-      showAlert(r.message||'Kode berhasil dikirim ulang','success');
-      const cooldown=r.cooldownDetik||120;
-      startResendCountdown(cooldown,'btn-resend-register','resend-register-countdown','resendTimerRegister');
-      clearOtpRow('verify-register-otp-row');
-    }
-  }catch(err){
-    const raw=err&&err.message?err.message:'Gagal mengirim ulang kode';
-    const parts=raw.split('::');
-    if(parts[0]==='TUNGGU'){
-      showInlineAlert('verify-register-alert',parts[1],'warning');
-    }else{
-      showInlineAlert('verify-register-alert',raw,'warning');
-    }
-  }
+  return resendOtpFlow({buttonId:'#btn-resend-register',alertId:'verify-register-alert',email:AppState.pendingRegisterEmail,apiFunction:'resendConfirmationEmail',rowId:'verify-register-otp-row',countdownId:'#resend-register-countdown',timerKey:'resendTimerRegister'});
 }
 
 /* ===== LUPA PASSWORD (FORGOT -> VERIFY -> NEW PASSWORD) ===== */
 async function handleForgotPassword(){
   hideInlineAlert('forgot-password-alert');
-  const e=$('#forgot-email').value.trim();
-  if(!e){showInlineAlert('forgot-password-alert','Mohon isi email','warning');return;}
-  const b=$('#btn-forgot-password'),o=b.innerHTML;
-  b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Mengirim...';
-  try{
-    const r=await apiCall('requestResetPasswordByEmail',{email:e});
-    if(r&&r.success){
-      AppState.pendingResetEmail=e;
-      $('#verify-reset-email').textContent=e;
-      showAlert('Kode reset password telah dikirim ke email Anda.','success');
-      navigateTo('verify-reset');
-      startResendCountdown(r.cooldownDetik||120,'btn-resend-reset','resend-reset-countdown','resendTimerReset');
-    }else{
-      showInlineAlert('forgot-password-alert',r?.message||'Gagal mengirim kode reset');
-    }
-  }catch(err){
-    const raw=err&&err.message?err.message:'Terjadi kesalahan';
-    const parts=String(raw).split('::');
-    showInlineAlert('forgot-password-alert',parts.length>1?parts.slice(1).join('::'):raw,parts[0]==='TUNGGU'?'warning':'error');
-  }finally{
-    b.disabled=false,b.innerHTML=o;
-  }
+  const email=$('#forgot-email').value.trim();
+  if(!email){showInlineAlert('forgot-password-alert','Mohon isi email','warning');return;}
+  await withBusyButton($('#btn-forgot-password'),'<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Mengirim...',async()=>{
+    try{
+      const r=await apiCall('requestResetPasswordByEmail',{email});
+      if(r&&r.success){
+        AppState.pendingResetEmail=email;$('#verify-reset-email').textContent=email;
+        showAlert('Kode reset password telah dikirim ke email Anda.','success');navigateTo('verify-reset');
+        startResendCountdown(r.cooldownDetik||120,'btn-resend-reset','resend-reset-countdown','resendTimerReset');
+      }else showInlineAlert('forgot-password-alert',r?.message||'Gagal mengirim kode reset');
+    }catch(error){const parsed=parseApiError(error);showInlineAlert('forgot-password-alert',parsed.message,parsed.code==='TUNGGU'?'warning':'error');}
+  });
 }
 
 async function handleVerifyReset(){
-  hideInlineAlert('verify-reset-alert');
-  const kode=getOtpValue('verify-reset-otp-row');
-  if(kode.length!==6){showInlineAlert('verify-reset-alert','Masukkan 6 digit kode verifikasi','warning');return;}
-  const b=$('#btn-verify-reset'),o=b.innerHTML;
-  b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Memverifikasi...';
-  try{
-    const r=await apiCall('verifyResetPasswordOtp',{email:AppState.pendingResetEmail,kodeOtp:kode});
-    if(r&&r.success){
-      AppState.pendingResetToken=r.resetToken;
-      if(AppState.resendTimerReset)clearInterval(AppState.resendTimerReset);
-      navigateTo('new-password');
-    }else{
-      showInlineAlert('verify-reset-alert',r?.message||'Verifikasi gagal');
-    }
-  }catch(err){
-    showInlineAlert('verify-reset-alert',err&&err.message?err.message:'Kode OTP salah');
-    clearOtpRow('verify-reset-otp-row');
-  }finally{
-    b.disabled=false,b.innerHTML=o;
-  }
+  return verifyOtpFlow({
+    alertId:'verify-reset-alert',rowId:'verify-reset-otp-row',buttonId:'#btn-verify-reset',
+    apiFunction:'verifyResetPasswordOtp',payload:kode=>({email:AppState.pendingResetEmail,kodeOtp:kode}),
+    onSuccess:r=>{AppState.pendingResetToken=r.resetToken;if(AppState.resendTimerReset)clearInterval(AppState.resendTimerReset);navigateTo('new-password');}
+  });
 }
 
 async function handleResendReset(){
-  if($('#btn-resend-reset').classList.contains('disabled'))return;
-  hideInlineAlert('verify-reset-alert');
-  try{
-    const r=await apiCall('requestResetPasswordByEmail',{email:AppState.pendingResetEmail});
-    if(r&&r.success){
-      showAlert(r.message||'Kode berhasil dikirim ulang','success');
-      startResendCountdown(r.cooldownDetik||120,'btn-resend-reset','resend-reset-countdown','resendTimerReset');
-      clearOtpRow('verify-reset-otp-row');
-    }
-  }catch(err){
-    const raw=err&&err.message?err.message:'Gagal mengirim ulang kode';
-    const parts=String(raw).split('::');
-    showInlineAlert('verify-reset-alert',parts.length>1?parts.slice(1).join('::'):raw,'warning');
-  }
+  return resendOtpFlow({buttonId:'#btn-resend-reset',alertId:'verify-reset-alert',email:AppState.pendingResetEmail,apiFunction:'requestResetPasswordByEmail',rowId:'verify-reset-otp-row',countdownId:'#resend-reset-countdown',timerKey:'resendTimerReset'});
 }
 
 async function handleUpdatePassword(){
@@ -2560,23 +2560,15 @@ async function handleUpdatePassword(){
   if(!p||!cp){showInlineAlert('new-password-alert','Mohon isi password baru dan konfirmasi','warning');return;}
   if(p!==cp){showInlineAlert('new-password-alert','Konfirmasi password tidak cocok');return;}
   if(p.length<6){showInlineAlert('new-password-alert','Password minimal 6 karakter','warning');return;}
-  const b=$('#btn-update-password'),o=b.innerHTML;
-  b.disabled=true,b.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Memperbarui...';
-  try{
-    const r=await apiCall('resetPassword',{email:AppState.pendingResetEmail,token:AppState.pendingResetToken,newPassword:p});
-    if(r&&r.success){
-      showAlert('Password berhasil diubah! Silakan login.','success');
-      $('#new-password').value='',$('#new-password-confirm').value='';
-      AppState.pendingResetEmail='',AppState.pendingResetToken='';
-      navigateTo('login');
-    }else{
-      showInlineAlert('new-password-alert',r?.message||'Gagal update password');
-    }
-  }catch(err){
-    showInlineAlert('new-password-alert',err&&err.message?err.message:'Terjadi kesalahan');
-  }finally{
-    b.disabled=false,b.innerHTML=o;
-  }
+  await withBusyButton($('#btn-update-password'),'<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Memperbarui...',async()=>{
+    try{
+      const r=await apiCall('resetPassword',{email:AppState.pendingResetEmail,token:AppState.pendingResetToken,newPassword:p});
+      if(r&&r.success){
+        showAlert('Password berhasil diubah! Silakan login.','success');$('#new-password').value='';$('#new-password-confirm').value='';
+        AppState.pendingResetEmail='';AppState.pendingResetToken='';navigateTo('login');
+      }else showInlineAlert('new-password-alert',r?.message||'Gagal update password');
+    }catch(error){showInlineAlert('new-password-alert',parseApiError(error).message);}
+  });
 }
 
 /* ===================================================================
@@ -2974,65 +2966,29 @@ function openUserDetail(index){
 }
 
 function openAdminUpdateUserModal(){
-  const u = AdminState.selectedUser;
-  if(!u) return;
+  const u=AdminState.selectedUser;if(!u)return;
+  const data=normalizeUserEditorData(u);
   hideInlineAlert('admin-update-user-alert');
-  $('#admin-update-user-id').value = u.ID_User || '';
-  $('#auu-nama').value = u.Nama_Lengkap||u.nama_lengkap||'';
-  $('#auu-wa').value = u.No_Whatsapp||u.no_whatsapp||'';
-  $('#auu-tempat-lahir').value = u.Tempat_Lahir||u.tempat_lahir||'';
-  const tgl = u.Tanggal_Lahir||u.tanggal_lahir;
-  $('#auu-tanggal-lahir').value = tgl ? String(tgl).split('T')[0] : '';
-  $('#auu-jk').value = u.Jenis_Kelamin||u.jenis_kelamin||'';
-  $('#auu-sppg').value = u.SPPG||u.sppg||'';
-  $('#auu-jabatan').value = u.Jabatan_Divisi||u.jabatan_divisi||'';
-  const mk = u.Tanggal_Mulai_Kerja||u.tanggal_mulai_kerja;
-  $('#auu-mulai-kerja').value = mk ? String(mk).split('T')[0] : '';
-  $('#auu-gaji').value = u.Gaji_Harian||u.gaji_harian||'';
-  $('#auu-bank').value = u.Nama_Bank||u.nama_bank||'';
-  $('#auu-nomor-rekening').value = u.Nomor_Rekening||u.nomor_rekening||'';
-  $('#auu-rekening').value = u.Atas_Nama_Rekening||u.atas_nama_rekening||'';
+  populateInputs({
+    '#admin-update-user-id':data.idUser,'#auu-nama':data.nama,'#auu-wa':data.wa,'#auu-tempat-lahir':data.tempatLahir,
+    '#auu-tanggal-lahir':data.tanggalLahir,'#auu-jk':data.jenisKelamin,'#auu-sppg':data.sppg,'#auu-jabatan':data.jabatan,
+    '#auu-mulai-kerja':data.mulaiKerja,'#auu-gaji':data.gaji,'#auu-bank':data.bank,'#auu-nomor-rekening':data.nomorRekening,'#auu-rekening':data.atasNamaRekening
+  });
   $('#modal-admin-update-user').classList.add('active');
 }
 
 async function handleSaveAdminUpdateUser(){
   hideInlineAlert('admin-update-user-alert');
-  const userId = $('#admin-update-user-id').value;
-  if(!userId){ showInlineAlert('admin-update-user-alert','ID user tidak ditemukan'); return; }
-  const updates = {
-    Nama_Lengkap: $('#auu-nama').value.trim(),
-    No_Whatsapp: $('#auu-wa').value.trim(),
-    Tempat_Lahir: $('#auu-tempat-lahir').value.trim(),
-    Tanggal_Lahir: $('#auu-tanggal-lahir').value || null,
-    Jenis_Kelamin: $('#auu-jk').value,
-    SPPG: $('#auu-sppg').value.trim(),
-    Jabatan_Divisi: $('#auu-jabatan').value.trim(),
-    Tanggal_Mulai_Kerja: $('#auu-mulai-kerja').value || null,
-    Gaji_Harian: $('#auu-gaji').value ? Number($('#auu-gaji').value) : null,
-    Nama_Bank: $('#auu-bank').value.trim(),
-    Nomor_Rekening: $('#auu-nomor-rekening').value.trim(),
-    Atas_Nama_Rekening: $('#auu-rekening').value.trim(),
-  };
-  if(!updates.Nama_Lengkap){ showInlineAlert('admin-update-user-alert','Nama lengkap tidak boleh kosong','warning'); return; }
-  const b = $('#btn-save-admin-update-user'), o = b.innerHTML;
-  b.disabled = true; b.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Menyimpan...';
-  try {
-const r = await apiCall('updateData', {token: AppState.token, menu: 'users', id: userId, data: updates});
-    if(r && r.success){
-      showAlert('Data user berhasil diperbarui','success');
-      // Update local state
-      Object.assign(AdminState.selectedUser, updates);
-      openUserDetail(AdminState.filteredUsers.indexOf(AdminState.selectedUser));
-      $('#modal-admin-update-user').classList.remove('active');
-      loadAdminUsers();
-    } else {
-      showInlineAlert('admin-update-user-alert', r?.message||'Gagal memperbarui data');
-    }
-  } catch(e) {
-    showInlineAlert('admin-update-user-alert', e.message||'Terjadi kesalahan');
-  } finally {
-    b.disabled = false; b.innerHTML = o;
-  }
+  const userId=$('#admin-update-user-id').value;if(!userId){showInlineAlert('admin-update-user-alert','ID user tidak ditemukan');return;}
+  const updates={Nama_Lengkap:$('#auu-nama').value.trim(),No_Whatsapp:$('#auu-wa').value.trim(),Tempat_Lahir:$('#auu-tempat-lahir').value.trim(),Tanggal_Lahir:$('#auu-tanggal-lahir').value||null,Jenis_Kelamin:$('#auu-jk').value,SPPG:$('#auu-sppg').value.trim(),Jabatan_Divisi:$('#auu-jabatan').value.trim(),Tanggal_Mulai_Kerja:$('#auu-mulai-kerja').value||null,Gaji_Harian:$('#auu-gaji').value?Number($('#auu-gaji').value):null,Nama_Bank:$('#auu-bank').value.trim(),Nomor_Rekening:$('#auu-nomor-rekening').value.trim(),Atas_Nama_Rekening:$('#auu-rekening').value.trim()};
+  if(!updates.Nama_Lengkap){showInlineAlert('admin-update-user-alert','Nama lengkap tidak boleh kosong','warning');return;}
+  await withBusyButton($('#btn-save-admin-update-user'),'<div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Menyimpan...',async()=>{
+    try{
+      const r=await apiCall('updateData',{token:AppState.token,menu:'users',id:userId,data:updates});
+      if(r&&r.success){showAlert('Data user berhasil diperbarui','success');Object.assign(AdminState.selectedUser,updates);openUserDetail(AdminState.filteredUsers.indexOf(AdminState.selectedUser));$('#modal-admin-update-user').classList.remove('active');loadAdminUsers();}
+      else showInlineAlert('admin-update-user-alert',r?.message||'Gagal memperbarui data');
+    }catch(error){showInlineAlert('admin-update-user-alert',parseApiError(error).message);}
+  });
 }
 
 async function openAdminDeleteUserModal(){
@@ -3953,55 +3909,30 @@ async function downloadPayrollSlip(idSlip,button){
 /* ===== EDIT PROFIL ===== */
 function openEditProfil(){
   const u=AppState.user;if(!u)return;
+  const data=normalizeUserEditorData(u);
   hideInlineAlert('edit-profil-alert');
-  const fotoUrl=u.urlFotoProfil||u.URL_Foto_Profil||'';
-  const nama0=u.namaLengkap||u.Nama_Lengkap||'';
-  const avatarEl=$('#edit-profil-avatar');
-  if(fotoUrl){avatarEl.innerHTML=`<img src="${fotoUrl}" alt="Foto profil">`;}else{avatarEl.textContent=nama0?nama0.trim().charAt(0).toUpperCase():'?';}
-  $('#edit-nama').value=u.namaLengkap||u.Nama_Lengkap||'';
-  $('#edit-username').value=u.username||u.Username||'';
-  $('#edit-tempat-lahir').value=u.tempatLahir||u.Tempat_Lahir||'';
-  const tgl=u.tanggalLahir||u.Tanggal_Lahir;
-  $('#edit-tanggal-lahir').value=tgl?String(tgl).split('T')[0]:'';
-  $('#edit-jk').value=u.jenisKelamin||u.Jenis_Kelamin||'';
-  $('#edit-email').value=u.email||u.Email||'';
-  $('#edit-wa').value=u.noWhatsapp||u.No_Whatsapp||'';
-  $('#edit-bank').value=u.namaBank||u.Nama_Bank||'';
-  $('#edit-nomor-rekening').value=u.nomorRekening||u.Nomor_Rekening||'';
-  $('#edit-rekening').value=u.atasNamaRekening||u.Atas_Nama_Rekening||'';
+  const avatar=$('#edit-profil-avatar');
+  if(data.foto)avatar.innerHTML=`<img src="${data.foto}" alt="Foto profil">`;
+  else avatar.textContent=data.nama?String(data.nama).trim().charAt(0).toUpperCase():'?';
+  populateInputs({
+    '#edit-nama':data.nama,'#edit-username':data.username,'#edit-tempat-lahir':data.tempatLahir,'#edit-tanggal-lahir':data.tanggalLahir,
+    '#edit-jk':data.jenisKelamin,'#edit-email':data.email,'#edit-wa':data.wa,'#edit-bank':data.bank,
+    '#edit-nomor-rekening':data.nomorRekening,'#edit-rekening':data.atasNamaRekening
+  });
   $('#modal-edit-profil').classList.add('active');
 }
 function closeEditProfil(){$('#modal-edit-profil').classList.remove('active');}
 async function handleSaveEditProfil(){
   hideInlineAlert('edit-profil-alert');
-  const updates={
-    Nama_Lengkap:$('#edit-nama').value.trim(),
-    Tempat_Lahir:$('#edit-tempat-lahir').value.trim(),
-    Tanggal_Lahir:$('#edit-tanggal-lahir').value||null,
-    Jenis_Kelamin:$('#edit-jk').value,
-    Email:$('#edit-email').value.trim(),
-    No_Whatsapp:$('#edit-wa').value.trim(),
-    Nama_Bank:$('#edit-bank').value.trim(),
-    Nomor_Rekening:$('#edit-nomor-rekening').value.trim(),
-    Atas_Nama_Rekening:$('#edit-rekening').value.trim(),
-  };
+  const updates={Nama_Lengkap:$('#edit-nama').value.trim(),Tempat_Lahir:$('#edit-tempat-lahir').value.trim(),Tanggal_Lahir:$('#edit-tanggal-lahir').value||null,Jenis_Kelamin:$('#edit-jk').value,Email:$('#edit-email').value.trim(),No_Whatsapp:$('#edit-wa').value.trim(),Nama_Bank:$('#edit-bank').value.trim(),Nomor_Rekening:$('#edit-nomor-rekening').value.trim(),Atas_Nama_Rekening:$('#edit-rekening').value.trim()};
   if(!updates.Nama_Lengkap){showInlineAlert('edit-profil-alert','Nama lengkap tidak boleh kosong','warning');return;}
-  const b=$('#btn-save-edit-profil'),o=b.innerHTML;
-  b.disabled=true,b.innerHTML='<div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Menyimpan...';
-  try{
-    const r=await apiCall('updateProfil',{token:AppState.token,updates});
-    if(r&&r.success){
-      showAlert('Profil berhasil diperbarui','success');
-      await loadProfilLengkap();
-      closeEditProfil();
-    }else{
-      showInlineAlert('edit-profil-alert',r?.message||'Gagal memperbarui profil');
-    }
-  }catch(err){
-    showInlineAlert('edit-profil-alert',err&&err.message?err.message:'Terjadi kesalahan');
-  }finally{
-    b.disabled=false,b.innerHTML=o;
-  }
+  await withBusyButton($('#btn-save-edit-profil'),'<div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Menyimpan...',async()=>{
+    try{
+      const r=await apiCall('updateProfil',{token:AppState.token,updates});
+      if(r&&r.success){showAlert('Profil berhasil diperbarui','success');await loadProfilLengkap();closeEditProfil();}
+      else showInlineAlert('edit-profil-alert',r?.message||'Gagal memperbarui profil');
+    }catch(error){showInlineAlert('edit-profil-alert',parseApiError(error).message);}
+  });
 }
 
 /* ===== GANTI PASSWORD PROFIL DENGAN OTP ===== */
@@ -4209,6 +4140,43 @@ const FaceRegState={stream:null,detectLoop:null,smileHoldMs:0,lastTs:0,busy:fals
 const FACE_SMILE_HOLD_TARGET_MS=900;
 const FACE_SMILE_THRESHOLD=0.7;
 
+function resetFaceSessionState(state){state.smileHoldMs=0;state.lastTs=0;state.busy=false;}
+async function startFaceCameraSession({state,videoSelector,canvasSelector,statusSelector,beforeDetection,onDetect}){
+  resetFaceSessionState(state);
+  const status=$(statusSelector);if(status)status.textContent='Memuat kamera...';
+  state.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:480},height:{ideal:480}},audio:false});
+  const video=$(videoSelector);video.srcObject=state.stream;
+  await new Promise(resolve=>{video.onloadedmetadata=()=>resolve();});
+  if(status)status.textContent='Memuat model deteksi wajah...';
+  await loadFaceApiModels();
+  const canvas=$(canvasSelector);canvas.width=video.videoWidth||480;canvas.height=video.videoHeight||480;
+  if(beforeDetection)await beforeDetection();
+  if(status)status.textContent='Posisikan wajah di dalam bingkai';
+  onDetect();
+}
+function stopFaceCameraSession(state,canvasSelector){
+  if(state.detectLoop)cancelAnimationFrame(state.detectLoop);state.detectLoop=null;
+  if(state.stream){state.stream.getTracks().forEach(track=>track.stop());state.stream=null;}
+  const canvas=$(canvasSelector);if(canvas){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);}
+}
+async function runFaceDetectionLoop({state,videoSelector,canvasSelector,statusSelector,progressSelector,smilePrompt,onComplete,reschedule}){
+  if(state.busy){state.detectLoop=requestAnimationFrame(reschedule);return;}
+  const video=$(videoSelector),canvas=$(canvasSelector);
+  if(!video||video.readyState<2){state.detectLoop=requestAnimationFrame(reschedule);return;}
+  const opts=new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:0.5});
+  const result=await faceapi.detectSingleFace(video,opts).withFaceLandmarks().withFaceExpressions().withFaceDescriptor();
+  const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
+  const now=performance.now(),dt=state.lastTs?now-state.lastTs:0;state.lastTs=now;
+  if(!result){state.smileHoldMs=0;$(statusSelector).textContent='Wajah tidak terdeteksi';$(progressSelector).style.width='0%';state.detectLoop=requestAnimationFrame(reschedule);return;}
+  const box=result.detection.box;ctx.strokeStyle='#4f46e5';ctx.lineWidth=3;ctx.strokeRect(box.x,box.y,box.width,box.height);
+  const smileScore=(result.expressions&&result.expressions.happy)||0;
+  if(smileScore>=FACE_SMILE_THRESHOLD){state.smileHoldMs=Math.min(FACE_SMILE_HOLD_TARGET_MS,state.smileHoldMs+dt);$(statusSelector).textContent='Bagus, tahan senyumnya...';}
+  else{state.smileHoldMs=Math.max(0,state.smileHoldMs-dt*2);$(statusSelector).textContent=smilePrompt;}
+  $(progressSelector).style.width=Math.round((state.smileHoldMs/FACE_SMILE_HOLD_TARGET_MS)*100)+'%';
+  if(state.smileHoldMs>=FACE_SMILE_HOLD_TARGET_MS){state.busy=true;await onComplete(result);return;}
+  state.detectLoop=requestAnimationFrame(reschedule);
+}
+
 function updateFaceStatusBadge(){
   const u=AppState.user;if(!u)return;
   const hasFace=Boolean(u.Wajah_Terdaftar||u.wajahTerdaftar||u.faceDescriptor||u.Face_Descriptor_JSON);
@@ -4226,83 +4194,17 @@ function updateFaceStatusBadge(){
 }
 
 async function openDaftarWajah(){
-  hideInlineAlert('daftar-wajah-alert');
-  $('#facecam-status').textContent='Memuat kamera...';
-  $('#facecam-progress-bar').style.width='0%';
-  FaceRegState.smileHoldMs=0;
-  FaceRegState.lastTs=0;
-  FaceRegState.busy=false;
-  $('#modal-daftar-wajah').classList.add('active');
-  try{
-    FaceRegState.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:480},height:{ideal:480}},audio:false});
-    const video=$('#facecam-video');
-    video.srcObject=FaceRegState.stream;
-    await new Promise(res=>{video.onloadedmetadata=()=>res();});
-    $('#facecam-status').textContent='Memuat model deteksi wajah...';
-    await loadFaceApiModels();
-    const canvas=$('#facecam-canvas');
-    canvas.width=video.videoWidth||480;
-    canvas.height=video.videoHeight||480;
-    $('#facecam-status').textContent='Posisikan wajah di dalam bingkai';
-    faceRegDetectLoop();
-  }catch(err){
-    console.error(err);
-    $('#facecam-status').textContent='';
-    showInlineAlert('daftar-wajah-alert', err&&err.name==='NotAllowedError' ? 'Izin kamera ditolak. Aktifkan akses kamera untuk melanjutkan.' : 'Gagal mengakses kamera.');
-  }
+  hideInlineAlert('daftar-wajah-alert');$('#facecam-progress-bar').style.width='0%';$('#modal-daftar-wajah').classList.add('active');
+  try{await startFaceCameraSession({state:FaceRegState,videoSelector:'#facecam-video',canvasSelector:'#facecam-canvas',statusSelector:'#facecam-status',onDetect:faceRegDetectLoop});}
+  catch(error){console.error(error);$('#facecam-status').textContent='';showInlineAlert('daftar-wajah-alert',error&&error.name==='NotAllowedError'?'Izin kamera ditolak. Aktifkan akses kamera untuk melanjutkan.':'Gagal mengakses kamera.');}
 }
 
 function closeDaftarWajah(){
-  $('#modal-daftar-wajah').classList.remove('active');
-  if(FaceRegState.detectLoop) cancelAnimationFrame(FaceRegState.detectLoop);
-  FaceRegState.detectLoop=null;
-  if(FaceRegState.stream){FaceRegState.stream.getTracks().forEach(t=>t.stop());FaceRegState.stream=null;}
-  const ctx=$('#facecam-canvas').getContext('2d');
-  ctx.clearRect(0,0,$('#facecam-canvas').width,$('#facecam-canvas').height);
+  $('#modal-daftar-wajah').classList.remove('active');stopFaceCameraSession(FaceRegState,'#facecam-canvas');
 }
 
 async function faceRegDetectLoop(){
-  if(FaceRegState.busy){FaceRegState.detectLoop=requestAnimationFrame(faceRegDetectLoop);return;}
-  const video=$('#facecam-video'),canvas=$('#facecam-canvas');
-  if(!video||video.readyState<2){FaceRegState.detectLoop=requestAnimationFrame(faceRegDetectLoop);return;}
-  const opts=new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:0.5});
-  const result=await faceapi.detectSingleFace(video,opts).withFaceLandmarks().withFaceExpressions().withFaceDescriptor();
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  const now=performance.now();
-  const dt=FaceRegState.lastTs?now-FaceRegState.lastTs:0;
-  FaceRegState.lastTs=now;
-
-  if(!result){
-    FaceRegState.smileHoldMs=0;
-    $('#facecam-status').textContent='Wajah tidak terdeteksi';
-    $('#facecam-progress-bar').style.width='0%';
-    FaceRegState.detectLoop=requestAnimationFrame(faceRegDetectLoop);
-    return;
-  }
-
-  const box=result.detection.box;
-  ctx.strokeStyle='#4f46e5';ctx.lineWidth=3;
-  ctx.strokeRect(box.x,box.y,box.width,box.height);
-
-  const smileScore=(result.expressions && result.expressions.happy) || 0;
-  if(smileScore>=FACE_SMILE_THRESHOLD){
-    FaceRegState.smileHoldMs=Math.min(FACE_SMILE_HOLD_TARGET_MS,FaceRegState.smileHoldMs+dt);
-    $('#facecam-status').textContent='Bagus, tahan senyumnya...';
-  }else{
-    FaceRegState.smileHoldMs=Math.max(0,FaceRegState.smileHoldMs-dt*2);
-    $('#facecam-status').textContent='Tersenyumlah untuk melanjutkan';
-  }
-  const pct=Math.round((FaceRegState.smileHoldMs/FACE_SMILE_HOLD_TARGET_MS)*100);
-  $('#facecam-progress-bar').style.width=pct+'%';
-
-  if(FaceRegState.smileHoldMs>=FACE_SMILE_HOLD_TARGET_MS){
-    FaceRegState.busy=true;
-    await handleFaceCaptureComplete(result.descriptor,video);
-    return;
-  }
-
-  FaceRegState.detectLoop=requestAnimationFrame(faceRegDetectLoop);
+  return runFaceDetectionLoop({state:FaceRegState,videoSelector:'#facecam-video',canvasSelector:'#facecam-canvas',statusSelector:'#facecam-status',progressSelector:'#facecam-progress-bar',smilePrompt:'Tersenyumlah untuk melanjutkan',reschedule:faceRegDetectLoop,onComplete:result=>handleFaceCaptureComplete(result.descriptor,$('#facecam-video'))});
 }
 
 const AbsenScanState={stream:null,detectLoop:null,smileHoldMs:0,lastTs:0,busy:false,coords:null};
@@ -4319,85 +4221,16 @@ function getCurrentPositionPromise(){
 }
 
 async function openAbsenScan(){
-  const overlay=$('#absen-result-overlay');
-  overlay.classList.remove('show','success','error');
-  $('#absen-facecam-status').textContent='Memuat kamera...';
-  $('#absen-facecam-hint').textContent='Posisikan wajah Anda di dalam bingkai, lalu tersenyumlah';
-  $('#absen-progress-bar').style.width='0%';
-  AbsenScanState.smileHoldMs=0;
-  AbsenScanState.lastTs=0;
-  AbsenScanState.busy=false;
-  AbsenScanState.coords=null;
-  try{
-    AbsenScanState.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:480},height:{ideal:480}},audio:false});
-    const video=$('#absen-facecam-video');
-    video.srcObject=AbsenScanState.stream;
-    await new Promise(res=>{video.onloadedmetadata=()=>res();});
-    $('#absen-facecam-status').textContent='Memuat model deteksi wajah...';
-    await loadFaceApiModels();
-    const canvas=$('#absen-facecam-canvas');
-    canvas.width=video.videoWidth||480;
-    canvas.height=video.videoHeight||480;
-    $('#absen-facecam-status').textContent='Mendeteksi lokasi Anda...';
-    AbsenScanState.coords=await getCurrentPositionPromise();
-    $('#absen-facecam-status').textContent='Posisikan wajah di dalam bingkai';
-    absenScanDetectLoop();
-  }catch(err){
-    console.error(err);
-    $('#absen-facecam-status').textContent=err&&err.name==='NotAllowedError' ? 'Izin kamera ditolak. Aktifkan akses kamera untuk melanjutkan.' : 'Gagal mengakses kamera.';
-  }
+  const overlay=$('#absen-result-overlay');overlay.classList.remove('show','success','error');
+  $('#absen-facecam-hint').textContent='Posisikan wajah Anda di dalam bingkai, lalu tersenyumlah';$('#absen-progress-bar').style.width='0%';AbsenScanState.coords=null;
+  try{await startFaceCameraSession({state:AbsenScanState,videoSelector:'#absen-facecam-video',canvasSelector:'#absen-facecam-canvas',statusSelector:'#absen-facecam-status',beforeDetection:async()=>{$('#absen-facecam-status').textContent='Mendeteksi lokasi Anda...';AbsenScanState.coords=await getCurrentPositionPromise();},onDetect:absenScanDetectLoop});}
+  catch(error){console.error(error);$('#absen-facecam-status').textContent=error&&error.name==='NotAllowedError'?'Izin kamera ditolak. Aktifkan akses kamera untuk melanjutkan.':'Gagal mengakses kamera.';}
 }
 
-function closeAbsenScan(){
-  if(AbsenScanState.detectLoop) cancelAnimationFrame(AbsenScanState.detectLoop);
-  AbsenScanState.detectLoop=null;
-  if(AbsenScanState.stream){AbsenScanState.stream.getTracks().forEach(t=>t.stop());AbsenScanState.stream=null;}
-  const canvas=$('#absen-facecam-canvas');
-  if(canvas){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);}
-}
+function closeAbsenScan(){stopFaceCameraSession(AbsenScanState,'#absen-facecam-canvas');}
 
 async function absenScanDetectLoop(){
-  if(AbsenScanState.busy){AbsenScanState.detectLoop=requestAnimationFrame(absenScanDetectLoop);return;}
-  const video=$('#absen-facecam-video'),canvas=$('#absen-facecam-canvas');
-  if(!video||video.readyState<2){AbsenScanState.detectLoop=requestAnimationFrame(absenScanDetectLoop);return;}
-  const opts=new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:0.5});
-  const result=await faceapi.detectSingleFace(video,opts).withFaceLandmarks().withFaceExpressions().withFaceDescriptor();
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  const now=performance.now();
-  const dt=AbsenScanState.lastTs?now-AbsenScanState.lastTs:0;
-  AbsenScanState.lastTs=now;
-
-  if(!result){
-    AbsenScanState.smileHoldMs=0;
-    $('#absen-facecam-status').textContent='Wajah tidak terdeteksi';
-    $('#absen-progress-bar').style.width='0%';
-    AbsenScanState.detectLoop=requestAnimationFrame(absenScanDetectLoop);
-    return;
-  }
-
-  const box=result.detection.box;
-  ctx.strokeStyle='#4f46e5';ctx.lineWidth=3;
-  ctx.strokeRect(box.x,box.y,box.width,box.height);
-
-  const smileScore=(result.expressions && result.expressions.happy) || 0;
-  if(smileScore>=FACE_SMILE_THRESHOLD){
-    AbsenScanState.smileHoldMs=Math.min(FACE_SMILE_HOLD_TARGET_MS,AbsenScanState.smileHoldMs+dt);
-    $('#absen-facecam-status').textContent='Bagus, tahan senyumnya...';
-  }else{
-    AbsenScanState.smileHoldMs=Math.max(0,AbsenScanState.smileHoldMs-dt*2);
-    $('#absen-facecam-status').textContent='Tersenyumlah untuk absen';
-  }
-  const pct=Math.round((AbsenScanState.smileHoldMs/FACE_SMILE_HOLD_TARGET_MS)*100);
-  $('#absen-progress-bar').style.width=pct+'%';
-
-  if(AbsenScanState.smileHoldMs>=FACE_SMILE_HOLD_TARGET_MS){
-    AbsenScanState.busy=true;
-    await handleAbsenScanComplete(result.descriptor);
-    return;
-  }
-
-  AbsenScanState.detectLoop=requestAnimationFrame(absenScanDetectLoop);
+  return runFaceDetectionLoop({state:AbsenScanState,videoSelector:'#absen-facecam-video',canvasSelector:'#absen-facecam-canvas',statusSelector:'#absen-facecam-status',progressSelector:'#absen-progress-bar',smilePrompt:'Tersenyumlah untuk absen',reschedule:absenScanDetectLoop,onComplete:result=>handleAbsenScanComplete(result.descriptor)});
 }
 
 async function handleAbsenScanComplete(descriptor){
@@ -4521,15 +4354,13 @@ function initCropDragEvents(){
   stage.addEventListener('touchend',end);
 }
 
-async function checkSession(){const st=localStorage.getItem('auth_token'),su=localStorage.getItem('auth_user');if(st&&su){try{const r=await apiCall('checkSession',{token:st});if(r&&r.valid){AppState.token=st,AppState.user=JSON.parse(su);return true;}}catch {}}localStorage.removeItem('auth_token'),localStorage.removeItem('auth_user');return false;}
-
-let DeferredInstallPrompt=null;
-
-function isInstalledApp(){
-  return window.matchMedia('(display-mode: standalone)').matches
-    || window.matchMedia('(display-mode: window-controls-overlay)').matches
-    || window.navigator.standalone===true
-    || document.referrer.startsWith('android-app://');
+async function checkSession(){
+  try{if(window.HadirlyCookieSession?.restoreCookieSession)await window.HadirlyCookieSession.restoreCookieSession();}catch{}
+  const st=localStorage.getItem('auth_token'),su=localStorage.getItem('auth_user');
+  if(!st||!su){localStorage.removeItem('auth_token');localStorage.removeItem('auth_user');return false;}
+  try{const r=await apiCall('checkSession',{token:st});if(r&&r.valid){AppState.token=st;AppState.user=r.user||JSON.parse(su);return true;}}
+  catch(error){console.error(error);}
+  localStorage.removeItem('auth_token');localStorage.removeItem('auth_user');return false;
 }
 
 function getInstallPlatform(){
@@ -4649,21 +4480,18 @@ async function initApp(){
   $('#btn-login').addEventListener('click',handleLogin);
   $('#btn-to-register').addEventListener('click',()=>navigateTo('register'));
   $('#btn-register').addEventListener('click',handleRegister);
-  $('#btn-to-login').addEventListener('click',()=>navigateTo('login'));
+  bindClicks(['btn-to-login','btn-verify-register-to-login','btn-forgot-to-login','btn-verify-reset-to-login'],()=>navigateTo('login'));
   $('#login-email').addEventListener('keypress',ev=>{if(ev.key==='Enter')$('#login-password').focus();});
   $('#login-password').addEventListener('keypress',ev=>{if(ev.key==='Enter')handleLogin();});
 
   $('#btn-verify-register').addEventListener('click',handleVerifyRegister);
   $('#btn-resend-register').addEventListener('click',handleResendRegister);
-  $('#btn-verify-register-to-login').addEventListener('click',()=>navigateTo('login'));
 
   $('#btn-goto-forgot').addEventListener('click',()=>navigateTo('forgot-password'));
   $('#btn-forgot-password').addEventListener('click',handleForgotPassword);
-  $('#btn-forgot-to-login').addEventListener('click',()=>navigateTo('login'));
 
   $('#btn-verify-reset').addEventListener('click',handleVerifyReset);
   $('#btn-resend-reset').addEventListener('click',handleResendReset);
-  $('#btn-verify-reset-to-login').addEventListener('click',()=>navigateTo('login'));
 
   $('#btn-update-password').addEventListener('click',handleUpdatePassword);
 
@@ -4744,26 +4572,22 @@ async function initApp(){
     });
     renderAdminPayroll();
   });
-  $('#payroll-period-start')?.addEventListener('change',()=>{FeatureState.payrollPreview={};renderAdminPayroll();});
-  $('#payroll-period-end')?.addEventListener('change',()=>{FeatureState.payrollPreview={};renderAdminPayroll();});
+  bindEvents(['payroll-period-start','payroll-period-end'],'change',()=>{FeatureState.payrollPreview={};renderAdminPayroll();});
   $('#btn-payroll-preview')?.addEventListener('click',()=>previewPayrollAttendance(true));
   $('#btn-open-payroll-publish')?.addEventListener('click',openPayrollPublishModal);
   $('#btn-refresh-payroll-history')?.addEventListener('click',loadAdminPayrollHistory);
-  $('#btn-close-payroll-publish')?.addEventListener('click',closePayrollPublishModal);
-  $('#btn-cancel-payroll-publish')?.addEventListener('click',closePayrollPublishModal);
+  bindClicks(['btn-close-payroll-publish','btn-cancel-payroll-publish'],closePayrollPublishModal);
   $('#btn-clear-accountant-signature')?.addEventListener('click',()=>clearSignatureCanvas('payroll-accountant-signature-canvas','accountant'));
   $('#btn-clear-head-signature')?.addEventListener('click',()=>clearSignatureCanvas('payroll-head-signature-canvas','head'));
   $('#btn-confirm-payroll-publish')?.addEventListener('click',publishPayrollSlips);
-  $('#btn-close-recipient-signature')?.addEventListener('click',closeRecipientSignatureModal);
-  $('#btn-cancel-recipient-signature')?.addEventListener('click',closeRecipientSignatureModal);
+  bindClicks(['btn-close-recipient-signature','btn-cancel-recipient-signature'],closeRecipientSignatureModal);
   $('#btn-clear-recipient-signature')?.addEventListener('click',()=>clearSignatureCanvas('payroll-recipient-signature-canvas','recipient'));
   $('#btn-confirm-recipient-signature')?.addEventListener('click',confirmRecipientSignature);
 
   // Admin: update user modal
   $('#btn-admin-update-user')?.addEventListener('click', openAdminUpdateUserModal);
   $('#btn-admin-delete-user')?.addEventListener('click', openAdminDeleteUserModal);
-  $('#btn-close-risk')?.addEventListener('click',()=>closeRiskConfirmation(null));
-  $('#btn-cancel-risk')?.addEventListener('click',()=>closeRiskConfirmation(null));
+  bindClicks(['btn-close-risk','btn-cancel-risk'],()=>closeRiskConfirmation(null));
   $('#btn-risk-next')?.addEventListener('click',advanceRiskConfirmation);
   $('#btn-risk-confirm')?.addEventListener('click',finishRiskConfirmation);
   $('#btn-close-admin-update-user')?.addEventListener('click',()=>$('#modal-admin-update-user').classList.remove('active'));
@@ -4811,8 +4635,7 @@ async function initApp(){
   $('#btn-open-edit-profil').addEventListener('click',openEditProfil);
   $('#btn-open-profile-password').addEventListener('click',openProfilePasswordModal);
   $('#btn-profile-password-inline')?.addEventListener('click',openProfilePasswordModal);
-  $('#btn-close-profile-password').addEventListener('click',closeProfilePasswordModal);
-  $('#btn-cancel-profile-password').addEventListener('click',closeProfilePasswordModal);
+  bindClicks(['btn-close-profile-password','btn-cancel-profile-password'],closeProfilePasswordModal);
   $('#btn-request-profile-password-otp').addEventListener('click',()=>requestProfilePasswordOtp(false));
   $('#btn-resend-profile-password').addEventListener('click',()=>requestProfilePasswordOtp(true));
   $('#btn-verify-profile-password-otp').addEventListener('click',verifyProfilePasswordOtp);
@@ -4820,18 +4643,15 @@ async function initApp(){
   $('#profile-password-email').addEventListener('keypress',event=>{if(event.key==='Enter')requestProfilePasswordOtp(false);});
   $('#profile-new-password-confirm').addEventListener('keypress',event=>{if(event.key==='Enter')submitProfilePassword();});
   $('#btn-open-daftar-wajah').addEventListener('click',openDaftarWajah);
-  $('#btn-close-daftar-wajah').addEventListener('click',closeDaftarWajah);
-  $('#btn-cancel-daftar-wajah').addEventListener('click',closeDaftarWajah);
+  bindClicks(['btn-close-daftar-wajah','btn-cancel-daftar-wajah'],closeDaftarWajah);
   $('#btn-ubah-foto-profil').addEventListener('click',()=>{
     const fotoUrl=AppState.user?.urlFotoProfil||AppState.user?.URL_Foto_Profil||'';
     if(fotoUrl){ openCropModalFromUrl(fotoUrl); } else { $('#input-foto-profil').click(); }
   });
   $('#input-foto-profil').addEventListener('change',(e)=>{const f=e.target.files[0];if(f)openCropModalFromFile(f);e.target.value='';});
-  $('#btn-close-edit-profil').addEventListener('click',closeEditProfil);
-  $('#btn-cancel-edit-profil').addEventListener('click',closeEditProfil);
+  bindClicks(['btn-close-edit-profil','btn-cancel-edit-profil'],closeEditProfil);
   $('#btn-save-edit-profil').addEventListener('click',handleSaveEditProfil);
-  $('#btn-close-crop-foto').addEventListener('click',closeCropModal);
-  $('#btn-cancel-crop-foto').addEventListener('click',closeCropModal);
+  bindClicks(['btn-close-crop-foto','btn-cancel-crop-foto'],closeCropModal);
   $('#btn-save-crop-foto').addEventListener('click',handleSaveCropFoto);
   $('#btn-pilih-foto-baru').addEventListener('click',()=>$('#input-foto-profil').click());
   $('#crop-zoom').addEventListener('input',(e)=>{
