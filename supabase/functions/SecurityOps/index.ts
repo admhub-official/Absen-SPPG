@@ -26,7 +26,7 @@ const KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const db = createClient(URL, KEY, { auth: { persistSession: false } });
 const corsOptions = {
   allowedOriginsEnv: Deno.env.get("ABSEN_ALLOWED_ORIGINS") || "",
-  productionOrigin: "https://absen-sppg.pages.dev",
+  productionOrigin: "https://hadirly.org",
   previewSuffix: ".absen-sppg.pages.dev",
   localOrigins: ["http://localhost:4173", "http://127.0.0.1:4173"],
 };
@@ -45,6 +45,27 @@ async function authenticate(tokenValue: unknown): Promise<Auth> {
   return { idUser: String(user.data.ID_User), role, email: String(user.data.Email || "") };
 }
 
+function normalizedDashboardSummary(value: unknown) {
+  const source = (Array.isArray(value) ? value[0] : value) as Record<string, unknown> | null;
+  const row = source && typeof source === "object" ? source : {};
+  const numberOf = (...keys: string[]) => {
+    for (const key of keys) {
+      if (row[key] !== undefined && row[key] !== null) return Number(row[key]) || 0;
+    }
+    return 0;
+  };
+  return {
+    securityEvents: numberOf("securityEvents", "security_events"),
+    highRiskEvents: numberOf("highRiskEvents", "high_risk_events"),
+    openIncidents: numberOf("openIncidents", "open_incidents"),
+    criticalIncidents: numberOf("criticalIncidents", "critical_incidents"),
+    pendingDevices: numberOf("pendingDevices", "pending_devices"),
+    blockedDevices: numberOf("blockedDevices", "blocked_devices"),
+    failedChallenges: numberOf("failedChallenges", "failed_challenges"),
+    rejectedEvents: numberOf("rejectedEvents", "rejected_events"),
+  };
+}
+
 async function dashboard(body: Record<string, unknown>) {
   const since = isoDate(body.since, new Date(Date.now() - 24 * 3600_000).toISOString());
   const [summary, recent, incidents, metrics] = await Promise.all([
@@ -54,7 +75,7 @@ async function dashboard(body: Record<string, unknown>) {
     db.from("System_Health_Metrics").select("Service_Name,Metric_Name,Metric_Value,Unit,Status,Recorded_At").order("Recorded_At", { ascending: false }).limit(30),
   ]);
   if (summary.error || recent.error || incidents.error || metrics.error) throw new Error("DASHBOARD_QUERY_FAILED");
-  return { summary: summary.data, recentEvents: recent.data || [], incidents: incidents.data || [], health: metrics.data || [] };
+  return { summary: normalizedDashboardSummary(summary.data), recentEvents: recent.data || [], incidents: incidents.data || [], health: metrics.data || [] };
 }
 
 async function listIncidents(body: Record<string, unknown>) {
