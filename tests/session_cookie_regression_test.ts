@@ -111,6 +111,8 @@ Deno.test("direct BFF navigation returns to app while PWA mutations retain CSRF 
   const worker = await read("bff/cloudflare/worker.ts");
   for (const marker of [
     'function isApiNavigation(request: Request, path: string, method: string): boolean',
+    'if (path === "/api") return true;',
+    'if (!path.startsWith("/api/")) return false;',
     'return fetchMode === "navigate" || accept.includes("text/html")',
     'if (isApiNavigation(request, path, method)) return redirectToApp(env, id);',
     'headers.set("Location", `${configuredOrigin(env)}/`)',
