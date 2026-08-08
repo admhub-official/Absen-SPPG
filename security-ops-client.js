@@ -12,7 +12,7 @@
       throw error;
     }
 
-    const token = localStorage.getItem('auth_token');
+    const token = window.HadirlySessionContext?.token?.() || '';
     if (!token) throw new Error('Sesi login tidak tersedia.');
 
     try {
