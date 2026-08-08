@@ -8,7 +8,8 @@ window.ABSEN_SUPABASE_CONFIG = Object.freeze({
   complaintsFunctionName: 'Complaints',
   digitalIdentityFunctionName: 'DigitalIdentity',
   employmentContractsFunctionName: 'EmploymentContracts',
-  operationsV2FunctionName: 'OperationsV2'
+  operationsV2FunctionName: 'OperationsV2',
+  systemSettingsFunctionName: 'SystemSettings'
 });
 
 function isInstalledApp() {
@@ -79,7 +80,9 @@ function isInstalledApp() {
     'getMyEmploymentContracts','getEmploymentContractDetail','getAdminEmploymentContracts','getContractMasterData',
     'saveContractMaster','createEmploymentContract','signEmploymentContract','cancelEmploymentContract','endEmploymentContract'
   ]);
-  const OPERATIONS_V2_WORKFLOW_FUNCTIONS = new Set(['getOperationalUsersV2','getOperationalDashboardV2']);
+  const OPERATIONS_V2_WORKFLOW_FUNCTIONS = new Set([
+    'getOperationalUsersV2','getOperationalDashboardV2','getAbsensiGroupedDataV2','validateAttendanceBulkV3','getSuperAdminAuditV3'
+  ]);
   const DEVICE_KEY_STORAGE = 'absen:device-key:v1';
 
   function getOrCreateDeviceKey() {
@@ -121,6 +124,29 @@ function isInstalledApp() {
     if (!response.ok || body?.success === false) { const hint=body?.requestId?` (${body.requestId})`:''; throw new Error(`${body?.message || body?.code || 'Layanan operasional tidak tersedia.'}${hint}`); }
     return body?.result;
   }
+  async function callSystemSettingsCompatibility(payload={}) {
+    const token = payload.token || localStorage.getItem('auth_token'); if (!token) throw new Error('Sesi login tidak tersedia.');
+    const mode = String(payload.mode || 'READ').trim().toUpperCase();
+    const action = mode === 'UPDATE' ? 'updateSetting' : 'getSettings';
+    const response = await fetch(`${window.ABSEN_SUPABASE_CONFIG.projectUrl}/functions/v1/${window.ABSEN_SUPABASE_CONFIG.systemSettingsFunctionName || 'SystemSettings'}`, {
+      method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+      body:JSON.stringify({action,token,key:payload.key,enabled:payload.enabled,description:payload.description,reason:payload.reason})
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok || body?.success === false) throw new Error(body?.message || 'Pengaturan sistem gagal diproses.');
+    const result = body?.result || {};
+    if (mode !== 'UPDATE') return { settings: result?.items || [] };
+    const item = result?.item;
+    return {
+      setting: item ? {
+        Setting_Key:item.Setting_Key,
+        Setting_Value:item.Setting_Value || {},
+        Description:item.Description || '',
+        Updated_At:item.Updated_At || null,
+        Updated_By:item.Updated_By || null,
+      } : null
+    };
+  }
   const callPayrollWorkflow = (name,payload={}) => callWorkflow(window.ABSEN_SUPABASE_CONFIG.payrollUserFunctionName || 'PayrollUser', name, payload, 'Workflow payroll tidak tersedia.');
   async function callComplaintWorkflow(name,payload={}) { const isSubmission=name==='kirimPengaduan'; const result=await callWorkflow(window.ABSEN_SUPABASE_CONFIG.complaintsFunctionName || 'Complaints',name,{...payload,...(isSubmission?{idempotencyKey:payload.idempotencyKey||getOrCreateIdempotencyKey('kirimPengaduan')}:{})},'Workflow pengaduan tidak tersedia.'); if(isSubmission)clearIdempotencyKey('kirimPengaduan'); return result; }
   const callDigitalIdentityWorkflow = (name,payload={}) => callWorkflow(window.ABSEN_SUPABASE_CONFIG.digitalIdentityFunctionName || 'DigitalIdentity', name, payload, 'Layanan QR dan ID Card tidak tersedia.');
@@ -159,6 +185,7 @@ function isInstalledApp() {
       window.__ABSEN_API_WRAPPED__ = true;
       window.apiCall = async function securityAwareApiCall(functionName, payload = {}) {
         if (functionName === 'logout') return originalApiCall(functionName, payload);
+        if (functionName === 'manageSystemSettingsV3') return callSystemSettingsCompatibility(payload);
         if (OPERATIONS_V2_WORKFLOW_FUNCTIONS.has(functionName)) return callOperationsV2(functionName,payload);
         if (EMPLOYMENT_CONTRACT_WORKFLOW_FUNCTIONS.has(functionName)) return callEmploymentContractWorkflow(functionName,payload);
         if (DIGITAL_IDENTITY_WORKFLOW_FUNCTIONS.has(functionName)) return callDigitalIdentityWorkflow(functionName,payload);
