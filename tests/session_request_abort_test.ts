@@ -96,7 +96,7 @@ Deno.test("logout rotates stale requests before server revoke and bootstrap init
   }
 });
 
-Deno.test("main push quality requires browser smoke before production readiness marker", async () => {
+Deno.test("quality requires browser smoke before production readiness marker", async () => {
   const workflow = await read(".github/workflows/quality.yml");
   const browserSmoke = await read("tests/browser_public_smoke.mjs");
 
@@ -109,6 +109,14 @@ Deno.test("main push quality requires browser smoke before production readiness 
     "status=deployable",
   ]) {
     if (!workflow.includes(marker)) throw new Error(`quality workflow missing gated marker: ${marker}`);
+  }
+  const browserBlock = workflow.split("browser-smoke:")[1]?.split("production-readiness:")[0] || "";
+  if (browserBlock.includes("github.event_name == 'push'")) {
+    throw new Error("browser smoke must run on pull requests as well as main pushes");
+  }
+  const readinessBlock = workflow.split("production-readiness:")[1] || "";
+  if (!readinessBlock.includes("github.event_name == 'push' && github.ref == 'refs/heads/main'")) {
+    throw new Error("production readiness marker must remain restricted to main pushes");
   }
   for (const marker of [
     "#register",
