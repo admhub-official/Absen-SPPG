@@ -136,12 +136,16 @@ Deno.test("canonical browser cutover is fail-closed and localStorage receives on
     "const canonicalOrigin = 'https://hadirly.org'",
     "const sessionMarker = '__HADIRLY_HTTP_ONLY_SESSION__'",
     "localStorage.setItem('auth_token', sessionMarker)",
+    "localStorage.removeItem('auth_token')",
     "if (!isCanonicalProduction()) return downstreamFetch(input, init)",
     "'/api/auth/exchange'",
     "'/api/auth/login'",
     "'/api/auth/session'",
     "'/api/auth/logout'",
     "`/api/functions/${encodeURIComponent(target)}`",
+    "restoreCookieSession",
+    "clearClientAuth();\n        return false;",
+    "SESSION_MIGRATION_REQUIRED",
     "productionRequired: true",
   ]) {
     if (!bridge.includes(marker)) throw new Error(`HttpOnly bridge missing marker: ${marker}`);
