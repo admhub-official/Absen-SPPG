@@ -81,7 +81,7 @@
     });
     const payload = await response.json().catch(() => ({ success: false, error: 'Respons daftar slip tidak valid.' }));
     if (!response.ok || payload?.success === false) throw new Error(messageOf(payload?.error || `HTTP ${response.status}`));
-    return payload;
+    return payload?.result || {};
   }
 
   function pageNumbers(current, total) {
