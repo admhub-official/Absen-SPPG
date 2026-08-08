@@ -19,6 +19,7 @@ const SHELL = [
   './supabase-config.js',
   './src/app/release-version.js',
   './src/app/pwa-shell-assets.js',
+  './src/app/navigation-state-guard.js',
   './icons/app-icon.svg',
   './icons/app-icon-maskable.svg',
   './icons/hadirly-logo-horizontal.svg',
