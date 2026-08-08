@@ -14,51 +14,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  frontend-structure-finalize:
-    if: "${{ github.event_name == 'pull_request' && github.event.pull_request.title == 'perf(frontend): finalize legacy structure' }}"
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout PR head
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-
-      - name: Run asserted frontend structure transform
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          source=Path('.github/workflows/frontend-structure-finalize.yml').read_text(encoding='utf-8')
-          start="          python3 - <<'PY'\n"
-          end="\n          PY\n"
-          if start not in source:
-              raise SystemExit('embedded finalizer start marker missing')
-          block=source.split(start,1)[1].split(end,1)[0]
-          code='\n'.join(line[10:] if line.startswith('          ') else line for line in block.splitlines())
-          exec(compile(code,'frontend-structure-finalizer','exec'))
-          PY
-          node --check src/legacy/index-app.js
-          git diff --check
-          test -s src/legacy/index-shell.css
-          test -s src/legacy/index-app.js
-          ! grep -q '<style>' index.html
-          ! grep -q 'installLegacyFrontendPerformanceGuards' supabase-config.js
-
-      - name: Commit transform to PR branch
-        shell: bash
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'perf(frontend): externalize legacy shell and delegate events'
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
-
   deno-quality:
     runs-on: ubuntu-latest
     timeout-minutes: 15
