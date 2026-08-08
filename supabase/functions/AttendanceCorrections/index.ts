@@ -16,7 +16,8 @@ const corsOptions = {
 };
 
 async function auth(token: unknown) {
-  const cleanToken = requiredString(token, "token", { min: 16, max: 2048 });
+  const cleanToken = String(token || "").trim();
+  if (!cleanToken || cleanToken.length > 2048) throw new Error("SESSION_EXPIRED");
   const session = await db.from("Sessions")
     .select("ID_User,Type,Expires_At")
     .eq("Token", cleanToken)
@@ -64,8 +65,14 @@ Deno.serve(async (req) => {
     return jsonResponse({ success: false, code: "METHOD_NOT_ALLOWED", message: "Gunakan POST.", requestId }, 405, requestId, headers);
   }
 
+  let body: Record<string, unknown>;
   try {
-    const body = await req.json() as Record<string, unknown>;
+    body = await req.json() as Record<string, unknown>;
+  } catch {
+    return jsonResponse({ success: false, code: "INVALID_JSON", message: "Payload JSON tidak valid.", requestId }, 400, requestId, headers);
+  }
+
+  try {
     const actor = await auth(body.token);
     const action = requiredString(body.action, "action", { max: 40 });
 
