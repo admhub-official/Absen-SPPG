@@ -1,0 +1,216 @@
+name: Issue-triggered frontend performance refactor
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: frontend-performance-refactor
+  cancel-in-progress: true
+
+jobs:
+  refactor:
+    if: github.event.issue.title == '[automation] frontend performance refactor'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Refactor legacy frontend shell
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 - <<'PY' 2>&1 | tee /tmp/frontend-refactor.log
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          index_path = root / 'index.html'
+          index = index_path.read_text(encoding='utf-8')
+          if './src/legacy/index-app.js' in index:
+              raise SystemExit('index.html already externalized')
+
+          legacy_dir = root / 'src' / 'legacy'
+          legacy_dir.mkdir(parents=True, exist_ok=True)
+
+          style_match = re.search(r'<style>\s*(.*?)\s*</style>', index, flags=re.S)
+          if not style_match:
+              raise SystemExit('inline style block not found')
+          css = style_match.group(1).rstrip() + '\n'
+          (legacy_dir / 'index-shell.css').write_text(css, encoding='utf-8')
+          index = index[:style_match.start()] + '<link rel="stylesheet" href="./src/legacy/index-shell.css">' + index[style_match.end():]
+
+          script_match = re.search(r'<script>\s*(const APP_CONFIG=.*?)\s*</script>\s*</body>', index, flags=re.S)
+          if not script_match:
+              raise SystemExit('legacy inline application script not found')
+          js = script_match.group(1).rstrip() + '\n'
+
+          crop_pattern = re.compile(r"function drawCropCanvas\(\)\{.*?\n\}\n\nfunction clampCropOffset", re.S)
+          crop_replacement = r'''let CropDrawFrame=0;
+function drawCropCanvas(){
+  if(CropDrawFrame)return;
+  CropDrawFrame=requestAnimationFrame(()=>{
+    CropDrawFrame=0;
+    const canvas=$('#crop-canvas');if(!canvas)return;
+    const ctx=canvas.getContext('2d'),size=CropState.canvasSize;
+    if(canvas.width!==size)canvas.width=size;
+    if(canvas.height!==size)canvas.height=size;
+    ctx.clearRect(0,0,size,size);
+    const img=CropState.img;if(!img)return;
+    const w=img.width*CropState.scale,h=img.height*CropState.scale;
+    const x=(size-w)/2+CropState.offsetX,y=(size-h)/2+CropState.offsetY;
+    ctx.drawImage(img,x,y,w,h);
+  });
+}
+
+function clampCropOffset'''
+          js, count = crop_pattern.subn(crop_replacement, js, count=1)
+          if count != 1:
+              raise SystemExit(f'cropper replacement count={count}')
+
+          old_row_listener = """\n  body.querySelectorAll('.payroll-row-check').forEach(input=>input.addEventListener('change',()=>{\n    if(input.checked)FeatureState.payrollSelected.add(input.dataset.payrollId);else FeatureState.payrollSelected.delete(input.dataset.payrollId);\n    renderAdminPayroll();\n  }));"""
+          if old_row_listener not in js:
+              raise SystemExit('payroll row listener block not found')
+          js = js.replace(old_row_listener, '', 1)
+
+          money_listener = "\n  body.querySelectorAll('.payroll-money-input').forEach(input=>input.addEventListener('input',updatePayrollAdjustmentTotals));"
+          if money_listener not in js:
+              raise SystemExit('payroll money listener block not found')
+          js = js.replace(money_listener, '', 1)
+
+          totals_pattern = re.compile(r"function updatePayrollAdjustmentTotals\(\)\{.*?\n\}\n\nfunction closePayrollPublishModal", re.S)
+          totals_replacement = r'''function updatePayrollAdjustmentTotals(event){
+  const targetRow=event?.target?.closest?.('[data-payroll-adjustment]');
+  const rows=targetRow?[targetRow]:[...$('#payroll-adjustment-body').querySelectorAll('[data-payroll-adjustment]')];
+  rows.forEach(row=>{
+    const subtotal=Number(row.dataset.subtotal)||0,bonus=Math.max(0,Number(row.querySelector('.payroll-bonus-input').value)||0),deduction=Math.max(0,Number(row.querySelector('.payroll-deduction-input').value)||0);
+    row.querySelector('.payroll-total').textContent=formatRupiah(Math.max(0,subtotal+bonus-deduction));
+  });
+}
+
+function closePayrollPublishModal'''
+          js, count = totals_pattern.subn(totals_replacement, js, count=1)
+          if count != 1:
+              raise SystemExit(f'payroll totals replacement count={count}')
+
+          delegation_anchor = "  bindEvents(['payroll-period-start','payroll-period-end'],'change',()=>{FeatureState.payrollPreview={};renderAdminPayroll();});"
+          if delegation_anchor not in js:
+              raise SystemExit('payroll delegation anchor not found')
+          delegated = r'''  $('#admin-payroll-body')?.addEventListener('change',(event)=>{
+    const input=event.target?.closest?.('.payroll-row-check');if(!input)return;
+    const id=input.dataset.payrollId;
+    if(input.checked)FeatureState.payrollSelected.add(id);else FeatureState.payrollSelected.delete(id);
+    const selectedCount=FeatureState.payrollSelected.size;
+    $('#payroll-selected-count').textContent=selectedCount;
+    const publishButton=$('#btn-open-payroll-publish');if(publishButton)publishButton.disabled=selectedCount===0;
+    const checks=[...$('#admin-payroll-body').querySelectorAll('.payroll-row-check:not(:disabled)')];
+    const selectAll=$('#payroll-select-all');if(selectAll){selectAll.checked=checks.length>0&&checks.every(item=>item.checked);selectAll.indeterminate=checks.some(item=>item.checked)&&!selectAll.checked;}
+    updatePayrollWizard();
+  });
+  $('#payroll-adjustment-body')?.addEventListener('input',updatePayrollAdjustmentTotals);
+'''
+          js = js.replace(delegation_anchor, delegated + delegation_anchor, 1)
+
+          if js.count("const FACEAPI_CDN_URL=") != 1:
+              raise SystemExit('face-api lazy loader invariant failed')
+
+          (legacy_dir / 'index-app.js').write_text(js, encoding='utf-8')
+          replacement = '<script src="./src/legacy/index-app.js"></script>\n</body>'
+          index = index[:script_match.start()] + replacement + index[script_match.end():]
+          index_path.write_text(index, encoding='utf-8')
+
+          sw_path = root / 'sw.js'
+          sw = sw_path.read_text(encoding='utf-8')
+          sw_anchor = "  './supabase-config.js',\n"
+          if sw_anchor not in sw:
+              raise SystemExit('service worker shell anchor not found')
+          sw = sw.replace(sw_anchor, sw_anchor + "  './src/legacy/index-shell.css',\n  './src/legacy/index-app.js',\n", 1)
+          sw_path.write_text(sw, encoding='utf-8')
+
+          # Once the optimized logic lives in the extracted application script, remove
+          # the temporary runtime guard from supabase-config.js to avoid duplicate handlers.
+          config_path = root / 'supabase-config.js'
+          config = config_path.read_text(encoding='utf-8')
+          guard_pattern = re.compile(r"\nfunction installLegacyFrontendPerformanceGuards\(\) \{.*?\n\}\n\n(?=\(\(\) => \{\n  if \(window\.__HADIRLY_SESSION_GATEWAY_FETCH__\))", re.S)
+          config, guard_count = guard_pattern.subn('\n', config, count=1)
+          if guard_count != 1:
+              raise SystemExit(f'performance guard cleanup count={guard_count}')
+          if '    installLegacyFrontendPerformanceGuards();\n' not in config:
+              raise SystemExit('performance guard call not found')
+          config = config.replace('    installLegacyFrontendPerformanceGuards();\n', '', 1)
+          config_path.write_text(config, encoding='utf-8')
+
+          release_path = root / 'src' / 'app' / 'release-version.js'
+          release = release_path.read_text(encoding='utf-8')
+          version_match = re.search(r"const version = '(\d+)\.(\d+)\.(\d+)';", release)
+          cache_match = re.search(r"const cacheName = 'absen-sppg-hadirly-v(\d+)';", release)
+          if not version_match or not cache_match:
+              raise SystemExit('release manifest format changed')
+          major, minor, patch = map(int, version_match.groups())
+          next_version = f'{major}.{minor}.{patch + 1}'
+          next_cache = int(cache_match.group(1)) + 1
+          release = re.sub(r"const version = '\d+\.\d+\.\d+';", f"const version = '{next_version}';", release, count=1)
+          release = re.sub(r"const cacheName = 'absen-sppg-hadirly-v\d+';", f"const cacheName = 'absen-sppg-hadirly-v{next_cache}';", release, count=1)
+          release_path.write_text(release, encoding='utf-8')
+
+          final_index = index_path.read_text(encoding='utf-8')
+          if '<style>' in final_index or 'const APP_CONFIG=' in final_index:
+              raise SystemExit('index shell extraction incomplete')
+          if 'innerHTML +=' in js or 'innerHTML+=' in js:
+              raise SystemExit('per-item innerHTML accumulation introduced')
+          print(f'index.html bytes={len(final_index.encode())}')
+          print(f'index-shell.css bytes={len(css.encode())}')
+          print(f'index-app.js bytes={len(js.encode())}')
+          print(f'release={next_version}; cache=v{next_cache}')
+          PY
+
+      - name: Validate frontend refactor
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            node --check src/legacy/index-app.js
+            node --check supabase-config.js
+            node --check sw.js
+            git diff --check
+            test -s src/legacy/index-shell.css
+            test -s src/legacy/index-app.js
+            grep -q 'src/legacy/index-shell.css' index.html
+            grep -q 'src/legacy/index-app.js' index.html
+            grep -q "const FACEAPI_CDN_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js'" src/legacy/index-app.js
+            ! grep -q '<script[^>]*face-api' index.html
+            ! grep -q 'installLegacyFrontendPerformanceGuards' supabase-config.js
+          } 2>&1 | tee -a /tmp/frontend-refactor.log
+
+      - name: Commit frontend performance update
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html src/legacy/index-shell.css src/legacy/index-app.js supabase-config.js sw.js src/app/release-version.js
+          git commit -m 'perf(frontend): externalize shell and reduce render churn'
+          git push origin HEAD:main
+
+      - name: Report success
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --body "Frontend performance refactor selesai dan lolos validasi. Commit: $(git rev-parse HEAD)."
+          gh issue close "${{ github.event.issue.number }}" --reason completed
+
+      - name: Report failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          LOG="$(tail -n 80 /tmp/frontend-refactor.log 2>/dev/null || true)"
+          gh issue comment "${{ github.event.issue.number }}" --body "Frontend performance refactor gagal. Log terakhir:\n\n\`\`\`\n${LOG}\n\`\`\`" || true
