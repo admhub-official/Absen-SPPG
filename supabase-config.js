@@ -93,7 +93,7 @@ function installLegacyFrontendPerformanceGuards() {
     const bonus = Math.max(0, Number(row.querySelector('.payroll-bonus-input')?.value) || 0);
     const deduction = Math.max(0, Number(row.querySelector('.payroll-deduction-input')?.value) || 0);
     const total = row.querySelector('.payroll-total');
-    if (total && typeof window.formatRupiah === 'function') total.textContent = window.formatRupiah(Math.max(0, subtotal + bonus - deduction));
+    if (total && typeof formatRupiah === 'function') total.textContent = formatRupiah(Math.max(0, subtotal + bonus - deduction));
   }, { capture: true });
 }
 
