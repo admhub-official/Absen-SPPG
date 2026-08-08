@@ -41,8 +41,10 @@ Deno.test("active admin KPI, audit, payroll and notification paths avoid row ove
   assert(operations.includes('db.rpc("get_operational_dashboard_counts"'));
   assert(!operations.includes('.select("ID_Pengaduan,SPPG,Status_Tiket").limit(5000)'));
   assert(proxy.includes("async function optimizedAuditLog"));
+  assert(proxy.includes("functionName === 'getAuditLogEnriched'"));
   assert(proxy.includes("select('ID_Log,Waktu,ID_User_Pelaku,Jenis_Aktivitas,Detail,IP_Address')"));
   assert(proxy.includes("async function optimizedSlipList"));
+  assert(proxy.includes("functionName === 'getAllSlipGajiList'"));
   assert(proxy.includes("select('ID_User,Nama_Lengkap,SPPG')"));
   assert(!proxy.includes(".from('App_Notifications')\n    .select('*')"));
   assert(migration.includes("get_operational_dashboard_counts"));
