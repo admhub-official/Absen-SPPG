@@ -34,10 +34,8 @@ const expectedCompatibilityConsumers = [
   "src/app/attendance-import.js",
   "src/app/config-center.js",
   "src/app/digital-id-card.js",
-  "src/app/employment-contract-navigation.js",
   "src/app/employment-contracts.js",
   "src/app/http-only-session-bridge.js",
-  "src/app/in-app-confirm.js",
   "src/app/logout-session-guard.js",
   "src/app/navigation-state-guard.js",
   "src/app/notification-publisher.js",
@@ -63,7 +61,7 @@ Deno.test("modern service and security consumers use canonical session context",
   const context = await read("src/app/session-context.js");
   const bootstrap = await read("src/app/bootstrap.js");
   const sw = await read("sw.js");
-  for (const marker of ["HadirlySessionContext", "function token()", "function user()", "function authenticated()"] ) {
+  for (const marker of ["HadirlySessionContext", "function appState()", "typeof AppState !== 'undefined'", "function token()", "function user()", "function authenticated()"] ) {
     if (!context.includes(marker)) throw new Error(`session context missing marker: ${marker}`);
   }
   const bridgeImport = bootstrap.indexOf("import './http-only-session-bridge.js';");
@@ -78,6 +76,8 @@ Deno.test("modern service and security consumers use canonical session context",
     "security-operations-ui.js",
     "security-ops-client.js",
     "src/app/attendance-location-flow.js",
+    "src/app/employment-contract-navigation.js",
+    "src/app/in-app-confirm.js",
     "src/services/api-client.js",
     "src/services/attendance-correction-service.js",
     "src/services/domain-services.js",
