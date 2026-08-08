@@ -62,7 +62,7 @@
 
   function clearClientAuth() {
     try {
-      if (localStorage.getItem('auth_token') === sessionMarker) localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
     } catch {}
     syncRuntimeToken(null);
@@ -143,9 +143,12 @@
           window.dispatchEvent(new CustomEvent('absen:session-changed', { detail: { authenticated: true, source: 'http-only-bff' } }));
           return true;
         }
-        if (response.status === 401 || response.status === 410) clearClientAuth();
+        clearClientAuth();
         return false;
       } catch {
+        // Canonical production never keeps a raw legacy bearer when the cookie exchange
+        // cannot be proven successful. Re-login is safer than retaining browser-readable secret material.
+        clearClientAuth();
         return false;
       } finally {
         exchangePromise = null;
@@ -235,7 +238,16 @@
 
   async function bffProxy(target, body, sourceHeaders) {
     const stored = currentStoredToken();
-    if (stored && stored !== sessionMarker) await exchangeLegacySession();
+    if (stored && stored !== sessionMarker) {
+      const migrated = await exchangeLegacySession();
+      if (!migrated) {
+        return responseWithJson(new Response(null, { status: 401 }), {
+          success: false,
+          code: 'SESSION_MIGRATION_REQUIRED',
+          message: 'Sesi lama tidak dapat diamankan. Silakan login kembali.'
+        });
+      }
+    }
     const headers = mutationHeaders(sourceHeaders);
     const response = await downstreamFetch(`/api/functions/${encodeURIComponent(target)}`, {
       method: 'POST',
