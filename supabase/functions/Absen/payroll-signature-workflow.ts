@@ -179,7 +179,6 @@ async function getScopedUserIds(
   const uniqueTargetIds = [...new Set(targetIds.map(String).filter(Boolean))];
   if (!uniqueTargetIds.length) return new Set();
   if (isSuperAdmin(session.role)) {
-    // SUPER ADMIN sudah tervalidasi; tidak perlu mengunduh seluruh ID pengguna.
     return new Set(uniqueTargetIds);
   }
 
@@ -188,7 +187,8 @@ async function getScopedUserIds(
     .select("Email")
     .eq("ID_User", session.idUser)
     .maybeSingle();
-  if (actorError || !actor?.Email) return new Set([session.idUser]);
+  if (actorError) throw new Error("Gagal membaca profil penerbit: " + actorError.message);
+  if (!actor?.Email) return new Set([session.idUser]);
 
   const { data: accessRows, error: accessError } = await supabase
     .from("Akses_Email")
@@ -244,8 +244,6 @@ async function downloadStorageObject(
   const { data, error } = await supabase.storage.from(bucket).download(path);
   if (error || !data) throw new Error(`${label} tidak dapat dibaca`);
   const bytes = new Uint8Array(await data.arrayBuffer());
-  // Cache kecil pada instance Edge yang hangat mencegah logo/TTD batch yang sama
-  // diunduh ulang untuk setiap penerima, sehingga mengurangi Storage egress.
   if (storageDownloadCache.size >= STORAGE_CACHE_MAX_ENTRIES) {
     const oldestKey = storageDownloadCache.keys().next().value;
     if (oldestKey) storageDownloadCache.delete(oldestKey);
@@ -261,7 +259,7 @@ async function logAudit(
   idUser: string,
 ): Promise<void> {
   try {
-    await supabase.from("Audit_Log").insert({
+    const result = await supabase.from("Audit_Log").insert({
       ID_Log: generateId("LOG"),
       Waktu: new Date().toISOString(),
       ID_User_Pelaku: idUser,
@@ -269,8 +267,36 @@ async function logAudit(
       Detail: detail,
       IP_Address: "N/A",
     });
+    if (result.error) throw result.error;
   } catch (error) {
     console.error("Payroll signature audit failed", error);
+  }
+}
+
+async function cleanupStorageBestEffort(
+  supabase: SupabaseClient,
+  bucket: string,
+  paths: string[],
+  phase: string,
+): Promise<void> {
+  if (!paths.length) return;
+  const result = await supabase.storage.from(bucket).remove(paths);
+  if (result.error) {
+    console.error(JSON.stringify({ code: "PAYROLL_STORAGE_CLEANUP_DEFERRED", phase, bucket, error: result.error.message }));
+  }
+}
+
+async function cleanupRowsBestEffort(
+  promise: PromiseLike<{ error: { message?: string } | null }>,
+  phase: string,
+): Promise<void> {
+  try {
+    const result = await promise;
+    if (result.error) {
+      console.error(JSON.stringify({ code: "PAYROLL_DB_CLEANUP_DEFERRED", phase, error: result.error.message || "unknown" }));
+    }
+  } catch (error) {
+    console.error(JSON.stringify({ code: "PAYROLL_DB_CLEANUP_DEFERRED", phase, error: error instanceof Error ? error.message : String(error) }));
   }
 }
 
@@ -684,10 +710,16 @@ async function processPayroll(
     };
   } catch (error) {
     if (payrollInserted) {
-      await supabase.from("Slip_Gaji").delete().eq("ID_Payroll", idPayroll);
-      await supabase.from("Payroll").delete().eq("ID_Payroll", idPayroll);
+      await cleanupRowsBestEffort(
+        supabase.from("Slip_Gaji").delete().eq("ID_Payroll", idPayroll),
+        "DELETE_SLIPS_AFTER_FAILURE",
+      );
+      await cleanupRowsBestEffort(
+        supabase.from("Payroll").delete().eq("ID_Payroll", idPayroll),
+        "DELETE_PAYROLL_AFTER_FAILURE",
+      );
     }
-    if (uploadedPaths.length) await supabase.storage.from("tanda-tangan").remove(uploadedPaths);
+    await cleanupStorageBestEffort(supabase, "tanda-tangan", uploadedPaths, "REMOVE_BATCH_ASSETS_AFTER_FAILURE");
     throw error;
   }
 }
@@ -696,7 +728,6 @@ async function getMyPayroll(supabase: SupabaseClient, data: JsonRecord): Promise
   const session = await validateSession(supabase, data.token);
   const { data: slips, error: slipsError } = await supabase
     .from("Slip_Gaji")
-    // Payload slip dibatasi ke kolom yang benar-benar dirender di halaman pengguna.
     .select("ID_Slip,ID_Payroll,ID_User,Periode_Mulai,Periode_Akhir,Jumlah_Hari_Kerja,Gaji_Harian,Subtotal_Gaji,Lembur_Nominal,Bonus,Potongan,Keterangan_Potongan,Total_Gaji_Diterima,Status_Penerbitan,Diterbitkan_At,Nama_Penerbit,Ditandatangani_Penerima_At,PDF_Storage_Path,URL_PDF_Slip")
     .eq("ID_User", session.idUser)
     .in("Status_Penerbitan", ["MENUNGGU_TTD_PENERIMA", "DITERBITKAN"])
@@ -844,9 +875,16 @@ async function signPayrollReceipt(supabase: SupabaseClient, data: JsonRecord): P
     if (countError) {
       console.error("Gagal menghitung slip yang menunggu tanda tangan", countError.message);
     } else if ((waitingCount || 0) === 0) {
-      await supabase.from("Payroll")
+      const payrollUpdate = await supabase.from("Payroll")
         .update({ Status_Penerbitan: "DITERBITKAN" })
         .eq("ID_Payroll", slip.ID_Payroll);
+      if (payrollUpdate.error) {
+        console.error(JSON.stringify({
+          code: "PAYROLL_FINAL_STATUS_DEFERRED",
+          idPayroll: slip.ID_Payroll,
+          error: payrollUpdate.error.message,
+        }));
+      }
     }
 
     await logAudit(supabase, "TANDA_TANGAN_PENERIMA_SLIP_GAJI", {
@@ -862,8 +900,8 @@ async function signPayrollReceipt(supabase: SupabaseClient, data: JsonRecord): P
     };
   } catch (error) {
     if (!finalized) {
-      if (pdfUploaded) await supabase.storage.from("slip-gaji").remove([pdfPath]);
-      if (recipientUploaded) await supabase.storage.from("tanda-tangan").remove([recipientPath]);
+      if (pdfUploaded) await cleanupStorageBestEffort(supabase, "slip-gaji", [pdfPath], "REMOVE_FINAL_PDF_AFTER_FAILURE");
+      if (recipientUploaded) await cleanupStorageBestEffort(supabase, "tanda-tangan", [recipientPath], "REMOVE_RECIPIENT_SIGNATURE_AFTER_FAILURE");
     }
     throw error;
   }
