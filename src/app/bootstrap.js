@@ -1,3 +1,4 @@
+import './session-request-abort.js';
 import './http-only-session-bridge.js';
 import './navigation-state-guard.js';
 import { createRouter } from './router.js';
@@ -48,7 +49,7 @@ function loadScript(path) {
   const key = `script:${canonicalPath(path)}`;
   if (loadedAssets.has(key)) return loadedAssets.get(key);
   const existing = [...document.querySelectorAll('script[src]')]
-    .find((node) => canonicalPath(node.src) === canonicalPath(path));
+    .find((node) => canonicalPath(node.href) === canonicalPath(path));
   if (existing) {
     const ready = Promise.resolve(existing);
     loadedAssets.set(key, ready);
