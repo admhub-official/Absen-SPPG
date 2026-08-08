@@ -60,7 +60,7 @@ Deno.test("browser persists only minimal non-sensitive auth identity", async () 
     "'Wajah_Terdaftar'",
     "function sanitizePersistentUser(value)",
     "const nativeSetItem = Storage.prototype.setItem;",
-    "if (this === localStorage && String(key) === 'auth_user')",
+    "if (this === localStorage && String(key) === 'auth_user'",
     "JSON.stringify(sanitizePersistentUser(JSON.parse(String(value))))",
   ]) {
     if (!bridge.includes(marker)) throw new Error(`auth_user storage hardening missing ${marker}`);
@@ -104,5 +104,21 @@ Deno.test("root Cloudflare Workers build binds canonical BFF to hadirly api rout
     'ALLOW_LEGACY_EXCHANGE = "true"',
   ]) {
     if (!wrangler.includes(marker)) throw new Error(`root Cloudflare BFF route missing ${marker}`);
+  }
+});
+
+Deno.test("direct BFF navigation returns to app while PWA mutations retain CSRF protection", async () => {
+  const worker = await read("bff/cloudflare/worker.ts");
+  for (const marker of [
+    'function isApiNavigation(request: Request, path: string, method: string): boolean',
+    'return fetchMode === "navigate" || accept.includes("text/html")',
+    'if (isApiNavigation(request, path, method)) return redirectToApp(env, id);',
+    'headers.set("Location", `${configuredOrigin(env)}/`)',
+    'const mutation = !["GET", "HEAD", "OPTIONS"].includes(method);',
+    'const browserConfirmsSameOrigin = secFetchSite === "same-origin";',
+    'if (!suppliedOrigin && !sameOriginReference(suppliedReferer, origin) && !browserConfirmsSameOrigin)',
+    'if (request.headers.get(CSRF_HEADER) !== CSRF_VALUE) return "CSRF_CHECK_FAILED";',
+  ]) {
+    if (!worker.includes(marker)) throw new Error(`PWA BFF navigation/auth guard missing ${marker}`);
   }
 });
