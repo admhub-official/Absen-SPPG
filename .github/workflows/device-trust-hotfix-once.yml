@@ -1,0 +1,86 @@
+name: Device Trust Hotfix Once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix:
+    if: contains(github.event.head_commit.message, '[device-trust-hotfix-once]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Patch Device Trust and validate
+        shell: bash
+        run: |
+          set -e
+          python - <<'PY'
+          from pathlib import Path
+
+          p=Path('supabase/functions/DeviceTrust/index.ts')
+          s=p.read_text(encoding='utf-8')
+          if 'authenticateUserSession' not in s:
+              s=s.replace('import { createClient } from "jsr:@supabase/supabase-js@2";','import { createClient } from "jsr:@supabase/supabase-js@2";\nimport { authenticateUserSession, type AuthenticatedUser } from "../_shared/auth.ts";')
+          start=s.index('type Auth = { idUser: string; role: string; token: string };')
+          end=s.index('\n\nfunction clientIp',start)
+          s=s[:start]+'''type Auth = AuthenticatedUser;\nasync function authenticate(tokenValue: unknown): Promise<Auth> {\n  return await authenticateUserSession(supabase, tokenValue);\n}'''+s[end:]
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('supabase-config.js')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('  let registeredDevice = null;','  let registeredDevice = null;\n  let deviceRegistrationPromise = null;\n  let deviceRegistrationRetryAfter = 0;\n  let deviceRegistrationWarnedAt = 0;')
+          old="  async function ensureDeviceRegistered() { if (registeredDevice) return registeredDevice; registeredDevice = await callDeviceTrust('registerDevice', deviceMetadata()); return registeredDevice; }\n  function resetDeviceContext(){ registeredDevice = null; }"
+          new="""  async function ensureDeviceRegistered() {
+    if (registeredDevice) return registeredDevice;
+    if (Date.now() < deviceRegistrationRetryAfter) return null;
+    if (deviceRegistrationPromise) return deviceRegistrationPromise;
+    deviceRegistrationPromise = callDeviceTrust('registerDevice', deviceMetadata())
+      .then((device) => { registeredDevice = device || null; deviceRegistrationRetryAfter = 0; return registeredDevice; })
+      .catch((error) => {
+        deviceRegistrationRetryAfter = Date.now() + 60_000;
+        if (Date.now() - deviceRegistrationWarnedAt > 60_000) {
+          deviceRegistrationWarnedAt = Date.now();
+          console.warn('Device registration deferred', error);
+        }
+        return null;
+      })
+      .finally(() => { deviceRegistrationPromise = null; });
+    return deviceRegistrationPromise;
+  }
+  function resetDeviceContext(){ registeredDevice = null; deviceRegistrationPromise = null; deviceRegistrationRetryAfter = 0; }"""
+          if old not in s: raise SystemExit('ensureDeviceRegistered anchor missing')
+          s=s.replace(old,new,1)
+          s=s.replace("        if (localStorage.getItem('auth_token')) { try { await ensureDeviceRegistered(); } catch (error) { console.warn('Device registration deferred', error); } }","        if (localStorage.getItem('auth_token')) await ensureDeviceRegistered();")
+          s=s.replace("    if (localStorage.getItem('auth_token')) ensureDeviceRegistered().catch((error)=>console.warn('Device registration pending',error));","    if (localStorage.getItem('auth_token')) void ensureDeviceRegistered();")
+          p.write_text(s,encoding='utf-8')
+
+          release=Path('src/app/release-version.js')
+          r=release.read_text(encoding='utf-8').replace("26.11.57","26.11.58").replace('absen-sppg-hadirly-v98','absen-sppg-hadirly-v99')
+          release.write_text(r,encoding='utf-8')
+          for test in Path('tests').glob('*.ts'):
+              q=test.read_text(encoding='utf-8').replace('26.11.57','26.11.58').replace('absen-sppg-hadirly-v98','absen-sppg-hadirly-v99')
+              test.write_text(q,encoding='utf-8')
+
+          t=Path('tests/device_trust_policy_test.ts')
+          q=t.read_text(encoding='utf-8')
+          marker='Device Trust runtime uses shared hash-only auth and bounded registration retry'
+          if marker not in q:
+              q += '''\n\nDeno.test('Device Trust runtime uses shared hash-only auth and bounded registration retry',async()=>{\n  const edge=await read('supabase/functions/DeviceTrust/index.ts');\n  const config=await read('supabase-config.js');\n  const migration=await read('supabase/migrations/20260808140200_create_attendance_device_trust_runtime.sql');\n  for(const value of ['authenticateUserSession','type Auth = AuthenticatedUser'])if(!edge.includes(value))throw new Error(`Device Trust shared auth missing ${value}`);\n  if(edge.includes('.eq("Token", token)'))throw new Error('Device Trust must not query legacy raw session token');\n  for(const value of ['deviceRegistrationPromise','deviceRegistrationRetryAfter','60_000','void ensureDeviceRegistered()'])if(!config.includes(value))throw new Error(`Device Trust retry guard missing ${value}`);\n  for(const value of ['create table if not exists public."Attendance_Devices"','review_attendance_device','enable row level security'])if(!migration.includes(value))throw new Error(`Device Trust schema migration missing ${value}`);\n});\n'''
+              t.write_text(q,encoding='utf-8')
+          PY
+          deno task ci
+          rm -f .github/workflows/device-trust-hotfix-once.yml .github/device-trust-hotfix.trigger
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: restore device trust runtime and bound retries"
+          git push origin HEAD:main
