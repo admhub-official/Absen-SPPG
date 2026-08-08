@@ -76,3 +76,5 @@ Script tersebut men-deploy Edge Function `Absen` melalui Supabase CLI dan
 mempertahankan `verify_jwt = false` karena aplikasi menggunakan token sesi kustom
 yang divalidasi kembali oleh gateway terhadap tabel `Sessions`. Service-role key
 tetap hanya digunakan di dalam Edge Function dan tidak dikirim ke browser.
+
+<!-- CI validation probe: API consistency/session-context v108 -->
