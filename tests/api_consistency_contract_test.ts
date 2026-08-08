@@ -12,6 +12,16 @@ Deno.test("legacy frontend V2/V3 calls are routed to OperationsV2 handlers", asy
   }
 });
 
+Deno.test("attendance validation preserves the canonical database status vocabulary", async () => {
+  const operations = await read("supabase/functions/OperationsV2/index.ts");
+  if (!operations.includes('action === "DITOLAK" ? "TIDAK_VALID" : action')) {
+    throw new Error("DITOLAK must persist as canonical TIDAK_VALID");
+  }
+  if (operations.includes('action === "DITOLAK" ? "INVALID" : action')) {
+    throw new Error("legacy INVALID status must not be introduced by bulk validation");
+  }
+});
+
 Deno.test("modular PlatformOps and WorkforceOps services call their edge endpoints directly", async () => {
   const platform = await read("src/services/platform-ops-service.js");
   const workforce = await read("src/services/workforce-ops-service.js");
