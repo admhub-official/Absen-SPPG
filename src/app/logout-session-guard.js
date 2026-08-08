@@ -61,12 +61,29 @@
     }
   }
 
-  document.addEventListener('click', (event) => {
+  async function confirmManualLogout() {
+    if (busy) return false;
+    if (typeof window.appConfirm !== 'function') {
+      console.error('In-app confirmation belum tersedia; logout manual dibatalkan.');
+      return false;
+    }
+    return await window.appConfirm({
+      title: 'Keluar dari akun?',
+      message: 'Sesi di perangkat ini akan diakhiri. Anda perlu login kembali untuk mengakses aplikasi.',
+      confirmText: 'Ya, logout',
+      cancelText: 'Batal',
+      tone: 'primary',
+    });
+  }
+
+  document.addEventListener('click', async (event) => {
     const target = event.target instanceof Element ? event.target.closest('#btn-logout') : null;
     if (!target) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    logout();
+    const approved = await confirmManualLogout();
+    if (!approved) return;
+    await logout();
   }, true);
 
   window.HadirlyLogout = Object.freeze({ logout, clearClientSession });
