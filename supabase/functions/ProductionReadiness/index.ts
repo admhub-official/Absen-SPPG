@@ -16,7 +16,8 @@ const corsOptions = {
 type Actor = { idUser: string; role: string };
 
 async function authenticate(tokenValue: unknown): Promise<Actor> {
-  const token = requiredString(tokenValue, "token", { min: 20, max: 2048 });
+  const token = String(tokenValue || "").trim();
+  if (!token || token.length > 2048) throw new Error("SESSION_EXPIRED");
   const session = await db.from("Sessions").select("ID_User,Type,Expires_At").eq("Token", token).maybeSingle();
   if (session.error || !session.data?.ID_User || String(session.data.Type).toLowerCase() !== "user") {
     throw new Error("SESSION_EXPIRED");
@@ -77,6 +78,9 @@ async function recordAudit(body: Record<string, unknown>, actor: Actor) {
   if (!["PASS", "WARN", "FAIL"].includes(status)) {
     throw new ValidationError("INVALID_STATUS", "Status audit tidak valid.", "status");
   }
+  if (body.detail !== undefined && (!body.detail || typeof body.detail !== "object" || Array.isArray(body.detail))) {
+    throw new ValidationError("INVALID_DETAIL", "detail wajib berupa object.", "detail");
+  }
 
   const result = await db.from("Deployment_Audit").insert({
     Release_Name: releaseName,
@@ -85,7 +89,7 @@ async function recordAudit(body: Record<string, unknown>, actor: Actor) {
     Component: component,
     Check_Name: checkName,
     Status: status,
-    Detail: typeof body.detail === "object" && body.detail ? body.detail : {},
+    Detail: body.detail || {},
     Checked_By: actor.idUser,
   }).select().maybeSingle();
   if (result.error) throw new Error("DEPLOYMENT_AUDIT_INSERT_FAILED");
@@ -104,8 +108,14 @@ Deno.serve(async (request) => {
     return jsonResponse({ success: false, code: "METHOD_NOT_ALLOWED", message: "Gunakan POST.", requestId }, 405, requestId, headers);
   }
 
+  let body: Record<string, unknown>;
   try {
-    const body = await request.json() as Record<string, unknown>;
+    body = await request.json() as Record<string, unknown>;
+  } catch {
+    return jsonResponse({ success: false, code: "INVALID_JSON", message: "Payload JSON tidak valid.", requestId }, 400, requestId, headers);
+  }
+
+  try {
     const actor = await authenticate(body.token);
     const action = requiredString(body.action, "action", { min: 3, max: 80 });
     let result: unknown;
