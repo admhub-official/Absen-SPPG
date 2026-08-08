@@ -1,3 +1,10 @@
+html[data-brand="hadirly"] {
+  --primary: var(--ui-brand-blue, #079fe7);
+  --primary-dark: var(--ui-primary-700, #0678b5);
+  --primary-light: var(--ui-primary-50, #effaff);
+  --primary-ring: rgb(7 159 231 / 0.20);
+}
+
 html[data-brand="hadirly"] .hadirly-brand {
   display: flex;
   align-items: center;
@@ -54,11 +61,29 @@ html[data-brand="hadirly"] .app-topbar-brand .hadirly-brand__text small {
 }
 
 html[data-brand="hadirly"] .auth-logo-mobile .hadirly-brand__text strong {
-  color: #079fe7;
+  color: var(--ui-brand-blue, #079fe7);
 }
 
 html[data-brand="hadirly"] .auth-logo-mobile .hadirly-brand__text small {
   color: #7d91b6;
+}
+
+/* Samakan accent shell lama yang masih memiliki nilai warna lokal dengan biru ikon Hadirly. */
+html[data-brand="hadirly"] .app-bottomnav-item-scan svg,
+html[data-brand="hadirly"] .sidebar-absen-btn,
+html[data-brand="hadirly"] .btn-primary {
+  background-color: var(--ui-brand-blue, #079fe7);
+}
+
+html[data-brand="hadirly"] .app-bottomnav-item-scan svg {
+  box-shadow: 0 6px 16px -3px rgb(7 159 231 / 0.48);
+}
+
+html[data-brand="hadirly"] .app-bottomnav-item-scan.active svg,
+html[data-brand="hadirly"] .sidebar-absen-btn:hover,
+html[data-brand="hadirly"] .sidebar-absen-btn.active,
+html[data-brand="hadirly"] .btn-primary:hover {
+  background-color: var(--ui-primary-700, #0678b5);
 }
 
 /* Di layar ponsel sidebar tidak tersedia, sehingga satu branding dipindahkan ke topbar. */
