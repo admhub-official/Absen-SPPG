@@ -297,44 +297,11 @@ function normalizeAttendanceRow(row: Record<string, any>): Record<string, any> {
   return { ...row, punches, sumber: attendanceSources({ ...row, punches }) };
 }
 
-async function allGroupedAttendance(auth: AuthenticatedUser, search: string): Promise<Record<string, any>[]> {
-  requireOperationalRole(auth);
-  const scope = await allowedSppg(auth);
-  const users = await scopedUsers(scope);
-  const scopedIds = users.map((row) => String(row.ID_User || "")).filter(Boolean);
-  if (!scopedIds.length) return [];
-
-  const rows: Record<string, any>[] = [];
-  const rpcPageSize = 500;
-  let rpcPage = 1;
-  let total = Number.POSITIVE_INFINITY;
-  while (rows.length < total && rpcPage <= 200) {
-    const result = await db.rpc("get_absensi_grouped_page", {
-      p_user_ids: scopedIds,
-      p_page: rpcPage,
-      p_page_size: rpcPageSize,
-      p_search: search || null,
-    });
-    if (result.error) throw new Error(`ATTENDANCE_QUERY_FAILED:${result.error.message}`);
-    const batch = result.data || [];
-    if (!batch.length) break;
-    if (!Number.isFinite(total)) total = Number(batch[0]?.total_count || 0);
-    rows.push(...batch.map((item: any) => normalizeAttendanceRow(item.row_data || {})));
-    rpcPage += 1;
-  }
-  if (Number.isFinite(total) && rows.length < total) throw new Error("ATTENDANCE_RESULT_TOO_LARGE");
-  return rows;
-}
-
 async function groupedAttendanceV2(body: Record<string, unknown>, auth: AuthenticatedUser) {
+  requireOperationalRole(auth);
   const page = clampInt(body.page, 1, 1, 100000);
   const pageSize = clampInt(body.pageSize, 20, 1, 100);
   const search = String(body.search || "").trim();
-  const allRows = await allGroupedAttendance(auth, search);
-  const filterOptions = {
-    sppg: [...new Set(allRows.map((row) => String(row.sppg || row.SPPG || "").trim()).filter(Boolean))].sort(),
-  };
-
   const startDate = body.startDate ? dateOnly(body.startDate) : "";
   const endDate = body.endDate ? dateOnly(body.endDate) : "";
   if (body.startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) throw new ValidationError("INVALID_START_DATE", "Tanggal mulai tidak valid.", "startDate");
@@ -343,29 +310,20 @@ async function groupedAttendanceV2(body: Record<string, unknown>, auth: Authenti
   const sppg = String(body.sppg || "").trim();
   const source = body.source ? requiredString(body.source, "source", { max: 100 }).toUpperCase() : "";
   const status = body.status ? requiredString(body.status, "status", { max: 40 }).toUpperCase() : "";
-  if (status && !ATTENDANCE_VIEW_STATUSES.has(status)) {
-    throw new ValidationError("INVALID_ATTENDANCE_STATUS", "Filter status absensi tidak valid.", "status");
-  }
-
-  const filtered = allRows.filter((row) => {
-    const date = dateOnly(row.Tanggal || row.tanggal);
-    if (startDate && date < startDate) return false;
-    if (endDate && date > endDate) return false;
-    if (sppg && String(row.sppg || row.SPPG || "") !== sppg) return false;
-    const sources = attendanceSources(row).map((value) => value.toUpperCase());
-    if (source && !sources.includes(source)) return false;
-    const punches = Array.isArray(row.punches) ? row.punches : [];
-    const complete = Boolean(row.jamMasuk && row.jamPulang);
-    const single = punches.length === 1 || punches.some((punch: Record<string, any>) => normalize(punch.jenis || punch.Jenis_Absen) === "PUNCH TUNGGAL");
-    if (status === "LENGKAP" && !complete) return false;
-    if (status === "PUNCH_TUNGGAL" && !single) return false;
-    if (status === "BELUM_LENGKAP" && (complete || single)) return false;
-    return true;
+  if (status && !ATTENDANCE_VIEW_STATUSES.has(status)) throw new ValidationError("INVALID_ATTENDANCE_STATUS", "Filter status absensi tidak valid.", "status");
+  const scope = await allowedSppg(auth);
+  const users = await scopedUsers(scope);
+  const scopedIds = users.map((row) => String(row.ID_User || "")).filter(Boolean);
+  const filterOptions = { sppg: [...new Set(users.map((row) => String(row.SPPG || "").trim()).filter(Boolean))].sort() };
+  if (!scopedIds.length) return { absensi: [], total: 0, page, pageSize, filterOptions };
+  const result = await db.rpc("get_absensi_grouped_page_v2", {
+    p_user_ids: scopedIds, p_page: page, p_page_size: pageSize, p_search: search || null,
+    p_start_date: startDate || null, p_end_date: endDate || null, p_sppg: sppg || null,
+    p_status: status || null, p_source: source || null,
   });
-
-  const total = filtered.length;
-  const from = (page - 1) * pageSize;
-  return { absensi: filtered.slice(from, from + pageSize), total, page, pageSize, filterOptions };
+  if (result.error) throw new Error(`ATTENDANCE_QUERY_FAILED:${result.error.message}`);
+  const rows = (result.data || []).map((item: any) => normalizeAttendanceRow(item.row_data || {}));
+  return { absensi: rows, total: Number(result.data?.[0]?.total_count || 0), page, pageSize, filterOptions };
 }
 
 async function validateAttendanceBulkV3(body: Record<string, unknown>, auth: AuthenticatedUser) {

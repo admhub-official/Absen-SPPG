@@ -213,28 +213,22 @@ Deno.serve(async (req) => {
       const fileHash = body.fileHash == null ? null : String(body.fileHash).trim().slice(0, 256) || null;
       const { data: job, error: jobError } = await db.from('Attendance_Import_Jobs').insert({ File_Name: fileName, File_Hash: fileHash, SPPG: sppg, Yayasan: scopes.find((x:any)=>x.SPPG===sppg)?.Yayasan || user.Yayasan, Period_Start: period.start || null, Period_End: period.end || null, Uploaded_By: user.ID_User, Status: 'PROCESSING', Total_Source_Employees: employees.length, Total_Target_Accounts: allIds.length, Import_Settings_JSON: { duplicatePolicy } }).select().single();
       if (jobError) throw new Error('IMPORT_JOB_CREATE_FAILED');
-      let inserted = 0, skipped = 0, errors = 0, scansRead = 0;
-      for (const employee of employees) {
-        if (employee.mappingMode === 'IGNORE') continue;
-        if (!employee.targetUserIds.length) { errors++; continue; }
-        for (const day of employee.attendance) {
-          const scans = day.scans; scansRead += scans.length;
-          const { data: importRow, error: rowError } = await db.from('Attendance_Import_Rows').insert({ ID_Import: job.ID_Import, Machine_Employee_ID: employee.machineId, Source_Name: employee.sourceName, Source_Department: employee.department, Attendance_Date: day.date, Parsed_Scans_JSON: scans, Target_User_IDs: employee.targetUserIds, Validation_Status: 'VALID' }).select().single();
-          if (rowError) { errors++; console.error(JSON.stringify({ requestId, code: 'IMPORT_ROW_INSERT_FAILED', error: rowError.message })); continue; }
-          for (const userId of employee.targetUserIds) for (let i=0;i<scans.length;i++) {
-            const kind = scans.length === 1 ? 'PUNCH_TUNGGAL' : i === 0 ? 'DATANG' : i === scans.length - 1 ? 'PULANG' : 'PUNCH_TAMBAHAN';
-            const stamp = `${day.date}T${scans[i]}:00+07:00`;
-            const row = { ID_Absen: crypto.randomUUID(), ID_User: userId, Tanggal: day.date, Jenis_Absen: kind, Waktu_Timestamp: stamp, Status_Validasi: 'VALID', SPPG: sppg, Yayasan: valid.get(userId)?.Yayasan || user.Yayasan, Sumber_Data: 'IMPORT_FILE_ABSENSI', Nama_Impor: employee.sourceName, Dept_Impor: employee.department, Urutan_Punch: i+1, Waktu_Asli_Impor: scans[i], Catatan_Validasi: 'Validasi administratif: upload file absensi.', File_Impor: fileName, ID_Import: job.ID_Import, ID_Import_Row: importRow?.ID_Import_Row, Mapping_Mode: employee.mappingMode };
-            const { error } = await db.from('Absensi').insert(row);
-            if (error?.code === '23505') skipped++; else if (error) { errors++; console.error(JSON.stringify({ requestId, code: 'ATTENDANCE_IMPORT_INSERT_FAILED', error: error.message })); } else inserted++;
-          }
-        }
-        if (body.saveMappings === true && roleConfig.Can_Save_Mapping) {
-          const { error } = await db.from('Attendance_Name_Mappings').upsert({ SPPG: sppg, Source_Name_Normalized: normalizeName(employee.sourceName), Source_Machine_ID: employee.machineId || null, Source_Department: employee.department, Mapping_Mode: employee.mappingMode, Target_User_IDs: employee.targetUserIds, Is_Active: true, Created_By: user.ID_User, Updated_At: new Date().toISOString() }, { onConflict: 'SPPG,Source_Name_Normalized,Source_Machine_ID' });
-          if (error) { errors++; console.error(JSON.stringify({ requestId, code: 'MAPPING_SAVE_FAILED', error: error.message })); }
-        }
-      }
-      const status = errors ? (inserted ? 'PARTIAL' : 'FAILED') : 'COMPLETED';
+      const batch = await db.rpc('commit_attendance_import_batch', {
+  p_import: job.ID_Import, p_sppg: sppg,
+  p_default_yayasan: scopes.find((x:any)=>x.SPPG===sppg)?.Yayasan || user.Yayasan || null,
+  p_file_name: fileName, p_rows: employees,
+});
+if (batch.error) throw new Error(`ATTENDANCE_IMPORT_BATCH_FAILED:${batch.error.message}`);
+const stats = batch.data || {};
+let inserted = Number(stats.inserted || 0), skipped = Number(stats.skipped || 0), errors = 0, scansRead = Number(stats.scansRead || 0);
+if (body.saveMappings === true && roleConfig.Can_Save_Mapping) {
+  const mappingRows = employees.filter((employee:any) => employee.mappingMode !== 'IGNORE').map((employee:any) => ({ SPPG: sppg, Source_Name_Normalized: normalizeName(employee.sourceName), Source_Machine_ID: employee.machineId || null, Source_Department: employee.department, Mapping_Mode: employee.mappingMode, Target_User_IDs: employee.targetUserIds, Is_Active: true, Created_By: user.ID_User, Updated_At: new Date().toISOString() }));
+  if (mappingRows.length) {
+    const mappingSave = await db.from('Attendance_Name_Mappings').upsert(mappingRows, { onConflict: 'SPPG,Source_Name_Normalized,Source_Machine_ID' });
+    if (mappingSave.error) { errors++; console.error(JSON.stringify({ requestId, code: 'MAPPING_SAVE_FAILED', error: mappingSave.error.message })); }
+  }
+}
+const status = errors ? (inserted ? 'PARTIAL' : 'FAILED') : 'COMPLETED';
       const finalUpdate = await db.from('Attendance_Import_Jobs').update({ Status: status, Total_Scans_Read: scansRead, Total_Scans_Inserted: inserted, Total_Scans_Skipped: skipped, Total_Errors: errors, Completed_At: new Date().toISOString() }).eq('ID_Import', job.ID_Import);
       const finalizationWarning = Boolean(finalUpdate.error);
       if (finalUpdate.error) console.error(JSON.stringify({ requestId, code: 'IMPORT_JOB_FINALIZE_FAILED', importId: job.ID_Import, error: finalUpdate.error.message }));
